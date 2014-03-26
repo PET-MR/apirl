@@ -1,0 +1,125 @@
+#  CMAKE Main File for the AR-PET Image Reconstruction library (APIRL)
+#
+#  Martin Belzunce, UTN-FRBA, Proyecto AR-PET (CNEA)
+#  Copyright (c) 2009
+
+PROJECT(APIRL)
+CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
+
+# Type of build (Debug or Release). CMAKE_BUILD_TYPE es una variable del tipo cache, por lo que no conviene
+# forzarla a un valor, mejor definirla cuando uno llama a cmake.
+#set(CMAKE_BUILD_TYPE	Debug)
+
+# Defino una variable que me indice si las librería para cuda son dinámicas o estáticas. Esto lo hago
+# así porque he tenido algún problema para hacerlas dinámicas.
+#SET(CUDA_LIBRARIES_BUILD	STATIC)
+SET(CUDA_LIBRARIES_BUILD	SHARED)
+
+###################### OPENMP CONFIGURATION #############################
+INCLUDE(FindOpenMP)
+IF(OPENMP_FOUND)
+    OPTION(USE_OPENMP    "Manages the frame grabbing on windows" ON)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
+	message(STATUS "Flags: ${OpenMP_C_FLAGS} ${OpenMP_CXX_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
+     SET(ENV{OMP_STACKSIZE} 512M)
+ELSE(OPENMP_FOUND)
+    SET(USE_OPENMP OFF)
+ENDIF(OPENMP_FOUND)
+#######################################################################
+
+################## CAMBIO EL STACK SIZE POR EL OPENMP #########
+#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} --main-stacksize=8500000")
+SET (CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} --main-stacksize=8500000")
+#########################################################
+
+# Genero una variable con los directorios de invlude para cada subproyecto. Las creo en este, para que
+# puedan ser accesibles desde cada uno de ellos.
+SET(cmd_Headers_Dir ${CMAKE_SOURCE_DIR}/cmd/inc)
+SET(recon_Headers_Dir ${CMAKE_SOURCE_DIR}/recon/inc)
+SET(utils_Headers_Dir ${CMAKE_SOURCE_DIR}/utils/inc)
+SET(data_Headers_Dir ${CMAKE_SOURCE_DIR}/data/inc)
+SET(reconGPU_Headers_Dir ${CMAKE_SOURCE_DIR}/reconGPU/inc)
+
+# El directorio de instalación para modo debug es sobre el mismo directorio de build, en un directorio
+# llamado instal. Para la versión release no se cambia, se deja el por default, que suele depender
+# del sistema operativo:
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+	SET(APIRL_INSTALL_PATH "${CMAKE_BINARY_DIR}/debug")
+else()
+	SET(APIRL_INSTALL_PATH "${CMAKE_INSTALL_PREFIX}")
+endif()	
+MESSAGE(STATUS "DIRECTORIO DE INSTALACION: ${APIRL_INSTALL_PATH}")
+
+# Directorio donde se encuentra el FindCUDA:
+SET(FindCUDA_Dir ${CMAKE_SOURCE_DIR}/FindCUDA)
+# Seteo las compute capabilities con las que quiero compilar (Por default es la más baja: 1.0):
+SET(CUDA_COMPUTE_CAPABILITY 2.0)
+# Algunas opciones adicionales para cuda.
+#SET(CUDA_USE_FAST_MATH ON)
+# Tipo de Cache que se habilita:
+#SET(CUDA_USE_CACHE_L1_L2 ON)
+#SET(CUDA_USE_CACHE_ONLY_L2 ON)
+#SET(CUDA_MAX_REG_COUNT 20)
+
+# Seteo en ON CUDA_VERBOSE_BUILD para visualizar todos los resultados del nvcc.
+SET(CUDA_VERBOSE_BUILD ON)
+# Variables de entorno necesarias en linux, si no están definidas las fuerzo a un valor por default:
+if(CMAKE_HOST_UNIX)
+  if(NOT ENV{CUDA_SDK_INSTALL_PATH})
+    SET(ENV{CUDA_SDK_INSTALL_PATH} "$ENV{HOME}/NVIDIA_GPU_Computing_SDK")
+  endif()
+endif()
+
+# Agrego los directorios de cada proyecto:
+add_subdirectory(recon)
+add_subdirectory(data)
+add_subdirectory(utils)
+add_subdirectory(cmd)
+#add_subdirectory(cmdGPU)
+#add_subdirectory(reconGPU)
+
+# Configuraciones Adicionales de CUDA. En windows compilo en 32 bits al menos que obtenga un
+# Visual Studio de 64 bits. En Linux si directamente compilo según el sistema operativo.
+# Cuando la variable CUDA_64_BIT_DEVICE_CODE está en ON se compila con la opción -m64 para
+# 64 bits, de lo contrario se utiliza la opción -m32.
+if(CMAKE_HOST_WIN32 OR CMAKE_HOST_WIN64)
+	if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+	  set(CUDA_64_BIT_DEVICE_CODE OFF)
+	else(CMAKE_SIZEOF_VOID_P EQUAL 4)
+	  set(CUDA_64_BIT_DEVICE_CODE OFF)
+	endif(CMAKE_SIZEOF_VOID_P EQUAL 8)
+else()
+	if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+	  set(CUDA_64_BIT_DEVICE_CODE ON)
+	else(CMAKE_SIZEOF_VOID_P EQUAL 4)
+	  set(CUDA_64_BIT_DEVICE_CODE OFF)
+	endif(CMAKE_SIZEOF_VOID_P EQUAL 8)
+	
+endif()
+
+
+# Check if Doxygen is available
+#find_package(Doxygen REQUIRED)
+find_package(Doxygen)
+
+OPTION(INSTALL_DOC "Set to OFF to skip build/install Documentation" OFF)
+OPTION(USE_DOT "Set to ON to perform diagram generation with graphviz" OFF)
+OPTION(USE_LATEX "Set to ON to build latex documentation" OFF)
+OPTION(USE_CHM "Set to ON to build CHM Windows documentation" OFF)
+#SET(INSTALL_DOC ON)
+IF (INSTALL_DOC)
+	INCLUDE("${CMAKE_SOURCE_DIR}/Doxygen/generateDOC.cmake" )
+	GENERATE_DOCUMENTATION(${CMAKE_SOURCE_DIR}/${PROJECT_NAME}.dox.in)
+ENDIF()
+
+# Instalo los archivos de sample.
+#FILE(GLOB Sample_Files RELATIVE ${CMAKE_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/samples/*.txt | ${CMAKE_SOURCE_DIR}/samples/*.par)
+FILE(GLOB Sample_Files ABSOLUTE ${CMAKE_SOURCE_DIR}/samples/*.txt | ${CMAKE_SOURCE_DIR}/samples/*.par)
+
+Install(FILES ${Sample_Files} DESTINATION "${APIRL_INSTALL_PATH}/Samples")
+
+
+
+

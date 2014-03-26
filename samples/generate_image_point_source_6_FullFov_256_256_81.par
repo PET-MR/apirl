@@ -1,0 +1,44 @@
+generateImage Parameters :=
+output filename := point_source_6_FullFov_256_256_81
+; optional keyword to specify the output file format
+; example below uses Interfile with 16-bit unsigned integers
+output file format type := Interfile
+  interfile Output File Format Parameters :=
+	number format  := float
+	number_of_bytes_per_pixel := 4
+	; fix the scale factor to 1
+	; comment out next line to let STIR use the full dynamic 
+	; range of the output type
+	scale_to_write_data := 1
+  End Interfile Output File Format Parameters :=
+
+X output image size (in pixels) := 256
+Y output image size (in pixels) := 256
+Z output image size (in pixels) := 81
+; Tamaño de pixel del ArPet: FOV: 600mmx260mm
+X voxel size (in mm) := 2.34375
+Y voxel size (in mm) := 2.34375
+Z voxel size (in mm) := 3.20987
+
+; parameters that determine subsampling of border voxels
+; to obtain smooth edges
+; setting these to 1 will just check if the centre of the voxel is in or out
+; default to 5
+; Z number of samples to take per voxel := 5
+; Y number of samples to take per voxel := 5
+; X number of samples to take per voxel := 5
+	    
+shape type := box
+Box Parameters :=
+    length-x (in mm) := 3
+    length-y (in mm) := 3
+    length-z (in mm) := 4
+    ; origin w.r.t. to standard STIR coordinate system (middle of first plane)
+    origin (in mm) := {100.0, 0.0, 195.0}
+END :=
+value := 1
+
+; next shape :=
+; see Shape3D hierarhcy for possibly shapes
+
+END :=

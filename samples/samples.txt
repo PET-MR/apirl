@@ -1,0 +1,14 @@
+/**
+	\file samples.txt
+	\brief Archivo de Readme para ejemplos.
+
+	\author Martín Belzunce (martin.sure@gmail.com)
+	\date 2010.08.30
+	\version 1.0.0
+*/
+
+En la carpeta samples se encuentra ejemplos para los tipos de archivo interfile que se utilizan en la biblioteca APIRL. Ellos son:
+
+*.par : Especifican la configuración de la reconstrucción.
+*.hv  : Especificación de las propiedades de una imagen.
+*.hs  : Especificación de las características del sinograma de entrada.
