@@ -77,8 +77,8 @@ add_subdirectory(recon)
 add_subdirectory(data)
 add_subdirectory(utils)
 add_subdirectory(cmd)
-#add_subdirectory(cmdGPU)
-#add_subdirectory(reconGPU)
+add_subdirectory(cmdGPU)
+add_subdirectory(reconGPU)
 
 # Configuraciones Adicionales de CUDA. En windows compilo en 32 bits al menos que obtenga un
 # Visual Studio de 64 bits. En Linux si directamente compilo según el sistema operativo.

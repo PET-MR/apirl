@@ -1,7 +1,7 @@
 /**
-	\file MlemSinogram3d.h
-	\brief Archivo que contiene la definición de la clase MlemSinogram3d. 
-	Clase derivada de Mlem, que define el algoritmo Mlem para los sinogramas3D de un cylindrical PET.
+	\file OsemSinogram3d.h
+	\brief Archivo que contiene la definición de la clase OsemSinogram3d. 
+	Clase derivada de MlemSinogram3d, que define el algoritmo Osem para los sinogramas3D de un cylindrical PET.
 
 	\todo 
 	\bug

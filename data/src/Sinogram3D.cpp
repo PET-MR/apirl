@@ -67,6 +67,19 @@ Sinogram3D::~Sinogram3D()
   free(ptrAxialvalues_mm);
 }
 
+int Sinogram3D::getBinCount()
+{
+  int numBins = 0;
+  // Obtengo la cantidad total de bins que tiene el sinograma 3D.
+  for(int i = 0; i < this->numSegments; i++)
+  {
+	for(int j = 0; j < this->getSegment(i)->getNumSinograms(); j++)
+	{
+	  numBins += this->getSegment(i)->getSinogram2D(j)->getNumProj() * this->getSegment(i)->getSinogram2D(j)->getNumR();
+	}
+  }
+  return numBins;
+}
 
 bool Sinogram3D::readFromInterfile(string headerFilename)
 {

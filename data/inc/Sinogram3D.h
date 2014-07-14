@@ -163,6 +163,11 @@ class DLLEXPORT Sinogram3D : public Sinogram2D
 	*/
 	virtual Sinogram3D* Copy() = 0;
 	
+	/** Método que devuelve la cantidad de bins totales del sinograma 3D.
+	 * @return número de bins que tiene el sinograma 3d.
+	 */
+	int getBinCount();
+	
 	/** Método que deveulve la cantidad de segmentos del sinograma3d. 
 		@return número de segmentos que contiene el sinograma3d.
 	*/

@@ -14,8 +14,8 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 set(CMAKE_MODULE_PATH "${FindCUDA_Dir}/CMake/cuda" ${CMAKE_MODULE_PATH})
 find_package(CUDA REQUIRED FIND_CUDA_DIR)
 # Llamo al script FindCUTIL que me genera las variables CUDA_CUT_INCLUDE_DIR y CUDA_CUT_LIBRARIES.
-INCLUDE(${FindCUDA_Dir}/FindCUTIL.cmake)
-message(STATUS "CUDA_CUT_INCLUDE_DIR: ${CUDA_CUT_INCLUDE_DIR}")
+#INCLUDE(${FindCUDA_Dir}/FindCUTIL.cmake)
+#message(STATUS "CUDA_CUT_INCLUDE_DIR: ${CUDA_CUT_INCLUDE_DIR}")
 ADD_DEFINITIONS(-D_CRT_SECURE_NO_WARNINGS)
 SET(CUDA_BUILD_CUBIN ON)
 SET(CUDA_VERBOSE_BUILD ON)
@@ -27,7 +27,8 @@ SET(reconGPU_Sources)
 SET(reconGPU_Headers)
 SET(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH})
 SET(reconGPU_Sources_Dir ${reconGPU_SOURCE_DIR}/src)
-#SET(reconGPU_Headers_Dir ${reconGPU_SOURCE_DIR}/inc)	Lo generé en el raíz.
+SET(reconGPU_Headers_Dir ${reconGPU_SOURCE_DIR}/inc)
+message(STATUS "reconGPU_Headers_Dir: ${reconGPU_Headers_Dir}")
 INCLUDE(${reconGPU_SOURCE_DIR}/reconGPU.cmake OPTIONAL)
 #######################################################################
 
@@ -53,7 +54,7 @@ message(STATUS "Output Directory: ${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}")
 #ADD_DEFINITIONS(DLL_BUILD)
 # Genero una DLL.
 #ADD_Library(reconGPU SHARED ${reconGPU_Sources} ${reconGPU_Headers})${CUDA_LIBRARIES_BUILD}
-CUDA_ADD_LIBRARY(reconGPU  ${CUDA_LIBRARIES_BUILD} ${reconGPU_Sources} ${reconGPU_Headers} ${reconGPU_cuHeaders})
+CUDA_ADD_LIBRARY(reconGPU  ${CUDA_LIBRARIES_BUILD} ${reconGPU_Sources} ${reconGPU_cuSources} ${reconGPU_Headers} ${reconGPU_cuHeaders})
 # Para windows se debe definir WIN32 y DLL_BUILD tambien
 if(CMAKE_HOST_WIN32)
 #	set_target_properties(APIRL PROPERTIES COMPILE_DEFINITIONS WIN32)
