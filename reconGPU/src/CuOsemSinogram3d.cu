@@ -3,7 +3,7 @@
 
 CuOsemSinogram3d::CuOsemSinogram3d(Sinogram3D* cInputProjection, Image* cInitialEstimate, string cPathSalida, string cOutputPrefix, int cNumIterations, int cSaveIterationInterval, bool cSaveIntermediate, bool cSensitivityImageFromFile, Projector* cForwardprojector, Projector* cBackprojector, int cNumSubsets) : OsemSinogram3d(cInputProjection, cInitialEstimate, cPathSalida, cOutputPrefix, cNumIterations, cSaveIterationInterval, cSaveIntermediate, cSensitivityImageFromFile, cForwardprojector, cBackprojector, cNumSubsets)
 {
-
+  Michelogram::ReadDataFromSinogram3D(Sinogram3D* MiSino3D)
 }
 
 CuOsemSinogram3d::CuOsemSinogram3d(string configFilename):OsemSinogram3d(configFilename)
@@ -144,6 +144,31 @@ bool CuOsemSinogram3d::InitGpuMemory()
   // Pongo en cero el sinograma de proyección:
   checkCudaErrors(cudaMemset(d_estimatedProjection, 0,sizeof(float)*numBins));
   
+  checkCudaErrors(my_cuda_error = cudaMemcpyToSymbol(cuda_values_r, rValues_mm, sizeof(float)*inputProjection->NR));
+  checkCudaErrors(my_cuda_error = cudaMemcpyToSymbol(cuda_values_z, inputProjection->ZValues, sizeof(float)*inputProjection->NZ));
+  checkCudaErrors(my_cuda_error = cudaMemcpyToSymbol(cuda_threads_per_block, &(blockSizeProjector.x), sizeof(unsigned int)));
+  checkCudaErrors(my_cuda_error = cudaMemcpyToSymbol(cuda_threads_per_block_update_pixel, &(blockSizeImageUpdate.x), sizeof(unsigned int)));
+  checkCudaErrors(my_cuda_error = cudaMemcpyToSymbol(cuda_nr_splitter, &NR_Splitter, sizeof(unsigned int)));
+  checkCudaErrors(my_cuda_error = cudaMemcpyToSymbol(cuda_rows_splitter, &rowSplitter, sizeof(unsigned int)));
+  checkCudaErrors(my_cuda_error = cudaMemcpyToSymbol(cuda_image_size, &sizeReconImage, sizeof(SizeImage)));
+  checkCudaErrors(my_cuda_error = cudaMemcpyToSymbol(cudaRFOV, &MySizeMichelogram.RFOV, sizeof(MySizeMichelogram.RFOV)));
+  checkCudaErrors(my_cuda_error = cudaMemcpyToSymbol(cudaZFOV, &MySizeMichelogram.ZFOV, sizeof(MySizeMichelogram.ZFOV)));
+  int binsSino2D = MySizeMichelogram.NR * MySizeMichelogram.NProj;
+  checkCudaErrors(my_cuda_error = cudaMemcpyToSymbol(cudaBinsSino2D, &binsSino2D, sizeof(binsSino2D)));
+  
+  /// Esto después hay que cambiarlo! Tiene que ir en la clase Michelogram!!!!!!!!!!!!!
+  /// Necesito tener el dato del zfov del michelograma, que no lo tengo accesible ahora. Lo pongo a mano, pero
+  /// cambiarlo de maner aurgente lo antes posible.!!!
+  /// Ente el offsetZ lo calculaba en base al FOV del sinograma, ahora que fov es el de la imagen adquirida. Debo
+  /// centrar dicho FOV en el FOV del sinograma y calcular el offsetZ relativo. Esto sería el valor mínimo de Z de la
+  /// imagen a reconstruir. Lo puedo obtener del zFOV de la imagen o del sizePixelZ_mm.
+  /// Lo mejor sería que el slice central sea el z=0, entonces no deberíamos modificar nada. Pero habría que cambiar
+  /// varias funciones para que así sea. Por ahora queda así.
+  float offsetZvalue = (SCANNER_ZFOV - inputProjection->ZFOV)/2;
+  checkCudaErrors(my_cuda_error = cudaMemcpyToSymbol(OffsetZ, &offsetZvalue, sizeof(offsetZvalue)));
+  checkCudaErrors(my_cuda_error = cudaMemcpyToSymbol(cudaRscanner, &(inputProjection->rScanner), sizeof(inputProjection->rScanner)));
+  checkCudaErrors(my_cuda_error = cudaMemcpyToSymbol(cuda_michelogram_size, &MySizeMichelogram, sizeof(SizeMichelogram)));
+
 }
 
 bool CuOsemSinogram3d::CopySinogram3dHostToGpu(float* d_destino, Sinogram3D* h_source)
