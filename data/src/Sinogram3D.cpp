@@ -81,6 +81,17 @@ int Sinogram3D::getBinCount()
   return numBins;
 }
 
+int inogram3D::getNumSinograms()
+{
+  int numSinos = 0;
+  // Obtengo la cantidad total de sinos 2d que tiene el sinograma 3D.
+  for(int i = 0; i < this->numSegments; i++)
+  {
+    numSinos += this->getSegment(i)->getNumSinograms();
+  }
+  return numSinos;
+}
+
 bool Sinogram3D::readFromInterfile(string headerFilename)
 {
   const int sizeBuffer = 512;

@@ -19,7 +19,13 @@
 #include <Logger.h>
 #include <omp.h>
 #include <cuda.h> // cuda api
+#include <cuda_runtime.h>
 #include <helper_cuda.h> 	// cuda helper para chequeo de errores
+
+#define MAX_PHI_VALUES	512	// Máxima cantidad de valores en el angulo theta que puede admitir la implementación.
+#define MAX_R_VALUES	512	// Idem para R.
+#define MAX_Z_VALUES	92	// Idem para anillos (z)
+#define MAX_SPAN	7	// Máximo valor de combinación de anillos por sinograma 2D.
 
 using namespace::std;
 
@@ -82,6 +88,16 @@ class DLLEXPORT CuOsemSinogram3d : public OsemSinogram3d
     /// Sensitivity Image.
     /* Puntero a al dirección de memoria en GPU donde se tendrá la imagen de sensibilidad.*/
     float* d_sensitivityImage;
+
+    /// Array con las coordenadas del ring1 (z1) para cada sinograma 2d.
+    /** El largo del vector es igual a la suma total de sinogramas 2d que tiene el sino3d.
+     */
+    float* d_ring1;
+    
+    /// Array con las coordenadas del ring2 (z2) para cada sinograma 2d.
+    /** El largo del vector es igual a la suma total de sinogramas 2d que tiene el sino3d.
+     */
+    float* d_ring2;
     
     /// Dim3 con configuración de threads per block en cada dimensión para el kernel de proyección.
     dim3 blockSizeProjector;
@@ -119,7 +135,7 @@ class DLLEXPORT CuOsemSinogram3d : public OsemSinogram3d
     bool InitGpuMemory();
     
     /// Método que copia memoria de cpu en gpu.
-    bool CopySinogram3dHostToGpu(float* d_destino, Sinogram3D* h_source);
+    int CopySinogram3dHostToGpu(float* d_destino, Sinogram3D* h_source);
     
     /// Método que inicializa la gpu.
     bool initCuda (int, Logger*);

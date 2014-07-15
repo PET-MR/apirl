@@ -168,6 +168,12 @@ class DLLEXPORT Sinogram3D : public Sinogram2D
 	 */
 	int getBinCount();
 	
+	/// Método que devuelve la cantidad de sinogramas 2d que tiene el sinograma3d.
+	/** Considera cada sinograma 2d almacenado, o sea que las múltiples combinaciones de anillos
+	 * para un único bin no las suma.
+	 */
+	int getNumSinograms();
+	
 	/** Método que deveulve la cantidad de segmentos del sinograma3d. 
 		@return número de segmentos que contiene el sinograma3d.
 	*/
@@ -195,8 +201,11 @@ class DLLEXPORT Sinogram3D : public Sinogram2D
 	float getAxialFoV_mm(){ return axialFov_mm;};
 	
 	
-	/** Método que devuelve el valor de ángulo de la fila del sinograma pedido. */
+	/** Método que devuelve el valor de de la coordenada axial del anillo pedido. */
 	float getAxialValue(int indexRing){ return ptrAxialvalues_mm[indexRing];};
+	
+	/** Método que devuelve un puntero a los valores de las coordenadas de cada anillo.*/
+	float* getAxialPtr(int indexRing){ return ptrAxialvalues_mm;};
 	
 	/** Método que calcula el likelihood de esta proyección respecto de una de referencia. */
 	float getLikelihoodValue(Sinogram3D* referenceProjection);

@@ -1,5 +1,18 @@
 #include <CuOsemSinogram3d.h>
 
+// Memoria constante con los valores de los angulos de la proyeccion,
+__device__ __constant__ float d_thetaValues_deg[MAX_PHI_VALUES];
+
+// Memoria constante con los valores de la distancia r.
+__device__ __constant__ float d_RValues_mm[MAX_R_VALUES];
+
+// Memoria constante con los valores de la coordenada axial o z.
+__device__ __constant__ float d_AxialValues_mm[MAX_Z_VALUES];
+
+__device__ __constant__ float d_RadioFov_mm;
+
+__device__ __constant__ float d_AxialFov_mm;
+
 
 CuOsemSinogram3d::CuOsemSinogram3d(Sinogram3D* cInputProjection, Image* cInitialEstimate, string cPathSalida, string cOutputPrefix, int cNumIterations, int cSaveIterationInterval, bool cSaveIntermediate, bool cSensitivityImageFromFile, Projector* cForwardprojector, Projector* cBackprojector, int cNumSubsets) : OsemSinogram3d(cInputProjection, cInitialEstimate, cPathSalida, cOutputPrefix, cNumIterations, cSaveIterationInterval, cSaveIntermediate, cSensitivityImageFromFile, cForwardprojector, cBackprojector, cNumSubsets)
 {
@@ -84,16 +97,16 @@ bool CuOsemSinogram3d::initCuda (int device, Logger* logger)
   //CHECK_CUDA_ERROR();
   if(cudaSetDevice(device)!=cudaSuccess)
   {
-	  return false;
+    return false;
   }
   else
   {
-	  /// Pude seleccionar el GPU adecudamente.
-	  /// Ahora lo configuro para que se bloquee en la llamada a los kernels
-	  if(cudaSetDeviceFlags(cudaDeviceBlockingSync)!=cudaSuccess)
-		return false;
-	  else
-		return true;
+    /// Pude seleccionar el GPU adecudamente.
+    /// Ahora lo configuro para que se bloquee en la llamada a los kernels
+    if(cudaSetDeviceFlags(cudaDeviceBlockingSync)!=cudaSuccess)
+	  return false;
+    else
+	  return true;
   }
 }
 
@@ -134,6 +147,8 @@ bool CuOsemSinogram3d::InitGpuMemory()
   checkCudaErrors(cudaMalloc((void**) &d_backprojectedImage, sizeof(float)*numPixels));
   checkCudaErrors(cudaMalloc((void**) &d_inputProjection, sizeof(float)*numBins));
   checkCudaErrors(cudaMalloc((void**) &d_estimatedProjection, sizeof(float)*numBins));
+  checkCudaErrors(cudaMalloc((void**) &d_ring1, sizeof(float)*inputProjection->getNumSinograms()));
+  checkCudaErrors(cudaMalloc((void**) &d_ring2, sizeof(float)*inputProjection->getNumSinograms()));
   // Copio la iamgen inicial:
   checkCudaErrors(cudaMemcpy(d_reconstructionImage, initialEstimate->getPixelsPtr(),sizeof(float)*numPixels,cudaMemcpyHostToDevice));
   // Pongo en cero la imágens de sensibilidad y la de retroproyección:
@@ -144,18 +159,45 @@ bool CuOsemSinogram3d::InitGpuMemory()
   // Pongo en cero el sinograma de proyección:
   checkCudaErrors(cudaMemset(d_estimatedProjection, 0,sizeof(float)*numBins));
   
-  checkCudaErrors(my_cuda_error = cudaMemcpyToSymbol(cuda_values_r, rValues_mm, sizeof(float)*inputProjection->NR));
-  checkCudaErrors(my_cuda_error = cudaMemcpyToSymbol(cuda_values_z, inputProjection->ZValues, sizeof(float)*inputProjection->NZ));
-  checkCudaErrors(my_cuda_error = cudaMemcpyToSymbol(cuda_threads_per_block, &(blockSizeProjector.x), sizeof(unsigned int)));
-  checkCudaErrors(my_cuda_error = cudaMemcpyToSymbol(cuda_threads_per_block_update_pixel, &(blockSizeImageUpdate.x), sizeof(unsigned int)));
-  checkCudaErrors(my_cuda_error = cudaMemcpyToSymbol(cuda_nr_splitter, &NR_Splitter, sizeof(unsigned int)));
-  checkCudaErrors(my_cuda_error = cudaMemcpyToSymbol(cuda_rows_splitter, &rowSplitter, sizeof(unsigned int)));
-  checkCudaErrors(my_cuda_error = cudaMemcpyToSymbol(cuda_image_size, &sizeReconImage, sizeof(SizeImage)));
-  checkCudaErrors(my_cuda_error = cudaMemcpyToSymbol(cudaRFOV, &MySizeMichelogram.RFOV, sizeof(MySizeMichelogram.RFOV)));
-  checkCudaErrors(my_cuda_error = cudaMemcpyToSymbol(cudaZFOV, &MySizeMichelogram.ZFOV, sizeof(MySizeMichelogram.ZFOV)));
-  int binsSino2D = MySizeMichelogram.NR * MySizeMichelogram.NProj;
-  checkCudaErrors(my_cuda_error = cudaMemcpyToSymbol(cudaBinsSino2D, &binsSino2D, sizeof(binsSino2D)));
-  
+  // Además de copiar los valores de todos los bins, debo inicializar todas las constantes de reconstrucción.
+  // Por un lado tengo los valores de coordenadas posibles de r, theta y z. Los mismos se copian a memoria constante de GPU (ver vectores globales al inicio de este archivo.
+  checkCudaErrors(cudaMemcpyToSymbol(d_thetaValues_deg, inputProjection->getAngPtr(), sizeof(float)*inputProjection->getNumProj()));
+  checkCudaErrors(cudaMemcpyToSymbol(d_RValues_mm, inputProjection->getRPtr(), sizeof(float)*inputProjection->getNumR()));
+  checkCudaErrors(cudaMemcpyToSymbol(d_AxialValues_mm, inputProjection->getAxialPtr(), sizeof(float)*inputProjection->getNumRings()));
+  checkCudaErrors(cudaMemcpyToSymbol(cuda_threads_per_block, &(blockSizeProjector.x), sizeof(unsigned int)));
+  checkCudaErrors(cudaMemcpyToSymbol(cuda_threads_per_block_update_pixel, &(blockSizeImageUpdate.x), sizeof(unsigned int)));
+  checkCudaErrors(cudaMemcpyToSymbol(cuda_nr_splitter, &NR_Splitter, sizeof(unsigned int)));
+  checkCudaErrors(cudaMemcpyToSymbol(cuda_rows_splitter, &rowSplitter, sizeof(unsigned int)));
+  checkCudaErrors(cudaMemcpyToSymbol(cuda_image_size, &sizeReconImage, sizeof(SizeImage)));
+  checkCudaErrors(cudaMemcpyToSymbol(d_RadioFov_mm, &(inputProjection->getRadioFov_mm()), sizeof(inputProjection->getRadioFov_mm())));
+  checkCudaErrors(cudaMemcpyToSymbol(d_AxialFov_mm, &(inputProjection->getAxialFoV_mm()), sizeof(inputProjection->getAxialFoV_mm())));
+
+  // Para el sinograma 3d tengo que cada sino 2d puede representar varios sinogramas asociados a distintas combinaciones de anillos.
+  // En la versión con CPU proceso todas las LORs, ahora solo voy a considerar la del medio, que sería la ventaja de reducir el volumen de LORs.
+  // Entonces genero un array con las coordenadas de anillos de cada sinograma.
+  int iSino = 0;
+  float* auxRings1 = new float[inputProjection->getNumSinograms()];
+  float* auxRings2 = new float[inputProjection->getNumSinograms()];
+  for(int i = 0; i < inputProjection->getNumSegments(); i++)
+  {
+    for(int j = 0; j < inputProjection->getSegment(i)->getNumSinograms(); j++)
+    {
+      // Como voy a agarrar solo la combinación del medio:
+      int indexMedio = floor(outputProjection->getSegment(i)->getSinogram2D(j)->getNumZ()/2);
+    }
+  }
+    for(unsigned int i = 0; i < outputProjection->getNumSegments(); i++)
+  {
+    printf("Forwardprojection con Siddon Segmento: %d\n", i);	  
+    for(unsigned int j = 0; j < outputProjection->getSegment(i)->getNumSinograms(); j++)
+    {
+      /// Cálculo de las coordenadas z del sinograma
+      for(unsigned int m = 0; m < outputProjection->getSegment(i)->getSinogram2D(j)->getNumZ(); m++)
+      {
+	int indexRing1 = outputProjection->getSegment(i)->getSinogram2D(j)->getRing1FromList(m);
+	int indexRing2 = outputProjection->getSegment(i)->getSinogram2D(j)->getRing2FromList(m);
+	
+	
   /// Esto después hay que cambiarlo! Tiene que ir en la clase Michelogram!!!!!!!!!!!!!
   /// Necesito tener el dato del zfov del michelograma, que no lo tengo accesible ahora. Lo pongo a mano, pero
   /// cambiarlo de maner aurgente lo antes posible.!!!
@@ -171,20 +213,24 @@ bool CuOsemSinogram3d::InitGpuMemory()
 
 }
 
-bool CuOsemSinogram3d::CopySinogram3dHostToGpu(float* d_destino, Sinogram3D* h_source)
+int CuOsemSinogram3d::CopySinogram3dHostToGpu(float* d_destino, Sinogram3D* h_source)
 {
   // Obtengo la cantidad total de bins que tiene el sinograma 3D.
   int offset = 0;
+  int numSinograms = 0;
   for(int i = 0; i < h_source->getNumSegments(); i++)
   {
-	for(int j = 0; j < h_source->getSegment(i)->getNumSinograms(); j++)
-	{
-	  checkCudaErrors(cudaMemcpy(d_destino + offset, h_source->getSegment(i)->getSinogram2D(j)->getSinogramPtr(), 
-				     sizeof(float)*h_source->getSegment(i)->getSinogram2D(j)->getNumR() * h_source->getSegment(i)->getSinogram2D(j)->getNumProj(),cudaMemcpyHostToDevice));
-	  offset += h_source->getSegment(i)->getSinogram2D(j)->getNumR() * h_source->getSegment(i)->getSinogram2D(j)->getNumProj();
-	}
+    for(int j = 0; j < h_source->getSegment(i)->getNumSinograms(); j++)
+    {
+      checkCudaErrors(cudaMemcpy(d_destino + offset, h_source->getSegment(i)->getSinogram2D(j)->getSinogramPtr(), 
+				  sizeof(float)*h_source->getSegment(i)->getSinogram2D(j)->getNumR() * h_source->getSegment(i)->getSinogram2D(j)->getNumProj(),cudaMemcpyHostToDevice));
+      offset += h_source->getSegment(i)->getSinogram2D(j)->getNumR() * h_source->getSegment(i)->getSinogram2D(j)->getNumProj();
+      numSinograms++;
+    }
   }
+  return numSinograms;
 }
+
 // Método de reconstrucción que no se le indica el índice de GPU, incializa la GPU 0 por defecto.
 bool CuOsemSinogram3d::Reconstruct()
 {

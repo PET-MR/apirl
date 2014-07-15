@@ -12,22 +12,18 @@
 #include <cuda.h>
 #include <cuda_runtime.h>
 
-#define MAX_PHI_VALUES	512	// Máxima cantidad de valores en el angulo theta que puede admitir la implementación.
-#define MAX_R_VALUES	512	// Idem para R.
-#define MAX_Z_VALUES	92	// Idem para anillos (z)
-#define MAX_SPAN	7	// Máximo valor de combinación de anillos por sinograma 2D.
 
 // Memoria constante con los valores de los angulos de la proyeccion,
-__device__ __constant__ float cuda_values_theta[MAX_PHI_VALUES];
+extern float cuda_values_theta[MAX_PHI_VALUES];
 
 // Memoria constante con los valores de la distancia r.
-__device__ __constant__ float cuda_values_r[MAX_R_VALUES];
+extern float cuda_values_r[MAX_R_VALUES];
 
 // Memoria constante con los valores de la coordenada axial o z.
-__device__ __constant__ float cuda_values_z[MAX_Z_VALUES];
+extern float cuda_values_z[MAX_Z_VALUES];
 
 // Memoria constante con los valores de la coordenada axial o z.
-__device__ __constant__ float cuda_values_z[MAX_Z_VALUES*MAX_Z_VALUES][MAX_SPAN];
+extern float cuda_values_z[MAX_Z_VALUES*MAX_Z_VALUES][MAX_SPAN];
 	
 __global__ void CUDA_Forward_Projection (float* volume, float* michelogram, float* michelogram_measured, int numR, int numProj, int)
 {

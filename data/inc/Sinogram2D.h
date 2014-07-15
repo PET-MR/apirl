@@ -196,8 +196,14 @@ class DLLEXPORT Sinogram2D : public Projection
 		/** Método que devuelve el valor de ángulo en grados de la fila del sinograma pedido. */
 		float getAngValue(int indexAng){ return ptrAngValues_deg[indexAng];};
 		
+		/** Método que devuelve un puntero al array con todos los valroes de ángulo */
+		float* getAngPtr(){ return ptrAngValues_deg;};
+		
 		/** Método que devuelve el valor de ángulo de la fila del sinograma pedido. */
 		float getRValue(int indexR){ return ptrRvalues_mm[indexR];};
+		
+		/** Método que devuelve un puntero al array con todos los valroes de ángulo. */
+		float getRPtr(){ return ptrRvalues_mm;};
 		
 		/** Método que calcula el likelihood de esta proyección respecto de una de referencia. */
 		float getLikelihoodValue(Sinogram2D* referenceProjection);
