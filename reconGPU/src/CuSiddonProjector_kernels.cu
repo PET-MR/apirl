@@ -15,8 +15,8 @@
 
 #include <cuda.h>
 #include <cuda_runtime.h>
-#include <CUDA_Siddon.h>
-#include "../src/CUDA_Siddon.cu"
+#include <CuSiddon.h>
+#include "../src/CuSiddon.cu"
 #define MAX_PHI_VALUES	512	// Máxima cantidad de valores en el angulo theta que puede admitir la implementación.
 #define MAX_R_VALUES	512	// Idem para R.
 #define MAX_Z_VALUES	92	// Idem para anillos (z)
@@ -31,14 +31,11 @@ __device__ __constant__ float d_RValues_mm[MAX_R_VALUES];
 // Memoria constante con los valores de la coordenada axial o z.
 __device__ __constant__ float d_AxialValues_mm[MAX_Z_VALUES];
 
-__device__ __constant__ float d_RadioFov_mm;
-
-__device__ __constant__ float d_AxialFov_mm;
-
 __device__ __constant__ float d_RadioScanner_mm;
 
-__device__ __constant__ SizeImage d_imageSize;
-	
+__device__ void CUDA_GetPointsFromLOR (float PhiAngle, float r, float Z1, float Z2, float cudaRscanner, float4* P1, float4* P2);
+
+
 __global__ void CUDA_Forward_Projection (float* volume, float* michelogram, float* michelogram_measured, int numR, int numProj, int numRings, int numSinos)
 {
   int indexSino2D =  threadIdx.x + (blockIdx.x * blockDim.x);

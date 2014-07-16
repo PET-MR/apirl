@@ -25,9 +25,6 @@
 	#define DLLEXPORT
 	#define DLLLOCAL
 #endif
-#ifdef __cplusplus
-	extern "C" 
-#endif
 
 #define SCANNER_ZFOV	156.96
 
@@ -54,7 +51,6 @@ typedef enum {
 #ifdef __cplusplus
 	extern "C" 
 #endif
-__device__ void CUDA_Siddon (float4* LOR, float4* P0, float* Input, float* Result, int MODE, int indiceMichelogram);
-#ifdef __cplusplus
-	extern "C" 
+//__device__ void CUDA_Siddon (float4* LOR, float4* P0, float* Input, float* Result, int MODE, int indiceMichelogram);
 
+#endif
