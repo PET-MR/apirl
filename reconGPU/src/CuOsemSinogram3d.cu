@@ -1,21 +1,6 @@
 #include <CuOsemSinogram3d.h>
+#include "../src/CuSiddonProjector_kernels.cu"
 
-// Memoria constante con los valores de los angulos de la proyeccion,
-__device__ __constant__ float d_thetaValues_deg[MAX_PHI_VALUES];
-
-// Memoria constante con los valores de la distancia r.
-__device__ __constant__ float d_RValues_mm[MAX_R_VALUES];
-
-// Memoria constante con los valores de la coordenada axial o z.
-__device__ __constant__ float d_AxialValues_mm[MAX_Z_VALUES];
-
-__device__ __constant__ float d_RadioFov_mm;
-
-__device__ __constant__ float d_AxialFov_mm;
-
-__device__ __constant__ float d_RadioScanner_mm;
-
-__device__ __constant__ SizeImage d_imageSize;
 
 CuOsemSinogram3d::CuOsemSinogram3d(Sinogram3D* cInputProjection, Image* cInitialEstimate, string cPathSalida, string cOutputPrefix, int cNumIterations, int cSaveIterationInterval, bool cSaveIntermediate, bool cSensitivityImageFromFile, Projector* cForwardprojector, Projector* cBackprojector, int cNumSubsets) : OsemSinogram3d(cInputProjection, cInitialEstimate, cPathSalida, cOutputPrefix, cNumIterations, cSaveIterationInterval, cSaveIntermediate, cSensitivityImageFromFile, cForwardprojector, cBackprojector, cNumSubsets)
 {

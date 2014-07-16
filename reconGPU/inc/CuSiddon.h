@@ -39,7 +39,15 @@ struct SiddonSegment
 	float Segment;
 };
 
+typedef enum {
+  SENSIBILITY_IMAGE,
+  PROJECTION,
+  BACKPROJECTION
+} SiddonOperation;
 
+#define SENSIBILITY_IMAGE	1
+#define PROJECTION		2
+#define BACKPROJECTION		3
 // This function calculates Siddon Wieghts for a lor. It gets as parameters, the LOR in
 // a Line3D object which P0 is the P1 of the LOR, the values of the planes in X, Y, Z, and a pointer
 // where all the wieghts will be loaded.
@@ -47,4 +55,6 @@ struct SiddonSegment
 	extern "C" 
 #endif
 __device__ void CUDA_Siddon (float4* LOR, float4* P0, float* Input, float* Result, int MODE, int indiceMichelogram);
-#endif
+#ifdef __cplusplus
+	extern "C" 
+

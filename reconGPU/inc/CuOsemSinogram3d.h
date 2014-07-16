@@ -22,11 +22,6 @@
 #include <cuda_runtime.h>
 #include <helper_cuda.h> 	// cuda helper para chequeo de errores
 
-#define MAX_PHI_VALUES	512	// Máxima cantidad de valores en el angulo theta que puede admitir la implementación.
-#define MAX_R_VALUES	512	// Idem para R.
-#define MAX_Z_VALUES	92	// Idem para anillos (z)
-#define MAX_SPAN	7	// Máximo valor de combinación de anillos por sinograma 2D.
-
 using namespace::std;
 
 
