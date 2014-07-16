@@ -203,7 +203,7 @@ class DLLEXPORT Sinogram2D : public Projection
 		float getRValue(int indexR){ return ptrRvalues_mm[indexR];};
 		
 		/** Método que devuelve un puntero al array con todos los valroes de ángulo. */
-		float getRPtr(){ return ptrRvalues_mm;};
+		float* getRPtr(){ return ptrRvalues_mm;};
 		
 		/** Método que calcula el likelihood de esta proyección respecto de una de referencia. */
 		float getLikelihoodValue(Sinogram2D* referenceProjection);

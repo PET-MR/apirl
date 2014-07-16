@@ -16,7 +16,7 @@
 #include <cuda.h>
 #include <cuda_runtime.h>
 #include <CuSiddon.h>
-#include "../src/CuSiddon.cu"
+#include "../kernels/CuSiddon.cu"
 #define MAX_PHI_VALUES	512	// Máxima cantidad de valores en el angulo theta que puede admitir la implementación.
 #define MAX_R_VALUES	512	// Idem para R.
 #define MAX_Z_VALUES	92	// Idem para anillos (z)

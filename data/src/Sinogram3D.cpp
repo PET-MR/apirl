@@ -81,7 +81,7 @@ int Sinogram3D::getBinCount()
   return numBins;
 }
 
-int inogram3D::getNumSinograms()
+int Sinogram3D::getNumSinograms()
 {
   int numSinos = 0;
   // Obtengo la cantidad total de sinos 2d que tiene el sinograma 3D.

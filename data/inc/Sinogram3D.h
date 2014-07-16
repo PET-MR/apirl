@@ -205,7 +205,7 @@ class DLLEXPORT Sinogram3D : public Sinogram2D
 	float getAxialValue(int indexRing){ return ptrAxialvalues_mm[indexRing];};
 	
 	/** Método que devuelve un puntero a los valores de las coordenadas de cada anillo.*/
-	float* getAxialPtr(int indexRing){ return ptrAxialvalues_mm;};
+	float* getAxialPtr(){ return ptrAxialvalues_mm;};
 	
 	/** Método que calcula el likelihood de esta proyección respecto de una de referencia. */
 	float getLikelihoodValue(Sinogram3D* referenceProjection);
