@@ -25,7 +25,7 @@ extern float cuda_values_z[MAX_Z_VALUES];
 // Memoria constante con los valores de la coordenada axial o z.
 extern float cuda_values_z[MAX_Z_VALUES*MAX_Z_VALUES][MAX_SPAN];
 	
-__global__ void CUDA_Forward_Projection (float* volume, float* michelogram, float* michelogram_measured, int numR, int numProj, int)
+__global__ void CUDA_Forward_Projection (float* volume, float* michelogram, float* michelogram_measured, int numR, int numProj, int numRings)
 {
   int indexSino2D =  threadIdx.x + (blockIdx.x * cuda_threads_per_block);
   if(indexSino2D>=cudaBinsSino2D)

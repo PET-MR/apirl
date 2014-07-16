@@ -13,10 +13,13 @@ __device__ __constant__ float d_RadioFov_mm;
 
 __device__ __constant__ float d_AxialFov_mm;
 
+__device__ __constant__ float d_RadioScanner_mm;
+
+__device__ __constant__ SizeImage d_imageSize;
 
 CuOsemSinogram3d::CuOsemSinogram3d(Sinogram3D* cInputProjection, Image* cInitialEstimate, string cPathSalida, string cOutputPrefix, int cNumIterations, int cSaveIterationInterval, bool cSaveIntermediate, bool cSensitivityImageFromFile, Projector* cForwardprojector, Projector* cBackprojector, int cNumSubsets) : OsemSinogram3d(cInputProjection, cInitialEstimate, cPathSalida, cOutputPrefix, cNumIterations, cSaveIterationInterval, cSaveIntermediate, cSensitivityImageFromFile, cForwardprojector, cBackprojector, cNumSubsets)
 {
-  Michelogram::ReadDataFromSinogram3D(Sinogram3D* MiSino3D)
+
 }
 
 CuOsemSinogram3d::CuOsemSinogram3d(string configFilename):OsemSinogram3d(configFilename)
@@ -164,13 +167,13 @@ bool CuOsemSinogram3d::InitGpuMemory()
   checkCudaErrors(cudaMemcpyToSymbol(d_thetaValues_deg, inputProjection->getAngPtr(), sizeof(float)*inputProjection->getNumProj()));
   checkCudaErrors(cudaMemcpyToSymbol(d_RValues_mm, inputProjection->getRPtr(), sizeof(float)*inputProjection->getNumR()));
   checkCudaErrors(cudaMemcpyToSymbol(d_AxialValues_mm, inputProjection->getAxialPtr(), sizeof(float)*inputProjection->getNumRings()));
-  checkCudaErrors(cudaMemcpyToSymbol(cuda_threads_per_block, &(blockSizeProjector.x), sizeof(unsigned int)));
-  checkCudaErrors(cudaMemcpyToSymbol(cuda_threads_per_block_update_pixel, &(blockSizeImageUpdate.x), sizeof(unsigned int)));
-  checkCudaErrors(cudaMemcpyToSymbol(cuda_nr_splitter, &NR_Splitter, sizeof(unsigned int)));
-  checkCudaErrors(cudaMemcpyToSymbol(cuda_rows_splitter, &rowSplitter, sizeof(unsigned int)));
-  checkCudaErrors(cudaMemcpyToSymbol(cuda_image_size, &sizeReconImage, sizeof(SizeImage)));
-  checkCudaErrors(cudaMemcpyToSymbol(d_RadioFov_mm, &(inputProjection->getRadioFov_mm()), sizeof(inputProjection->getRadioFov_mm())));
-  checkCudaErrors(cudaMemcpyToSymbol(d_AxialFov_mm, &(inputProjection->getAxialFoV_mm()), sizeof(inputProjection->getAxialFoV_mm())));
+  SizeImage size =  reconstructionImage->getSize();
+  checkCudaErrors(cudaMemcpyToSymbol(d_imageSize, &size, sizeof(reconstructionImage->getSize())));
+  float aux;
+  aux = inputProjection->getRadioFov_mm();
+  checkCudaErrors(cudaMemcpyToSymbol(d_RadioFov_mm, &aux, sizeof(inputProjection->getRadioFov_mm())));
+  aux = inputProjection->getAxialFoV_mm();
+  checkCudaErrors(cudaMemcpyToSymbol(d_AxialFov_mm, &aux, sizeof(inputProjection->getAxialFoV_mm())));
 
   // Para el sinograma 3d tengo que cada sino 2d puede representar varios sinogramas asociados a distintas combinaciones de anillos.
   // En la versión con CPU proceso todas las LORs, ahora solo voy a considerar la del medio, que sería la ventaja de reducir el volumen de LORs.
@@ -183,33 +186,15 @@ bool CuOsemSinogram3d::InitGpuMemory()
     for(int j = 0; j < inputProjection->getSegment(i)->getNumSinograms(); j++)
     {
       // Como voy a agarrar solo la combinación del medio:
-      int indexMedio = floor(outputProjection->getSegment(i)->getSinogram2D(j)->getNumZ()/2);
+      int indexMedio = floor(inputProjection->getSegment(i)->getSinogram2D(j)->getNumZ()/2);
+      auxRings1[iSino] = inputProjection->getSegment(i)->getSinogram2D(j)->getRing1FromList(indexMedio);
+      auxRings2[iSino] = inputProjection->getSegment(i)->getSinogram2D(j)->getRing2FromList(indexMedio);
+      iSino++;
     }
   }
-    for(unsigned int i = 0; i < outputProjection->getNumSegments(); i++)
-  {
-    printf("Forwardprojection con Siddon Segmento: %d\n", i);	  
-    for(unsigned int j = 0; j < outputProjection->getSegment(i)->getNumSinograms(); j++)
-    {
-      /// Cálculo de las coordenadas z del sinograma
-      for(unsigned int m = 0; m < outputProjection->getSegment(i)->getSinogram2D(j)->getNumZ(); m++)
-      {
-	int indexRing1 = outputProjection->getSegment(i)->getSinogram2D(j)->getRing1FromList(m);
-	int indexRing2 = outputProjection->getSegment(i)->getSinogram2D(j)->getRing2FromList(m);
-	
-	
-  /// Esto después hay que cambiarlo! Tiene que ir en la clase Michelogram!!!!!!!!!!!!!
-  /// Necesito tener el dato del zfov del michelograma, que no lo tengo accesible ahora. Lo pongo a mano, pero
-  /// cambiarlo de maner aurgente lo antes posible.!!!
-  /// Ente el offsetZ lo calculaba en base al FOV del sinograma, ahora que fov es el de la imagen adquirida. Debo
-  /// centrar dicho FOV en el FOV del sinograma y calcular el offsetZ relativo. Esto sería el valor mínimo de Z de la
-  /// imagen a reconstruir. Lo puedo obtener del zFOV de la imagen o del sizePixelZ_mm.
-  /// Lo mejor sería que el slice central sea el z=0, entonces no deberíamos modificar nada. Pero habría que cambiar
-  /// varias funciones para que así sea. Por ahora queda así.
-  float offsetZvalue = (SCANNER_ZFOV - inputProjection->ZFOV)/2;
-  checkCudaErrors(my_cuda_error = cudaMemcpyToSymbol(OffsetZ, &offsetZvalue, sizeof(offsetZvalue)));
-  checkCudaErrors(my_cuda_error = cudaMemcpyToSymbol(cudaRscanner, &(inputProjection->rScanner), sizeof(inputProjection->rScanner)));
-  checkCudaErrors(my_cuda_error = cudaMemcpyToSymbol(cuda_michelogram_size, &MySizeMichelogram, sizeof(SizeMichelogram)));
+  // Copio los índices de anillos a memoris de GPU:
+  checkCudaErrors(cudaMemcpy(d_ring1, auxRings1, sizeof(float)*inputProjection->getNumSinograms(), cudaMemcpyHostToDevice));
+  checkCudaErrors(cudaMemcpy(d_ring2, auxRings2, sizeof(float)*inputProjection->getNumSinograms(), cudaMemcpyHostToDevice));
 
 }
 
