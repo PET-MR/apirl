@@ -55,7 +55,10 @@ message(STATUS "Output Directory: ${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}")
 # Genero una DLL.
 #ADD_Library(reconGPU SHARED ${reconGPU_Sources} ${reconGPU_Headers})${CUDA_LIBRARIES_BUILD}
 #CUDA_ADD_LIBRARY(reconGPU  ${CUDA_LIBRARIES_BUILD} ${reconGPU_Sources} ${reconGPU_cuSources} ${reconGPU_Headers} ${reconGPU_cuHeaders})
+# Genero varias DLLs, una por cada proyector y los m¨¦todos de reconstrucci¨®n:
 CUDA_ADD_LIBRARY(reconGPU  "src/CuMlemSinogram3d.cu")
+CUDA_ADD_LIBRARY(cuOsem  "src/CuOsemSinogram3d.cu")
+CUDA_ADD_LIBRARY(cuSiddonProjector  "src/CuSiddonProjector.cu")
 #CUDA_ADD_LIBRARY(reconGPU2  "src/CuMlemSinogram3d.cu")
 # Para windows se debe definir WIN32 y DLL_BUILD tambien
 if(CMAKE_HOST_WIN32)

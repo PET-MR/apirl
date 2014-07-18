@@ -36,7 +36,7 @@ __device__ __constant__ float d_RadioScanner_mm;
 __device__ void CUDA_GetPointsFromLOR (float PhiAngle, float r, float Z1, float Z2, float cudaRscanner, float4* P1, float4* P2);
 
 
-__global__ void CUDA_Forward_Projection (float* volume, float* michelogram, float* michelogram_measured, int numR, int numProj, int numRings, int numSinos)
+__global__ void cuSiddonProjection (float* volume, float* michelogram, float* michelogram_measured, int numR, int numProj, int numRings, int numSinos)
 {
   int indexSino2D =  threadIdx.x + (blockIdx.x * blockDim.x);
   if(indexSino2D>= (numR*numProj))
