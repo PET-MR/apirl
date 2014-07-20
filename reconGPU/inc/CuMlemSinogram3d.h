@@ -1,7 +1,7 @@
 /**
-	\file CuOsemSinogram3d.h
-	\brief Archivo que contiene la definición de la clase CuOsemSinogram3d. 
-	Clase derivada de OsemSinogram3d, que define el algoritmo Osem para CUDA para sinogramas3D de un cylindrical PET.
+	\file CuMlemSinogram3d.h
+	\brief Archivo que contiene la definición de la clase CuMlemSinogram3d. 
+	Clase derivada de CuMlemSinogram3d, que define el algoritmo Mlem para CUDA para sinogramas3D de un cylindrical PET.
 
 	\todo 
 	\bug
@@ -10,8 +10,8 @@
 	\date 2010.11.11
 	\version 1.1.0
 */
-#ifndef _CU_OSEMSINOGRAM3D_H_
-#define _CU_OSEMSINOGRAM3D_H_
+#ifndef _CU_MLEMSINOGRAM3D_H_
+#define _CU_MLEMSINOGRAM3D_H_
 
 #include <Mlem.h>
 #include <OsemSinogram3d.h>
@@ -63,8 +63,13 @@ using namespace::std;
 #ifdef __cplusplus
 //extern "C"
 #endif
-class DLLEXPORT CuOsemSinogram3d : public OsemSinogram3d
-{	
+class DLLEXPORT CuMlemSinogram3d : public MlemSinogram3d
+{
+    enum TipoProyector
+    {
+      SIDDON_CYLINDRICAL_SCANNER,
+      SIDDON_HEXAGONAL_SCANNER
+    };
   protected:  
     /// Proyección a reconstruir.
     /** Puntero donde se almacenará el sinograma de entrada. */
@@ -127,9 +132,10 @@ class DLLEXPORT CuOsemSinogram3d : public OsemSinogram3d
 			  unsigned int numBlocksX, unsigned int numBlocksY, unsigned int numBlocksZ);
     
     /// Inicio la memoria en gpu
-    /** Se pide memoria para cada uno de los vectores y se copian los datos de entrada
+    /** Se pide memoria para cada uno de los vectores y se copian los datos de entrada. Se le indica apra que proyector
+     * es porque cambia de proyector en proyector.
      */
-    bool InitGpuMemory();
+    bool InitGpuMemory(TipoProyector tipoProy);
     
     /// Método que copia memoria de cpu en gpu.
     int CopySinogram3dHostToGpu(float* d_destino, Sinogram3D* h_source);
@@ -137,24 +143,35 @@ class DLLEXPORT CuOsemSinogram3d : public OsemSinogram3d
     /// Método que inicializa la gpu.
     bool initCuda (int, Logger*);
     
+    /// Proyector CUDA.
+    CuProjector *forwardprojector;
+    
+    /// Retroproyector CUDA.
+    CuProjector *backprojector;
+    
+    /// Calcula la imagen de sensibilidad.
+    /** Depende del tipo de dato utilizado por eso se le debe pasar como parámetro.
+     * Utiliza como proyector el backprojector y guarda el resultado en memoria de gpu d_sensitivtyImage y en
+     * memoria de cpu sensitivityImage. Además obtiene el umbral de actualización.
+     */
+    bool computeSensitivity(TipoProyector tipoProy);
   public:
     /// Constructores de la clase.
     /* Constructor que carga los parámetros base de una reconstrucción MLEM para Sinogram3D. */
-    CuOsemSinogram3d(Sinogram3D* cInputProjection, Image* cInitialEstimate, string cPathSalida, string cOutputPrefix, int cNumIterations, int cSaveIterationInterval, bool cSaveIntermediate, bool cSensitivityImageFromFile, Projector* cForwardprojector, Projector* cBackprojector, int cNumSubsets);
+    CuMlemSinogram3d(Sinogram3D* cInputProjection, Image* cInitialEstimate, string cPathSalida, string cOutputPrefix, int cNumIterations, int cSaveIterationInterval, bool cSaveIntermediate, bool cSensitivityImageFromFile, CuProjector* cForwardprojector, CuProjector* cBackprojector);
     
     /// Constructores de la clase a partir de un archivo de configuración.
     /* Constructor que carga los parámetros base de una reconstrucción MLEM
     a partir de un archivo de configuración con cierto formato dado. */
-    CuOsemSinogram3d(string configFilename);
+    CuMlemSinogram3d(string configFilename);
     
     
     /// Método que realiza la reconstrucción de las proyecciones. 
-    bool Reconstruct();
+    bool Reconstruct(TipoProyector tipoProy);
     
     /// Método que realiza la reconstrucción y permite al usuario establecer el índice de GPU a utilizar
-    bool Reconstruct(int indexGpu);
-    
-    
+    bool Reconstruct(TipoProyector tipoProy, int indexGpu);
+   
 		
 };
 

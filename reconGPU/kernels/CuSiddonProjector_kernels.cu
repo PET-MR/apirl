@@ -36,7 +36,7 @@ __device__ __constant__ float d_RadioScanner_mm;
 __device__ void CUDA_GetPointsFromLOR (float PhiAngle, float r, float Z1, float Z2, float cudaRscanner, float4* P1, float4* P2);
 
 
-__global__ void cuSiddonProjection (float* volume, float* michelogram, float* michelogram_measured, int numR, int numProj, int numRings, int numSinos)
+__global__ void cuSiddonProjection (float* volume, float* michelogram, int numR, int numProj, int numRings, int numSinos)
 {
   int indexSino2D =  threadIdx.x + (blockIdx.x * blockDim.x);
   if(indexSino2D>= (numR*numProj))
@@ -50,14 +50,11 @@ __global__ void cuSiddonProjection (float* volume, float* michelogram, float* mi
   float4 P2;
   float4 LOR;
   int indiceMichelogram = iR + iProj * numR + iZ * (numProj * numR);
-  if(michelogram_measured[indiceMichelogram] != 0)
-  {
-    CUDA_GetPointsFromLOR(d_thetaValues_deg[iProj], d_RValues_mm[iR], d_AxialValues_mm[indexRing1], d_AxialValues_mm[indexRing2], d_RadioScanner_mm, &P1, &P2);
-    LOR.x = P2.x - P1.x;
-    LOR.y = P2.y - P1.y;
-    LOR.z = P2.z - P1.z;
-    CUDA_Siddon (&LOR, &P1, volume, michelogram, PROJECTION, indiceMichelogram);
-  }	
+  CUDA_GetPointsFromLOR(d_thetaValues_deg[iProj], d_RValues_mm[iR], d_AxialValues_mm[indexRing1], d_AxialValues_mm[indexRing2], d_RadioScanner_mm, &P1, &P2);
+  LOR.x = P2.x - P1.x;
+  LOR.y = P2.y - P1.y;
+  LOR.z = P2.z - P1.z;
+  CUDA_Siddon (&LOR, &P1, volume, michelogram, PROJECTION, indiceMichelogram);
 }
 
 /// El ángulo de GetPointsFromLOR debe estar en radianes.
