@@ -151,6 +151,8 @@ bool CuMlemSinogram3d::InitGpuMemory(TipoProyector tipoProy)
   checkCudaErrors(cudaMalloc((void**) &d_estimatedProjection, sizeof(float)*numBins));
   checkCudaErrors(cudaMalloc((void**) &d_ring1, sizeof(float)*inputProjection->getNumSinograms()));
   checkCudaErrors(cudaMalloc((void**) &d_ring2, sizeof(float)*inputProjection->getNumSinograms()));
+  checkCudaErrors(cudaMalloc((void**) &d_likelihood, sizeof(float)));
+  checkCudaErrors(cudaMemset(d_likelihood, 0,sizeof(float)));
   // Copio la iamgen inicial:
   checkCudaErrors(cudaMemcpy(d_reconstructionImage, initialEstimate->getPixelsPtr(),sizeof(float)*numPixels,cudaMemcpyHostToDevice));
   // Pongo en cero la imágens de sensibilidad y la de retroproyección:
@@ -472,14 +474,21 @@ bool CuMlemSinogram3d::Reconstruct(TipoProyector tipoProy, int indexGpu)
   return true;
 }
 
-bool CuMlemSinogram3d::getLikelihoodValue()
+float CuMlemSinogram3d::getLikelihoodValue()
 {
+  float likelihood;
+  checkCudaErrors(cudaMemset(d_likelihood, 0,sizeof(float)));
+  cuGetLikelihoodValue<<<gridSizeProjector, blockSizeProjector>>>(d_estimatedProjection, d_inputProjection, d_likelihood, inputProjection->getNumR(), inputProjection->getNumProj(), inputProjection->getNumRings(), inputProjection->getNumSinograms());
+  /// Sincronización de todos los threads.
+  cudaThreadSynchronize();
+  checkCudaErrors(cudaMemcpy(&likelihood, d_likelihood,sizeof(float),cudaMemcpyDeviceToHost));
+  return likelihood;
   
 }
 
 bool CuMlemSinogram3d::updatePixelValue()
 {
-  
+  //<<<gridSizeImageUpdate, blockSizeImageUpdate>>>
 }
 
 bool CuMlemSinogram3d::computeSensitivity(TipoProyector tipoProy)

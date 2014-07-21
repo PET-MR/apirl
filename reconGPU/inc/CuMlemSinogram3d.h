@@ -101,6 +101,11 @@ class DLLEXPORT CuMlemSinogram3d : public MlemSinogram3d
      */
     float* d_ring2;
     
+    /// Puntero a Float en memoria de gpu donde se almacena el valor de likelihhod.
+    /** El likelihood estimado es el de d_estimatedProjection en referencia a d_inputProjection.
+     */
+    float* d_likelihood;
+    
     /// Dim3 con configuración de threads per block en cada dimensión para el kernel de proyección.
     dim3 blockSizeProjector;
     
@@ -155,6 +160,18 @@ class DLLEXPORT CuMlemSinogram3d : public MlemSinogram3d
      * memoria de cpu sensitivityImage. Además obtiene el umbral de actualización.
      */
     bool computeSensitivity(TipoProyector tipoProy);
+    
+    /// Realiza la actualización de los valores de píxeles en gpu cada iteracion.
+    /** Utiliza la imagen d_backprojectedImage, la d_sensitivityImage y la d_reconstructionImage.
+     * El resultado se sobreescribe en d_reconstructionImage.
+     */
+    bool updatePixelValue();
+    
+    /// Obtiene el valor de likelihood actual en la reconstrucción.
+    /** Estima el likelihood a nivel de gpu entre d_estimatedProjection y d_inputProjection.
+     * Guarda el valor en memoria de gpu en d_likelihood y lo devuelve en un float a nivel de cpu.
+     */
+    float getLikelihoodValue();
   public:
     /// Constructores de la clase.
     /* Constructor que carga los parámetros base de una reconstrucción MLEM para Sinogram3D. */
