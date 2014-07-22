@@ -61,7 +61,7 @@ bool CuSiddonProjector::Backproject (float * d_inputSinogram, float* d_outputIma
     El tamaño de la ejecución del kernel está definida en las propiedades gridSize y blockSize de la clase.
     La misma se configura en el constructor o con el método setKernelConfig.
     */
-  cuSiddonBackprojection<<<gridSize, blockSize>>>(d_inputSinogram d_outputImage, d_ring1, d_ring2, 
+  cuSiddonBackprojection<<<gridSize, blockSize>>>(d_inputSinogram, d_outputImage, d_ring1, d_ring2, 
 							inputSinogram->getNumR(), inputSinogram->getNumProj(), inputSinogram->getNumRings(), inputSinogram->getNumSinograms());
   /// Sincronización de todos los threads.
   cudaThreadSynchronize();
