@@ -19,8 +19,14 @@ CuProjector::CuProjector()
 CuProjector::CuProjector(unsigned int numThreadsPerBlockX, unsigned int numThreadsPerBlockY, unsigned int numThreadsPerBlockZ, 
 			     unsigned int numBlocksX, unsigned int numBlocksY, unsigned int numBlocksZ)
 {
+  setKernelConfig(numThreadsPerBlockX, numThreadsPerBlockY, numThreadsPerBlockZ,
+    numBlocksX, numBlocksY, numBlocksZ);
+}
+
+void CuProjector::setKernelConfig(unsigned int numThreadsPerBlockX, unsigned int numThreadsPerBlockY, unsigned int numThreadsPerBlockZ, 
+			     unsigned int numBlocksX, unsigned int numBlocksY, unsigned int numBlocksZ)
+{
   /* Configuro el kernel de ejecución. */
   this->blockSize = dim3(numThreadsPerBlockX, numThreadsPerBlockY, numThreadsPerBlockZ);
   this->gridSize = dim3(numBlocksX, numBlocksY, numBlocksZ);
 }
-

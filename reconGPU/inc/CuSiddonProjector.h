@@ -25,9 +25,29 @@
 #include <cuda.h>
 #include <helper_cuda.h>
 #include <vector_types.h>
-#include "../kernels/CuSiddonProjector_kernels.cu"
 
-
+// DLL export/import declaration: visibility of objects
+#ifndef LINK_STATIC
+	#ifdef WIN32               // Win32 build
+		#ifdef DLL_BUILD    // this applies to DLL building
+			#define DLLEXPORT __declspec(dllexport)
+		#else                   // this applies to DLL clients/users
+			#define DLLEXPORT __declspec(dllimport)
+		#endif
+		#define DLLLOCAL        // not explicitly export-marked objects are local by default on Win32
+	#else
+		#ifdef HAVE_GCCVISIBILITYPATCH   // GCC 4.x and patched GCC 3.4 under Linux
+			#define DLLEXPORT __attribute__ ((visibility("default")))
+			#define DLLLOCAL __attribute__ ((visibility("hidden")))
+		#else
+			#define DLLEXPORT
+			#define DLLLOCAL
+		#endif
+	#endif
+#else                         // static linking
+	#define DLLEXPORT
+	#define DLLLOCAL
+#endif
 
 class DLLEXPORT CuSiddonProjector : virtual CuProjector
 {
@@ -58,11 +78,11 @@ class DLLEXPORT CuSiddonProjector : virtual CuProjector
 // 	bool Project(Image* image, Sinogram2Dtgs* projection);
 	
 	/** Backprojection con Siddon para Sinogram3D. */
-	bool Backproject (float * d_inputSinogram, float* d_outputImage, Sinogram3DCylindricalPet* inputSinogram, Image* outputImage, bool copyResult); 
+	bool Backproject (float * d_inputSinogram, float* d_outputImage, float *d_ring1, float *d_ring2, Sinogram3DCylindricalPet* inputSinogram, Image* outputImage, bool copyResult); 
 	/** DivideAndBackprojection con Siddon para Sinogram3D. */
-	bool DivideAndBackproject (float* d_inputSinogram, float* d_estimatedSinogram, float* d_outputImage, Sinogram3DCylindricalPet* inputSinogram, Image* outputImage, bool copyResult);
+	bool DivideAndBackproject (float* d_inputSinogram, float* d_estimatedSinogram, float* d_outputImage, float *d_ring1, float *d_ring2, Sinogram3DCylindricalPet* inputSinogram, Image* outputImage, bool copyResult);
 	/** Projection con Siddon para Sinogram3D. */
-	bool Project (float* d_image, float* d_projection, Image* inputImage, Sinogram3DCylindricalPet* outputSinogram, bool copyResult);
+	bool Project (float* d_image, float* d_projection, float *d_ring1, float *d_ring2, Image* inputImage, Sinogram3DCylindricalPet* outputSinogram, bool copyResult);
 	
 	/// Inicio la memoria en gpu para el proyector
 	/** Se pide memoria para cada uno de los vectores y se copian los datos de entrada

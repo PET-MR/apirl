@@ -13,7 +13,7 @@
 
 #include <CuMlemSinogram3d.h>
 #include "../kernels/CuMlem_kernels.cu"
-
+#include "../kernels/CuSiddonProjector_kernels.cu"
 
 CuMlemSinogram3d::CuMlemSinogram3d(Sinogram3D* cInputProjection, Image* cInitialEstimate, string cPathSalida, string cOutputPrefix, int cNumIterations, int cSaveIterationInterval, bool cSaveIntermediate, bool cSensitivityImageFromFile, CuProjector* cForwardprojector, CuProjector* cBackprojector) : MlemSinogram3d(cInputProjection, cInitialEstimate, cPathSalida, cOutputPrefix, cNumIterations, cSaveIterationInterval, cSaveIntermediate, cSensitivityImageFromFile, NULL, NULL)
 {
@@ -240,6 +240,11 @@ int CuMlemSinogram3d::CopySinogram3dHostToGpu(float* d_destino, Sinogram3D* h_so
   return numSinograms;
 }
 
+void CuMlemSinogram3d::CopyReconstructedImageGpuToHost()
+{
+ checkCudaErrors(cudaMemcpy(reconstructionImage->getPixelsPtr(), d_reconstructionImage, sizeof(float)*reconstructionImage->getPixelCount(),cudaMemcpyHostToDevice)); 
+}
+
 // Método de reconstrucción que no se le indica el índice de GPU, incializa la GPU 0 por defecto.
 bool CuMlemSinogram3d::Reconstruct(TipoProyector tipoProy)
 {
@@ -351,6 +356,7 @@ bool CuMlemSinogram3d::Reconstruct(TipoProyector tipoProy, int indexGpu)
   logger->writeLine(c_string, strlen(c_string));
   /// Voy generando mensajes con los archivos creados en el log de salida:
   int nPixels = reconstructionImage->getPixelCount();
+  int nBins = estimatedProjection->getBinCount();
   for(unsigned int t = 0; t < this->numIterations; t++)
   {
 	  clock_t initialClockIteration = clock();
@@ -359,44 +365,32 @@ bool CuMlemSinogram3d::Reconstruct(TipoProyector tipoProy, int indexGpu)
 	  switch(tipoProy)
 	  {
 	    case SIDDON_CYLINDRICAL_SCANNER:
-	      forwardprojector->Project(d_reconstructionImage, d_estimatedProjection, reconstructionImage, (Sinogram3DCylindricalPet*)inputProjection, false);
+	      forwardprojector->Project(d_reconstructionImage, d_estimatedProjection, d_ring1, d_ring2, reconstructionImage, (Sinogram3DCylindricalPet*)inputProjection, false);
 	      break;
 	  }
 	  clock_t finalClockProjection = clock();
 	  /// Guardo el likelihood (Siempre va una iteración atrás, ya que el likelihhod se calcula a partir de la proyección
 	  /// estimada, que es el primer paso del algoritmo). Se lo calculo al sinograma
 	  /// proyectado, respecto del de entrada.
-	  this->likelihoodValues[t] = estimatedProjection->getLikelihoodValue(inputProjection);
+	  this->likelihoodValues[t] = this->getLikelihoodValue();
 	  /// Pongo en cero la proyección estimada, y hago la backprojection.
 	  checkCudaErrors(cudaMemset(d_backprojectedImage, 0,sizeof(float)*nPixels));
 	  switch(tipoProy)
 	  {
 	    case SIDDON_CYLINDRICAL_SCANNER:
-	      backprojector->DivideAndBackproject(d_inputProjection, d_estimatedProjection, d_backprojectedImage, (Sinogram3DCylindricalPet*)inputProjection, backprojectedImage, false);
+	      backprojector->DivideAndBackproject(d_inputProjection, d_estimatedProjection, d_backprojectedImage, d_ring1, d_ring2, (Sinogram3DCylindricalPet*)inputProjection, backprojectedImage, false);
 	      break;
 	  }
 	  clock_t finalClockBackprojection = clock();
 	  /// Actualización del Pixel
-	  for(int k = 0; k < nPixels; k++)
-	  {
-	      /// Si el coeficiente de sensitivity es menor que 1 puedo, plantear distintas alternativas, pero algo
-	      /// hay que hacer sino el valor del píxel tiende a crecer demasiado. .
-	      if(ptrSensitivityPixels[k]>=updateThreshold)
-	      {
-		ptrPixels[k] = ptrPixels[k] * ptrBackprojectedPixels[k] / ptrSensitivityPixels[k];
-	      }
-	      else
-	      {
-		/// Si la sensitivity image es distinta de cero significa que estoy fuera del fov de reconstrucción
-		/// por lo que pongo en cero dicho píxel:
-		ptrPixels[k] = 0;
-	      }
-	  }
+	  this->updatePixelValue();
 	  /// Verifico
 	  if(saveIterationInterval != 0)
 	  {
 	    if((t%saveIterationInterval)==0)
 	    {
+	      // Primero tengo que obtener la memoria de GPU:
+	      CopyReconstructedImageGpuToHost();
 	      sprintf(c_string, "%s_iter_%d", outputFilenamePrefix.c_str(), t); /// La extensión se le agrega en write interfile.
 	      string outputFilename;
 	      outputFilename.assign(c_string);
@@ -407,6 +401,8 @@ bool CuMlemSinogram3d::Reconstruct(TipoProyector tipoProy, int indexGpu)
 	      if(saveIntermediateProjectionAndBackprojectedImage)
 	      {
 		// Tengo que guardar la estimated projection, y la backprojected image.
+		checkCudaErrors(cudaMemcpy(backprojectedImage->getPixelsPtr(), d_backprojectedImage,sizeof(float)*nPixels,cudaMemcpyDeviceToHost));
+		checkCudaErrors(cudaMemcpy(estimatedProjection->getSinogramPtr(), d_estimatedProjection,sizeof(float)*nBins,cudaMemcpyDeviceToHost));
 		sprintf(c_string, "%s_projection_iter_%d", outputFilenamePrefix.c_str(), t); /// La extensión se le agrega en write interfile.
 		outputFilename.assign(c_string);
 		estimatedProjection->writeInterfile((char*)outputFilename.c_str());
@@ -424,7 +420,9 @@ bool CuMlemSinogram3d::Reconstruct(TipoProyector tipoProy, int indexGpu)
 	  timesPixelUpdate_mseg[t] = (float)(finalClockIteration-finalClockBackprojection)*1000/(float)CLOCKS_PER_SEC;
 
   }
-
+  
+  // Copio resultado:
+  CopyReconstructedImageGpuToHost();
   clock_t finalClock = clock();
   sprintf(c_string, "%s_final", outputFilenamePrefix.c_str()); /// La extensión se le agrega en write interfile.
   string outputFilename;
@@ -437,10 +435,10 @@ bool CuMlemSinogram3d::Reconstruct(TipoProyector tipoProy, int indexGpu)
   switch(tipoProy)
   {
     case SIDDON_CYLINDRICAL_SCANNER:
-      forwardprojector->Project(d_reconstructionImage, d_estimatedProjection, reconstructionImage, (Sinogram3DCylindricalPet*)inputProjection, false);
+      forwardprojector->Project(d_reconstructionImage, d_estimatedProjection, d_ring1, d_ring2, reconstructionImage, (Sinogram3DCylindricalPet*)inputProjection, false);
       break;
   }
-  this->likelihoodValues[this->numIterations] = estimatedProjection->getLikelihoodValue(inputProjection);
+  this->likelihoodValues[this->numIterations] = getLikelihoodValue();
 
   float tiempoTotal = (float)(finalClock - initialClock)*1000/(float)CLOCKS_PER_SEC;
   /// Termino con el log de los resultados:
@@ -488,7 +486,10 @@ float CuMlemSinogram3d::getLikelihoodValue()
 
 bool CuMlemSinogram3d::updatePixelValue()
 {
-  //<<<gridSizeImageUpdate, blockSizeImageUpdate>>>
+  //
+  cuUpdatePixelValue<<<gridSizeImageUpdate, blockSizeImageUpdate>>>(d_reconstructionImage, d_backprojectedImage, d_sensitivityImage, reconstructionImage->getSize(), updateThreshold);
+  cudaThreadSynchronize();
+  
 }
 
 bool CuMlemSinogram3d::computeSensitivity(TipoProyector tipoProy)
@@ -503,7 +504,7 @@ bool CuMlemSinogram3d::computeSensitivity(TipoProyector tipoProy)
   switch(tipoProy)
   {
     case SIDDON_CYLINDRICAL_SCANNER:
-      backprojector->Backproject(d_estimatedProjection, d_sensitivityImage, (Sinogram3DCylindricalPet*)inputProjection, reconstructionImage, false);
+      backprojector->Backproject(d_estimatedProjection, d_sensitivityImage, d_ring1, d_ring2, (Sinogram3DCylindricalPet*)inputProjection, reconstructionImage, false);
       break;
   }
   // Copio la memoria de gpu a cpu, así se puede actualizar el umbral:

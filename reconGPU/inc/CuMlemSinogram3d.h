@@ -172,6 +172,12 @@ class DLLEXPORT CuMlemSinogram3d : public MlemSinogram3d
      * Guarda el valor en memoria de gpu en d_likelihood y lo devuelve en un float a nivel de cpu.
      */
     float getLikelihoodValue();
+    
+    /// Copia el resultado actual de la reconstrucciónde GPU a CPU.
+    /** La imagen de reconstrucción se actualiza en memoria de gpu en cada iteración en d_reconstructionImage, para poder
+     * obtenerla en memoria de cpu se debe llamar a este método que copiará el resultado en reconstructionImage
+     */
+    void CopyReconstructedImageGpuToHost();
   public:
     /// Constructores de la clase.
     /* Constructor que carga los parámetros base de una reconstrucción MLEM para Sinogram3D. */

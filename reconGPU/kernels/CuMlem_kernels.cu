@@ -27,8 +27,6 @@ __global__ void cuUpdatePixelValue(float *RawImage, float *FactorRawImage, float
   // Each block should have the size of a 2D Image
   if(SumAij[indexPixel] >= threshold)
     RawImage[indexPixel] = RawImage[indexPixel] * FactorRawImage[indexPixel] / SumAij[indexPixel];
-  else if(SumAij[indexPixel] != 0)
-    RawImage[indexPixel] = RawImage[indexPixel];
   else
     RawImage[indexPixel] = 0;
   //__syncthreads();
