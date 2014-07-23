@@ -231,7 +231,8 @@ bool Sinogram3D::readFromInterfile(string headerFilename)
       // Verifico que no quedaba ningún elemento adicional:
       auxElemento = strtok (NULL, " ,.-");
       if(auxElemento != NULL){
-	  cout << "La lista de sinogramas por segmento tiene más elementos que el número de segmentos." << endl; return false;}
+	  cout << "La lista de sinogramas por segmento tiene más elementos que el número de segmentos." << endl; return false;
+      }
     }
   }
   else{  

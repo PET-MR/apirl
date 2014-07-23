@@ -22,7 +22,7 @@
 __global__ void cuUpdatePixelValue(float *RawImage, float *FactorRawImage, float* SumAij, SizeImage size, float threshold)
 {
   // Global Pixel index
-  int indexPixel = blockIdx.y * (size.nPixelsX * size.nPixelsY) + blockIdx.x * size.nPixelsX + threadIdx.x;
+  int indexPixel = blockIdx.y * (size.nPixelsX * size.nPixelsY) + blockIdx.x * blockDim.x + threadIdx.x;
   // Memory is in contiguous address, so it can be coalesce while accessing memory.
   // Each block should have the size of a 2D Image
   if(SumAij[indexPixel] >= threshold)

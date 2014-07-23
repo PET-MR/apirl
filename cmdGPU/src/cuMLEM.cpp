@@ -54,6 +54,7 @@
 #include <Sinogram3DCylindricalPet.h>
 #include <ParametersFile.h>
 #include <readParameters.h>
+#include <readCudaParameters.h>
 
 #define FOV_axial 162
 #define FOV_radial 582
@@ -154,7 +155,7 @@ int main (int argc, char *argv[])
   bool saveIntermediateData = false, bSensitivityFromFile = 0;
   Image* initialEstimate;
   unsigned int nIterations = 0;	// Número de iteraciones.
-  Mlem* mlem;	// Objeto mlem con el que haremos la reconstrucción. 
+  CuMlemSinogram3d* mlem;	// Objeto mlem con el que haremos la reconstrucción. 
   
   // Asigno la memoria para los punteros dobles, para el array de strings.
   keyWords = (char**)malloc(sizeof(*keyWords)*FIXED_KEYS);
@@ -221,13 +222,12 @@ int main (int argc, char *argv[])
   {
     return -1;
   }
-  
+ 
   // Obtengo los nombres (solo los nombres!) del projecctor y backprojector
   if(getProjectorBackprojectorNames(parameterFileName, "MLEM", &strForwardprojector, &strBackprojector))
   {
     return -1;
   }
-  
   
   /// Corrección por Atenuación.
   // Es opcional, si está el mapa de atenuación se habilita:
@@ -251,7 +251,26 @@ int main (int argc, char *argv[])
     attenMapFilename.assign(returnValue);
   }
   
-  
+  // Parámetros de Cuda:
+  // Obtengo los nombres (solo los nombres!) del projecctor y backprojector
+  int gpuId;
+  dim3 projectorBlockSize, backprojectorBlockSize, updateBlockSize;
+  if(getProjectorBlockSize(parameterFileName, "MLEM", &projectorBlockSize))
+  {
+    return -1;
+  }
+  if(getBackprojectorBlockSize(parameterFileName, "MLEM", &backprojectorBlockSize))
+  {
+    return -1;
+  }
+  if(getPixelUpdateBlockSize(parameterFileName, "MLEM", &updateBlockSize))
+  {
+    return -1;
+  }
+  if(getGpuId(parameterFileName, "MLEM", &gpuId))
+  {
+    return -1;
+  }
   
   // Cargo la imagen de initial estimate, que esta en formato interfile, y de ella obtengo 
   // los tamaños de la imagen.
@@ -381,7 +400,10 @@ int main (int argc, char *argv[])
     // Sinograma 3D
     // Para este tipo de datos, en el archivo de mlem me tienen que haber cargados los datos del scanner cilíndrico.
     if (getCylindricalScannerParameters(parameterFileName, "MLEM", &radiusFov_mm, &zFov_mm, &radiusScanner_mm))
+    {
+      cout<<"Error "<<errorCode<<" en el archivo de parámetros. No se pudieron obtener los parámetros para Sinogram3D."<<endl;
       return -1;
+    }
     Sinogram3D* inputProjection = new Sinogram3DCylindricalPet((char*)inputFilename.c_str(),radiusFov_mm, zFov_mm, radiusScanner_mm);
     mlem = new CuMlemSinogram3d(inputProjection, initialEstimate, "", outputPrefix, numIterations, saveIterationInterval, saveIntermediateData, bSensitivityFromFile, forwardprojector, backprojector);
     if(bSensitivityFromFile)
@@ -424,7 +446,13 @@ int main (int argc, char *argv[])
   // Aplico las correciones:
   mlem->correctInputSinogram();
   // Reconstruyo:
-  mlem->Reconstruct();
+  TipoProyector tipoProy;
+  tipoProy = SIDDON_CYLINDRICAL_SCANNER;
+  // Asigno las configuraciones de ejecución:
+  mlem->setBackprojectorKernelConfig(&backprojectorBlockSize);
+  mlem->setProjectorKernelConfig(&projectorBlockSize);
+  mlem->setUpdatePixelKernelConfig(&updateBlockSize);
+  mlem->Reconstruct(tipoProy, gpuId);
 //	mlem->reconstructionImage->writeInterfile(sprintf("%s_end", outputPrefix.c_str()));
  
 }

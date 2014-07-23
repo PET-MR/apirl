@@ -4,12 +4,12 @@
 #  Copyright (c) 2010
 
 #Directorios de la Librería de Reconstrucción de Imágenes
-INCLUDE_DIRECTORIES(${reconGPU_Headers_Dir} ${recon_Headers_Dir} ${data_Headers_Dir} ${utils_Headers_Dir} ${FIND_CUDA_DIR})
+INCLUDE_DIRECTORIES(${cmdGPU_Headers_Dir} ${reconGPU_Headers_Dir} ${recon_Headers_Dir} ${data_Headers_Dir} ${utils_Headers_Dir} ${FIND_CUDA_DIR})
 
 #  Tengo que generar un grupo de archivos por cada comando.
 
-#FILE(GLOB cmd_Sources RELATIVE ${cmd_SOURCE_DIR} ${cmd_SOURCE_DIR}/*.cpp)
-SET(cuMLEM_Sources "src/cuMLEM.cpp")
+#FILE(GLOB cmd_Sources RELATIVE ${cmdGPU_Sources_Dir} ${cmdGPU_Sources_Dir}/*.cpp)
+SET(cuMLEM_Sources "src/cuMLEM.cpp" "src/readCudaParameters.cpp")
 #SET(cuOSEM_Sources "src/cuOSEM.cpp")
 
 

@@ -60,16 +60,15 @@ using namespace::std;
 	
     \todo 
 */
-#ifdef __cplusplus
-//extern "C"
-#endif
+
+typedef enum
+{
+  SIDDON_CYLINDRICAL_SCANNER,
+  SIDDON_HEXAGONAL_SCANNER
+} TipoProyector;
+    
 class DLLEXPORT CuMlemSinogram3d : public MlemSinogram3d
 {
-    enum TipoProyector
-    {
-      SIDDON_CYLINDRICAL_SCANNER,
-      SIDDON_HEXAGONAL_SCANNER
-    };
   protected:  
     /// Proyección a reconstruir.
     /** Puntero donde se almacenará el sinograma de entrada. */
@@ -124,17 +123,6 @@ class DLLEXPORT CuMlemSinogram3d : public MlemSinogram3d
     /// Dim3 con configuración de la grilla en cada dimensión para el kernel de píxel.
     dim3 gridSizeImageUpdate;
     
-    /// Método que configura los tamaños de ejecución del kernel de proyección.
-    void setProjectorKernelConfig(unsigned int numThreadsPerBlockX, unsigned int numThreadsPerBlockY, unsigned int numThreadsPerBlockZ, 
-			  unsigned int numBlocksX, unsigned int numBlocksY, unsigned int numBlocksZ);
-    
-    /// Método que configura los tamaños de ejecución del kernel de retroproyección.
-    void setBackprojectorKernelConfig(unsigned int numThreadsPerBlockX, unsigned int numThreadsPerBlockY, unsigned int numThreadsPerBlockZ, 
-			  unsigned int numBlocksX, unsigned int numBlocksY, unsigned int numBlocksZ);
-    
-    /// Método que configura los tamaños de ejecución del kernel de actualización de píxel.
-    void setUpdatePixelKernelConfig(unsigned int numThreadsPerBlockX, unsigned int numThreadsPerBlockY, unsigned int numThreadsPerBlockZ, 
-			  unsigned int numBlocksX, unsigned int numBlocksY, unsigned int numBlocksZ);
     
     /// Inicio la memoria en gpu
     /** Se pide memoria para cada uno de los vectores y se copian los datos de entrada. Se le indica apra que proyector
@@ -187,6 +175,42 @@ class DLLEXPORT CuMlemSinogram3d : public MlemSinogram3d
     /* Constructor que carga los parámetros base de una reconstrucción MLEM
     a partir de un archivo de configuración con cierto formato dado. */
     CuMlemSinogram3d(string configFilename);
+    
+    /// Método que configura los tamaños de ejecución del kernel de proyección.
+    /** Recibe como parámetros las dimensiones del bloque, y luego genera el
+     * tamaño de grilla según el tamaño de los datos a procesar.
+     */
+    void setProjectorKernelConfig(unsigned int numThreadsPerBlockX, unsigned int numThreadsPerBlockY, unsigned int numThreadsPerBlockZ);
+    
+    /// Método que configura los tamaños de ejecución del kernel de retroproyección.
+    /** Recibe como parámetros las dimensiones del bloque, y luego genera el
+     * tamaño de grilla según el tamaño de los datos a procesar.
+     */
+    void setBackprojectorKernelConfig(unsigned int numThreadsPerBlockX, unsigned int numThreadsPerBlockY, unsigned int numThreadsPerBlockZ);
+    
+    /// Método que configura los tamaños de ejecución del kernel de actualización de píxel.
+    /** Recibe como parámetros las dimensiones del bloque, y luego genera el
+     * tamaño de grilla según el tamaño de los datos a procesar.
+     */
+    void setUpdatePixelKernelConfig(unsigned int numThreadsPerBlockX, unsigned int numThreadsPerBlockY, unsigned int numThreadsPerBlockZ);
+    
+    /// Método que configura los tamaños de ejecución del kernel de proyección.
+    /** Recibe como parámetro una estructura dim3 con las dimensiones del bloque, y luego genera el
+     * tamaño de grilla según el tamaño de los datos a procesar.
+     */
+    void setProjectorKernelConfig(dim3* blockSize);
+    
+    /// Método que configura los tamaños de ejecución del kernel de retroproyección.
+    /** Recibe como parámetro una estructura dim3 con las dimensiones del bloque, y luego genera el
+     * tamaño de grilla según el tamaño de los datos a procesar.
+     */
+    void setBackprojectorKernelConfig(dim3* blockSize);
+    
+    /// Método que configura los tamaños de ejecución del kernel de actualización de píxel.
+    /** Recibe como parámetro una estructura dim3 con las dimensiones del bloque, y luego genera el
+     * tamaño de grilla según el tamaño de los datos a procesar.
+     */
+    void setUpdatePixelKernelConfig(dim3* blockSize);
     
     
     /// Método que realiza la reconstrucción de las proyecciones. 

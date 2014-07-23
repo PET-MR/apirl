@@ -112,29 +112,58 @@ bool CuMlemSinogram3d::initCuda (int device, Logger* logger)
 }
 
 /// Método que configura los tamaños de ejecución del kernel de proyección.
-void CuMlemSinogram3d::setProjectorKernelConfig(unsigned int numThreadsPerBlockX, unsigned int numThreadsPerBlockY, unsigned int numThreadsPerBlockZ, 
-			      unsigned int numBlocksX, unsigned int numBlocksY, unsigned int numBlocksZ)
+void CuMlemSinogram3d::setProjectorKernelConfig(unsigned int numThreadsPerBlockX, unsigned int numThreadsPerBlockY, unsigned int numThreadsPerBlockZ)
 {
+  unsigned int numBlocksX = 1, numBlocksY = 1, numBlocksZ = 1;
   blockSizeProjector = dim3(numThreadsPerBlockX, numThreadsPerBlockY, numThreadsPerBlockZ);
+  // Con la dimensión x de la grilla completo el sino 2d:
+  numBlocksX = ceil((float)(inputProjection->getNumProj() * inputProjection->getNumR()) / blockSizeProjector.x);
+  // La dimensión y procesa cada sinograma:
+  numBlocksY = inputProjection->getNumSinograms();
   gridSizeProjector = dim3(numBlocksX, numBlocksY, numBlocksZ);
 }
 
 /// Método que configura los tamaños de ejecución del kernel de retroproyección.
-void CuMlemSinogram3d::setBackprojectorKernelConfig(unsigned int numThreadsPerBlockX, unsigned int numThreadsPerBlockY, unsigned int numThreadsPerBlockZ, 
-				  unsigned int numBlocksX, unsigned int numBlocksY, unsigned int numBlocksZ)
+void CuMlemSinogram3d::setBackprojectorKernelConfig(unsigned int numThreadsPerBlockX, unsigned int numThreadsPerBlockY, unsigned int numThreadsPerBlockZ)
 {
+  unsigned int numBlocksX = 1, numBlocksY = 1, numBlocksZ = 1;
   blockSizeBackprojector = dim3(numThreadsPerBlockX, numThreadsPerBlockY, numThreadsPerBlockZ);
+  // Con la dimensión x de la grilla completo el sino 2d:
+  numBlocksX = ceil((float)(inputProjection->getNumProj() * inputProjection->getNumR()) / blockSizeBackprojector.x);
+  // La dimensión y procesa cada sinograma:
+  numBlocksY = inputProjection->getNumSinograms();
   gridSizeBackprojector = dim3(numBlocksX, numBlocksY, numBlocksZ);
 }
 
 /// Método que configura los tamaños de ejecución del kernel de actualización de píxel.
-void CuMlemSinogram3d::setUpdatePixelKernelConfig(unsigned int numThreadsPerBlockX, unsigned int numThreadsPerBlockY, unsigned int numThreadsPerBlockZ, 
-				unsigned int numBlocksX, unsigned int numBlocksY, unsigned int numBlocksZ)
+void CuMlemSinogram3d::setUpdatePixelKernelConfig(unsigned int numThreadsPerBlockX, unsigned int numThreadsPerBlockY, unsigned int numThreadsPerBlockZ)
 {
+  unsigned int numBlocksX = 1, numBlocksY = 1, numBlocksZ = 1;
   blockSizeImageUpdate = dim3(numThreadsPerBlockX, numThreadsPerBlockY, numThreadsPerBlockZ);
+  // El bloque va procesando en x, luego completo con la dimensión x de la grilla y el resto de la imagen.
+  numBlocksX = ceil((float)(sizeReconImage.nPixelsX*sizeReconImage.nPixelsY) / blockSizeImageUpdate.x);
+  numBlocksY = sizeReconImage.nPixelsZ;
+  //numBlocksZ = sizeReconImage.nPixelsZ;
+
   gridSizeImageUpdate = dim3(numBlocksX, numBlocksY, numBlocksZ);  
 }
 
+void CuMlemSinogram3d::setProjectorKernelConfig(dim3* blockSize)
+{
+  // Llamo al método que recibe los componentes por separado, ya que ahí se actualiza el tamaño de grilla también:
+  setProjectorKernelConfig(blockSize->x, blockSize->y, blockSize->z);
+}
+    
+void CuMlemSinogram3d::setBackprojectorKernelConfig(dim3* blockSize)
+{
+  setBackprojectorKernelConfig(blockSize->x, blockSize->y, blockSize->z);
+}
+
+void CuMlemSinogram3d::setUpdatePixelKernelConfig(dim3* blockSize)
+{
+  setUpdatePixelKernelConfig(blockSize->x, blockSize->y, blockSize->z);	
+}
+    
 bool CuMlemSinogram3d::InitGpuMemory(TipoProyector tipoProy)
 {
   // Número total de píxeles.
@@ -264,6 +293,10 @@ bool CuMlemSinogram3d::Reconstruct(TipoProyector tipoProy, int indexGpu)
   {
 	  return false;
   }
+  // Inicializo memoria de GPU:
+  this->InitGpuMemory(tipoProy);
+  
+  // Sigo con variables necesarias durante la reconstrucción:
   /// Tamaño de la imagen:
   SizeImage sizeImage = reconstructionImage->getSize();
   /// Proyección auxiliar, donde guardo el sinograma proyectado:

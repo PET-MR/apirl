@@ -4,5 +4,5 @@
 #Para release el APIRL
 #export LD_LIBRARY_PATH=LD_LIBRARY_PATH:/usr/local/APIRL/bin
 
-export LD_LIBRARY_PATH=/sources/CopiasAPIRL/apirlCompleto/trunk/build/debug/bin/:$LD_LIBRARY_PATH
-export PATH=$PATH:/sources/CopiasAPIRL/apirlCompleto/trunk/build/debug/bin/
+export LD_LIBRARY_PATH=/workspaces/Martin/PET/apirl-sourceforge/trunk/build/debug/bin/:$LD_LIBRARY_PATH
+export PATH=$PATH:/workspaces/Martin/PET/apirl-sourceforge/trunk/build/debug/bin/

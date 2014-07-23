@@ -27,7 +27,7 @@ SET(cmdGPU_Sources)
 SET(cmdGPU_Headers)
 SET(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH})
 SET(cmdGPU_Sources_Dir ${cmdGPU_SOURCE_DIR}/src)
-#SET(cmdGPU_Headers_Dir ${cmdGPU_SOURCE_DIR}/inc)	Lo generé en el raíz.
+SET(cmdGPU_Headers_Dir ${cmdGPU_SOURCE_DIR}/inc)
 INCLUDE(${cmdGPU_SOURCE_DIR}/cmdGPU.cmake OPTIONAL)
 #######################################################################
 
