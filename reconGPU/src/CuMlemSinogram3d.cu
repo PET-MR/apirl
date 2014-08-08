@@ -211,7 +211,7 @@ bool CuMlemSinogram3d::InitGpuMemory(TipoProyector tipoProy)
   SizeImage size =  reconstructionImage->getSize();
   checkCudaErrors(cudaMemcpyToSymbol(d_imageSize, &size, sizeof(reconstructionImage->getSize())));
   aux = inputProjection->getRadioFov_mm();
-  //checkCudaErrors(cudaMemcpyToSymbol(d_RadioFov_mm, &aux, sizeof(inputProjection->getRadioFov_mm())));
+  checkCudaErrors(cudaMemcpyToSymbol(d_RadioFov_mm, &aux, sizeof(inputProjection->getRadioFov_mm())));
   aux = inputProjection->getAxialFoV_mm();
   checkCudaErrors(cudaMemcpyToSymbol(d_AxialFov_mm, &aux, sizeof(inputProjection->getAxialFoV_mm())));
 
@@ -419,6 +419,8 @@ bool CuMlemSinogram3d::Reconstruct(TipoProyector tipoProy, int indexGpu)
   {
 	  clock_t initialClockIteration = clock();
 	  printf("Iteración Nº: %d\n", t);
+	  /// Pongo en cero la proyección estimada, y hago la backprojection.
+	  checkCudaErrors(cudaMemset(d_estimatedProjection, 0,sizeof(float)*nBins));
 	  /// Proyección de la imagen:
 	  switch(tipoProy)
 	  {
@@ -431,7 +433,7 @@ bool CuMlemSinogram3d::Reconstruct(TipoProyector tipoProy, int indexGpu)
 	  /// estimada, que es el primer paso del algoritmo). Se lo calculo al sinograma
 	  /// proyectado, respecto del de entrada.
 	  this->likelihoodValues[t] = this->getLikelihoodValue();
-	  /// Pongo en cero la proyección estimada, y hago la backprojection.
+	  /// Pongo en cero la imagen de corrección, y hago la backprojection.
 	  checkCudaErrors(cudaMemset(d_backprojectedImage, 0,sizeof(float)*nPixels));
 	  switch(tipoProy)
 	  {

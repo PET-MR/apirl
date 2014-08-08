@@ -16,10 +16,11 @@
 
 
 // Variables de Memoria constante utilizadas en Siddon. Se debe encargar de cargar los datos de forma rpevia a la reconstrucción.
-
-__device__ __constant__ float d_RadioFov_mm;
+__device__ __constant__ float dummy; // Esto lo tuve que agregar porque el cudaMemcpyToSymbol me tiraba error con la primera variable declarada acá, sea cual sea.
 
 __device__ __constant__ float d_AxialFov_mm;
+
+__device__ __constant__ float d_RadioFov_mm;
 
 __device__ __constant__ SizeImage d_imageSize;
 
