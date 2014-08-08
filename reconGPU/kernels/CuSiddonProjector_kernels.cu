@@ -71,7 +71,7 @@ __global__ void cuSiddonDivideAndBackproject(float* d_inputSinogram, float* d_es
 
   int iProj = (int)((float)iBin2d / (float)numR);
   int indiceMichelogram = iBin2d + blockIdx.y * (numProj * numR);
-  
+
   // Primero hago la división:
   if(d_estimatedSinogram[indiceMichelogram]!=0)
     d_estimatedSinogram[indiceMichelogram] = d_inputSinogram[indiceMichelogram] / d_estimatedSinogram[indiceMichelogram];

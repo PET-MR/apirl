@@ -328,6 +328,10 @@ int main (int argc, char *argv[])
     printf("No existe el proyector %s.\n", strForwardprojector.c_str());
     exit(1);
   }
+  
+  // Configruo los kernels de los proyectores:
+  
+  
   // Pido los singoramas de corrección si es que están disponibles:
   if(getCorrectionSinogramNames(parameterFileName, "MLEM", &acfFilename, &estimatedRandomsFilename, &estimatedScatterFilename))
     return -1;

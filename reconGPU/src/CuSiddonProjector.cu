@@ -38,7 +38,7 @@ bool CuSiddonProjector::Project (float* d_image, float* d_projection, float *d_r
     */
   cuSiddonProjection<<<gridSize, blockSize>>>(d_image, d_projection, d_ring1, d_ring2, outputSinogram->getNumR(), outputSinogram->getNumProj(), outputSinogram->getNumRings(), outputSinogram->getNumSinograms());
   /// Sincronización de todos los threads.
-  cudaThreadSynchronize();
+  checkCudaErrors(cudaThreadSynchronize());
   return true;
 }
 
@@ -51,7 +51,7 @@ bool CuSiddonProjector::DivideAndBackproject (float* d_inputSinogram, float* d_e
   cuSiddonDivideAndBackproject<<<gridSize, blockSize>>>(d_inputSinogram, d_estimatedSinogram, d_outputImage, 
 					     d_ring1, d_ring2, inputSinogram->getNumR(), inputSinogram->getNumProj(), inputSinogram->getNumRings(), inputSinogram->getNumSinograms());
   /// Sincronización de todos los threads.
-  cudaThreadSynchronize();
+  checkCudaErrors(cudaThreadSynchronize());
   return true;
 }
 
@@ -64,7 +64,7 @@ bool CuSiddonProjector::Backproject (float * d_inputSinogram, float* d_outputIma
   cuSiddonBackprojection<<<gridSize, blockSize>>>(d_inputSinogram, d_outputImage, d_ring1, d_ring2, 
 							inputSinogram->getNumR(), inputSinogram->getNumProj(), inputSinogram->getNumRings(), inputSinogram->getNumSinograms());
   /// Sincronización de todos los threads.
-  cudaThreadSynchronize();
+  checkCudaErrors(cudaThreadSynchronize());
   return true;
 }
 

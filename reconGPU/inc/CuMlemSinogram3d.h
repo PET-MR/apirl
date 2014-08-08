@@ -130,8 +130,11 @@ class DLLEXPORT CuMlemSinogram3d : public MlemSinogram3d
      */
     bool InitGpuMemory(TipoProyector tipoProy);
     
-    /// Método que copia memoria de cpu en gpu.
+    /// Método que copia un sinograma 3d que reside en un objeto del tipo Sinogram3D hacia memoria de gpu.
     int CopySinogram3dHostToGpu(float* d_destino, Sinogram3D* h_source);
+    
+    /// Método que copia un sinograma 3d en gpu a uno en cpu en un objeto del tipo Sinogram3D.
+    int CopySinogram3dGpuToHost(Sinogram3D* h_destino, float* d_source);
     
     /// Método que inicializa la gpu.
     bool initCuda (int, Logger*);

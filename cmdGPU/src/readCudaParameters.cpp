@@ -35,12 +35,12 @@ bool ProcessBlockSizeString(char* strBlockSize, dim3* blockSize)
   if(auxElemento == NULL){
       cout << "Faltan elmentos en el block size." << endl; return false;}
   // El y:
-  auxElemento = strtok (aux," ,");
+  auxElemento = strtok (NULL," ,");
   blockSize->y = atoi(auxElemento);
   if(auxElemento == NULL){
       cout << "Faltan elmentos en el block size." << endl; return false;}
   // El z:
-  auxElemento = strtok (aux," ,");
+  auxElemento = strtok (NULL," ,");
   blockSize->z = atoi(auxElemento);
   if(auxElemento == NULL){
       cout << "Faltan elmentos en el block size." << endl; return false;}
@@ -85,7 +85,7 @@ int getPixelUpdateBlockSize (string mlemFilename, string cmd, dim3* updateBlockS
   int errorCode;
   char returnValue[256];	// string en el que se recibe el valor de un keyword en la lectura del archivo de parámetros.
   char errorMessage[300];	// string de error para la función de lectura de archivo de parámetros.
-  if((errorCode=parametersFile_read((char*)mlemFilename.c_str(), (char*)cmd.c_str(), "projector block size", returnValue, errorMessage)) != 0)
+  if((errorCode=parametersFile_read((char*)mlemFilename.c_str(), (char*)cmd.c_str(), "pixel update block size", returnValue, errorMessage)) != 0)
   {
     // Hubo un error. Salgo del comando.
     // Si no encontró el keyoword, está bien porque era opcional, cualquier otro código de error
@@ -117,7 +117,7 @@ int getBackprojectorBlockSize (string mlemFilename, string cmd, dim3* backprojec
   int errorCode;
   char returnValue[256];	// string en el que se recibe el valor de un keyword en la lectura del archivo de parámetros.
   char errorMessage[300];	// string de error para la función de lectura de archivo de parámetros.
-  if((errorCode=parametersFile_read((char*)mlemFilename.c_str(), (char*)cmd.c_str(), "projector block size", returnValue, errorMessage)) != 0)
+  if((errorCode=parametersFile_read((char*)mlemFilename.c_str(), (char*)cmd.c_str(), "backprojector block size", returnValue, errorMessage)) != 0)
   {
     // Hubo un error. Salgo del comando.
     // Si no encontró el keyoword, está bien porque era opcional, cualquier otro código de error

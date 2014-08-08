@@ -59,10 +59,6 @@ protected:
     dim3 gridSize;
     /// Estructura dim3 con tamaño de bloque.
     dim3 blockSize;
-
-    /// Método que configura los tamaños de ejecución del kernel.
-    void setKernelConfig(unsigned int numThreadsPerBlockX, unsigned int numThreadsPerBlockY, unsigned int numThreadsPerBlockZ, 
-			  unsigned int numBlocksX, unsigned int numBlocksY, unsigned int numBlocksZ);
     
     
   public:
@@ -96,6 +92,10 @@ protected:
     
     /// Método que incializa parámetros del proyector en la memoria de GPU.
     virtual void initGpuMemory(Sinogram3DCylindricalPet* inputSinogram) {};
+    
+    /// Método que configura los tamaños de ejecución del kernel.
+    void setKernelConfig(unsigned int numThreadsPerBlockX, unsigned int numThreadsPerBlockY, unsigned int numThreadsPerBlockZ, 
+			  unsigned int numBlocksX, unsigned int numBlocksY, unsigned int numBlocksZ);
 };
 
 #endif // CUPROJECTOR_H

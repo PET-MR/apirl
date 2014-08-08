@@ -55,7 +55,7 @@ MESSAGE(STATUS "DIRECTORIO DE INSTALACION: ${APIRL_INSTALL_PATH}")
 # Directorio donde se encuentra el FindCUDA:
 SET(FindCUDA_Dir ${CMAKE_SOURCE_DIR}/FindCUDA)
 # Seteo las compute capabilities con las que quiero compilar (Por default es la más baja: 1.0):
-SET(CUDA_COMPUTE_CAPABILITY 2.0)
+SET(CUDA_COMPUTE_CAPABILITY 1.3)
 # Algunas opciones adicionales para cuda.
 #SET(CUDA_USE_FAST_MATH ON)
 # Tipo de Cache que se habilita:

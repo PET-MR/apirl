@@ -17,7 +17,8 @@
 
 CuMlemSinogram3d::CuMlemSinogram3d(Sinogram3D* cInputProjection, Image* cInitialEstimate, string cPathSalida, string cOutputPrefix, int cNumIterations, int cSaveIterationInterval, bool cSaveIntermediate, bool cSensitivityImageFromFile, CuProjector* cForwardprojector, CuProjector* cBackprojector) : MlemSinogram3d(cInputProjection, cInitialEstimate, cPathSalida, cOutputPrefix, cNumIterations, cSaveIterationInterval, cSaveIntermediate, cSensitivityImageFromFile, NULL, NULL)
 {
-
+  this->backprojector = cBackprojector;
+  this->forwardprojector = cForwardprojector;
 }
 
 CuMlemSinogram3d::CuMlemSinogram3d(string configFilename):MlemSinogram3d(configFilename)
@@ -121,6 +122,9 @@ void CuMlemSinogram3d::setProjectorKernelConfig(unsigned int numThreadsPerBlockX
   // La dimensión y procesa cada sinograma:
   numBlocksY = inputProjection->getNumSinograms();
   gridSizeProjector = dim3(numBlocksX, numBlocksY, numBlocksZ);
+  
+  // Con esta configuración seteo el proyector:
+  forwardprojector->setKernelConfig(numThreadsPerBlockX, numThreadsPerBlockY, numThreadsPerBlockZ, numBlocksX, numBlocksY, numBlocksZ);
 }
 
 /// Método que configura los tamaños de ejecución del kernel de retroproyección.
@@ -133,6 +137,9 @@ void CuMlemSinogram3d::setBackprojectorKernelConfig(unsigned int numThreadsPerBl
   // La dimensión y procesa cada sinograma:
   numBlocksY = inputProjection->getNumSinograms();
   gridSizeBackprojector = dim3(numBlocksX, numBlocksY, numBlocksZ);
+  
+  // Con esta configuración seteo el retroproyector:
+  backprojector->setKernelConfig(numThreadsPerBlockX, numThreadsPerBlockY, numThreadsPerBlockZ, numBlocksX, numBlocksY, numBlocksZ);
 }
 
 /// Método que configura los tamaños de ejecución del kernel de actualización de píxel.
@@ -144,8 +151,8 @@ void CuMlemSinogram3d::setUpdatePixelKernelConfig(unsigned int numThreadsPerBloc
   numBlocksX = ceil((float)(sizeReconImage.nPixelsX*sizeReconImage.nPixelsY) / blockSizeImageUpdate.x);
   numBlocksY = sizeReconImage.nPixelsZ;
   //numBlocksZ = sizeReconImage.nPixelsZ;
-
   gridSizeImageUpdate = dim3(numBlocksX, numBlocksY, numBlocksZ);  
+  
 }
 
 void CuMlemSinogram3d::setProjectorKernelConfig(dim3* blockSize)
@@ -194,7 +201,7 @@ bool CuMlemSinogram3d::InitGpuMemory(TipoProyector tipoProy)
   
   // Además de copiar los valores de todos los bins, debo inicializar todas las constantes de reconstrucción.
   // Por un lado tengo los valores de coordenadas posibles de r, theta y z. Los mismos se copian a memoria constante de GPU (ver vectores globales al inicio de este archivo.
-  checkCudaErrors(cudaMemcpyToSymbol(d_thetaValues_deg, inputProjection->getAngPtr(), sizeof(float)*inputProjection->getNumProj()));
+  checkCudaErrors(cudaMemcpyToSymbol(d_thetaValues_deg, inputProjection->getAngPtr(), sizeof(float)*inputProjection->getNumProj(), 0, cudaMemcpyHostToDevice));
   checkCudaErrors(cudaMemcpyToSymbol(d_RValues_mm, inputProjection->getRPtr(), sizeof(float)*inputProjection->getNumR()));
   checkCudaErrors(cudaMemcpyToSymbol(d_AxialValues_mm, inputProjection->getAxialPtr(), sizeof(float)*inputProjection->getNumRings()));
 //   checkCudaErrors(cudaMemcpyToSymbol(cuda_threads_per_block, &(blockSizeProjector.x), sizeof(unsigned int)));
@@ -204,7 +211,7 @@ bool CuMlemSinogram3d::InitGpuMemory(TipoProyector tipoProy)
   SizeImage size =  reconstructionImage->getSize();
   checkCudaErrors(cudaMemcpyToSymbol(d_imageSize, &size, sizeof(reconstructionImage->getSize())));
   aux = inputProjection->getRadioFov_mm();
-  checkCudaErrors(cudaMemcpyToSymbol(d_RadioFov_mm, &aux, sizeof(inputProjection->getRadioFov_mm())));
+  //checkCudaErrors(cudaMemcpyToSymbol(d_RadioFov_mm, &aux, sizeof(inputProjection->getRadioFov_mm())));
   aux = inputProjection->getAxialFoV_mm();
   checkCudaErrors(cudaMemcpyToSymbol(d_AxialFov_mm, &aux, sizeof(inputProjection->getAxialFoV_mm())));
 
@@ -269,9 +276,27 @@ int CuMlemSinogram3d::CopySinogram3dHostToGpu(float* d_destino, Sinogram3D* h_so
   return numSinograms;
 }
 
+int CuMlemSinogram3d::CopySinogram3dGpuToHost(Sinogram3D* h_destino, float* d_source)
+{
+  int offset = 0;
+  int numSinograms = 0;
+  for(int i = 0; i < h_destino->getNumSegments(); i++)
+  {
+    for(int j = 0; j < h_destino->getSegment(i)->getNumSinograms(); j++)
+    {
+      checkCudaErrors(cudaMemcpy(h_destino->getSegment(i)->getSinogram2D(j)->getSinogramPtr(), d_source + offset, 
+				  sizeof(float)*h_destino->getSegment(i)->getSinogram2D(j)->getNumR() * h_destino->getSegment(i)->getSinogram2D(j)->getNumProj(),cudaMemcpyDeviceToHost));
+      offset += h_destino->getSegment(i)->getSinogram2D(j)->getNumR() * h_destino->getSegment(i)->getSinogram2D(j)->getNumProj();
+      numSinograms++;
+    }
+  }
+  return numSinograms;
+}
+
 void CuMlemSinogram3d::CopyReconstructedImageGpuToHost()
 {
- checkCudaErrors(cudaMemcpy(reconstructionImage->getPixelsPtr(), d_reconstructionImage, sizeof(float)*reconstructionImage->getPixelCount(),cudaMemcpyHostToDevice)); 
+  float* aux = reconstructionImage->getPixelsPtr();
+  checkCudaErrors(cudaMemcpy(aux, d_reconstructionImage, sizeof(float)*reconstructionImage->getPixelCount(),cudaMemcpyDeviceToHost)); 
 }
 
 // Método de reconstrucción que no se le indica el índice de GPU, incializa la GPU 0 por defecto.
@@ -435,7 +460,7 @@ bool CuMlemSinogram3d::Reconstruct(TipoProyector tipoProy, int indexGpu)
 	      {
 		// Tengo que guardar la estimated projection, y la backprojected image.
 		checkCudaErrors(cudaMemcpy(backprojectedImage->getPixelsPtr(), d_backprojectedImage,sizeof(float)*nPixels,cudaMemcpyDeviceToHost));
-		checkCudaErrors(cudaMemcpy(estimatedProjection->getSinogramPtr(), d_estimatedProjection,sizeof(float)*nBins,cudaMemcpyDeviceToHost));
+		CopySinogram3dGpuToHost(estimatedProjection, d_estimatedProjection);
 		sprintf(c_string, "%s_projection_iter_%d", outputFilenamePrefix.c_str(), t); /// La extensión se le agrega en write interfile.
 		outputFilename.assign(c_string);
 		estimatedProjection->writeInterfile((char*)outputFilename.c_str());
