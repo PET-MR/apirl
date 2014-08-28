@@ -36,6 +36,8 @@ Sinogram3DCylindricalPet::Sinogram3DCylindricalPet(Sinogram3DCylindricalPet* src
   {
     segments[i] = new SegmentInCylindrical3Dpet(srcSinogram3D->getSegment(i));
   }
+  // El radio del scnnaer también:
+  radioScanner_mm = srcSinogram3D->getRadioScanner_mm();
 }
 
 /// Desctructor

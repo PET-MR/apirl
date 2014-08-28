@@ -16,26 +16,11 @@
 #include <cuda.h>
 #include <cuda_runtime.h>
 #include <vector_types.h>
+#include <stdio.h>
 
 #include <CuSiddon.h>
+#include <CuSiddonProjector.h>
 #include "../kernels/CuSiddon.cu"
-#define MAX_PHI_VALUES	512	// Máxima cantidad de valores en el angulo theta que puede admitir la implementación.
-#define MAX_R_VALUES	512	// Idem para R.
-#define MAX_Z_VALUES	92	// Idem para anillos (z)
-#define MAX_SPAN	7	// Máximo valor de combinación de anillos por sinograma 2D.
-
-// Memoria constante con los valores de los angulos de la proyeccion,
-__device__ __constant__ float d_thetaValues_deg[MAX_PHI_VALUES];
-
-// Memoria constante con los valores de la distancia r.
-__device__ __constant__ float d_RValues_mm[MAX_R_VALUES];
-
-// Memoria constante con los valores de la coordenada axial o z.
-__device__ __constant__ float d_AxialValues_mm[MAX_Z_VALUES];
-
-__device__ __constant__ float d_RadioScanner_mm;
-
-__device__ void CUDA_GetPointsFromLOR (float PhiAngle, float r, float Z1, float Z2, float cudaRscanner, float4* P1, float4* P2);
 
 
 __global__ void cuSiddonProjection (float* volume, float* michelogram, float *d_ring1, float *d_ring2, int numR, int numProj, int numRings, int numSinos)
@@ -105,8 +90,13 @@ __global__ void cuSiddonBackprojection(float* d_inputSinogram, float* d_outputIm
 
   int iProj = (int)((float)iBin2d / (float)numR);
   int indiceMichelogram = iBin2d + blockIdx.y * (numProj * numR);
+  if((threadIdx.x==0)&&(blockIdx.y<3))
+    printf("%f %f %f %lX %lX %lX\n", d_RadioScanner_mm, d_RadioFov_mm, d_AxialFov_mm, &d_RadioScanner_mm, d_thetaValues_deg, d_ring1);
+  if((threadIdx.x==0)&&(blockIdx.y<3))
+    printf("%d %d %d %d %f %f %f %f %f\n", iBin2d, iProj, iR, blockIdx.y, d_thetaValues_deg[iProj], d_RValues_mm[iR], d_ring1[blockIdx.y], d_ring2[blockIdx.y], d_RadioScanner_mm);
   CUDA_GetPointsFromLOR(d_thetaValues_deg[iProj], d_RValues_mm[iR], d_ring1[blockIdx.y], d_ring2[blockIdx.y], d_RadioScanner_mm, &P1, &P2);
-  
+  //if(threadIdx.x==0)
+    //printf("%d %f %f %f %f %f %f\n", indiceMichelogram, P1.x, P1.y, P1.z, P2.x, P2.y, P2.z);
   LOR.x = P2.x - P1.x;
   LOR.y = P2.y - P1.y;
   LOR.z = P2.z - P1.z;

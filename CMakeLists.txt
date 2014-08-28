@@ -12,8 +12,8 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 
 # Defino una variable que me indice si las librería para cuda son dinámicas o estáticas. Esto lo hago
 # así porque he tenido algún problema para hacerlas dinámicas.
-#SET(CUDA_LIBRARIES_BUILD	STATIC)
-SET(CUDA_LIBRARIES_BUILD	SHARED)
+SET(CUDA_LIBRARIES_BUILD	STATIC)
+#SET(CUDA_LIBRARIES_BUILD	SHARED)
 
 ###################### OPENMP CONFIGURATION #############################
 INCLUDE(FindOpenMP)
@@ -55,13 +55,15 @@ MESSAGE(STATUS "DIRECTORIO DE INSTALACION: ${APIRL_INSTALL_PATH}")
 # Directorio donde se encuentra el FindCUDA:
 SET(FindCUDA_Dir ${CMAKE_SOURCE_DIR}/FindCUDA)
 # Seteo las compute capabilities con las que quiero compilar (Por default es la más baja: 1.0):
-SET(CUDA_COMPUTE_CAPABILITY 1.3)
+SET(CUDA_COMPUTE_CAPABILITY 3.0)
 # Algunas opciones adicionales para cuda.
 #SET(CUDA_USE_FAST_MATH ON)
 # Tipo de Cache que se habilita:
 #SET(CUDA_USE_CACHE_L1_L2 ON)
 #SET(CUDA_USE_CACHE_ONLY_L2 ON)
 #SET(CUDA_MAX_REG_COUNT 20)
+
+set(nvcc_flags "${nvcc_flags} -rdc=true")
 
 # Seteo en ON CUDA_VERBOSE_BUILD para visualizar todos los resultados del nvcc.
 SET(CUDA_VERBOSE_BUILD ON)
@@ -98,7 +100,6 @@ else()
 	endif(CMAKE_SIZEOF_VOID_P EQUAL 8)
 	
 endif()
-
 
 # Check if Doxygen is available
 #find_package(Doxygen REQUIRED)

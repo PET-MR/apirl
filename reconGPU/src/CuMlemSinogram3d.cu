@@ -13,7 +13,24 @@
 
 #include <CuMlemSinogram3d.h>
 #include "../kernels/CuMlem_kernels.cu"
-#include "../kernels/CuSiddonProjector_kernels.cu"
+//#include "../kernels/CuSiddonProjector_kernels.cu"
+
+// Memoria constante con los valores de los angulos de la proyeccion,
+__device__ __constant__ float d_thetaValues_deg[MAX_PHI_VALUES];
+
+// Memoria constante con los valores de la distancia r.
+__device__ __constant__ float d_RValues_mm[MAX_R_VALUES];
+
+// Memoria constante con los valores de la coordenada axial o z.
+__device__ __constant__ float d_AxialValues_mm[MAX_Z_VALUES];
+
+__device__ __constant__ float d_RadioScanner_mm;
+
+__device__ __constant__ float d_AxialFov_mm;
+
+__device__ __constant__ float d_RadioFov_mm;
+
+__device__ __constant__ SizeImage d_imageSize;
 
 CuMlemSinogram3d::CuMlemSinogram3d(Sinogram3D* cInputProjection, Image* cInitialEstimate, string cPathSalida, string cOutputPrefix, int cNumIterations, int cSaveIterationInterval, bool cSaveIntermediate, bool cSensitivityImageFromFile, CuProjector* cForwardprojector, CuProjector* cBackprojector) : MlemSinogram3d(cInputProjection, cInitialEstimate, cPathSalida, cOutputPrefix, cNumIterations, cSaveIterationInterval, cSaveIntermediate, cSensitivityImageFromFile, NULL, NULL)
 {
@@ -201,8 +218,9 @@ bool CuMlemSinogram3d::InitGpuMemory(TipoProyector tipoProy)
   
   // Además de copiar los valores de todos los bins, debo inicializar todas las constantes de reconstrucción.
   // Por un lado tengo los valores de coordenadas posibles de r, theta y z. Los mismos se copian a memoria constante de GPU (ver vectores globales al inicio de este archivo.
-  checkCudaErrors(cudaMemcpyToSymbol(d_thetaValues_deg, inputProjection->getAngPtr(), sizeof(float)*inputProjection->getNumProj(), 0, cudaMemcpyHostToDevice));
-  checkCudaErrors(cudaMemcpyToSymbol(d_RValues_mm, inputProjection->getRPtr(), sizeof(float)*inputProjection->getNumR()));
+  float *auxPtr = inputProjection->getSegment(0)->getSinogram2D(0)->getAngPtr();
+  checkCudaErrors(cudaMemcpyToSymbol(d_thetaValues_deg, auxPtr, sizeof(float)*inputProjection->getNumProj()));
+  checkCudaErrors(cudaMemcpyToSymbol(d_RValues_mm, inputProjection->getSegment(0)->getSinogram2D(0)->getRPtr(), sizeof(float)*inputProjection->getNumR()));
   checkCudaErrors(cudaMemcpyToSymbol(d_AxialValues_mm, inputProjection->getAxialPtr(), sizeof(float)*inputProjection->getNumRings()));
 //   checkCudaErrors(cudaMemcpyToSymbol(cuda_threads_per_block, &(blockSizeProjector.x), sizeof(unsigned int)));
 //   checkCudaErrors(cudaMemcpyToSymbol(cuda_threads_per_block_update_pixel, &(blockSizeImageUpdate.x), sizeof(unsigned int)));
@@ -254,6 +272,7 @@ bool CuMlemSinogram3d::InitGpuMemory(TipoProyector tipoProy)
     case SIDDON_CYLINDRICAL_SCANNER:
       aux = ((Sinogram3DCylindricalPet*)inputProjection)->getRadioScanner_mm();
       checkCudaErrors(cudaMemcpyToSymbol(d_RadioScanner_mm, &aux, sizeof(aux)));
+      //checkCudaErrors(cudaMemcpy(&d_RadioScanner_mm, &aux, sizeof(aux), cudaMemcpyHostToDevice));
       break;
   }
 }
@@ -404,7 +423,15 @@ bool CuMlemSinogram3d::Reconstruct(TipoProyector tipoProy, int indexGpu)
   logger->writeValue("Image Dimensions", c_string);
   sprintf(c_string, "%d[x] x %d[y] x %d[z]", this->sizeReconImage.nPixelsX, this->sizeReconImage.nPixelsY, this->sizeReconImage.nPixelsZ);
   logger->writeValue("Image Size", c_string);
-
+  sprintf(c_string, "Bloques %d[x] x %d[y] x %d[z]. Grilla %d[x] x %d[y] x %d[z]", this->blockSizeProjector.x, this->blockSizeProjector.y, this->blockSizeProjector.z,
+    this->gridSizeProjector.x, this->gridSizeProjector.y, this->gridSizeProjector.z);
+  logger->writeValue("Projection Kernel Config", c_string);
+  sprintf(c_string, "Bloques %d[x] x %d[y] x %d[z]. Grilla %d[x] x %d[y] x %d[z]", this->blockSizeBackprojector.x, this->blockSizeBackprojector.y, this->blockSizeBackprojector.z,
+    this->gridSizeBackprojector.x, this->gridSizeBackprojector.y, this->gridSizeBackprojector.z);
+  logger->writeValue("Backprojection Kernel Config", c_string);
+  sprintf(c_string, "Bloques %d[x] x %d[y] x %d[z]. Grilla %d[x] x %d[y] x %d[z]", this->blockSizeImageUpdate.x, this->blockSizeImageUpdate.y, this->blockSizeImageUpdate.z,
+    this->gridSizeImageUpdate.x, this->gridSizeImageUpdate.y, this->gridSizeImageUpdate.z);
+  logger->writeValue("Pixel Update Kernel Config", c_string);
   // También se realiza un registro de los tiempos de ejecución:
   clock_t initialClock = clock();
   //Start with the iteration

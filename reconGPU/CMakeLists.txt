@@ -4,7 +4,7 @@
 #  Copyright (c) 2010
 
 PROJECT(reconGPU)
-SET(BUILD_SHARED_LIBS  ON)
+SET(BUILD_SHARED_LIBS  OFF)
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 
 ###################### CUDA CONFIGURATION #############################
@@ -56,9 +56,9 @@ message(STATUS "Output Directory: ${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}")
 #ADD_Library(reconGPU SHARED ${reconGPU_Sources} ${reconGPU_Headers})${CUDA_LIBRARIES_BUILD}
 #CUDA_ADD_LIBRARY(reconGPU  ${CUDA_LIBRARIES_BUILD} ${reconGPU_Sources} ${reconGPU_cuSources} ${reconGPU_Headers} ${reconGPU_cuHeaders})
 # Genero varias DLLs, una por cada proyector y los m¨¦todos de reconstrucci¨®n:
-CUDA_ADD_LIBRARY(reconGPU  "src/CuSiddonProjector.cu" "src/CuProjector.cpp")
-CUDA_ADD_LIBRARY(cuOsem  "src/CuOsemSinogram3d.cu")
-CUDA_ADD_LIBRARY(cuMlem  "src/CuMlemSinogram3d.cu")
+CUDA_ADD_LIBRARY(reconGPU "src/CuSiddonProjector.cu" "src/CuProjector.cpp" "src/CuOsemSinogram3d.cu" "src/CuMlemSinogram3d.cu")
+#CUDA_ADD_LIBRARY(cuOsem  "src/CuOsemSinogram3d.cu")
+#CUDA_ADD_LIBRARY(cuMlem  "src/CuMlemSinogram3d.cu")
 #CUDA_ADD_LIBRARY(reconGPU2  "src/CuMlemSinogram3d.cu")
 # Para windows se debe definir WIN32 y DLL_BUILD tambien
 if(CMAKE_HOST_WIN32)
@@ -78,24 +78,24 @@ endif()
 # Si compilo en Fermi defino la variable FERMI. Esto me permite generar c¨®digo
 # condicional que solo anda en esa arquitectura. Por ejemplo, para utilizar printf
 # dentro de los kernels:
-if(CUDA_COMPUTE_CAPABILITY STREQUAL 2.0)
+if(CUDA_COMPUTE_CAPABILITY STREQUAL 3.0)
   add_definitions(-D_FERMI)
 endif()
 # Linkeo de DLL necesarias.
 TARGET_LINK_LIBRARIES(reconGPU ${LinkLibs})
-
+#TARGET_LINK_LIBRARIES(cuMlem reconGPU ${LinkLibs})
 
 if(CMAKE_HOST_WIN32)
 	if(CUDA_LIBRARIES_BUILD STREQUAL STATIC)
-		install(TARGETS reconGPU cuOsem cuMlem ARCHIVE DESTINATION "${APIRL_INSTALL_PATH}/bin")
+		install(TARGETS reconGPU ARCHIVE DESTINATION "${APIRL_INSTALL_PATH}/bin")
 	else()
-		install(TARGETS reconGPU cuOsem cuMlem RUNTIME DESTINATION "${APIRL_INSTALL_PATH}/bin")
+		install(TARGETS reconGPU RUNTIME DESTINATION "${APIRL_INSTALL_PATH}/bin")
 	endif()
 else()
 	if(CUDA_LIBRARIES_BUILD STREQUAL STATIC)
-		install(TARGETS reconGPU cuOsem cuMlem ARCHIVE DESTINATION "${APIRL_INSTALL_PATH}/bin")
+		install(TARGETS reconGPU ARCHIVE DESTINATION "${APIRL_INSTALL_PATH}/bin")
 	else()
-		install(TARGETS reconGPU cuOsem cuMlem LIBRARY DESTINATION "${APIRL_INSTALL_PATH}/bin")
+		install(TARGETS reconGPU LIBRARY DESTINATION "${APIRL_INSTALL_PATH}/bin")
 	endif()
 endif()
 

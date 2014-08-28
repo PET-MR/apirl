@@ -18,11 +18,11 @@
 // Variables de Memoria constante utilizadas en Siddon. Se debe encargar de cargar los datos de forma rpevia a la reconstrucción.
 __device__ __constant__ float dummy; // Esto lo tuve que agregar porque el cudaMemcpyToSymbol me tiraba error con la primera variable declarada acá, sea cual sea.
 
-__device__ __constant__ float d_AxialFov_mm;
+extern __device__ __constant__ float d_AxialFov_mm;
 
-__device__ __constant__ float d_RadioFov_mm;
+extern __device__ __constant__ float d_RadioFov_mm;
 
-__device__ __constant__ SizeImage d_imageSize;
+extern __device__ __constant__ SizeImage d_imageSize;
 
 // This function calculates Siddon Wieghts for a lor. It gets as parameters, the LOR direction vector in
 // a float4*, the first point of the lor in a float4, a float* where a posible input must be loaded, 

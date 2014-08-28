@@ -856,24 +856,58 @@ macro(CUDA_WRAP_SRCS cuda_target format generated_files)
     set(nvcc_flags ${nvcc_flags} -m32)
   endif()
   
-  # Agregado Martin Belzunce (05/01/11): Flags según el compute capability por default 1.0 (el mínimo):
+ # Agregado Martin Belzunce (05/01/11): Flags según el compute capability por default 1.0 (el mínimo):
+  # PAra compute capabilities
   if(NOT CUDA_COMPUTE_CAPABILITY)
+
     set(CUDA_COMPUTE_CAPABILITY 1.0)
+
   endif()
+
   if(CUDA_COMPUTE_CAPABILITY STREQUAL 1.0)
+
     set(nvcc_flags ${nvcc_flags} "-arch=sm_10")
+
   endif()
+
   if(CUDA_COMPUTE_CAPABILITY STREQUAL 1.1)
+
     set(nvcc_flags ${nvcc_flags} "-arch=sm_11")
+
   endif()
+
   if(CUDA_COMPUTE_CAPABILITY STREQUAL 1.2)
+
     set(nvcc_flags ${nvcc_flags} "-arch=sm_12")
+
   endif()
+
   if(CUDA_COMPUTE_CAPABILITY STREQUAL 1.3)
+
     set(nvcc_flags ${nvcc_flags} "-arch=sm_13")
+
   endif()
+
   if(CUDA_COMPUTE_CAPABILITY STREQUAL 2.0)
+
+    set(nvcc_flags ${nvcc_flags} "-arch=sm_20")
+
+		set(nvcc_flags ${nvcc_flags} "-gencode=arch=compute_20,code=sm_20")
+
+  endif()
+
+	if(CUDA_COMPUTE_CAPABILITY STREQUAL 2.1)
+
     set(nvcc_flags ${nvcc_flags} "-arch=sm_21")
+
+  endif()
+
+  if(CUDA_COMPUTE_CAPABILITY STREQUAL 3.0)
+
+    set(nvcc_flags ${nvcc_flags} "-arch=sm_30")
+
+    set(nvcc_flags ${nvcc_flags} "-gencode=arch=compute_30,code=sm_30")
+
   endif()
 # Agregado Martin Belzunce (14/04/11): Flags según el compute capability por default 1.0 (el mínimo):
   if(CUDA_USE_FAST_MATH)
@@ -888,6 +922,10 @@ macro(CUDA_WRAP_SRCS cuda_target format generated_files)
   if(CUDA_MAX_REG_COUNT)
     set(nvcc_flags ${nvcc_flags} "-maxrregcount=${CUDA_MAX_REG_COUNT}")
   endif()
+  # Agrego flags para poder tener código separado de CUDA. Es decir variables declaradas en un archivos
+  # y usadas en otro mediante extern:
+  #set(nvcc_flags ${nvcc_flags} "-dc")
+  message(STATUS "nvcc_flags: ${nvcc_flags}")
   # This needs to be passed in at this stage, because VS needs to fill out the
   # value of VCInstallDir from within VS.
   if(CMAKE_GENERATOR MATCHES "Visual Studio")
@@ -1039,7 +1077,7 @@ macro(CUDA_WRAP_SRCS cuda_target format generated_files)
       else( compile_to_ptx )
         set(generated_file_path "${cuda_compile_output_dir}/${CMAKE_CFG_INTDIR}")
         set(generated_file_basename "${cuda_target}_generated_${basename}${generated_extension}")
-        set(format_flag "-c")
+        set(format_flag "-dc") # Originalmente -c, con -dc para compilar con multiples files.
       endif( compile_to_ptx )
 
       # Set all of our file names.  Make sure that whatever filenames that have
@@ -1176,15 +1214,15 @@ endmacro(CUDA_WRAP_SRCS)
 macro(CUDA_ADD_LIBRARY cuda_target)
 
   CUDA_ADD_CUDA_INCLUDE_ONCE()
-
+ 
   # Separate the sources from the options
   CUDA_GET_SOURCES_AND_OPTIONS(_sources _cmake_options _options ${ARGN})
   CUDA_BUILD_SHARED_LIBRARY(_cuda_shared_flag ${ARGN})
   # Create custom commands and targets for each file.
-  CUDA_WRAP_SRCS( ${cuda_target} OBJ _generated_files ${_sources}
+  CUDA_WRAP_SRCS(${cuda_target} OBJ _generated_files "-dc"  ${_sources}
     ${_cmake_options} ${_cuda_shared_flag}
     OPTIONS ${_options} )
-
+ message(STATUS "${cuda_target} ${_sources}${_cmake_options} ${_cuda_shared_flag} ${_options}")
   # Add the library.
   add_library(${cuda_target} ${_cmake_options}
     ${_generated_files}

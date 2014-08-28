@@ -26,6 +26,11 @@
 #include <helper_cuda.h>
 #include <vector_types.h>
 
+#define MAX_PHI_VALUES	512	// Máxima cantidad de valores en el angulo theta que puede admitir la implementación.
+#define MAX_R_VALUES	512	// Idem para R.
+#define MAX_Z_VALUES	92	// Idem para anillos (z)
+#define MAX_SPAN	7	// Máximo valor de combinación de anillos por sinograma 2D.auto
+
 // DLL export/import declaration: visibility of objects
 #ifndef LINK_STATIC
 	#ifdef WIN32               // Win32 build
@@ -49,6 +54,34 @@
 	#define DLLLOCAL
 #endif
 
+/// Memoria Estática de GPU definido en Otra clase (Debería ser en la de reconstrucción: CuMlem, CuOsem, etc)
+// Memoria constante con los valores de los angulos de la proyeccion,
+extern  __device__ __constant__ float d_thetaValues_deg[MAX_PHI_VALUES];
+
+// Memoria constante con los valores de la distancia r.
+extern __device__ __constant__ float d_RValues_mm[MAX_R_VALUES];
+
+// Memoria constante con los valores de la coordenada axial o z.
+extern __device__ __constant__ float d_AxialValues_mm[MAX_Z_VALUES];
+
+// Memoria constante con el radio del scanner (solo para scanner cilíndricos).
+extern __device__ __constant__ float d_RadioScanner_mm;
+
+
+
+// Kernels en la biblioteca.
+__global__ void cuSiddonProjection (float* volume, float* michelogram, float *d_ring1, float *d_ring2, int numR, int numProj, int numRings, int numSinos);
+
+__global__ void cuSiddonDivideAndBackproject(float* d_inputSinogram, float* d_estimatedSinogram, float* d_outputImage, 
+					     float *d_ring1, float *d_ring2, int numR, int numProj, int numRings, int numSinos);
+
+__global__ void cuSiddonBackprojection(float* d_inputSinogram, float* d_outputImage, 
+				       float *d_ring1, float *d_ring2, int numR, int numProj, int numRings, int numSinos);
+
+// Funciones de device en la bilbioteca.
+__device__ void CUDA_GetPointsFromLOR (float PhiAngle, float r, float Z1, float Z2, float cudaRscanner, float4* P1, float4* P2);
+
+// Clase a exportar en la biblioteca.
 class DLLEXPORT CuSiddonProjector : virtual CuProjector
 {
   private:

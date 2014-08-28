@@ -126,6 +126,9 @@ class DLLEXPORT Sinogram2DinCylindrical3Dpet : public Sinogram2D
 	  /** Método que setea el valor del radio del scanner en mm a este sinograma. */
 	  void setRadioScanner(float rScanner_mm){ radioScanner_mm = rScanner_mm;};
 	  
+	  /** Método que devuelve el valor del radio del scanner en mm. */
+	  float getRadioScanner_mm(){ return radioScanner_mm;};
+	  
 	  /** Método que setea una configuración de combinación de ángulos polares para este sinograma 2D.
 		  O sea, define cuantas combinaciones de anillos representa cada bin del sinograma, y la lista de combinación
 		  de ellos.
