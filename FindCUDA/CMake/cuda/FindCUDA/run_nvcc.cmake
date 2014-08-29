@@ -49,31 +49,37 @@
 #
 # generated_cubin_file:STRING=<> File to generate.  This argument must be passed
 #                                                   in if build_cubin is true.
+# generate_dependency_only:BOOL=<> Only generate the dependency file.
+#
+# check_dependencies:BOOL=<> Check the dependencies.  If everything is up to
+#                            date, simply touch the output file instead of
+#                            generating it.
 
 if(NOT generated_file)
   message(FATAL_ERROR "You must specify generated_file on the command line")
 endif()
 
 # Set these up as variables to make reading the generated file easier
-set(CMAKE_COMMAND "@CMAKE_COMMAND@")
-set(source_file "@source_file@")
-set(NVCC_generated_dependency_file "@NVCC_generated_dependency_file@")
-set(cmake_dependency_file "@cmake_dependency_file@")
-set(CUDA_make2cmake "@CUDA_make2cmake@")
-set(CUDA_parse_cubin "@CUDA_parse_cubin@")
-set(build_cubin @build_cubin@)
+set(CMAKE_COMMAND "@CMAKE_COMMAND@") # path
+set(source_file "@source_file@") # path
+set(NVCC_generated_dependency_file "@NVCC_generated_dependency_file@") # path
+set(cmake_dependency_file "@cmake_dependency_file@") # path
+set(CUDA_make2cmake "@CUDA_make2cmake@") # path
+set(CUDA_parse_cubin "@CUDA_parse_cubin@") # path
+set(build_cubin @build_cubin@) # bool
+set(CUDA_HOST_COMPILER "@CUDA_HOST_COMPILER@") # bool
 # We won't actually use these variables for now, but we need to set this, in
 # order to force this file to be run again if it changes.
-set(generated_file_path "@generated_file_path@")
-set(generated_file_internal "@generated_file@")
-set(generated_cubin_file_internal "@generated_cubin_file@")
+set(generated_file_path "@generated_file_path@") # path
+set(generated_file_internal "@generated_file@") # path
+set(generated_cubin_file_internal "@generated_cubin_file@") # path
 
-set(CUDA_NVCC_EXECUTABLE "@CUDA_NVCC_EXECUTABLE@")
-set(CUDA_NVCC_FLAGS "@CUDA_NVCC_FLAGS@;;@CUDA_WRAP_OPTION_NVCC_FLAGS@")
+set(CUDA_NVCC_EXECUTABLE "@CUDA_NVCC_EXECUTABLE@") # path
+set(CUDA_NVCC_FLAGS @CUDA_NVCC_FLAGS@ ;; @CUDA_WRAP_OPTION_NVCC_FLAGS@) # list
 @CUDA_NVCC_FLAGS_CONFIG@
-set(nvcc_flags "@nvcc_flags@")
-set(CUDA_NVCC_INCLUDE_ARGS "@CUDA_NVCC_INCLUDE_ARGS@")
-set(format_flag "@format_flag@")
+set(nvcc_flags @nvcc_flags@) # list
+set(CUDA_NVCC_INCLUDE_ARGS "@CUDA_NVCC_INCLUDE_ARGS@") # list (needs to be in quotes to handle spaces properly).
+set(format_flag "@format_flag@") # string
 
 if(build_cubin AND NOT generated_cubin_file)
   message(FATAL_ERROR "You must specify generated_cubin_file on the command line")
@@ -102,8 +108,15 @@ endif()
 # Add the build specific configuration flags
 list(APPEND CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS_${build_configuration}})
 
-if(DEFINED CCBIN)
-  set(CCBIN -ccbin "${CCBIN}")
+# Any -ccbin existing in CUDA_NVCC_FLAGS gets highest priority
+list( FIND CUDA_NVCC_FLAGS "-ccbin" ccbin_found0 )
+list( FIND CUDA_NVCC_FLAGS "--compiler-bindir" ccbin_found1 )
+if( ccbin_found0 LESS 0 AND ccbin_found1 LESS 0 )
+  if (CUDA_HOST_COMPILER STREQUAL "$(VCInstallDir)bin" AND DEFINED CCBIN)
+    set(CCBIN -ccbin "${CCBIN}")
+  else()
+    set(CCBIN -ccbin "${CUDA_HOST_COMPILER}")
+  endif()
 endif()
 
 # cuda_execute_process - Executes a command with optional command echo and status message.
@@ -139,16 +152,10 @@ macro(cuda_execute_process status command)
     endforeach()
     # Echo the command
     execute_process(COMMAND ${CMAKE_COMMAND} -E echo ${cuda_execute_process_string})
-  endif(verbose)
+  endif()
   # Run the command
   execute_process(COMMAND ${ARGN} RESULT_VARIABLE CUDA_result )
 endmacro()
-
-# Delete the target file
-cuda_execute_process(
-  "Removing ${generated_file}"
-  COMMAND "${CMAKE_COMMAND}" -E remove "${generated_file}"
-  )
 
 # For CUDA 2.3 and below, -G -M doesn't work, so remove the -G flag
 # for dependency generation and hope for the best.
@@ -217,13 +224,57 @@ endif()
 
 # Delete the temporary file
 cuda_execute_process(
-  "Removing ${cmake_dependency_file}.tmp and ${NVCC_generated_dependency_file}"
-  COMMAND "${CMAKE_COMMAND}" -E remove "${cmake_dependency_file}.tmp" "${NVCC_generated_dependency_file}"
+  "Removing ${cmake_dependency_file}.tmp"
+  COMMAND "${CMAKE_COMMAND}" -E remove "${cmake_dependency_file}.tmp"
   )
 
 if(CUDA_result)
   message(FATAL_ERROR "Error generating ${generated_file}")
 endif()
+
+if (generate_dependency_only)
+  return()
+endif()
+
+if (check_dependencies)
+  set(rebuild FALSE)
+  include(${cmake_dependency_file})
+  if(NOT CUDA_NVCC_DEPEND)
+    # CUDA_NVCC_DEPEND should have something useful in it by now.  If not we
+    # should force the rebuild.
+    if (verbose)
+      message(WARNING "CUDA_NVCC_DEPEND not found for ${generated_file}")
+    endif()
+    set(rebuild TRUE)
+  endif()
+  # Rebuilding is also dependent on this file changing.
+  list(APPEND CUDA_NVCC_DEPEND "${CMAKE_CURRENT_LIST_FILE}")
+  foreach(f ${CUDA_NVCC_DEPEND})
+    # True if file1 is newer than file2 or if one of the two files doesn't
+    # exist. Behavior is well-defined only for full paths. If the file time
+    # stamps are exactly the same, an IS_NEWER_THAN comparison returns true, so
+    # that any dependent build operations will occur in the event of a tie. This
+    # includes the case of passing the same file name for both file1 and file2.
+    if("${f}" IS_NEWER_THAN "${generated_file}")
+      #message("file ${f} is newer than ${generated_file}")
+      set(rebuild TRUE)
+    endif()
+  endforeach()
+  if (NOT rebuild)
+    #message("Not rebuilding ${generated_file}")
+    cuda_execute_process(
+      "Dependencies up to date.  Not rebuilding ${generated_file}"
+      COMMAND "${CMAKE_COMMAND}" -E touch "${generated_file}"
+      )
+    return()
+  endif()
+endif()
+
+# Delete the target file
+cuda_execute_process(
+  "Removing ${generated_file}"
+  COMMAND "${CMAKE_COMMAND}" -E remove "${generated_file}"
+  )
 
 # Generate the code
 cuda_execute_process(
@@ -265,7 +316,6 @@ if( build_cubin )
     ${nvcc_host_compiler_flags}
     -DNVCC
     -cubin
-    -Xptxas -v
     -o "${generated_cubin_file}"
     ${CUDA_NVCC_INCLUDE_ARGS}
     )
@@ -278,4 +328,4 @@ if( build_cubin )
     -P "${CUDA_parse_cubin}"
     )
 
-endif( build_cubin )
+endif()

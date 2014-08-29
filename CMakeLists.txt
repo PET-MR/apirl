@@ -4,7 +4,7 @@
 #  Copyright (c) 2009
 
 PROJECT(APIRL)
-CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
+CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 
 # Type of build (Debug or Release). CMAKE_BUILD_TYPE es una variable del tipo cache, por lo que no conviene
 # forzarla a un valor, mejor definirla cuando uno llama a cmake.

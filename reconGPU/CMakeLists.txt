@@ -5,7 +5,8 @@
 
 PROJECT(reconGPU)
 SET(BUILD_SHARED_LIBS  OFF)
-CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
+SET(CUDA_SEPARABLE_COMPILATION ON)
+CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 
 ###################### CUDA CONFIGURATION #############################
 # Ejecuto el FindCUDA.
@@ -56,7 +57,7 @@ message(STATUS "Output Directory: ${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}")
 #ADD_Library(reconGPU SHARED ${reconGPU_Sources} ${reconGPU_Headers})${CUDA_LIBRARIES_BUILD}
 #CUDA_ADD_LIBRARY(reconGPU  ${CUDA_LIBRARIES_BUILD} ${reconGPU_Sources} ${reconGPU_cuSources} ${reconGPU_Headers} ${reconGPU_cuHeaders})
 # Genero varias DLLs, una por cada proyector y los m¨¦todos de reconstrucci¨®n:
-CUDA_ADD_LIBRARY(reconGPU "src/CuSiddonProjector.cu" "src/CuProjector.cpp" "src/CuOsemSinogram3d.cu" "src/CuMlemSinogram3d.cu")
+CUDA_ADD_LIBRARY(reconGPU "src/CuSiddonProjector.cu" "src/CuProjector.cpp"  "src/CuMlemSinogram3d.cu") #"src/CuOsemSinogram3d.cu"
 #CUDA_ADD_LIBRARY(cuOsem  "src/CuOsemSinogram3d.cu")
 #CUDA_ADD_LIBRARY(cuMlem  "src/CuMlemSinogram3d.cu")
 #CUDA_ADD_LIBRARY(reconGPU2  "src/CuMlemSinogram3d.cu")
