@@ -90,15 +90,17 @@ class DLLEXPORT CuMlemSinogram3d : public MlemSinogram3d
     /* Puntero a al dirección de memoria en GPU donde se tendrá la imagen de sensibilidad.*/
     float* d_sensitivityImage;
 
-    /// Array con las coordenadas del ring1 (z1) para cada sinograma 2d.
-    /** El largo del vector es igual a la suma total de sinogramas 2d que tiene el sino3d.
+    /// Array con el índice de ring1 (z1) para cada sinograma 2d del sino3D.
+    /** El largo del vector es igual a la suma total de sinogramas 2d que tiene el sino3d.Es sólo el índice de anillo!
+     * Para obtener la coordenada en el world hay que entrar con este indice al vector de coordenadas de los anillos.
      */
-    float* d_ring1;
+    int* d_ring1;
     
-    /// Array con las coordenadas del ring2 (z2) para cada sinograma 2d.
-    /** El largo del vector es igual a la suma total de sinogramas 2d que tiene el sino3d.
+    /// Array con el índice de ring1 (z2) para cada sinograma 2d del sino3D.
+    /** El largo del vector es igual a la suma total de sinogramas 2d que tiene el sino3d.Es sólo el índice de anillo!
+     * Para obtener la coordenada en el world hay que entrar con este indice al vector de coordenadas de los anillos.
      */
-    float* d_ring2;
+    int* d_ring2;
     
     /// Puntero a Float en memoria de gpu donde se almacena el valor de likelihhod.
     /** El likelihood estimado es el de d_estimatedProjection en referencia a d_inputProjection.

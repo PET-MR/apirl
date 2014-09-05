@@ -202,8 +202,8 @@ bool CuMlemSinogram3d::InitGpuMemory(TipoProyector tipoProy)
   checkCudaErrors(cudaMalloc((void**) &d_backprojectedImage, sizeof(float)*numPixels));
   checkCudaErrors(cudaMalloc((void**) &d_inputProjection, sizeof(float)*numBins));
   checkCudaErrors(cudaMalloc((void**) &d_estimatedProjection, sizeof(float)*numBins));
-  checkCudaErrors(cudaMalloc((void**) &d_ring1, sizeof(float)*inputProjection->getNumSinograms()));
-  checkCudaErrors(cudaMalloc((void**) &d_ring2, sizeof(float)*inputProjection->getNumSinograms()));
+  checkCudaErrors(cudaMalloc((void**) &d_ring1, sizeof(int)*inputProjection->getNumSinograms()));
+  checkCudaErrors(cudaMalloc((void**) &d_ring2, sizeof(int)*inputProjection->getNumSinograms()));
   checkCudaErrors(cudaMalloc((void**) &d_likelihood, sizeof(float)));
   checkCudaErrors(cudaMemset(d_likelihood, 0,sizeof(float)));
   // Copio la iamgen inicial:
@@ -237,8 +237,8 @@ bool CuMlemSinogram3d::InitGpuMemory(TipoProyector tipoProy)
   // En la versión con CPU proceso todas las LORs, ahora solo voy a considerar la del medio, que sería la ventaja de reducir el volumen de LORs.
   // Entonces genero un array con las coordenadas de anillos de cada sinograma.
   int iSino = 0;
-  float* auxRings1 = new float[inputProjection->getNumSinograms()];
-  float* auxRings2 = new float[inputProjection->getNumSinograms()];
+  int* auxRings1 = new int[inputProjection->getNumSinograms()];
+  int* auxRings2 = new int[inputProjection->getNumSinograms()];
   for(int i = 0; i < inputProjection->getNumSegments(); i++)
   {
     for(int j = 0; j < inputProjection->getSegment(i)->getNumSinograms(); j++)
@@ -251,8 +251,8 @@ bool CuMlemSinogram3d::InitGpuMemory(TipoProyector tipoProy)
     }
   }
   // Copio los índices de anillos a memoris de GPU:
-  checkCudaErrors(cudaMemcpy(d_ring1, auxRings1, sizeof(float)*inputProjection->getNumSinograms(), cudaMemcpyHostToDevice));
-  checkCudaErrors(cudaMemcpy(d_ring2, auxRings2, sizeof(float)*inputProjection->getNumSinograms(), cudaMemcpyHostToDevice));
+  checkCudaErrors(cudaMemcpy(d_ring1, auxRings1, sizeof(int)*inputProjection->getNumSinograms(), cudaMemcpyHostToDevice));
+  checkCudaErrors(cudaMemcpy(d_ring2, auxRings2, sizeof(int)*inputProjection->getNumSinograms(), cudaMemcpyHostToDevice));
   
 	
   /// Esto después hay que cambiarlo! Tiene que ir en la clase Michelogram!!!!!!!!!!!!!

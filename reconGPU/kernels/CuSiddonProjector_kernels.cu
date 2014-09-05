@@ -23,7 +23,7 @@
 #include "../kernels/CuSiddon.cu"
 
 
-__global__ void cuSiddonProjection (float* volume, float* michelogram, float *d_ring1, float *d_ring2, int numR, int numProj, int numRings, int numSinos)
+__global__ void cuSiddonProjection (float* volume, float* michelogram, int *d_ring1, int *d_ring2, int numR, int numProj, int numRings, int numSinos)
 {
   int iBin2d =  threadIdx.x + (blockIdx.x * blockDim.x);
   if(iBin2d>= (numR*numProj))
@@ -43,7 +43,7 @@ __global__ void cuSiddonProjection (float* volume, float* michelogram, float *d_
 }
 
 __global__ void cuSiddonDivideAndBackproject(float* d_inputSinogram, float* d_estimatedSinogram, float* d_outputImage, 
-					     float *d_ring1, float *d_ring2, int numR, int numProj, int numRings, int numSinos)
+					     int *d_ring1, int *d_ring2, int numR, int numProj, int numRings, int numSinos)
 {
   float4 P1;
   float4 P2;
@@ -77,7 +77,7 @@ __global__ void cuSiddonDivideAndBackproject(float* d_inputSinogram, float* d_es
 }
 
 __global__ void cuSiddonBackprojection(float* d_inputSinogram, float* d_outputImage, 
-				       float *d_ring1, float *d_ring2, int numR, int numProj, int numRings, int numSinos)
+				       int *d_ring1, int *d_ring2, int numR, int numProj, int numRings, int numSinos)
 {
   float4 P1;
   float4 P2;
@@ -90,13 +90,11 @@ __global__ void cuSiddonBackprojection(float* d_inputSinogram, float* d_outputIm
 
   int iProj = (int)((float)iBin2d / (float)numR);
   int indiceMichelogram = iBin2d + blockIdx.y * (numProj * numR);
-  if((threadIdx.x==0)&&(blockIdx.y<3))
-    printf("%f %f %f %lX %lX %lX\n", d_RadioScanner_mm, d_RadioFov_mm, d_AxialFov_mm, &d_RadioScanner_mm, d_thetaValues_deg, d_ring1);
-  if((threadIdx.x==0)&&(blockIdx.y<3))
-    printf("%d %d %d %d %f %f %f %f %f\n", iBin2d, iProj, iR, blockIdx.y, d_thetaValues_deg[iProj], d_RValues_mm[iR], d_ring1[blockIdx.y], d_ring2[blockIdx.y], d_RadioScanner_mm);
-  CUDA_GetPointsFromLOR(d_thetaValues_deg[iProj], d_RValues_mm[iR], d_ring1[blockIdx.y], d_ring2[blockIdx.y], d_RadioScanner_mm, &P1, &P2);
-  //if(threadIdx.x==0)
-    //printf("%d %f %f %f %f %f %f\n", indiceMichelogram, P1.x, P1.y, P1.z, P2.x, P2.y, P2.z);
+  if((threadIdx.x==32)&&(blockIdx.y==7))
+    printf("%d %d %d %d %f %f %f %d %f\n", iBin2d, iProj, iR, blockIdx.y, d_thetaValues_deg[iProj], d_RValues_mm[iR], d_AxialValues_mm[d_ring1[blockIdx.y]], d_ring2[blockIdx.y], d_RadioScanner_mm);
+  CUDA_GetPointsFromLOR(d_thetaValues_deg[iProj], d_RValues_mm[iR], d_AxialValues_mm[d_ring1[blockIdx.y]], d_AxialValues_mm[d_ring2[blockIdx.y]], d_RadioScanner_mm, &P1, &P2);
+  if((threadIdx.x==32)&&(blockIdx.x==7))
+   printf("%d %f %f %d %f %f %f %f %f %f\n", d_AxialValues_mm, d_AxialValues_mm[d_ring1[blockIdx.y]], d_AxialValues_mm[d_ring2[blockIdx.y]], indiceMichelogram, P1.x, P1.y, P1.z, P2.x, P2.y, P2.z);
   LOR.x = P2.x - P1.x;
   LOR.y = P2.y - P1.y;
   LOR.z = P2.z - P1.z;
