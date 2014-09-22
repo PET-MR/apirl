@@ -228,9 +228,9 @@ bool CuMlemSinogram3d::InitGpuMemory(TipoProyector tipoProy)
 //   checkCudaErrors(cudaMemcpyToSymbol(cuda_rows_splitter, &rowSplitter, sizeof(unsigned int)));
   SizeImage size =  reconstructionImage->getSize();
   checkCudaErrors(cudaMemcpyToSymbol(d_imageSize, &size, sizeof(reconstructionImage->getSize())));
-  aux = inputProjection->getRadioFov_mm();
+  aux = reconstructionImage->getFovRadio(); // Esto podría ser del sinograma también.
   checkCudaErrors(cudaMemcpyToSymbol(d_RadioFov_mm, &aux, sizeof(inputProjection->getRadioFov_mm())));
-  aux = inputProjection->getAxialFoV_mm();
+  aux = reconstructionImage->getFovHeight(); // Esto podría ser del sinograma.
   checkCudaErrors(cudaMemcpyToSymbol(d_AxialFov_mm, &aux, sizeof(inputProjection->getAxialFoV_mm())));
 
   // Para el sinograma 3d tengo que cada sino 2d puede representar varios sinogramas asociados a distintas combinaciones de anillos.
@@ -243,11 +243,22 @@ bool CuMlemSinogram3d::InitGpuMemory(TipoProyector tipoProy)
   {
     for(int j = 0; j < inputProjection->getSegment(i)->getNumSinograms(); j++)
     {
-      // Como voy a agarrar solo la combinación del medio:
+      // Como voy a agarrar solo la combinación del medio, si es impar es directamente el indice del medio, mientras que si es para
+      // tengo que hacer el promedio:
       int indexMedio = floor(inputProjection->getSegment(i)->getSinogram2D(j)->getNumZ()/2);
-      auxRings1[iSino] = inputProjection->getSegment(i)->getSinogram2D(j)->getRing1FromList(indexMedio);
-      auxRings2[iSino] = inputProjection->getSegment(i)->getSinogram2D(j)->getRing2FromList(indexMedio);
-      iSino++;
+      if(inputProjection->getSegment(i)->getSinogram2D(j)->getNumZ() % 2)
+      {
+	auxRings1[iSino] = inputProjection->getSegment(i)->getSinogram2D(j)->getRing1FromList(indexMedio);
+	auxRings2[iSino] = inputProjection->getSegment(i)->getSinogram2D(j)->getRing2FromList(indexMedio);
+	iSino++;
+      }
+      else
+      {
+	// Es el promedio : no me sirve porque esto es u índice y me quedaría 0.5
+	auxRings1[iSino] = (inputProjection->getSegment(i)->getSinogram2D(j)->getRing1FromList(indexMedio)+inputProjection->getSegment(i)->getSinogram2D(j)->getRing1FromList(indexMedio+1))/2;
+	auxRings2[iSino] = inputProjection->getSegment(i)->getSinogram2D(j)->getRing2FromList(indexMedio);
+	iSino++;
+      }
     }
   }
   // Copio los índices de anillos a memoris de GPU:

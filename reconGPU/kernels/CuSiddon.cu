@@ -88,11 +88,10 @@ __device__ void CUDA_Siddon (float4* LOR, float4* P0, float* Input, float* Resul
 
 	// Calculus of end pixel
 	float3 indexes_max = make_float3(0,0,0);
-	indexes_max.x = floorf((puntoEntrada.x + d_RadioFov_mm)/d_imageSize.sizePixelX_mm); // In X increase of System Coordinate = Increase Pixels.
-	indexes_max.y = floorf((puntoEntrada.y + d_RadioFov_mm)/d_imageSize.sizePixelY_mm); // 
-	indexes_max.z = floorf((puntoEntrada.z - 0)/d_imageSize.sizePixelZ_mm);	// indexes_max.z = floorf((puntoEntrada.z - OffsetZ)/d_imageSize.sizePixelZ_mm);
-	
-	/// Descomentar esto!
+	indexes_max.x = floorf((puntoSalida.x + d_RadioFov_mm)/d_imageSize.sizePixelX_mm); // In X increase of System Coordinate = Increase Pixels.
+	indexes_max.y = floorf((puntoSalida.y + d_RadioFov_mm)/d_imageSize.sizePixelY_mm); // 
+	indexes_max.z = floorf((puntoSalida.z - 0)/d_imageSize.sizePixelZ_mm);	// indexes_max.z = floorf((puntoEntrada.z - OffsetZ)/d_imageSize.sizePixelZ_mm);
+
 	/// EstïṡẄ dentro del FOV? Para eso verifico que el rango de valores de i, de j y de k estïṡẄ al menos parcialmente dentro de la imagen.
 	/*if(((indexes_min.x<0)&&(indexes_max.x<0))||((indexes_min.y<0)&&(indexes_max.y<0))||((indexes_min.z<0)&&(indexes_max.z<0))||((indexes_min.x>=d_imageSize.nPixelsX)&&(indexes_max.x>=d_imageSize.nPixelsX))
 		||((indexes_min.y>=d_imageSize.nPixelsY)&&(indexes_max.y>=d_imageSize.nPixelsY))||((indexes_min.z>=d_imageSize.nPixelsZ)&&(indexes_max.z>=d_imageSize.nPixelsZ)))
@@ -111,7 +110,6 @@ __device__ void CUDA_Siddon (float4* LOR, float4* P0, float* Input, float* Resul
 	// Amount of pixels intersected
 	float Np =  fabsf(indexes_max.x - indexes_min.x) + fabsf(indexes_max.y - indexes_min.y) + fabsf(indexes_max.z - indexes_min.z) + 1; // +1 in each dimension(for getting the amount of itnersections) -1 toget pixels> 3x1-1 = +2
 	
-
 	//Distance between thw two points of the LOR, the LOR has to be set in such way that
 	// P0 is P1 of the LOR and the point represented by a=1, is P2 of the LOR
 	float RayLength = sqrt(((P0->x + LOR->x) - P0->x) * ((P0->x + LOR->x) - P0->x) 
@@ -210,20 +208,20 @@ __device__ void CUDA_Siddon (float4* LOR, float4* P0, float* Input, float* Resul
 	  if((Weight.x<d_imageSize.nPixelsX)&&(Weight.y<d_imageSize.nPixelsY)&&(Weight.z<d_imageSize.nPixelsZ))
 	  {
 	    
-		  switch(Mode)
-		  {  
-		    case SENSIBILITY_IMAGE:
-			    Result[(int)(Weight.x + Weight.y * d_imageSize.nPixelsX + Weight.z * (d_imageSize.nPixelsX * d_imageSize.nPixelsY))] 
-				    += Weight.w;
-			    break;
-		    case PROJECTION:
-				    Result[indiceMichelogram] += Weight.w * Input[(int)(Weight.x + Weight.y * d_imageSize.nPixelsX + Weight.z * (d_imageSize.nPixelsX * d_imageSize.nPixelsY))];
-			    break;
-		    case BACKPROJECTION:
-			    Result[(int)(Weight.x + Weight.y * d_imageSize.nPixelsX + Weight.z * (d_imageSize.nPixelsX * d_imageSize.nPixelsY))] 
-				    += Weight.w * Input[indiceMichelogram];
-			    break;
-		  }
+	    switch(Mode)
+	    {  
+	      case SENSIBILITY_IMAGE:
+		Result[(int)(Weight.x + Weight.y * d_imageSize.nPixelsX + Weight.z * (d_imageSize.nPixelsX * d_imageSize.nPixelsY))] 
+		  += Weight.w;
+		break;
+	      case PROJECTION:
+		Result[indiceMichelogram] += Weight.w * Input[(int)(Weight.x + Weight.y * d_imageSize.nPixelsX + Weight.z * (d_imageSize.nPixelsX * d_imageSize.nPixelsY))];
+		break;
+	      case BACKPROJECTION:
+		Result[(int)(Weight.x + Weight.y * d_imageSize.nPixelsX + Weight.z * (d_imageSize.nPixelsX * d_imageSize.nPixelsY))] 
+		  += Weight.w * Input[indiceMichelogram];
+		break;
+	    }
 	  }
 	}
 }
