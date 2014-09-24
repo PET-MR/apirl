@@ -35,6 +35,8 @@ __global__ void cuSiddonProjection (float* volume, float* michelogram, float *d_
   float4 P2;
   float4 LOR;
   int indiceMichelogram = iBin2d + blockIdx.y * (numProj * numR);
+  if((threadIdx.x==0)&&(blockIdx.x==0))
+    printf("pixel: %f\n", volume[1000]);
   CUDA_GetPointsFromLOR(d_thetaValues_deg[iProj], d_RValues_mm[iR], d_ring1[blockIdx.y], d_ring2[blockIdx.y], d_RadioScanner_mm, &P1, &P2);
   LOR.x = P2.x - P1.x;
   LOR.y = P2.y - P1.y;

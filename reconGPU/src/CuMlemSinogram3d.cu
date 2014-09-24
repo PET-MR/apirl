@@ -210,7 +210,7 @@ bool CuMlemSinogram3d::InitGpuMemory(TipoProyector tipoProy)
   checkCudaErrors(cudaMalloc((void**) &d_ring2_mm, sizeof(int)*inputProjection->getNumSinograms()));
   checkCudaErrors(cudaMalloc((void**) &d_likelihood, sizeof(float)));
   checkCudaErrors(cudaMemset(d_likelihood, 0,sizeof(float)));
-  // Copio la iamgen inicial:
+  // Copio la iamgen inicial (esto lo hago cuando inicio la reconstrucción, así que no sería necesario):
   checkCudaErrors(cudaMemcpy(d_reconstructionImage, initialEstimate->getPixelsPtr(),sizeof(float)*numPixels,cudaMemcpyHostToDevice));
   // Pongo en cero la imágens de sensibilidad y la de retroproyección:
   checkCudaErrors(cudaMemset(d_sensitivityImage, 0,sizeof(float)*numPixels));
@@ -352,6 +352,12 @@ void CuMlemSinogram3d::CopyReconstructedImageGpuToHost()
   checkCudaErrors(cudaMemcpy(aux, d_reconstructionImage, sizeof(float)*reconstructionImage->getPixelCount(),cudaMemcpyDeviceToHost)); 
 }
 
+void CuMlemSinogram3d::CopyReconstructedImageHostToGpu()
+{
+  float* aux = reconstructionImage->getPixelsPtr();
+  checkCudaErrors(cudaMemcpy(d_reconstructionImage, aux, sizeof(float)*reconstructionImage->getPixelCount(),cudaMemcpyHostToDevice)); 
+}
+
 // Método de reconstrucción que no se le indica el índice de GPU, incializa la GPU 0 por defecto.
 bool CuMlemSinogram3d::Reconstruct(TipoProyector tipoProy)
 {
@@ -440,6 +446,9 @@ bool CuMlemSinogram3d::Reconstruct(TipoProyector tipoProy, int indexGpu)
   /// Inicializo el volumen a reconstruir con la imagen del initial estimate:
   reconstructionImage = new Image(initialEstimate);
   ptrPixels = reconstructionImage->getPixelsPtr();
+  // Copio la imagen a device.
+  CopyReconstructedImageHostToGpu();
+  
   /// Escribo el título y luego los distintos parámetros de la reconstrucción:
   logger->writeLine("######## CUDA ML-EM Reconstruction #########");
   logger->writeValue("Name", this->outputFilenamePrefix);

@@ -183,6 +183,11 @@ class DLLEXPORT CuMlemSinogram3d : public MlemSinogram3d
      * obtenerla en memoria de cpu se debe llamar a este método que copiará el resultado en reconstructionImage
      */
     void CopyReconstructedImageGpuToHost();
+    
+    /// Copia reconstructed image en cpu a device.
+    /**  Solo debería usarse para iniciar la reconstrucción con alguna iamgen deseada.
+     */
+    void CopyReconstructedImageHostToGpu();
   public:
     /// Constructores de la clase.
     /* Constructor que carga los parámetros base de una reconstrucción MLEM para Sinogram3D. */
@@ -234,8 +239,7 @@ class DLLEXPORT CuMlemSinogram3d : public MlemSinogram3d
     bool Reconstruct(TipoProyector tipoProy);
     
     /// Método que realiza la reconstrucción y permite al usuario establecer el índice de GPU a utilizar
-    bool Reconstruct(TipoProyector tipoProy, int indexGpu);
-    
+    bool Reconstruct(TipoProyector tipoProy, int indexGpu);    
    	
 };
 
