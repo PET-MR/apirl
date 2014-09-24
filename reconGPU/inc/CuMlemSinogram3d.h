@@ -102,6 +102,18 @@ class DLLEXPORT CuMlemSinogram3d : public MlemSinogram3d
      */
     int* d_ring2;
     
+    /// Array con el índice de ring1 (z1) para cada sinograma 2d del sino3D.
+    /** El largo del vector es igual a la suma total de sinogramas 2d que tiene el sino3d.Es sólo el índice de anillo!
+     * Para obtener la coordenada en el world hay que entrar con este indice al vector de coordenadas de los anillos.
+     */
+    float* d_ring1_mm;
+    
+    /// Array con el índice de ring1 (z2) para cada sinograma 2d del sino3D.
+    /** El largo del vector es igual a la suma total de sinogramas 2d que tiene el sino3d.Es sólo el índice de anillo!
+     * Para obtener la coordenada en el world hay que entrar con este indice al vector de coordenadas de los anillos.
+     */
+    float* d_ring2_mm;
+    
     /// Puntero a Float en memoria de gpu donde se almacena el valor de likelihhod.
     /** El likelihood estimado es el de d_estimatedProjection en referencia a d_inputProjection.
      */
@@ -223,8 +235,8 @@ class DLLEXPORT CuMlemSinogram3d : public MlemSinogram3d
     
     /// Método que realiza la reconstrucción y permite al usuario establecer el índice de GPU a utilizar
     bool Reconstruct(TipoProyector tipoProy, int indexGpu);
-   
-		
+    
+   	
 };
 
 #endif

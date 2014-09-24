@@ -70,13 +70,13 @@ extern __device__ __constant__ float d_RadioScanner_mm;
 
 
 // Kernels en la biblioteca.
-__global__ void cuSiddonProjection (float* volume, float* michelogram, int *d_ring1, int *d_ring2, int numR, int numProj, int numRings, int numSinos);
+__global__ void cuSiddonProjection (float* volume, float* michelogram, float *d_ring1, float *d_ring2, int numR, int numProj, int numRings, int numSinos);
 
 __global__ void cuSiddonDivideAndBackproject(float* d_inputSinogram, float* d_estimatedSinogram, float* d_outputImage, 
-					     int *d_ring1, int *d_ring2, int numR, int numProj, int numRings, int numSinos);
+					     float *d_ring1, float *d_ring2, int numR, int numProj, int numRings, int numSinos);
 
 __global__ void cuSiddonBackprojection(float* d_inputSinogram, float* d_outputImage, 
-				       int *d_ring1, int *d_ring2, int numR, int numProj, int numRings, int numSinos);
+				       float *d_ring1, float *d_ring2, int numR, int numProj, int numRings, int numSinos);
 
 // Funciones de device en la bilbioteca.
 __device__ void CUDA_GetPointsFromLOR (float PhiAngle, float r, float Z1, float Z2, float cudaRscanner, float4* P1, float4* P2);
@@ -111,11 +111,11 @@ class DLLEXPORT CuSiddonProjector : virtual CuProjector
 // 	bool Project(Image* image, Sinogram2Dtgs* projection);
 	
 	/** Backprojection con Siddon para Sinogram3D. */
-	bool Backproject (float * d_inputSinogram, float* d_outputImage, int *d_ring1, int *d_ring2, Sinogram3DCylindricalPet* inputSinogram, Image* outputImage, bool copyResult); 
+	bool Backproject (float * d_inputSinogram, float* d_outputImage, float *d_ring1, float *d_ring2, Sinogram3DCylindricalPet* inputSinogram, Image* outputImage, bool copyResult); 
 	/** DivideAndBackprojection con Siddon para Sinogram3D. */
-	bool DivideAndBackproject (float* d_inputSinogram, float* d_estimatedSinogram, float* d_outputImage, int *d_ring1, int *d_ring2, Sinogram3DCylindricalPet* inputSinogram, Image* outputImage, bool copyResult);
+	bool DivideAndBackproject (float* d_inputSinogram, float* d_estimatedSinogram, float* d_outputImage, float *d_ring1, float *d_ring2, Sinogram3DCylindricalPet* inputSinogram, Image* outputImage, bool copyResult);
 	/** Projection con Siddon para Sinogram3D. */
-	bool Project (float* d_image, float* d_projection, int *d_ring1, int *d_ring2, Image* inputImage, Sinogram3DCylindricalPet* outputSinogram, bool copyResult);
+	bool Project (float* d_image, float* d_projection, float *d_ring1, float *d_ring2, Image* inputImage, Sinogram3DCylindricalPet* outputSinogram, bool copyResult);
 	
 	/// Inicio la memoria en gpu para el proyector
 	/** Se pide memoria para cada uno de los vectores y se copian los datos de entrada

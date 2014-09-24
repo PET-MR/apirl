@@ -30,7 +30,7 @@ bool CuSiddonProjector::InitGpuMemory(Sinogram3DCylindricalPet* inputSinogram)
 }
 
 /** Sección para Sinogram3D. */
-bool CuSiddonProjector::Project (float* d_image, float* d_projection, int *d_ring1, int *d_ring2, Image* inputImage, Sinogram3DCylindricalPet* outputSinogram, bool copyResult)
+bool CuSiddonProjector::Project (float* d_image, float* d_projection, float *d_ring1, float *d_ring2, Image* inputImage, Sinogram3DCylindricalPet* outputSinogram, bool copyResult)
 {
   /* Este método simplemente encapsula la llamada al kernel.
     El tamaño de la ejecución del kernel está definida en las propiedades gridSize y blockSize de la clase.
@@ -42,7 +42,7 @@ bool CuSiddonProjector::Project (float* d_image, float* d_projection, int *d_rin
   return true;
 }
 
-bool CuSiddonProjector::DivideAndBackproject (float* d_inputSinogram, float* d_estimatedSinogram, float* d_outputImage, int *d_ring1, int *d_ring2, Sinogram3DCylindricalPet* inputSinogram, Image* outputImage, bool copyResult)
+bool CuSiddonProjector::DivideAndBackproject (float* d_inputSinogram, float* d_estimatedSinogram, float* d_outputImage, float *d_ring1, float *d_ring2, Sinogram3DCylindricalPet* inputSinogram, Image* outputImage, bool copyResult)
 {
   /* Este método simplemente encapsula la llamada al kernel.
     El tamaño de la ejecución del kernel está definida en las propiedades gridSize y blockSize de la clase.
@@ -55,7 +55,7 @@ bool CuSiddonProjector::DivideAndBackproject (float* d_inputSinogram, float* d_e
   return true;
 }
 
-bool CuSiddonProjector::Backproject (float * d_inputSinogram, float* d_outputImage, int *d_ring1, int *d_ring2, Sinogram3DCylindricalPet* inputSinogram, Image* outputImage, bool copyResult)
+bool CuSiddonProjector::Backproject (float * d_inputSinogram, float* d_outputImage, float *d_ring1, float *d_ring2, Sinogram3DCylindricalPet* inputSinogram, Image* outputImage, bool copyResult)
 {
   /* Este método simplemente encapsula la llamada al kernel.
     El tamaño de la ejecución del kernel está definida en las propiedades gridSize y blockSize de la clase.

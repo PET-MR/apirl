@@ -204,6 +204,10 @@ bool CuMlemSinogram3d::InitGpuMemory(TipoProyector tipoProy)
   checkCudaErrors(cudaMalloc((void**) &d_estimatedProjection, sizeof(float)*numBins));
   checkCudaErrors(cudaMalloc((void**) &d_ring1, sizeof(int)*inputProjection->getNumSinograms()));
   checkCudaErrors(cudaMalloc((void**) &d_ring2, sizeof(int)*inputProjection->getNumSinograms()));
+  // Por ahora tengo las dos, d_ring1 me da el índice de anillo, y d_ring1_mm me da directamente la coordenada axial.
+  // Agregue esto porque para usar una única LOR para
+  checkCudaErrors(cudaMalloc((void**) &d_ring1_mm, sizeof(int)*inputProjection->getNumSinograms()));
+  checkCudaErrors(cudaMalloc((void**) &d_ring2_mm, sizeof(int)*inputProjection->getNumSinograms()));
   checkCudaErrors(cudaMalloc((void**) &d_likelihood, sizeof(float)));
   checkCudaErrors(cudaMemset(d_likelihood, 0,sizeof(float)));
   // Copio la iamgen inicial:
@@ -246,25 +250,44 @@ bool CuMlemSinogram3d::InitGpuMemory(TipoProyector tipoProy)
       // Como voy a agarrar solo la combinación del medio, si es impar es directamente el indice del medio, mientras que si es para
       // tengo que hacer el promedio:
       int indexMedio = floor(inputProjection->getSegment(i)->getSinogram2D(j)->getNumZ()/2);
-      if(inputProjection->getSegment(i)->getSinogram2D(j)->getNumZ() % 2)
-      {
-	auxRings1[iSino] = inputProjection->getSegment(i)->getSinogram2D(j)->getRing1FromList(indexMedio);
-	auxRings2[iSino] = inputProjection->getSegment(i)->getSinogram2D(j)->getRing2FromList(indexMedio);
-	iSino++;
-      }
-      else
-      {
-	// Es el promedio : no me sirve porque esto es u índice y me quedaría 0.5
-	auxRings1[iSino] = (inputProjection->getSegment(i)->getSinogram2D(j)->getRing1FromList(indexMedio)+inputProjection->getSegment(i)->getSinogram2D(j)->getRing1FromList(indexMedio+1))/2;
-	auxRings2[iSino] = inputProjection->getSegment(i)->getSinogram2D(j)->getRing2FromList(indexMedio);
-	iSino++;
-      }
+      auxRings1[iSino] = inputProjection->getSegment(i)->getSinogram2D(j)->getRing1FromList(indexMedio);
+      auxRings2[iSino] = inputProjection->getSegment(i)->getSinogram2D(j)->getRing2FromList(indexMedio);
+      iSino++;
     }
   }
   // Copio los índices de anillos a memoris de GPU:
   checkCudaErrors(cudaMemcpy(d_ring1, auxRings1, sizeof(int)*inputProjection->getNumSinograms(), cudaMemcpyHostToDevice));
   checkCudaErrors(cudaMemcpy(d_ring2, auxRings2, sizeof(int)*inputProjection->getNumSinograms(), cudaMemcpyHostToDevice));
   
+  // Ahora con las coordenadas:
+  iSino = 0;
+  float* auxRings1_mm = new float[inputProjection->getNumSinograms()];
+  float* auxRings2_mm = new float[inputProjection->getNumSinograms()];
+  for(int i = 0; i < inputProjection->getNumSegments(); i++)
+  {
+    for(int j = 0; j < inputProjection->getSegment(i)->getNumSinograms(); j++)
+    {
+      // Como voy a agarrar solo la combinación del medio, si es impar es directamente el indice del medio, mientras que si es para
+      // tengo que hacer el promedio:
+      int indexMedio = floor(inputProjection->getSegment(i)->getSinogram2D(j)->getNumZ()/2);
+      if((inputProjection->getSegment(i)->getSinogram2D(j)->getNumZ() % 2) != 0)
+      {
+	auxRings1_mm[iSino] = inputProjection->getSegment(i)->getSinogram2D(j)->getAxialValue1FromList(indexMedio);
+	auxRings2_mm[iSino] = inputProjection->getSegment(i)->getSinogram2D(j)->getAxialValue2FromList(indexMedio);
+	iSino++;
+      }
+      else
+      {
+	// Es el promedio : cuando es par el index medio me da el índice menor pero con base 1, por eso le debo restar 1 para tener indices que inician en cero.
+	auxRings1_mm[iSino] = (inputProjection->getSegment(i)->getSinogram2D(j)->getAxialValue1FromList(indexMedio-1) + inputProjection->getSegment(i)->getSinogram2D(j)->getAxialValue1FromList(indexMedio))/2;
+	auxRings2_mm[iSino] = (inputProjection->getSegment(i)->getSinogram2D(j)->getAxialValue2FromList(indexMedio-1) + inputProjection->getSegment(i)->getSinogram2D(j)->getAxialValue2FromList(indexMedio))/2;
+	iSino++;
+      }
+    }
+  }
+  // Copio los índices de anillos a memoris de GPU:
+  checkCudaErrors(cudaMemcpy(d_ring1_mm, auxRings1_mm, sizeof(float)*inputProjection->getNumSinograms(), cudaMemcpyHostToDevice));
+  checkCudaErrors(cudaMemcpy(d_ring2_mm, auxRings2_mm, sizeof(float)*inputProjection->getNumSinograms(), cudaMemcpyHostToDevice));
 	
   /// Esto después hay que cambiarlo! Tiene que ir en la clase Michelogram!!!!!!!!!!!!!
   /// Necesito tener el dato del zfov del michelograma, que no lo tengo accesible ahora. Lo pongo a mano, pero
@@ -463,7 +486,7 @@ bool CuMlemSinogram3d::Reconstruct(TipoProyector tipoProy, int indexGpu)
 	  switch(tipoProy)
 	  {
 	    case SIDDON_CYLINDRICAL_SCANNER:
-	      forwardprojector->Project(d_reconstructionImage, d_estimatedProjection, d_ring1, d_ring2, reconstructionImage, (Sinogram3DCylindricalPet*)inputProjection, false);
+	      forwardprojector->Project(d_reconstructionImage, d_estimatedProjection, d_ring1_mm, d_ring2_mm, reconstructionImage, (Sinogram3DCylindricalPet*)inputProjection, false);
 	      break;
 	  }
 	  clock_t finalClockProjection = clock();
@@ -476,7 +499,7 @@ bool CuMlemSinogram3d::Reconstruct(TipoProyector tipoProy, int indexGpu)
 	  switch(tipoProy)
 	  {
 	    case SIDDON_CYLINDRICAL_SCANNER:
-	      backprojector->DivideAndBackproject(d_inputProjection, d_estimatedProjection, d_backprojectedImage, d_ring1, d_ring2, (Sinogram3DCylindricalPet*)inputProjection, backprojectedImage, false);
+	      backprojector->DivideAndBackproject(d_inputProjection, d_estimatedProjection, d_backprojectedImage, d_ring1_mm, d_ring2_mm, (Sinogram3DCylindricalPet*)inputProjection, backprojectedImage, false);
 	      break;
 	  }
 	  clock_t finalClockBackprojection = clock();
@@ -533,7 +556,7 @@ bool CuMlemSinogram3d::Reconstruct(TipoProyector tipoProy, int indexGpu)
   switch(tipoProy)
   {
     case SIDDON_CYLINDRICAL_SCANNER:
-      forwardprojector->Project(d_reconstructionImage, d_estimatedProjection, d_ring1, d_ring2, reconstructionImage, (Sinogram3DCylindricalPet*)inputProjection, false);
+      forwardprojector->Project(d_reconstructionImage, d_estimatedProjection, d_ring1_mm, d_ring2_mm, reconstructionImage, (Sinogram3DCylindricalPet*)inputProjection, false);
       break;
   }
   this->likelihoodValues[this->numIterations] = getLikelihoodValue();
@@ -602,7 +625,7 @@ bool CuMlemSinogram3d::computeSensitivity(TipoProyector tipoProy)
   switch(tipoProy)
   {
     case SIDDON_CYLINDRICAL_SCANNER:
-      backprojector->Backproject(d_estimatedProjection, d_sensitivityImage, d_ring1, d_ring2, (Sinogram3DCylindricalPet*)inputProjection, reconstructionImage, false);
+      backprojector->Backproject(d_estimatedProjection, d_sensitivityImage, d_ring1_mm, d_ring2_mm, (Sinogram3DCylindricalPet*)inputProjection, reconstructionImage, false);
       break;
   }
   // Copio la memoria de gpu a cpu, así se puede actualizar el umbral:

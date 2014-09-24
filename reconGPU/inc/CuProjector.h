@@ -84,11 +84,11 @@ protected:
 //     virtual bool DivideAndBackproject (Sinogram2Dtgs* InputSinogram, Sinogram2Dtgs* EstimatedSinogram, Image* outputImage){};
 //    */
     /** Backprojection con Siddon para Sinogram3D. */
-    virtual bool Backproject (float * d_inputSinogram, float* d_outputImage, int *d_ring1, int *d_ring2, Sinogram3DCylindricalPet* inputSinogram, Image* outputImage, bool copyResult){}; 
+    virtual bool Backproject (float * d_inputSinogram, float* d_outputImage, float *d_ring1, float *d_ring2, Sinogram3DCylindricalPet* inputSinogram, Image* outputImage, bool copyResult){}; 
     /** DivideAndBackprojection con Siddon para Sinogram3D. */
-    virtual bool DivideAndBackproject (float* d_inputSinogram, float* d_estimatedSinogram, float* d_outputImage, int *d_ring1, int *d_ring2, Sinogram3DCylindricalPet* inputSinogram, Image* outputImage, bool copyResult){};
+    virtual bool DivideAndBackproject (float* d_inputSinogram, float* d_estimatedSinogram, float* d_outputImage, float *d_ring1, float *d_ring2, Sinogram3DCylindricalPet* inputSinogram, Image* outputImage, bool copyResult){};
     /** Projection con Siddon para Sinogram3D. */
-    virtual bool Project(float* d_image, float* d_projection, int *d_ring1, int *d_ring2, Image* inputImage, Sinogram3DCylindricalPet* outputSinogram, bool copyResult){};
+    virtual bool Project(float* d_image, float* d_projection, float *d_ring1, float *d_ring2, Image* inputImage, Sinogram3DCylindricalPet* outputSinogram, bool copyResult){};
     
     /// Método que incializa parámetros del proyector en la memoria de GPU.
     virtual void initGpuMemory(Sinogram3DCylindricalPet* inputSinogram) {};
