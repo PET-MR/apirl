@@ -448,7 +448,7 @@ bool SiddonProjector::Backproject (Sinogram3D* inputProjection, Image* outputIma
 		  LOR.Vx = P2.X - P1.X;
 		  LOR.Vy = P2.Y - P1.Y;
 		  LOR.Vz = P2.Z - P1.Z;
-		  
+
 		  // Then I look for the intersection between the 3D LOR and the lines that
 		  // delimits the voxels
 		  // Siddon					

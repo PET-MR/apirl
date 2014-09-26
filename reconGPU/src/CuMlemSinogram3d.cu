@@ -367,6 +367,7 @@ bool CuMlemSinogram3d::Reconstruct(TipoProyector tipoProy)
 /// Método público que realiza la reconstrucción en base a los parámetros pasados al objeto Mlem instanciado
 bool CuMlemSinogram3d::Reconstruct(TipoProyector tipoProy, int indexGpu)
 {
+  string outputFilename;	// String para los nombres de los archivos de salida.
   // Instancio proyector:
   
   
@@ -503,6 +504,14 @@ bool CuMlemSinogram3d::Reconstruct(TipoProyector tipoProy, int indexGpu)
 	  /// estimada, que es el primer paso del algoritmo). Se lo calculo al sinograma
 	  /// proyectado, respecto del de entrada.
 	  this->likelihoodValues[t] = this->getLikelihoodValue();
+	  /// Si quiero guardar la proyección intermedia, lo hago acá, porque luego en la backprojection se modifica para hacer el cociente entre entrada y estimada:
+	  if(saveIntermediateProjectionAndBackprojectedImage)
+	  {
+	    CopySinogram3dGpuToHost(estimatedProjection, d_estimatedProjection);
+	    sprintf(c_string, "%s_projection_iter_%d", outputFilenamePrefix.c_str(), t); /// La extensión se le agrega en write interfile.
+	    outputFilename.assign(c_string);
+	    estimatedProjection->writeInterfile((char*)outputFilename.c_str());
+	  }
 	  /// Pongo en cero la imagen de corrección, y hago la backprojection.
 	  checkCudaErrors(cudaMemset(d_backprojectedImage, 0,sizeof(float)*nPixels));
 	  switch(tipoProy)
@@ -522,7 +531,6 @@ bool CuMlemSinogram3d::Reconstruct(TipoProyector tipoProy, int indexGpu)
 	      // Primero tengo que obtener la memoria de GPU:
 	      CopyReconstructedImageGpuToHost();
 	      sprintf(c_string, "%s_iter_%d", outputFilenamePrefix.c_str(), t); /// La extensión se le agrega en write interfile.
-	      string outputFilename;
 	      outputFilename.assign(c_string);
 	      reconstructionImage->writeInterfile((char*)outputFilename.c_str());
 	      /// Termino con el log de los resultados:
@@ -532,10 +540,6 @@ bool CuMlemSinogram3d::Reconstruct(TipoProyector tipoProy, int indexGpu)
 	      {
 		// Tengo que guardar la estimated projection, y la backprojected image.
 		checkCudaErrors(cudaMemcpy(backprojectedImage->getPixelsPtr(), d_backprojectedImage,sizeof(float)*nPixels,cudaMemcpyDeviceToHost));
-		CopySinogram3dGpuToHost(estimatedProjection, d_estimatedProjection);
-		sprintf(c_string, "%s_projection_iter_%d", outputFilenamePrefix.c_str(), t); /// La extensión se le agrega en write interfile.
-		outputFilename.assign(c_string);
-		estimatedProjection->writeInterfile((char*)outputFilename.c_str());
 		sprintf(c_string, "%s_backprojected_iter_%d", outputFilenamePrefix.c_str(), t); /// La extensión se le agrega en write interfile.
 		outputFilename.assign(c_string);
 		backprojectedImage->writeInterfile((char*)outputFilename.c_str());
@@ -555,7 +559,6 @@ bool CuMlemSinogram3d::Reconstruct(TipoProyector tipoProy, int indexGpu)
   CopyReconstructedImageGpuToHost();
   clock_t finalClock = clock();
   sprintf(c_string, "%s_final", outputFilenamePrefix.c_str()); /// La extensión se le agrega en write interfile.
-  string outputFilename;
   outputFilename.assign(c_string);
   reconstructionImage->writeInterfile((char*)outputFilename.c_str());
   /// Termino con el log de los resultados:

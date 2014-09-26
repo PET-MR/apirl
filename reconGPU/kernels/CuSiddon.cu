@@ -216,10 +216,15 @@ __device__ void CUDA_Siddon (float4* LOR, float4* P0, float* Input, float* Resul
 		break;
 	      case PROJECTION:
 		Result[indiceMichelogram] += Weight.w * Input[(int)(Weight.x + Weight.y * d_imageSize.nPixelsX + Weight.z * (d_imageSize.nPixelsX * d_imageSize.nPixelsY))];
-		break;
+		 /*if(Result[indiceMichelogram] < 0)
+		  */printf("Proy. Bin negativo: %f. Pixel Value: %f Pixel coord: %f %f %f Weight: %f Lor: %d \n", Result[indiceMichelogram], Input[(int)(Weight.x + Weight.y * d_imageSize.nPixelsX + Weight.z * (d_imageSize.nPixelsX * d_imageSize.nPixelsY))], Weight.x, Weight.y, Weight.z, Weight.w,indiceMichelogram);
+		 break;
 	      case BACKPROJECTION:
 		Result[(int)(Weight.x + Weight.y * d_imageSize.nPixelsX + Weight.z * (d_imageSize.nPixelsX * d_imageSize.nPixelsY))] 
 		  += Weight.w * Input[indiceMichelogram];
+		  /*if(Result[(int)(Weight.x + Weight.y * d_imageSize.nPixelsX + Weight.z * (d_imageSize.nPixelsX * d_imageSize.nPixelsY))] < 0)
+		  */printf("Backproy Pixel negativo: %f. Pixel: %f %f %f Weight: %f Lor: %d \n", Result[(int)(Weight.x + Weight.y * d_imageSize.nPixelsX + Weight.z * (d_imageSize.nPixelsX * d_imageSize.nPixelsY))], Weight.x, Weight.y, Weight.z, Weight.w, indiceMichelogram);
+		
 		break;
 	    }
 	  }
