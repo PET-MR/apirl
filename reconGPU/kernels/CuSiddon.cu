@@ -108,11 +108,37 @@ __device__ void CUDA_Siddon (float4* LOR, float4* P0, float* Input, float* Resul
   i_max = floor((x_2_mm + d_RadioFov_mm)/d_imageSize.sizePixelX_mm); // In X increase of System Coordinate = Increase Pixels.
   j_max = floor((y_2_mm + d_RadioFov_mm)/d_imageSize.sizePixelY_mm); // 
   k_max = floor((z_2_mm - offsetZ_mm)/d_imageSize.sizePixelZ_mm);
-  
+  if((threadIdx.x == 116) && (blockIdx.x == 62))
+     printf("Lims: %d %d %f %f %f %d %d %d %d\n", i_min, j_min, y_1_mm, (y_1_mm + d_RadioFov_mm), (y_1_mm + d_RadioFov_mm)/d_imageSize.sizePixelY_mm, k_min, i_max, j_max, k_max);
   // Verifico que los índices de i y j dieron dentro de la imagen, sino es que que estoy fuera del fov.
   if(((i_min<0)||(i_max<0))||((j_min<0)||(j_max<0))||((k_min<0)||(k_max<0))||((i_min>=d_imageSize.nPixelsX)||(i_max>=d_imageSize.nPixelsX))||
 	((j_min>=d_imageSize.nPixelsY)||(j_max>=d_imageSize.nPixelsY))||((k_min>=d_imageSize.nPixelsZ)||(k_max>=d_imageSize.nPixelsZ)))
   {
+    // Por error de redondeo puede caer al límite:
+    if(i_min == -1)
+      i_min = 0;
+    if(j_min == -1)
+      j_min = 0;
+    if(k_min == -1)
+      k_min = 0;
+    if(i_min == 128)
+      i_min = 127;
+    if(j_min == 128)
+      j_min = 127;
+    if(k_min == 128)
+      k_min = 127;
+    if(i_max == -1)
+      i_max = 0;
+    if(j_max == -1)
+      j_max = 0;
+    if(k_max == -1)
+      k_max = 0;
+    if(i_max == 128)
+      i_max = 127;
+    if(j_max == 128)
+      j_max = 127;
+    if(k_max == 128)
+      k_max = 127;
 	return;
   }
 
