@@ -10,6 +10,12 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 # forzarla a un valor, mejor definirla cuando uno llama a cmake.
 #set(CMAKE_BUILD_TYPE	Debug)
 
+# Di estoy en modo debug definio una variable para el preprocesador, para poder incorporar
+# pedazos de código de debuggeo con compilación condicional:
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+  add_definitions(-D__DEBUG__)
+endif()
+
 # Defino una variable que me indice si las librería para cuda son dinámicas o estáticas. Esto lo hago
 # así porque he tenido algún problema para hacerlas dinámicas.
 SET(CUDA_LIBRARIES_BUILD	STATIC)

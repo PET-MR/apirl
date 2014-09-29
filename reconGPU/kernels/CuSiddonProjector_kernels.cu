@@ -41,10 +41,7 @@ __global__ void cuSiddonProjection (float* volume, float* michelogram, float *d_
   LOR.y = P2.y - P1.y;
   LOR.z = P2.z - P1.z;
   CUDA_Siddon (&LOR, &P1, volume, michelogram, PROJECTION, indiceMichelogram);
-  if((iProj == 24) && (iR == 156))
-     printf("Bin cero: %f. Coord: %d %d %d. ThreadId: %d %d\n", michelogram[indiceMichelogram], iProj, iR, blockIdx.y, threadIdx.x, blockIdx.x);
-  //if((blockIdx.y==46)&&(iR == 130) && (iProj == 271))
-  //  printf("%d %d P1:%f,%f,%f P2:%f,%f,%f  Valor: %f\n", threadIdx.x, blockIdx.x, P1.x, P1.y, P1.z, P2.x, P2.y, P2.z, michelogram[indiceMichelogram]);
+
 }
 
 __global__ void cuSiddonDivideAndBackproject(float* d_inputSinogram, float* d_estimatedSinogram, float* d_outputImage, 

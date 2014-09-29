@@ -242,31 +242,31 @@ float Siddon (Line3D LOR, Image* image, SiddonSegment** weightsList, unsigned in
   // el valor de alpha si avanzar un píxel en i (o x) y el valor de alpha en j (o y). De estos dos valores: alpha_x
   // y alpha_y, el que sea menor indicará en que sentido tengo que avanzar con el píxel.
   if (LOR.Vx>0)
-	  alpha_x = ( -rFov_mm + (i_min + i_incr) * sizeImage.sizePixelX_mm - LOR.P0.X ) / LOR.Vx;	//The formula is (i_min+i_incr) because que want the limit to the next change of pixel
+    alpha_x = ( -rFov_mm + (i_min + i_incr) * sizeImage.sizePixelX_mm - LOR.P0.X ) / LOR.Vx;	//The formula is (i_min+i_incr) because que want the limit to the next change of pixel
   else if (LOR.Vx<0)
-	  alpha_x = ( -rFov_mm + i_min * sizeImage.sizePixelX_mm - LOR.P0.X ) / LOR.Vx;	// Limit to the left
+    alpha_x = ( -rFov_mm + i_min * sizeImage.sizePixelX_mm - LOR.P0.X ) / LOR.Vx;	// Limit to the left
   else
-	  alpha_x = numeric_limits<float>::max();;
-  if	(alpha_x <0)		// If its outside the FOV que get to the maximum value so it doesn't bother
-	  alpha_x = numeric_limits<float>::max();
+    alpha_x = numeric_limits<float>::max();;
+  if (alpha_x <0)		// If its outside the FOV que get to the maximum value so it doesn't bother
+    alpha_x = numeric_limits<float>::max();
   
   if(LOR.Vy > 0)
-	  alpha_y = ( -rFov_mm + (j_min + j_incr) * sizeImage.sizePixelY_mm - LOR.P0.Y ) / LOR.Vy;
+    alpha_y = ( -rFov_mm + (j_min + j_incr) * sizeImage.sizePixelY_mm - LOR.P0.Y ) / LOR.Vy;
   else if (LOR.Vy < 0)
-	  alpha_y = ( -rFov_mm + j_min * sizeImage.sizePixelY_mm - LOR.P0.Y ) / LOR.Vy;
+    alpha_y = ( -rFov_mm + j_min * sizeImage.sizePixelY_mm - LOR.P0.Y ) / LOR.Vy;
   else
-	  alpha_y = numeric_limits<float>::max();
-  if	(alpha_y <0)
-	  alpha_y = numeric_limits<float>::max();
+    alpha_y = numeric_limits<float>::max();
+  if (alpha_y <0)
+    alpha_y = numeric_limits<float>::max();
   
   if(LOR.Vz > 0)
-	  alpha_z = ( offsetZ_mm + (k_min + k_incr) * sizeImage.sizePixelZ_mm - LOR.P0.Z ) / LOR.Vz;
+    alpha_z = ( offsetZ_mm + (k_min + k_incr) * sizeImage.sizePixelZ_mm - LOR.P0.Z ) / LOR.Vz;
   else if (LOR.Vz < 0)
-	  alpha_z = ( offsetZ_mm + k_min * sizeImage.sizePixelZ_mm - LOR.P0.Z ) / LOR.Vz;
+    alpha_z = ( offsetZ_mm + k_min * sizeImage.sizePixelZ_mm - LOR.P0.Z ) / LOR.Vz;
   else
-	  alpha_z = numeric_limits<float>::max();
-  if	(alpha_z <0)
-	  alpha_z = numeric_limits<float>::max();
+    alpha_z = numeric_limits<float>::max();
+  if (alpha_z <0)
+    alpha_z = numeric_limits<float>::max();
 
   // En alpha_c voy guardando el valor de alpha con el que voy recorriendo los píxeles.
   alpha_c = alpha_min;
@@ -279,34 +279,34 @@ float Siddon (Line3D LOR, Image* image, SiddonSegment** weightsList, unsigned in
   for(int m = 0; m < numIntersectedPixels; m++)
   {
       // Cruce por el plano x: avanzo en i.
-	weightsList[0][m].IndexX = i;
-	// El índice en Y de las coordenadas de píxeles crece de forma inversa que las coordenadas geométricas,
-	// por eso en vez de guardar el j, guardo nPixelsY -j - 1;
-	weightsList[0][m].IndexY = sizeImage.nPixelsY - 1 - j;
-	weightsList[0][m].IndexZ = k;
-	if((alpha_x <= alpha_y) && (alpha_x <= alpha_z))
-	{
-	  weightsList[0][m].Segment = (alpha_x - alpha_c) * rayLength_mm;
-	  i += i_incr;
-	  alpha_c = alpha_x;
-	  alpha_x += alpha_x_u;
-	}
-	else if((alpha_y <= alpha_x) && (alpha_y <= alpha_z))
-	{
-	  weightsList[0][m].Segment = (alpha_y - alpha_c) * rayLength_mm;
-	  // Cruce por el plano y: avanzo en j.
-	  j += j_incr;
-	  alpha_c = alpha_y;
-	  alpha_y += alpha_y_u;
-	}
-	else
-	{
-	  // Cruce por el plano y: avanzo en j.
-	  weightsList[0][m].Segment = (alpha_z - alpha_c) * rayLength_mm;
-	  k += k_incr;
-	  alpha_c = alpha_z;
-	  alpha_z += alpha_z_u;
-	}
+    weightsList[0][m].IndexX = i;
+    // El índice en Y de las coordenadas de píxeles crece de forma inversa que las coordenadas geométricas,
+    // por eso en vez de guardar el j, guardo nPixelsY -j - 1;
+    weightsList[0][m].IndexY = sizeImage.nPixelsY - 1 - j;
+    weightsList[0][m].IndexZ = k;
+    if((alpha_x <= alpha_y) && (alpha_x <= alpha_z))
+    {
+      weightsList[0][m].Segment = (alpha_x - alpha_c) * rayLength_mm;
+      i += i_incr;
+      alpha_c = alpha_x;
+      alpha_x += alpha_x_u;
+    }
+    else if((alpha_y <= alpha_x) && (alpha_y <= alpha_z))
+    {
+      weightsList[0][m].Segment = (alpha_y - alpha_c) * rayLength_mm;
+      // Cruce por el plano y: avanzo en j.
+      j += j_incr;
+      alpha_c = alpha_y;
+      alpha_y += alpha_y_u;
+    }
+    else
+    {
+      // Cruce por el plano y: avanzo en j.
+      weightsList[0][m].Segment = (alpha_z - alpha_c) * rayLength_mm;
+      k += k_incr;
+      alpha_c = alpha_z;
+      alpha_z += alpha_z_u;
+    }
   }
   lengthList[0] = numIntersectedPixels;
   
