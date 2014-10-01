@@ -109,7 +109,7 @@
 
 #define MDC_INTF_SUPPORT_DIALECT 1  /* 0/1 - support dialect interfile     */
 
-#define MDC_INTF_SUPPORT_SCALE   1  /* 0/1 - support global scale factor   */
+#define MDC_INTF_SUPPORT_SCALE   0  /* 0/1 - support global scale factor   */
 
 #define MDC_INTF_SUPPORT_NUD     1  /* 0/1 - support NUD extended keys     */
 

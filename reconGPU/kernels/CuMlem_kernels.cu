@@ -29,7 +29,8 @@ __global__ void cuUpdatePixelValue(float *RawImage, float *FactorRawImage, float
     RawImage[indexPixel] = RawImage[indexPixel] * FactorRawImage[indexPixel] / SumAij[indexPixel];
   else
     RawImage[indexPixel] = 0;
-  //__syncthreads();
+  if((threadIdx.x == 64)&&(blockIdx.x == 4))
+    printf("Image: %f. Correction: %f. Sensitivity: %f. Umbral: %f.\n", RawImage[indexPixel], FactorRawImage[indexPixel], SumAij[indexPixel], threshold);
 }
 
 __global__ void cuGetLikelihoodValue (float* estimated_michelogram, float* measured_michelogram, float* likelihood, int numR, int numProj, int numRings, int numSinos)
@@ -37,12 +38,7 @@ __global__ void cuGetLikelihoodValue (float* estimated_michelogram, float* measu
   int indexSino2D =  threadIdx.x + (blockIdx.x * blockDim.x);
   if(indexSino2D>=numR*numProj)
     return;
-  int iR = indexSino2D % numR;
-  int iProj = (int)((float)indexSino2D / (float)numR);
-  int iZ = blockIdx.y;	// Block index y, index of the 2d sinogram, from which it can be taken  position Z1 and Z2 of th sinogram2d
-  int indexRing1 = iZ%numRings; //Ring 1 : Las columnas;
-  int indexRing2 = (unsigned int)(iZ/numRings);	// Ring 2 las filas		
-  int indiceMichelogram = iR + iProj * numR + iZ * (numProj * numR);
+  int indiceMichelogram = indexSino2D + blockIdx.y * (numProj * numR);
   if(estimated_michelogram[indiceMichelogram]>0)
   {
     (*likelihood) += measured_michelogram[indiceMichelogram] * logf(estimated_michelogram[indiceMichelogram])

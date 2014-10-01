@@ -520,6 +520,13 @@ bool CuMlemSinogram3d::Reconstruct(TipoProyector tipoProy, int indexGpu)
 	      backprojector->DivideAndBackproject(d_inputProjection, d_estimatedProjection, d_backprojectedImage, d_ring1_mm, d_ring2_mm, (Sinogram3DCylindricalPet*)inputProjection, backprojectedImage, false);
 	      break;
 	  }
+	  if(saveIntermediateProjectionAndBackprojectedImage)
+	  {
+	    CopySinogram3dGpuToHost(estimatedProjection, d_estimatedProjection);
+	    sprintf(c_string, "%s_projectionDiv_iter_%d", outputFilenamePrefix.c_str(), t); /// La extensión se le agrega en write interfile.
+	    outputFilename.assign(c_string);
+	    estimatedProjection->writeInterfile((char*)outputFilename.c_str());
+	  }
 	  clock_t finalClockBackprojection = clock();
 	  /// Actualización del Pixel
 	  this->updatePixelValue();
@@ -619,7 +626,7 @@ float CuMlemSinogram3d::getLikelihoodValue()
 
 bool CuMlemSinogram3d::updatePixelValue()
 {
-  //
+  // Llamo al kernel que actualiza el pixel.
   cuUpdatePixelValue<<<gridSizeImageUpdate, blockSizeImageUpdate>>>(d_reconstructionImage, d_backprojectedImage, d_sensitivityImage, reconstructionImage->getSize(), updateThreshold);
   cudaThreadSynchronize();
   

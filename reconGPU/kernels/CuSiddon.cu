@@ -282,7 +282,7 @@ __device__ void CUDA_Siddon (float4* LOR, float4* P0, float* Input, float* Resul
 	  atomicAdd(Result+indicePixel, weight.w / d_imageSize.sizePixelX_mm);
 	  break;
 	case PROJECTION:
-	  Result[indiceMichelogram] += weight.w / d_imageSize.sizePixelX_mm * Input[(int)(weight.x + weight.y * d_imageSize.nPixelsX + weight.z * nPixelsXY)];
+	  Result[indiceMichelogram] += weight.w / d_imageSize.sizePixelX_mm * Input[indicePixel];
 	  break;
 	case BACKPROJECTION:
 	  atomicAdd(Result+indicePixel, weight.w / d_imageSize.sizePixelX_mm * Input[indiceMichelogram]);
