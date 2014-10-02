@@ -29,8 +29,6 @@ __global__ void cuUpdatePixelValue(float *RawImage, float *FactorRawImage, float
     RawImage[indexPixel] = RawImage[indexPixel] * FactorRawImage[indexPixel] / SumAij[indexPixel];
   else
     RawImage[indexPixel] = 0;
-  if((threadIdx.x == 64)&&(blockIdx.x == 4))
-    printf("Image: %f. Correction: %f. Sensitivity: %f. Umbral: %f.\n", RawImage[indexPixel], FactorRawImage[indexPixel], SumAij[indexPixel], threshold);
 }
 
 __global__ void cuGetLikelihoodValue (float* estimated_michelogram, float* measured_michelogram, float* likelihood, int numR, int numProj, int numRings, int numSinos)

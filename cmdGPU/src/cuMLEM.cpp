@@ -170,8 +170,8 @@ int main (int argc, char *argv[])
   // Verificación de que se llamo al comando con el nombre de archivo de parámetros como argumento.
   if(argc != 2)
   {
-	  cout << "El comando MLEM debe llamarse indicando el archivo de Parámetros de Reconstrucción: MLEM Param.par." << endl;
-	  return -1;
+    cout << "El comando MLEM debe llamarse indicando el archivo de Parámetros de Reconstrucción: MLEM Param.par." << endl;
+    return -1;
   }
   // Los parámetros de reconstrucción son los correctos.
   // Se verifica que el archivo tenga la extensión .par.

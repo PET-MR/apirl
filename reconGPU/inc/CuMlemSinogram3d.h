@@ -119,6 +119,16 @@ class DLLEXPORT CuMlemSinogram3d : public MlemSinogram3d
      */
     float* d_likelihood;
     
+    /// Flag que habilita el procesamiento de las LORs sin compresión con el Span.
+    /** Los sinogramas3D habitualmente tienen un span para comprimir la información y que ocupe menos volumen. Esto implica que un sinograma oblicuo
+     * representa a varias LORS con distintas combinaciones de anillos. En el modo básico de funcionamiento, en la reconstrucción se toma una LOR por
+     * sinograma oblicuo tomando su coordenada promedio entre las distintas LORs. Con este flag se puede deshabilitar este modo de trabajo, para que
+     * se proyecte cada LOR, independientemente del span del sinograma3D. Para ello se convierte al sinograma3d en cpu con cierto span, en un sinograma3d en gpu sin span
+     * que tendrá Nrings*Nrings sinogramas (podría deshabilitar por maxringdiff), repartiendo en partes iguales las cuentas del sinograma con cierto span en las combinaciones de anillos
+     * correspondientes al sino3d original.
+     */
+    bool enableProcessWithoutSpan;
+    
     /// Dim3 con configuración de threads per block en cada dimensión para el kernel de proyección.
     dim3 blockSizeProjector;
     
@@ -149,6 +159,15 @@ class DLLEXPORT CuMlemSinogram3d : public MlemSinogram3d
     
     /// Método que copia un sinograma 3d en gpu a uno en cpu en un objeto del tipo Sinogram3D.
     int CopySinogram3dGpuToHost(Sinogram3D* h_destino, float* d_source);
+    
+    /// Método que copia un sinograma 3d que reside en un objeto del tipo Sinogram3D hacia memoria de gpu convirtiéndole en un sinograma sin span.
+    /** Con este método se convierte el sinograma3d en memoria de cpu con cierto span, en un sinograma3d sin span en memoria de gpu.
+     * Para ello se reparten las cuentas de un sinograma con varias combinaciones axiales en un sinograma por cada combinación de anillo.
+     */
+    int CopySinogram3dHostToGpuWithoutSpan(float* d_destino, Sinogram3D* h_source);
+    
+    /// Método que copia un sinograma 3d en gpu a uno en cpu en un objeto del tipo Sinogram3D.
+    int CopySinogram3dGpuWithoutSpanToHost(Sinogram3D* h_destino, float* d_source);
     
     /// Método que inicializa la gpu.
     bool initCuda (int, Logger*);
@@ -234,6 +253,10 @@ class DLLEXPORT CuMlemSinogram3d : public MlemSinogram3d
      */
     void setUpdatePixelKernelConfig(dim3* blockSize);
     
+    /// Habilita el procesamiento sin compresión de span.
+    /** Habilita o deshabilta el procesamiento sin compresión de span.
+     */
+    void processWithoutSpan(bool enable){ enableProcessWithoutSpan = enable;};
     
     /// Método que realiza la reconstrucción de las proyecciones. 
     bool Reconstruct(TipoProyector tipoProy);
