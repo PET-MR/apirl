@@ -92,7 +92,7 @@ __global__ void cuSiddonBackprojection(float* d_inputSinogram, float* d_outputIm
   int iProj = (int)((float)iBin2d / (float)numR);
   int indiceMichelogram = iBin2d + blockIdx.y * (numProj * numR);
 //   CUDA_GetPointsFromLOR(d_thetaValues_deg[iProj], d_RValues_mm[iR], d_AxialValues_mm[d_ring1[blockIdx.y]], d_AxialValues_mm[d_ring2[blockIdx.y]], d_RadioScanner_mm, &P1, &P2);
-  CUDA_GetPointsFromLOR(d_thetaValues_deg[iProj], d_RValues_mm[iR], d_ring1[blockIdx.y], d_ring2[blockIdx.y], d_RadioFov_mm, &P1, &P2);
+  CUDA_GetPointsFromLOR(d_thetaValues_deg[iProj], d_RValues_mm[iR], d_ring1[blockIdx.y], d_ring2[blockIdx.y], d_RadioScanner_mm, &P1, &P2);
   LOR.x = P2.x - P1.x;
   LOR.y = P2.y - P1.y;
   LOR.z = P2.z - P1.z;
