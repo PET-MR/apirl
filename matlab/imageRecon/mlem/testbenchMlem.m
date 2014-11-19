@@ -14,36 +14,182 @@
 % imágenes.
 % Los sinogramas se generan a partir de un fantoma Shepp-Logan.
 % Se genera un cell array, con un sinograma en cada elemento del mismo.
-p = phantom;    % Fantoma Shepp-Logan
-i = 1;          % Indices para las imágenes
-NProy = 180;
-NR = 213;
-for j = 4 : 0.5 : 8
-    Sinogramas{i} = SimulacionSino(p ,NProy ,NR ,10^j ,'CantR');
-    figure(i);
-    imshow(Sinogramas{i}/max(max(Sinogramas{i})));
-    title(sprintf('Sinograma de Phantoma Shepp-Logan con %d eventos', sum(sum(Sinogramas{i}))));
-    i = i+1;
+clear all
+close all
+addpath('/sources/MATLAB/WorkingCopy/ImageRecon')
+addpath('/sources/MATLAB/WorkingCopy/ImageProcessing')
+% %% ADAPTO SINOGRAMAS A MLEM
+% % Esto lo debo hacer previo a la reconstrucción si use sinogramas apra FOV
+% % cuadrado.
+% cuentasPorSino = [10029 31425 99826 315967 1001233 3163069 10002754 31622653];
+% sinosPath = '/workspaces/Martin/Doctorado/Tesis/Tesis Martín Belzunce/docusTesis/Resultados/Capitulo3';
+% for i = 1 : numel(cuentasPorSino)
+%     % Leo el sinograma:
+%     sino = interfileread(sprintf('%s/Sino_%dEventos.h33',sinosPath,cuentasPorSino(i)));
+%     % Estos sinogramas son para mlem y ahí el fov lo tengo circular, por lo
+%     % que debo recortar los valores de r que se pasan:
+%     numR = size(sino,2);
+%     binsEliminarPorLado = round((numR-numR / sqrt(2)) / 2);
+%     sino = sino(:, binsEliminarPorLado: (end-binsEliminarPorLado));
+%     interfileWriteSino(single(sino), sprintf('%s/Sino_%dEventos', sinosPath,cuentasPorSino(i)));
+% end
+%% LEVANTO LAS IMÁGENES RECONSTRUIDAS
+% Las imágenes las levanto porque ya las reconstruí por afuera. Hay para
+% distinta cantidad de cuentas:
+cuentasPorSino = [10029 31425 99826 315967 1001233 3163069 10002754 31622653];
+close all
+imagesPath = '/workspaces/Martin/Doctorado/Tesis/Tesis Martín Belzunce/docusTesis/Resultados/Capitulo3/mlem';
+for i = 1 : numel(cuentasPorSino)
+    % Agrando un poco el sinograma porque sino no entra todo
+    h = figure
+    imagenesMlem{i} = interfileread(sprintf('%s/MLEM_Siddon_Sinogram2D_%d__final.h33',imagesPath,cuentasPorSino(i)));
+    % La imagen esta invertida assí que tengo que cambiar el eje y (filas):
+    imagenesMlem{i} = imagenesMlem{i}(end:-1:1,:);
+    imshow(imagenesMlem{i} ./max(max(imagenesMlem{i})));
 end
-NombreSinos = sprintf('Sinogramas%dx%d', NProy, NR);    % Guardo la matriz ya normalizada.
-save(NombreSinos, 'Sinogramas');
-CantSinos = i-1;
-%%
-load('Aij180x213_128x128.mat');
-for k = 1 : size(Sinogramas,2)
-    disp('######################################################');
-    disp(sprintf('Reconstrucción de Sinograma con %d eventos.', sum(sum(Sinogramas{k}))));
-    [Imagen, L, Xi] = MLEM(Sinogramas{k}, Aij, 20);
-    for j = 1: size(Xi,1)
-        disp(sprintf('Imagen reconstruída con MLEM. Nº de Iteración %d :', j-1)); 
-        figure(i);
-        imshow(Xi{j}/max(max(Xi{j})));
-        title(sprintf('Imagen reconstruída con MLEM. Nº de Iteración: %d', j-1));
-        i = i + 1;
-        figure(i);
+
+i = 1; fila = 1; col = 1;
+imagen = [];
+for i = 1 : numel(imagenesMlem)
+    col = rem(i,2);
+    if col == 0
+        col = 2;
     end
-    disp(sprintf('Curva de evolución de ML:'));
-    plot(L);
-    title(sprintf('Curva de evolución de ML'));
-    i = i + 1;
+    fila = ceil(i / 2);
+    imagen(((fila-1)*size(imagenesMlem{i},1)+1) : (fila*size(imagenesMlem{i},1)), ((col-1)*size(imagenesMlem{i},2)+1) : (col*size(imagenesMlem{i},2))) = (imagenesMlem{i}./max(max(imagenesMlem{i})));    
 end
+h = figure
+imshow(imagen ./max(max(imagen)));
+
+line([size(imagenesMlem{1},2) size(imagenesMlem{1},2)],[0 size(imagenesMlem{1},1)*4],'color','w','LineWidth', 2)
+line([0 size(imagenesMlem{1},2)*4 ],[size(imagenesMlem{1},1) size(imagenesMlem{1},1)],'color','w','LineWidth', 2)
+line([0 size(imagenesMlem{1},2)*4 ],[size(imagenesMlem{1},1)*2 size(imagenesMlem{1},1)*2],'color','w','LineWidth', 2)
+line([0 size(imagenesMlem{1},2)*4 ],[size(imagenesMlem{1},1)*3 size(imagenesMlem{1},1)*3],'color','w','LineWidth', 2)
+set(gcf, 'Position', [50 50 1600 1200]);
+set(gcf, 'InvertHardcopy', 'off')
+% Agrego una leyenda en cada imagen para identificarlas:
+for i = 1 : numel(imagenesMlem)
+    col = rem(i,2);
+    if col == 0
+        col = 2;
+    end
+    fila = ceil(i / 2);
+    text(15 + size(imagenesMlem{1},2) * (col-1), 15 + size(imagenesMlem{1},1) * (fila-1) , sprintf('%d Eventos',cuentasPorSino(i))  ,'Color','w','FontSize',9.5,'FontWeight','bold')
+end
+outputGraphsPath = '/workspaces/Martin/Doctorado/Tesis/Tesis Martín Belzunce/docusTesis/Figuras/Capitulo3/mlem/';
+graphicFilename = sprintf('mlemRuidoPois_50iter');
+set(gcf,'PaperPositionMode','auto');    % Para que lo guarde en el tamaño modificado.
+saveas(gcf, [outputGraphsPath graphicFilename], 'fig');
+frame = getframe(gca);
+imwrite(frame.cdata, [outputGraphsPath graphicFilename '.png']);
+saveas(gca, [outputGraphsPath graphicFilename], 'epsc');
+%% LEVANTO LAS IMÁGENES RECONSTRUIDAS CON MENOS ITERACIONES
+cuentasPorSino = [10029 31425 99826 315967 1001233 3163069 10002754 31622653];
+close all
+imagesPath = '/workspaces/Martin/Doctorado/Tesis/Tesis Martín Belzunce/docusTesis/Resultados/Capitulo3/mlem';
+% Repito todas las operaciones para distinta cantidad de iteraciones:
+iteraciones = [0 10 20 30 40];
+for iteracion = 1 : numel(iteraciones)
+    for i = 1 : numel(cuentasPorSino)
+        % Agrando un poco el sinograma porque sino no entra todo
+        h = figure
+        imagenesMlem{i} = interfileread(sprintf('%s/MLEM_Siddon_Sinogram2D_%d__iter_%d.h33',imagesPath,cuentasPorSino(i), iteraciones(iteracion)));
+        % La imagen esta invertida assí que tengo que cambiar el eje y (filas):
+        imagenesMlem{i} = imagenesMlem{i}(end:-1:1,:);
+        imshow(imagenesMlem{i} ./max(max(imagenesMlem{i})));
+    end
+
+    i = 1; fila = 1; col = 1;
+    imagen = [];
+    for i = 1 : numel(imagenesMlem)
+        col = rem(i,2);
+        if col == 0
+            col = 2;
+        end
+        fila = ceil(i / 2);
+        imagen(((fila-1)*size(imagenesMlem{i},1)+1) : (fila*size(imagenesMlem{i},1)), ((col-1)*size(imagenesMlem{i},2)+1) : (col*size(imagenesMlem{i},2))) = (imagenesMlem{i}./max(max(imagenesMlem{i})));    
+    end
+    h = figure
+    imshow(imagen ./max(max(imagen)));
+
+    line([size(imagenesMlem{1},2) size(imagenesMlem{1},2)],[0 size(imagenesMlem{1},1)*4],'color','w','LineWidth', 2)
+    line([0 size(imagenesMlem{1},2)*4 ],[size(imagenesMlem{1},1) size(imagenesMlem{1},1)],'color','w','LineWidth', 2)
+    line([0 size(imagenesMlem{1},2)*4 ],[size(imagenesMlem{1},1)*2 size(imagenesMlem{1},1)*2],'color','w','LineWidth', 2)
+    line([0 size(imagenesMlem{1},2)*4 ],[size(imagenesMlem{1},1)*3 size(imagenesMlem{1},1)*3],'color','w','LineWidth', 2)
+    set(gcf, 'Position', [50 50 1600 1200]);
+    set(gcf, 'InvertHardcopy', 'off')
+    % Agrego una leyenda en cada imagen para identificarlas:
+    for i = 1 : numel(imagenesMlem)
+        col = rem(i,2);
+        if col == 0
+            col = 2;
+        end
+        fila = ceil(i / 2);
+        text(15 + size(imagenesMlem{1},2) * (col-1), 15 + size(imagenesMlem{1},1) * (fila-1) , sprintf('%d Eventos',cuentasPorSino(i))  ,'Color','w','FontSize',9.5,'FontWeight','bold')
+    end
+    outputGraphsPath = '/workspaces/Martin/Doctorado/Tesis/Tesis Martín Belzunce/docusTesis/Figuras/Capitulo3/mlem/';
+    graphicFilename = sprintf('mlemRuidoPois_%diter', iteraciones(iteracion));
+    set(gcf,'PaperPositionMode','auto');    % Para que lo guarde en el tamaño modificado.
+    saveas(gcf, [outputGraphsPath graphicFilename], 'fig');
+    frame = getframe(gca);
+    imwrite(frame.cdata, [outputGraphsPath graphicFilename '.png']);
+    saveas(gca, [outputGraphsPath graphicFilename], 'epsc');
+end
+%% RECONSTRUCCIÓN DE UN SINOGRAMA PERO POR ITERACIONES
+cuentasPorSino = 1001233;
+cuentasPorSino = 3163069;
+close all
+imagesPath = '/workspaces/Martin/Doctorado/Tesis/Tesis Martín Belzunce/docusTesis/Resultados/Capitulo3/mlem';
+% Repito todas las operaciones para distinta cantidad de iteraciones:
+iteraciones = [0 10 20 30 40 50];
+imagenesMlem = [];
+for i = 1 : numel(iteraciones)-1
+    % Agrando un poco el sinograma porque sino no entra todo
+    h = figure
+    imagenesMlem{i} = interfileread(sprintf('%s/MLEM_Siddon_Sinogram2D_%d__iter_%d.h33',imagesPath,cuentasPorSino, iteraciones(i)));
+    % La imagen esta invertida assí que tengo que cambiar el eje y (filas):
+    imagenesMlem{i} = imagenesMlem{i}(end:-1:1,:);
+    imshow(imagenesMlem{i} ./max(max(imagenesMlem{i})));
+end
+i = i + 1;
+% Leo una más que es la final con 50 iteraciones:
+imagenesMlem{i} = interfileread(sprintf('%s/MLEM_Siddon_Sinogram2D_%d__final.h33',imagesPath,cuentasPorSino));
+imagenesMlem{i} = imagenesMlem{i}(end:-1:1,:);
+
+i = 1; fila = 1; col = 1;
+imagen = [];
+for i = 1 : numel(imagenesMlem)
+    col = rem(i,3);
+    if col == 0
+        col = 3;
+    end
+    fila = ceil(i / 3);
+    imagen(((fila-1)*size(imagenesMlem{i},1)+1) : (fila*size(imagenesMlem{i},1)), ((col-1)*size(imagenesMlem{i},2)+1) : (col*size(imagenesMlem{i},2))) = (imagenesMlem{i}./max(max(imagenesMlem{i})));    
+end
+h = figure
+imshow(imagen ./max(max(imagen)));
+
+line([size(imagenesMlem{1},2) size(imagenesMlem{1},2)],[0 size(imagenesMlem{1},1)*3],'color','w','LineWidth', 2)
+line([size(imagenesMlem{1},2)*2 size(imagenesMlem{1},2)*2],[0 size(imagenesMlem{1},1)*3],'color','w','LineWidth', 2)
+line([0 size(imagenesMlem{1},2)*3 ],[size(imagenesMlem{1},1) size(imagenesMlem{1},1)],'color','w','LineWidth', 2)
+%line([0 size(imagenesMlem{1},2)*2 ],[size(imagenesMlem{1},1)*2 size(imagenesMlem{1},1)*2],'color','w','LineWidth', 2)
+%line([0 size(imagenesMlem{1},2)*4 ],[size(imagenesMlem{1},1)*3 size(imagenesMlem{1},1)*3],'color','w','LineWidth', 2)
+set(gcf, 'Position', [50 50 1600 1200]);
+set(gcf, 'InvertHardcopy', 'off')
+% Agrego una leyenda en cada imagen para identificarlas:
+iteraciones(1) = 1;
+for i = 1 : numel(imagenesMlem)
+    col = rem(i,3);
+    if col == 0
+        col = 3;
+    end
+    fila = ceil(i / 3);
+    text(15 + size(imagenesMlem{1},2) * (col-1), 15 + size(imagenesMlem{1},1) * (fila-1) , sprintf('%d Iteraciones',iteraciones(i))  ,'Color','w','FontSize',9.5,'FontWeight','bold')
+end
+outputGraphsPath = '/workspaces/Martin/Doctorado/Tesis/Tesis Martín Belzunce/docusTesis/Figuras/Capitulo3/mlem/';
+graphicFilename = sprintf('mlemRuidoPois_%d_varias_iter', cuentasPorSino);
+set(gcf,'PaperPositionMode','auto');    % Para que lo guarde en el tamaño modificado.
+saveas(gcf, [outputGraphsPath graphicFilename], 'fig');
+frame = getframe(gca);
+imwrite(frame.cdata, [outputGraphsPath graphicFilename '.png']);
+saveas(gca, [outputGraphsPath graphicFilename], 'epsc');
