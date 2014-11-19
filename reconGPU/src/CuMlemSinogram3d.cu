@@ -494,7 +494,7 @@ bool CuMlemSinogram3d::Reconstruct(TipoProyector tipoProy, int indexGpu)
   // INICALIZACIÓN DE GPU 
   if(!initCuda (0, logger))
   {
-	  return false;
+    return false;
   }
   // Inicializo memoria de GPU:
   this->InitGpuMemory(tipoProy);
@@ -736,6 +736,7 @@ bool CuMlemSinogram3d::Reconstruct(TipoProyector tipoProy, int indexGpu)
   free(timesPixelUpdate_mseg);
   return true;
 }
+
 
 float CuMlemSinogram3d::getLikelihoodValue()
 {

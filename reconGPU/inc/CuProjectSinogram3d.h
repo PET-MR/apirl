@@ -1,7 +1,7 @@
 /**
-	\file CuMlemSinogram3d.h
-	\brief Archivo que contiene la definición de la clase CuMlemSinogram3d. 
-	Clase derivada de CuMlemSinogram3d, que define el algoritmo Mlem para CUDA para sinogramas3D de un cylindrical PET.
+	\file CuProjectSinogram3d.h
+	\brief Archivo que contiene la definición de la clase CuProjectSinogram3d. 
+	Clase que realiza la proyección de una imagen en un sinograma 3D en CUDA.
 
 	\todo 
 	\bug
@@ -10,8 +10,8 @@
 	\date 2010.11.11
 	\version 1.1.0
 */
-#ifndef _CU_MLEMSINOGRAM3D_H_
-#define _CU_MLEMSINOGRAM3D_H_
+#ifndef _CU_PROJECTSINOGRAM3D_H_
+#define _CU_PROJECTSINOGRAM3D_H_
 
 #include <Mlem.h>
 #include <OsemSinogram3d.h>
@@ -67,12 +67,9 @@ typedef enum
   SIDDON_HEXAGONAL_SCANNER
 } TipoProyector;
     
-class DLLEXPORT CuMlemSinogram3d : public MlemSinogram3d
+class DLLEXPORT CuProjectSinogram3d
 {
   protected:  
-    /// Proyección a reconstruir.
-    /** Puntero donde se almacenará el sinograma de entrada. */
-    float* d_inputProjection;
     
     /// Proyección a reconstruir.
     /** Puntero donde se almacenará el sinograma intermedio de proyección. */
@@ -80,11 +77,7 @@ class DLLEXPORT CuMlemSinogram3d : public MlemSinogram3d
     
     /// Imagen a reconstruir en gpu.
     /* Puntero a al dirección de memoria en GPU donde se tendrá la imagen a reconstruir.*/
-    float* d_reconstructionImage;
-    
-    /// Imagen retroproyectada en gpu.
-    /* Puntero a al dirección de memoria en GPU donde se tendrá la imagen retroproyectada en cada iteración.*/
-    float* d_backprojectedImage;
+    float* d_inputImage;
     
     /// Sensitivity Image.
     /* Puntero a al dirección de memoria en GPU donde se tendrá la imagen de sensibilidad.*/
@@ -135,19 +128,6 @@ class DLLEXPORT CuMlemSinogram3d : public MlemSinogram3d
     /// Dim3 con configuración de la grilla en cada dimensión para el kernel de proyección.
     dim3 gridSizeProjector;
     
-    /// Dim3 con configuración de threads per block en cada dimensión para el kernel de retroproyección.
-    dim3 blockSizeBackprojector;
-    
-    /// Dim3 con configuración de la grilla en cada dimensión para el kernel de retroproyección.
-    dim3 gridSizeBackprojector;
-    
-    /// im3 con configuración de threads per block en cada dimensión para el kernel de actualización de píxel.
-    dim3 blockSizeImageUpdate;
-    
-    /// Dim3 con configuración de la grilla en cada dimensión para el kernel de píxel.
-    dim3 gridSizeImageUpdate;
-    
-    
     /// Inicio la memoria en gpu
     /** Se pide memoria para cada uno de los vectores y se copian los datos de entrada. Se le indica apra que proyector
      * es porque cambia de proyector en proyector.
@@ -174,9 +154,7 @@ class DLLEXPORT CuMlemSinogram3d : public MlemSinogram3d
     
     /// Proyector CUDA.
     CuProjector *forwardprojector;
-    
-    /// Retroproyector CUDA.
-    CuProjector *backprojector;
+   
     
     /// Calcula la imagen de sensibilidad.
     /** Depende del tipo de dato utilizado por eso se le debe pasar como parámetro.

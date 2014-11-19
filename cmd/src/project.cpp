@@ -214,35 +214,6 @@ int main (int argc, char *argv[])
 	strForwardprojector.assign(multipleReturnValue[2]);
 	outputFilename.assign(multipleReturnValue[3]);
 	sampleProjection.assign(multipleReturnValue[4]);
-	/// Corrección por Atenuación.
-	attenuationImage = new Image();
-	// Es opcional, si está el mapa de atenuación se habilita:
-	if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), "Projection", "attenuation image filename", returnValue, errorMessage)) != 0)
-	{
-		// Hubo un error. Salgo del comando.
-		// Si no encontró el keyoword, está bien porque era opcional, cualquier otro código de error
-		// signfica que hubo un error.
-		if(errorCode == PMF_KEY_NOT_FOUND)
-		{
-		  // No está la keyword, como era opcional se carga con su valor por default.
-		}
-		else
-		{
-		  cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
-		  return -1;
-		}
-	}
-	else
-	{
-	  attenMapFilename.assign(returnValue);
-	  enableAttenuationCorrection = true;
-	  if(!attenuationImage->readFromInterfile((char*)attenMapFilename.c_str()))
-	  {
-		cout<<"Error al leer la imagen de mapa de atenuación." <<endl;
-		return -1;
-	  }
-	}
-	
 	
 	// Cargo la imagen de initial estimate, que esta en formato interfile, y de ella obtengo 
 	// los tamaños de la imagen.
@@ -435,22 +406,9 @@ int main (int argc, char *argv[])
 	  forwardprojector->Project(inputImage, outputProjection);
 	  outputProjection->writeInterfile(outputFilename);
 	}
-	else if(outputType.compare("Michelogram")==0)
-	{
-	  // Sinograma 3D
-	 // inputProjection = new Sinogram3D((char*)inputFilename.c_str());
-	 /* SizeMichelogram sizeMichelogram;
-	  sizeMichelogram.NProj = inputSinogram3D->NProj;
-	  sizeMichelogram.NR = inputSinogram3D->NR;
-	  sizeMichelogram.NZ = inputSinogram3D->NRings;
-	  sizeMichelogram.RFOV = inputSinogram3D->RFOV;
-	  sizeMichelogram.ZFOV = inputSinogram3D->ZFOV;
-	  inputProjection = new Michelogram(sizeMichelogram);*/
-	  //inputProjection->ReadDataFromSinogram3D(inputSinogram3D);
-	}
 	else
 	{
-	  cout<<"Tipo de dato de entrada no válido. Formatos válidos: ""Sinogram2d"", ""Sinogram3D"", ""Michelogram"""<<endl;
+	  cout<<"Tipo de dato de entrada no válido. Formatos válidos: ""Sinogram2d"", ""Sinogram3D"", ""Sinogram3DArPet"""<<endl;
 	  return -1;
 	}
 	

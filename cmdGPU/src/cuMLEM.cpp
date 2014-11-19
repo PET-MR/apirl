@@ -156,6 +156,8 @@ int main (int argc, char *argv[])
   Image* initialEstimate;
   unsigned int nIterations = 0;	// Número de iteraciones.
   CuMlemSinogram3d* mlem;	// Objeto mlem con el que haremos la reconstrucción. 
+  int gpuId;	// Id de la gpu a utilizar.
+  dim3 projectorBlockSize, backprojectorBlockSize, updateBlockSize;	// Parámetros de cuda.
   
   // Asigno la memoria para los punteros dobles, para el array de strings.
   keyWords = (char**)malloc(sizeof(*keyWords)*FIXED_KEYS);
@@ -165,7 +167,6 @@ int main (int argc, char *argv[])
     keyWords[j] = (char*) malloc(sizeof(char)*MAX_KEY_LENGTH);
     multipleReturnValue[j] = (char*) malloc(sizeof(char)*MAX_KEY_LENGTH);
   }
-  //mlem = new MLEM();
   
   // Verificación de que se llamo al comando con el nombre de archivo de parámetros como argumento.
   if(argc != 2)
@@ -252,9 +253,7 @@ int main (int argc, char *argv[])
   }
   
   // Parámetros de Cuda:
-  // Obtengo los nombres (solo los nombres!) del projecctor y backprojector
-  int gpuId;
-  dim3 projectorBlockSize, backprojectorBlockSize, updateBlockSize;
+  
   if(getProjectorBlockSize(parameterFileName, "MLEM", &projectorBlockSize))
   {
     return -1;
@@ -412,7 +411,7 @@ int main (int argc, char *argv[])
     mlem = new CuMlemSinogram3d(inputProjection, initialEstimate, "", outputPrefix, numIterations, saveIterationInterval, saveIntermediateData, bSensitivityFromFile, forwardprojector, backprojector);
     if(bSensitivityFromFile)
     {
-	  mlem->setSensitivityFilename(sensitivityFilename);
+      mlem->setSensitivityFilename(sensitivityFilename);
     }
   }
   else if(inputType.compare("Michelogram")==0)
