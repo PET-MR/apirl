@@ -5,56 +5,33 @@
 %  *********************************************************************
 %  This scripts creates a image of the Ge-68 normalization phantom and
 %  write its in interfile format. It also generates a configuration file to
-%  generate the ACFs for different types of sinograms with APIRL.
-close all
-clear all
-
+%  generate the ACFs for different types of sinograms with APIRL, and the
+%  run it.
+%  It receives as a parameter an ouputpath, where not only stores the acfs
+%  but also other intermediate files, and then the name for the specific
+%  acfFile. It also receives the filename of the sinogram which is intenden
+%  to correct for attenuation as it's needed in APIRl. And finally the
+%  struct with the size of the sinogram.
+function acfs = createNormalizationPhantomACFs(outputPath, acfFilename, filenameSinogram, structSizeSinos)
 %% PATHS FOR EXTERNAL FUNCTIONS
 addpath('/workspaces/Martin/KCL/Biograph_mMr/mmr');
 apirlPath = '/workspaces/Martin/PET/apirl-code/trunk/';
 addpath(genpath([apirlPath '/matlab']));
 
-%% OUTPUT PATH
-% Outputh were images and other files are writen:
-outputPath = '/workspaces/Martin/KCL/Biograph_mMr/mmr/5hr_ge68/';
-%% INICIALIZACIÓN IMÁGENES
-% Image of the Full Fov of the Siemens mMr
-sizeImage_mm = [594 594 258];
-sizeImage_pixels = [344 344 127];
-% Pixel size:
-sizePixel_mm = sizeImage_mm ./ sizeImage_pixels;
-imageAtenuation = zeros(sizeImage_pixels);
-mu_mass_aire = 8.712E-02;
-densidad_aire = 1.205E-03;
-mu_lineal_aire_1_cm = mu_mass_aire *densidad_aire;
-imageAtenuation(:) = mu_lineal_aire_1_cm;
-%% COORDINATE SYSTEM
-% El x vanza como los índices, osea a la izquierda es menor, a la derecha
-% mayor.
-coordX = -((sizeImage_mm(2)/2)-sizePixel_mm(1)/2):sizePixel_mm(1):((sizeImage_mm(2)/2)-sizePixel_mm(1)/2);
-% El y y el z van al revés que los índices, o sea el valor geométrico va a
-% contramano con los índices de las matrices.
-coordY = -((sizeImage_mm(1)/2)-sizePixel_mm(2)/2):sizePixel_mm(2):((sizeImage_mm(1)/2)-sizePixel_mm(2)/2);
-coordZ = -((sizeImage_mm(3)/2)-sizePixel_mm(3)/2):sizePixel_mm(3):((sizeImage_mm(3)/2)-sizePixel_mm(3)/2);
-[X,Y,Z] = meshgrid(coordX, coordY, coordZ);
+%% IMAGE SIZES
+% Size of the image to cover the full fov:
+sizeImage_mm = [structSizeSinos.rFov_mm*2 structSizeSinos.rFov_mm*2 structSizeSinos.zFov_mm];
+% The size in pixels based in numR and the number of rings:
+sizeImage_pixels = [structSizeSinos.numR structSizeSinos.numR structSizeSinos.numZ];
+% Call function to create phantom:
+attenuationMapFilename = [outputPath '/normalizationPhantom'];
+imageAtenuation = createNormalizationPhantom(sizeImage_pixels, sizeImage_mm, attenuationMapFilename, 1);
 
-%% PHANTOM
-% Linear attenuation coefficent of Ge-68 resine:
-% Net weight of epoxy/Ge68 matrix
-% 24.0 lbs (10.9 kg)
-% Approximate volume of epoxy/Ge68 matrix
-% 10.9 kg / (1.058 g/cc) = 10.3 L
-% Mass attenuation coefficient of active resin@511 keV
-% 0.103 (cm2/g)
-mu_ge_resine_1_mm = 0.103 * 1.058 / 10;
-% Size of the phantom
-radiusGeCylinder_mm = 85;
-heightGeCylinder_mm = 275;
-indexGeCylinder = (sqrt((X-0).^2+(Y-0).^2) < radiusGeCylinder_mm)  & (Z>-(heightGeCylinder_mm/2))&(Z<(heightGeCylinder_mm/2));
-imageAtenuation(indexGeCylinder) = mu_ge_resine_1_mm;
-%% VISUALIZATION
-image = getImageFromSlices(imageAtenuation, 12, 1, 0);
-figure;
-imshow(image);
-%% ESCRITURA DE IMÁGENES EN INTERFILE
-interfilewrite(single(imageAtenuation), sprintf('%s/Ge60NormalizationPhantom',outputPath), sizePixel_mm);
+% Now with the phantom, we create the configuration file for the command
+% generateACFs:
+genAcfFilename = [outputPath '/genACFs_' acfFilename '.par'];
+% I have to add the extensions of the interfiles:
+CreateGenAcfConfigFile(genAcfFilename, 'Sinograms2D', [filenameSinogram '.h33'], [attenuationMapFilename '.h33'], acfFilename);
+
+% Then execute APIRL:
+status = system(['generateACFs ' genAcfFilename]); 
