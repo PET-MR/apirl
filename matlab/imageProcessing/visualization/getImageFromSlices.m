@@ -3,11 +3,17 @@
 %  Autor: Martín Belzunce. UTN-FRBA.
 %  Fecha de Creación: 31/08/2011
 %  *********************************************************************
+%  
+%  function image = getImageFromSlices(volume, columns, enableSepLines, sliceIndependientes)
+%
 %  Función que genera una única imagen en la que se visualizan los
 %  distintos slices de un volumen. Se le debe pasar como parámetros el
 %  volumen en una matriz de 3 dimensiones. Y luego la cantidad de columnas,
-%  en que quiero dividir los slices:
-% El parámetro enableSepLines con true
+%  en que quiero dividir los slices.
+%  El tercer parámetro enableSepLines, indica si se desea hacer una linea
+%  para separar los slices, y el cuarto parametro indica si se desea
+%  normalizar sobre el volumen o sobre cada slice (en 1 cada slice se toma
+%  como un valor independiente).
 function image = getImageFromSlices(volume, columns, enableSepLines, sliceIndependientes)
 
 if nargin == 2
@@ -24,10 +30,10 @@ image = zeros(size(volume,1)*rows, size(volume,2)*columns);
 % Para visualización normalizo a 1, y las líneas de separación las hago con
 % intensidad = 1:
 if ~sliceIndependientes
-    volume = volume ./ max(max(max(volume)));
+    volume = double(volume) ./ double(max(max(max(volume))));
 else
     for i = 1 : size(volume,3)
-        volume(:,:,i) = volume(:,:,i) ./ max(max(volume(:,:,i)));
+        volume(:,:,i) = double(volume(:,:,i)) ./ double(max(max(volume(:,:,i))));
     end
 end
 

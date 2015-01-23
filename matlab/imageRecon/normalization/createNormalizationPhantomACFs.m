@@ -12,7 +12,7 @@
 %  acfFile. It also receives the filename of the sinogram which is intenden
 %  to correct for attenuation as it's needed in APIRl. And finally the
 %  struct with the size of the sinogram.
-function acfs = createNormalizationPhantomACFs(outputPath, acfFilename, filenameSinogram, structSizeSinos)
+function acfs = createNormalizationPhantomACFs(outputPath, acfFilename, filenameSinogram, structSizeSinos, visualization)
 %% PATHS FOR EXTERNAL FUNCTIONS
 addpath('/workspaces/Martin/KCL/Biograph_mMr/mmr');
 apirlPath = '/workspaces/Martin/PET/apirl-code/trunk/';
@@ -25,7 +25,7 @@ sizeImage_mm = [structSizeSinos.rFov_mm*2 structSizeSinos.rFov_mm*2 structSizeSi
 sizeImage_pixels = [structSizeSinos.numR structSizeSinos.numR structSizeSinos.numZ];
 % Call function to create phantom:
 attenuationMapFilename = [outputPath '/normalizationPhantom'];
-imageAtenuation = createNormalizationPhantom(sizeImage_pixels, sizeImage_mm, attenuationMapFilename, 1);
+imageAtenuation = createNormalizationPhantom(sizeImage_pixels, sizeImage_mm, attenuationMapFilename, visualization);
 
 % Now with the phantom, we create the configuration file for the command
 % generateACFs:
@@ -35,3 +35,20 @@ CreateGenAcfConfigFile(genAcfFilename, 'Sinograms2D', [filenameSinogram '.h33'],
 
 % Then execute APIRL:
 status = system(['generateACFs ' genAcfFilename]); 
+
+% Read the generated acfs:
+fid = fopen([acfFilename '.i33'], 'r');
+[acfs, count] = fread(fid, structSizeSinos.numTheta*structSizeSinos.numR*structSizeSinos.numZ, 'single=>single');
+acfs = reshape(acfs, [structSizeSinos.numR structSizeSinos.numTheta structSizeSinos.numZ]);
+% Matlab reads in a column-wise order that why angles are in the columns.
+% We want to have it in the rows since APIRL and STIR and other libraries
+% use row-wise order:
+acfs = permute(acfs,[2 1 3]);
+% Close the file:
+fclose(fid);
+
+if visualization == 1
+    image = getImageFromSlices(acfs,12);
+    figure;
+    imshow(image);
+end

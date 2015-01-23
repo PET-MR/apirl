@@ -140,6 +140,7 @@ fprintf(fid,'!number of images/window := %d\n', size(image,3));
 % Ahora cantidad de filas y columnas:
 fprintf(fid,'!matrix size [1] := %d\n', size(image,2)); % Es el ancho en realidad, o sea la coordenada x que son las columnas.
 fprintf(fid,'!matrix size [2] := %d\n', size(image,1)); % Filas.
+fprintf(fid,'!matrix size [3] := %d\n', size(image,3));
 % Tipo de dato. Los formatos disponibles son:
 % signed integer|unsigned integer|long float|short float|bit|ASCII
 % Para esto busco el tipo de dato de la variable imagen:
@@ -181,6 +182,7 @@ if(nargin==3)
     if(numel(sizePixel)==3)
         fprintf(fid,'scaling factor (mm/pixel) [1] := %f\n', sizePixel(1));
         fprintf(fid,'scaling factor (mm/pixel) [2] := %f\n', sizePixel(2));
+        fprintf(fid,'scaling factor (mm/pixel) [3] := %f\n', sizePixel(3));
     else
         disp('Error: el tamaño del pixel debe pasarse en un vector con 3 elementos.');
     end

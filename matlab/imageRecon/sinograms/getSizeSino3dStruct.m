@@ -47,14 +47,20 @@
 %
 %  structSizeSino3D.maxRingDiff
 %
+%  structSizeSino3D.maxAbsRingDiff
+%
 %  Recibe los valores de cada uno de esos campos como parámetro, y devuelve
-%  la estructura en si.
+%  la estructura en si. Si no se recibe maxAbsRingDiff, se considera numZ
 %
 %  Ejemplo:
 %   structSizeSino3D = getSizeSino3Dstruct(192, 192, 24, 300, 200, sinogramsPerSegment, minRingDiff, maxRingDiff)
 
 
-function structSizeSino3D = getSizeSino3Dstruct(numTheta, numR, numZ, rFov, zFov, sinogramsPerSegment, minRingDiff, maxRingDiff)
+function structSizeSino3D = getSizeSino3Dstruct(numTheta, numR, numZ, rFov, zFov, sinogramsPerSegment, minRingDiff, maxRingDiff, maxAbsRingDiff)
+
+if nargin < 9
+    maxAbsRingDiff = numZ;
+end
 
 % Genero un vector con los valores de r:
 deltaR = (2*rFov) / numR;
@@ -70,4 +76,4 @@ numSegments = numel(sinogramsPerSegment);
 
 structSizeSino3D = struct('numTheta', numTheta, 'numR', numR, 'numZ', numZ, 'numSegments', numSegments, 'rFov_mm', rFov,...
     'zFov_mm', zFov, 'rValues_mm', rValues_mm, 'thetaValues_deg', thetaValues_deg, ...
-    'zValues_mm', zValues_mm, 'sinogramsPerSegment', sinogramsPerSegment,'minRingDiff', minRingDiff, 'maxRingDiff', maxRingDiff);
+    'zValues_mm', zValues_mm, 'sinogramsPerSegment', sinogramsPerSegment,'minRingDiff', minRingDiff, 'maxRingDiff', maxRingDiff, 'maxAbsRingDiff', maxAbsRingDiff);

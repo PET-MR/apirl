@@ -20,8 +20,8 @@ sizePixel_mm = sizeImage_mm ./ sizeImage_pixels;
 imageAtenuation = zeros(sizeImage_pixels);
 mu_mass_aire = 8.712E-02;
 densidad_aire = 1.205E-03;
-mu_lineal_aire_1_cm = mu_mass_aire *densidad_aire;
-imageAtenuation(:) = mu_lineal_aire_1_cm;
+mu_lineal_aire_1_mm = mu_mass_aire *densidad_aire / 10;
+imageAtenuation(:) = mu_lineal_aire_1_mm;
 %% COORDINATE SYSTEM
 % El x vanza como los índices, osea a la izquierda es menor, a la derecha
 % mayor.
@@ -34,15 +34,13 @@ coordZ = -((sizeImage_mm(3)/2)-sizePixel_mm(3)/2):sizePixel_mm(3):((sizeImage_mm
 
 %% PHANTOM
 % Linear attenuation coefficent of Ge-68 resine:
-% Net weight of epoxy/Ge68 matrix
-% 24.0 lbs (10.9 kg)
-% Approximate volume of epoxy/Ge68 matrix
-% 10.9 kg / (1.058 g/cc) = 10.3 L
 % Mass attenuation coefficient of active resin@511 keV
 % 0.103 (cm2/g)
-mu_ge_resine_1_mm = 0.103 * 1.058 / 10;
+mu_mass_ge = 1.03E-01;
+densidad_ge = 5;
+mu_ge_resine_1_mm = mu_mass_ge * densidad_ge / 10;
 % Size of the phantom
-radiusGeCylinder_mm = 85;
+radiusGeCylinder_mm = 82;
 heightGeCylinder_mm = 275;
 indexGeCylinder = (sqrt((X-0).^2+(Y-0).^2) < radiusGeCylinder_mm)  & (Z>-(heightGeCylinder_mm/2))&(Z<(heightGeCylinder_mm/2));
 imageAtenuation(indexGeCylinder) = mu_ge_resine_1_mm;
