@@ -108,14 +108,14 @@ else()
 endif()
 
 # Check if Doxygen is available
-#find_package(Doxygen REQUIRED)
-find_package(Doxygen)
+find_package(Doxygen REQUIRED)
+#find_package(Doxygen)
 
 OPTION(INSTALL_DOC "Set to OFF to skip build/install Documentation" OFF)
 OPTION(USE_DOT "Set to ON to perform diagram generation with graphviz" OFF)
 OPTION(USE_LATEX "Set to ON to build latex documentation" OFF)
 OPTION(USE_CHM "Set to ON to build CHM Windows documentation" OFF)
-#SET(INSTALL_DOC ON)
+SET(INSTALL_DOC ON)
 IF (INSTALL_DOC)
 	INCLUDE("${CMAKE_SOURCE_DIR}/Doxygen/generateDOC.cmake" )
 	GENERATE_DOCUMENTATION(${CMAKE_SOURCE_DIR}/${PROJECT_NAME}.dox.in)

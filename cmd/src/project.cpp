@@ -4,7 +4,7 @@
 
 	Este archivo genera el comando ejecutable para la operación de proyección. Para esto
 	recibe como parámetro un archivo de configuración en formato interfile, donde se configuran todos
-	los parámetros de reconstrucción, incluyendo en el mismo el dato de entrada a reconstruir.
+	los parámetros de proyeccion, incluyendo en el mismo el dato de entrada a reconstruir.
 	\par Ejemplo de archivo de configuración de proyección projection.par:
 	\code
 	    input file := image.h33

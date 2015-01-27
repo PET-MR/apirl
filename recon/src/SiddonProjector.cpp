@@ -172,7 +172,7 @@ bool SiddonProjector::Project (Image* inputImage, Sinogram2D* outputProjection)
 		  ptrPixels[MyWeightsList[0][l].IndexY * sizeImage.nPixelsX + MyWeightsList[0][l].IndexX]);		  
 	    }
 	    if(outputProjection->getSinogramBin(i,j) != outputProjection->getSinogramBin(i,j))
-	      printf("aca");
+	      printf("Warnign: NaN.\n");
 	    free(MyWeightsList[0]);
 	  }
 	}

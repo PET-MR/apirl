@@ -37,7 +37,7 @@ coordZ = -((sizeImage_mm(3)/2)-sizePixel_mm(3)/2):sizePixel_mm(3):((sizeImage_mm
 % Mass attenuation coefficient of active resin@511 keV
 % 0.103 (cm2/g)
 mu_mass_ge = 1.03E-01;
-densidad_ge = 5;
+densidad_ge = 1;
 mu_ge_resine_1_mm = mu_mass_ge * densidad_ge / 10;
 % Size of the phantom
 radiusGeCylinder_mm = 82;
