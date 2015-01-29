@@ -82,6 +82,11 @@ class DLLEXPORT Mlem2d : public Mlem
 	  puede ser alguno de los distintos tipos de proyección: sinograma 2D, sinograma 3D, etc. */
 	  Sinogram2D* scatterCorrectionProjection;
 	  
+	  /// Proyección con factores de corrección por atenuación.
+	  /** Objeto del tipo Projection que será la entrada al algoritmo de reconstrucción,
+	  puede ser alguno de los distintos tipos de proyección: sinograma 2D, sinograma 3D, etc. */
+	  Sinogram2D* normalizationCorrectionFactorsProjection;
+	  
 	  /// Método que calcula la imagen de sensibilidad.
 	  /* Método que hace la backprojection de una imagen cosntante para obtener
 	  la imagen de sensibilidad necesaria para la reconstrucción. */

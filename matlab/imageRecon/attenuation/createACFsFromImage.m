@@ -42,7 +42,7 @@ end
 
 fid = fopen([acfFilename '.i33'], 'r');
 [acfs, count] = fread(fid, structSizeSinos.numTheta*structSizeSinos.numR*numSinos, 'single=>single');
-acfs = reshape(acfs, [structSizeSinos.numR structSizeSinos.numTheta structSizeSinos.numZ]);
+acfs = reshape(acfs, [structSizeSinos.numR structSizeSinos.numTheta numSinos]);
 % Matlab reads in a column-wise order that why angles are in the columns.
 % We want to have it in the rows since APIRL and STIR and other libraries
 % use row-wise order:

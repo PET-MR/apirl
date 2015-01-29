@@ -122,7 +122,8 @@ bool Mlem2dMultiple::Reconstruct()
   }
   
   // Normalizo el volumen para que todos los slices tengan la misma ganancia:
-  this->NormalizeVolume();
+  // Saco esto porque no es genérico.
+  //this->NormalizeVolume();
   // Una vez que recontruí todo, guardo en interfile la imagen con todos los slices:
   sprintf(c_string, "%s_volFinal", this->outputFilenamePrefix.c_str());
   reconstructionImage->writeInterfile(c_string);
