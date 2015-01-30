@@ -81,7 +81,12 @@ class DLLEXPORT MlemSinogram3d : public Mlem
     /** Objeto del tipo Projection que será la entrada al algoritmo de reconstrucción,
     puede ser alguno de los distintos tipos de proyección: sinograma 2D, sinograma 3D, etc. */
     Sinogram3D* scatterCorrectionProjection;
-	  
+    
+    /// Proyección de normalización. Es unfactor multiplicativo.
+    /** Objeto del tipo Projection que será la entrada al algoritmo de reconstrucción,
+    puede ser alguno de los distintos tipos de proyección: sinograma 2D, sinograma 3D, etc. */
+    Sinogram3D* normalizationCorrectionFactorsProjection;
+    
     /// Método que calcula la imagen de sensibilidad.
     /* Método que hace la backprojection de una imagen cosntante para obtener
     la imagen de sensibilidad necesaria para la reconstrucción. */
@@ -112,6 +117,11 @@ class DLLEXPORT MlemSinogram3d : public Mlem
     /**  Este método habilita la corrección por randoms y carga un sinograma para ello.
     */
     bool setRandomCorrectionProjection(string acfFilename);
+    
+    /// Método que carga un sinograma desde un archivo interfile con los factores de normalización.
+    /**  Este método habilita la corrección por randoms y carga un sinograma para ello.
+    */
+    bool setNormalizationFactorsProjection(string normFilename);
     
     /// Método que aplica las correcciones habilitadas según se hayan cargado los sinogramas de atenuación, randoms y/o scatter.
     bool correctInputSinogram();

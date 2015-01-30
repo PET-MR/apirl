@@ -82,7 +82,7 @@ class DLLEXPORT Mlem2d : public Mlem
 	  puede ser alguno de los distintos tipos de proyección: sinograma 2D, sinograma 3D, etc. */
 	  Sinogram2D* scatterCorrectionProjection;
 	  
-	  /// Proyección con factores de corrección por atenuación.
+	  /// Proyección con factores de corrección para normalización.
 	  /** Objeto del tipo Projection que será la entrada al algoritmo de reconstrucción,
 	  puede ser alguno de los distintos tipos de proyección: sinograma 2D, sinograma 3D, etc. */
 	  Sinogram2D* normalizationCorrectionFactorsProjection;
@@ -117,6 +117,16 @@ class DLLEXPORT Mlem2d : public Mlem
 		/**  Este método habilita la corrección por randoms y carga un sinograma para ello.
 		*/
 		bool setRandomCorrectionProjection(string acfFilename){};
+		
+		/// Método que carga un sinograma de normalización desde un archivo interfile.
+		/**  Este método habilita la corrección por normalización y carga un sinograma para ello.
+		*/
+		bool setNormalizationFactorsProjection(string normFilename);
+		
+		/// Sobrecarga de setNormalizationFactorsProjection que carga un sinograma de normalización desde un archivo interfile.
+		/**  Este método habilita la corrección por normalización y carga un sinograma para ello.
+		*/
+		bool setNormalizationFactorsProjection(Sinogram2D* normSinogram);
 		
 		/// Método que aplica las correcciones habilitadas según se hayan cargado los sinogramas de atenuación, randoms y/o scatter.
 		bool correctInputSinogram(){};

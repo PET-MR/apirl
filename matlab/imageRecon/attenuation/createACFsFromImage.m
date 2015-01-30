@@ -26,7 +26,7 @@ attenuationMapFilename = [outputPath 'attenMapPhantom'];
 interfilewrite(single(attenuationMap_1_cm), attenuationMapFilename, sizePixel_mm);
 % Now with the phantom, we create the configuration file for the command
 % generateACFs:
-genAcfFilename = [outputPath '/genACFs_' acfFilename '.par'];
+genAcfFilename = [outputPath 'genACFs_' acfFilename '.par'];
 % I have to add the extensions of the interfiles:
 CreateGenAcfConfigFile(genAcfFilename, structSizeSinos, [filenameSinogram '.h33'], [attenuationMapFilename '.h33'], acfFilename);
 

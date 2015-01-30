@@ -36,10 +36,10 @@ bool SiddonProjector::Backproject (Sinogram2D* InputSinogram, Image* outputImage
   unsigned int LengthList, i, j, l, indexPixel;
   float newValue = 0, geomFactor;
   // I only need to calculate the ForwardProjection of the bins were ara at least one event
-  #pragma omp parallel private(i, j, l, LOR, P1, P2, MyWeightsList, geomFactor, LengthList, newValue, indexPixel) shared(InputSinogram,ptrPixels)
+  //#pragma omp parallel private(i, j, l, LOR, P1, P2, MyWeightsList, geomFactor, LengthList, newValue, indexPixel) shared(InputSinogram,ptrPixels)
   {
     //MyWeightsList = (SiddonSegment**)malloc(sizeof(SiddonSegment*));
-    #pragma omp for
+    //#pragma omp for
     for(int i = 0; i < InputSinogram->getNumProj(); i++)
     {
       for(int j = 0; j < InputSinogram->getNumR(); j++)
@@ -63,8 +63,10 @@ bool SiddonProjector::Backproject (Sinogram2D* InputSinogram, Image* outputImage
 	      {
 		indexPixel = MyWeightsList[l].IndexY * sizeImage.nPixelsX + MyWeightsList[l].IndexX;
 		newValue = MyWeightsList[l].Segment * InputSinogram->getSinogramBin(i,j)*geomFactor;
-		#pragma omp atomic
+		//#pragma omp atomic
 		  ptrPixels[indexPixel] += newValue;	
+		  if(ptrPixels[indexPixel]!=ptrPixels[indexPixel])
+		    printf("Nan: %d %d %f\n", i, j, newValue);
 	      }
 	    }
 	    // Now I have my estimated projection for LOR i

@@ -70,13 +70,14 @@ imshow(crystalInterf ./max(max(crystalInterf)));
 % Generate one norm factor:
 normSinoGeomInterf = normSinoGeom .* crystalInterf;
 title('Sinogram Correction For Crystal Interference and Geometry');
-
+%%
 % Generate the sinogram for crystal efficencies. To test, each detector has
 % a different gain:
-%sinoEfficencies = createSinogram2dFromDetectorsEfficency(componentFactors{3}(:,10), structSizeSino2d, 1);
-
+sinoEfficencies = createSinogram2dFromDetectorsEfficency(componentFactors{3}(:,10), structSizeSino2d, 1);
+figure;
+imshow(componentFactors{3}'./max(max(componentFactors{3})));
 % Axial correction factors:
-axialCorrectionFactors = componentFactors{4}.*componentFactors{8};
+%axialCorrectionFactors = componentFactors{4}.*componentFactors{8};
 %% ATTENUATION CORRECTION - PICK A OR B AND COMMENT THE NOT USED 
 %% COMPUTE THE ACFS (OPTION A)
 % Read the phantom and then generate the ACFs with apirl:
@@ -96,17 +97,32 @@ imshow(image, gray);
 % Size of the image to cover the full fov:
 sizeImage_mm = [structSizeSino3d.rFov_mm*2 structSizeSino3d.rFov_mm*2 structSizeSino3d.zFov_mm];
 sizePixel_mm = sizeImage_mm ./ imageSize_pixels;
-
-% Create ACFs of a computed phatoms with the linear attenuation
-% coefficients:
-acfFilename = [outputPath 'acfsSinogramSpan11'];
-filenameSinogram = [outputPath 'sinogramSpan11'];
-acfs3dSpan11 = createACFsFromImage(attenMap, sizePixel_mm, outputPath, acfFilename, filenameSinogram, structSizeSino3d, 1);
+% 
+% % Create ACFs of a computed phatoms with the linear attenuation
+% % coefficients:
+% acfFilename = ['acfsSinogramSpan11'];
+% filenameSinogram = [outputPath 'sinogramSpan11'];
+% acfs3dSpan11 = createACFsFromImage(attenMap, sizePixel_mm, outputPath, acfFilename, filenameSinogram, structSizeSino3d, 1);
 % Now the same for 2d sinograms:
-acfFilename = [outputPath 'acfsDirectSinograms'];
+acfFilename = ['acfsDirectSinograms'];
 filenameSinogram = [outputPath 'directSinograms'];
 acfsDirectSinograms = createACFsFromImage(attenMap, sizePixel_mm, outputPath, acfFilename, filenameSinogram, structSizeSino2d, 1);
 %% READ THE ACFS (OPTION B)
+% Span11 Sinogram:
+acfFilename = [outputPath 'acfsSinogramSpan11'];
+fid = fopen([acfFilename '.i33'], 'r');
+numSinos = sum(structSizeSino3dSpan11.sinogramsPerSegment);
+[acfsSinogramSpan11, count] = fread(fid, structSizeSino3dSpan11.numTheta*structSizeSino3dSpan11.numR*numSinos, 'single=>single');
+acfsSinogramSpan11 = reshape(acfsSinogramSpan11, [structSizeSino3dSpan11.numR structSizeSino3dSpan11.numTheta numSinos]);
+% Matlab reads in a column-wise order that why angles are in the columns.
+% We want to have it in the rows since APIRL and STIR and other libraries
+% use row-wise order:
+acfsSinogramSpan11 = permute(acfsSinogramSpan11,[2 1 3]);
+% Close the file:
+fclose(fid);
+
+acfFilename = [outputPath 'acfsDirectSinograms'];
+% Direct Sinogram:
 fid = fopen([acfFilename '.i33'], 'r');
 [acfsDirectSinograms, count] = fread(fid, structSizeSino2d.numTheta*structSizeSino2d.numR*structSizeSino2d.numZ, 'single=>single');
 acfsDirectSinograms = reshape(acfsDirectSinograms, [structSizeSino2d.numR structSizeSino2d.numTheta structSizeSino2d.numZ]);
@@ -123,7 +139,7 @@ h = figure;
 imshow(imageOfDirectSinos);
 title('Direct Sinograms Span 1');
 % SPAN11
-imageOfDirectSinos = getImageFromSlices(sinogramSpan11(:,:,1: structSizeSino3d.sinogramsPerSegment(1)), 8, 1,0);
+imageOfDirectSinos = getImageFromSlices(sinogramSpan11(:,:,1: structSizeSino3dSpan11.sinogramsPerSegment(1)), 8, 1,0);
 h = figure;
 imshow(imageOfDirectSinos);
 title('Direct Sinograms Span 11');
@@ -143,9 +159,6 @@ countsPerSinogram = permute(countsPerSinogram,[3 1 2]);
 h = figure;
 plot(countsPerSinogram);
 title('Counts Per Sinogram Span 11 without Normalization');
-
-
-
 
 %% CORRECTION OF SPAN 11 SINOGRAMS
 if(numel(axialCorrectionFactors) ~= sum(structSizeSino3dSpan11.sinogramsPerSegment))
@@ -177,7 +190,6 @@ title('Counts Per Direct Sinogram without Normalization');
 % very precise. So we estimate them from the same GE acquisition. There is
 % a pattern in the blocks in the gain of each pixel, this can be observed
 % if we plot all of them normalized to the maximum:
-%%
 % Re arrange data for block:
 numRingBlocks = 8;
 numPixelsPerBlock = 8;
@@ -187,12 +199,12 @@ for ringBlock = 1 : numRingBlocks
     labels{ringBlock} = sprintf('Ring Block %d', ringBlock);
 end
 figure;
-subplot(3,2,1);
+subplot(2,2,1);
 plot(ringGain);
 legend(labels);
 xlabel('Nº of Pixel in Block Ring');
 ylabel('Counts in Pixel');
-subplot(3,2,2);
+subplot(2,2,2);
 for pixels = 1 : numPixelsPerBlock
     labelsPixels{pixels} = sprintf('Pixel %d', pixels);
 end
@@ -201,45 +213,67 @@ xlabel('Nº of Block');
 ylabel('Counts in Pixels');
 legend(labelsPixels);
 
-subplot(3,2,3);
+subplot(2,2,3);
 % Gain for each block:
 for ringBlock = 1 : numRingBlocks
     ringGainNormInPosInBlock(:,ringBlock) = ringGain(:,ringBlock)./max(ringGain(:,ringBlock));
 end
-plot(ringGainNormInPosInBlock');
+gainPerPixelInBlock = mean(ringGainNormInPosInBlock,2);
+plot(ringGainNormInPosInBlock);
+hold on
+plot(gainPerPixelInBlock, 'r', 'LineWidth', 2);
+labels{9} = 'media';
 legend(labels);
 xlabel('Nº of Pixel in Block Ring');
 ylabel('Counts in Pixel');
-subplot(3,2,4);
+subplot(2,2,4);
 % Normalize to get other info:
 for pixels = 1 : numPixelsPerBlock
     labelsPixels{pixels} = sprintf('Pixel %d', pixels);
     ringGainNormInBlock(pixels,:) = ringGain(pixels,:)./mean(ringGain(pixels,:));
     %ringGainNormInBlock(pixels,:) = [ringGain(pixels,1:4) ringGain(9-pixels,5:8)]./max(ringGain(pixels,:));
 end
+gainPerBlock = mean(ringGainNormInBlock,1);
 plot(ringGainNormInBlock');
+hold on;
+plot(gainPerBlock, 'r-*', 'LineWidth', 2);
 xlabel('Nº of Block');
 ylabel('Counts in Pixels');
+labelsPixels{9} =  'media';
 legend(labelsPixels);
 
-subplot(3,2,5);
-gainPerPixel = mean(ringGain,2);
-plot(1:numPixelsPerBlock,gainPerPixel);
-xlabel('Nº of Pixel in Block Ring');
-ylabel('Counts in Pixels');
-legend(labelsPixels);
+% We observe that there is a parabola a bit displaces from the center. We
+% fit a parabola for each case and compute its center:
+figure;
+hold on;
+colors = {'r','g','b','k','c','m','y','r'};
+for pixel = 1 : numPixelsPerBlock
+    x = pixel:8:numRingBlocks*numPixelsPerBlock;
+    quadratic = polyfit(x,ringGainNormInBlock(pixel,:),2);
+    center(pixel) = -quadratic(2)/(2*quadratic(1));
+    plot(x, polyval(quadratic,x), [colors{pixel} '-*']);
+end
+% A general fit:
+x = 1:1:numRingBlocks*numPixelsPerBlock;
+quadratic = polyfit(x ,[ringGainNormInBlock(:)]',2);
+plot(x, polyval(quadratic,x), [colors{pixel} '-*'], 'LineWidth', 2);
+title('Fitted Quadratic Curve to Pixel Gain in Ring');
+xlabel('Ring Number');
 
-subplot(3,2,6);
-% Gain for each block:
-gainPerBlock = mean(ringGain,1);
-plot(1:8,(ringGain(:,8)-ringGain(:,1))',1:8,ringGainNormInBlock(8,:)-ringGainNormInBlock(1,:));
+% This is the parameter we use for a global ring gain:
+ringGainFactor = polyval(quadratic,x);
+% The other factor is the mean distribution inside a block, that is
+% repeated for each pixel =
+gainPerPixel = repmat(gainPerPixelInBlock', 1, 8);
+% Now to produce a correction factor that invovles both, just multiply both
+axialNormFactorsDirectSinograms = ringGainFactor .* gainPerPixel;
+figure;
+plot(1:64, axialNormFactorsDirectSinograms./max(axialNormFactorsDirectSinograms), 1:64, countsPerSinogram./max(countsPerSinogram));
+title('Axial Correction Factors for Direct Sinograms');
+xlabel('Ring');
 
-xlabel('Nº of Block');
-ylabel('Counts in Pixel');
-% Compute block dependent gain by averaging
-%%
 for i = 1 : structSizeSino2d.numZ
-    directSinogramsCorrected(:,:,i) = single(directSinograms(:,:,i)) .* normSinoGeomInterf .* 1./ componentFactors{8}(2*i-1);% axialCorrectionFactors(2*i);
+    directSinogramsCorrected(:,:,i) = single(directSinograms(:,:,i)) .* normSinoGeomInterf .* 1./ axialNormFactorsDirectSinograms(i);
 end
 % Plot
 h = figure;image = getImageFromSlices(directSinogramsCorrected,10,1,1);
@@ -268,17 +302,41 @@ title('Direct Sinograms with Normalization and Attenuation');
 % Write to a file in interfile formar:
 outputSinogramName = [outputPath '/directSinogramsNormAttenCorrected'];
 interfileWriteSino(single(directSinogramsCorrected), outputSinogramName);
-%% GENERATE ATTENUATION AND NORMALIZATION FACTORS FOR APIRL
+%% GENERATE ATTENUATION AND NORMALIZATION FACTORS FOR DIRECT SINOGRAMS FOR APIRL
+% This factors are not for precorrect but for apply as normalizaiton in
+% each iteration:
 atteNormFactorsDirect = zeros(size(directSinograms));
 for i = 1 : structSizeSino2d.numZ
-    atteNormFactorsDirect(:,:,i) = gaps_sinogram .* normSinoGeomInterf .* axialCorrectionFactors(i) .* acfsDirectSinograms(:,:,i);
+    nonZeroBins = (normSinoGeomInterf~=0) & (acfsDirectSinograms(:,:,i)~=0);
+    auxAcfs = acfsDirectSinograms(:,:,i);
+    atteNormFactorsDirect_i = atteNormFactorsDirect(:,:,i);
+    atteNormFactorsDirect_i(nonZeroBins) = 1./ (normSinoGeomInterf(nonZeroBins) .* (1./ axialNormFactorsDirectSinograms(i)) .* auxAcfs(nonZeroBins));
+    % Gaps:
+    atteNormFactorsDirect(:,:,i) = gaps_sinogram .* atteNormFactorsDirect_i;
+    % For precorrection we need the inverse factor:
+    atteNormPrecorrectionFactorsDirect(:,:,i) = gaps_sinogram .* normSinoGeomInterf .* (1./ axialNormFactorsDirectSinograms(i)) .* acfsDirectSinograms(:,:,i);
 end
 outputSinogramName = [outputPath '/attenNormFactorsForDirectSinograms'];
 interfileWriteSino(single(atteNormFactorsDirect), outputSinogramName);
 h = figure;image = getImageFromSlices(atteNormFactorsDirect,10,1,1);
 imshow(image);
 title('Normalization and Attenuation Factors for Direct Sinograms');
-
+%% GENERATE ATTENUATION AND NORMALIZATION FACTORS FOR SPAN11 SINOGRAMS FOR APIRL
+% This factors are not for precorrect but for apply as normalizaiton in
+% each iteration:
+atteNormFactorsSpan11 = zeros(size(sinogramSpan11));
+for i = 1 : sum(structSizeSino3dSpan11.sinogramsPerSegment)
+    nonZeroBins = (normSinoGeomInterf~=0) & (acfsSinogramSpan11(:,:,i)~=0);
+    auxAcfs = acfsSinogramSpan11(:,:,i);
+    atteNormFactorsSpan11_i = atteNormFactorsSpan11(:,:,i);
+    atteNormFactorsSpan11_i(nonZeroBins) = 1./ (normSinoGeomInterf(nonZeroBins) .* (1./axialCorrectionFactors(i)) .* auxAcfs(nonZeroBins));
+    % Gaps:
+    atteNormFactorsSpan11(:,:,i) = gaps_sinogram .* atteNormFactorsSpan11_i;
+    % For precorrection we need the inverse factor:
+    atteNormPrecorrectionFactorsSpan11(:,:,i) = gaps_sinogram .* normSinoGeomInterf .* (axialCorrectionFactors(i)) .* acfsSinogramSpan11(:,:,i);
+end
+outputSinogramName = [outputPath '/attenNormFactorsForSinogramSpan11'];
+interfileWriteSino(single(atteNormFactorsSpan11), outputSinogramName, structSizeSino3dSpan11.sinogramsPerSegment, structSizeSino3dSpan11.minRingDiff, structSizeSino3dSpan11.maxRingDiff);
 %% 2D RECONSTRUCTION OF DIRECT SINOGRAMS WITH ONLY ATTENUATION CORRECTION
 % Create initial estimate for reconstruction:
 % Size of the image to cover the full fov:
@@ -340,7 +398,7 @@ mm_x = 2.0445;
 % Reconstruction
 for slice = 1 : structSizeSino2d.numZ
     disp(sprintf('Reconstrucción de Slice %d', slice));
-    em_recon(:,:,slice) = mlem_mmr( nx, ny, mm_x, structSizeSino2d.numR, directSinograms(:,:,slice)', gaps_sinogram', atteNormFactorsDirect(:,:,slice)', gaps_sinogram', structSizeSino2d.thetaValues_deg, 40, 0);
+    em_recon(:,:,slice) = mlem_mmr( nx, ny, mm_x, structSizeSino2d.numR, directSinograms(:,:,slice)', gaps_sinogram', atteNormPrecorrectionFactorsDirect(:,:,slice)', gaps_sinogram', structSizeSino2d.thetaValues_deg, 40, 1);
 end
 
 outputVolumeName = [outputPath '/reconstructedVolDirectSinogramsAtenNorm'];

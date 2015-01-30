@@ -17,6 +17,7 @@ Mlem::Mlem(Image* cInitialEstimate, string cPathSalida, string cOutputPrefix, in
   enableAttenuationCorrection = false;
   enableRandomsCorrection = false;
   enableScatterCorrection = false;
+  enableNormalization = false;
   
   sizeReconImage = initialEstimate->getSize();
   reconstructionImage = new Image(sizeReconImage);

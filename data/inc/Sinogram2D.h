@@ -183,6 +183,13 @@ class DLLEXPORT Sinogram2D : public Projection
 		  */
 		void divideBinToBin(Sinogram2D* sinogramDivisor);
 		
+		/// Método que multiplica bin a bin con otro sinograma, y lo asigna en el bin de este sinograma.
+		/** Método que multiplica bin a bin con otro sinograma, y lo asigna en el bin de este sinograma. 
+		  @param sinogramFactor puntero a objeto del tipo Sinogram2D con que multiplicará bin a bin este sinograma. El divisor con los bines de este singorama.
+		  
+		  */
+		void multiplyBinToBin(Sinogram2D* sinogramFactor);
+		
 		/// Método que divide bin a bin con otro sinograma, y lo asigna en el bin de este sinograma.
 		/** Método que divide bin a bin con otro sinograma, y lo asigna en el bin de este sinograma. El divisor es este sinograma.
 		  @param sinogramDivisor puntero a objeto del tipo Sinogram2D con que será dividendo de la divsión. 

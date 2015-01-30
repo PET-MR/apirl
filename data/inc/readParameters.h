@@ -32,4 +32,5 @@ int getCylindricalScannerParameters(string mlemFilename, string cmd, float* radi
 int getNumberOfSubsets(string mlemFilename, string cmd, float* numberOfSubsets);
 int getArPetParameters(string mlemFilename, string cmd, float* radiusFov_mm, float* zFov_mm, float* blindArea_mm, int* minDiffDetectors);
 int getCorrectionSinogramNames(string mlemFilename, string cmd, string* acfFilename, string* estimatedRandomsFilename, string* estimatedScatterFilename);
+int getNormalizationSinogramName(string mlemFilename, string cmd, string* normFilename);
 #endif

@@ -513,3 +513,31 @@ int getCorrectionSinogramNames(string mlemFilename, string cmd, string* acfFilen
   }
   return 0;
 }
+
+
+int getNormalizationSinogramName(string mlemFilename, string cmd, string* normFilename)
+{
+  int errorCode;
+  char returnValue[256];	// string en el que se recibe el valor de un keyword en la lectura del archivo de parámetros.
+  char errorMessage[300];	// string de error para la función de lectura de archivo de parámetros.
+  // Lectura de Proyectores, tanto para forwardprojection como para backprojection.
+  if((errorCode=parametersFile_read((char*)mlemFilename.c_str(), (char*)cmd.c_str(), "normalization correction factors", returnValue, errorMessage)) != 0)
+  {
+    if(errorCode == PMF_KEY_NOT_FOUND)
+    {
+      // Si no lo encuentra pongo el string vacío, de esta forma indico que no se realiza la corrección por atenuación:
+      *normFilename = "";
+    }
+    else
+    {
+      cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
+      return -1;
+    }
+  }
+  else
+  {
+    (*normFilename).assign(returnValue);
+  }
+  
+  return 0;
+}

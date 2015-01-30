@@ -188,7 +188,7 @@ int main (int argc, char *argv[])
   string strForwardprojector;
   string strBackprojector;
   string attenMapFilename;
-  string acfFilename, estimatedRandomsFilename, estimatedScatterFilename;
+  string acfFilename, estimatedRandomsFilename, estimatedScatterFilename, normFilename;
   Projector* forwardprojector;
   Projector* backprojector;
   int saveIterationInterval;
@@ -347,7 +347,9 @@ int main (int argc, char *argv[])
   // Pido los singoramas de corrección si es que están disponibles:
   if(getCorrectionSinogramNames(parameterFileName, "OSEM", &acfFilename, &estimatedRandomsFilename, &estimatedScatterFilename))
     return -1;
-  
+  // Idem para normalización:
+  if(getNormalizationSinogramName(parameterFileName,  "OSEM",&normFilename))
+    return -1;
 	
   // Lectura de proyecciones y reconstrucción, depende del tipo de dato de entrada:
   if(inputType.compare("Sinogram2D")==0)
@@ -384,6 +386,7 @@ int main (int argc, char *argv[])
     if (getCylindricalScannerParameters(parameterFileName, "OSEM", &radiusFov_mm, &zFov_mm, &radiusScanner_mm))
       return -1;
     Sinograms2DinCylindrical3Dpet* inputProjection = new Sinograms2DinCylindrical3Dpet(inputFilename, radiusFov_mm, zFov_mm, radiusScanner_mm);
+    
     mlem = new Mlem2dMultiple(inputProjection, initialEstimate, "", outputPrefix, numIterations, saveIterationInterval, saveIntermediateData, bSensitivityFromFile, forwardprojector, backprojector);
     if(bSensitivityFromFile)
     {
@@ -451,6 +454,11 @@ int main (int argc, char *argv[])
     mlem->setRandomCorrectionProjection(estimatedRandomsFilename);
   if(estimatedScatterFilename != "")
     mlem->setScatterCorrectionProjection(estimatedScatterFilename);
+  // Y normalización:
+  if (normFilename != "")
+  {
+    mlem->setNormalizationFactorsProjection(normFilename);
+  }
   // Aplico las correcciones:
   mlem->correctInputSinogram();
   // Reconstruyo.

@@ -39,6 +39,12 @@ bool MlemSinogram3d::setRandomCorrectionProjection(string randomsFilename)
   enableRandomsCorrection = true;
 }
 
+bool MlemSinogram3d::setNormalizationFactorsProjection(string normFilename)
+{
+  normalizationCorrectionFactorsProjection = new Sinogram3DCylindricalPet((char*)normFilename.c_str(), inputProjection->getRadioFov_mm(), inputProjection->getAxialFoV_mm(), inputProjection->getRadioFov_mm());
+  enableNormalization = true;
+}
+
 /// Método que aplica las correcciones habilitadas según se hayan cargado los sinogramas de atenuación, randoms y/o scatter.
 bool MlemSinogram3d::correctInputSinogram()
 {

@@ -7,7 +7,7 @@
 %
 %  This functions create a 2d sinogram for the correction of detector
 %  efficencies from the individual detector efficencies reveived in the
-%  parameter efficenciesPerDetector.
+%  parameter efficenciesPerDetector. This is for the siemens biograph mMr
 
 function sinoEfficencies = createSinogram2dFromDetectorsEfficency(efficenciesPerDetector, structSizeSino2d, visualization)
 
@@ -16,11 +16,12 @@ numDetectors = numel(efficenciesPerDetector);
 % minDiff between detectors:
 minDiffDetectors = (numDetectors - structSizeSino2d.numR) / 2;
 
+% Offset. La proyeccion empieza en
 % Histogram of amount of times has been used each detector:
 detectorIds = 1 : numDetectors;
 histDetIds = zeros(1, numDetectors);
 % Go for each detector and then for each combination:
-for det1 = 1 : numel(efficenciesPerDetector)
+for det1 = 1 : 1%numel(efficenciesPerDetector)
     for indDet2 = 1 : structSizeSino2d.numR/2
         % For each detector, the same angle for two detectors (half angles)
         indProj = det1 - indDet2;

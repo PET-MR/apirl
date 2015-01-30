@@ -215,6 +215,8 @@ class DLLEXPORT Mlem
 	  
 	  bool enableRandomsCorrection;
 	  
+	  bool enableNormalization;
+	  
 	  /// Proyección con factores de corrección por atenuación.
 	  /** Objeto del tipo Projection que será la entrada al algoritmo de reconstrucción,
 	  puede ser alguno de los distintos tipos de proyección: sinograma 2D, sinograma 3D, etc. */
@@ -231,6 +233,11 @@ class DLLEXPORT Mlem
 	  /** Objeto del tipo Projection que será la entrada al algoritmo de reconstrucción,
 	  puede ser alguno de los distintos tipos de proyección: sinograma 2D, sinograma 3D, etc. */
 	  Projection* scatterCorrectionProjection;
+	  
+	  //// Proyección con factores de corrección para normalización.
+	  /** Objeto del tipo Projection que será la entrada al algoritmo de reconstrucción,
+	  puede ser alguno de los distintos tipos de proyección: sinograma 2D, sinograma 3D, etc. */
+	  Projection* normalizationCorrectionFactorsProjection;
 	  
 	  /// Umbral de la sensibility image para considerarla en la actualización del píxel.
 	  /** En el píxel update, se divide la imagen backprojected por la sensibility image. Esto hace que cuando 
@@ -297,6 +304,11 @@ class DLLEXPORT Mlem
 	  /**  Este método habilita la corrección por randoms y carga un sinograma para ello.
 	  */
 	  virtual bool setRandomCorrectionProjection(string acfFilename) = 0;
+	  
+	  /// Método que carga un sinograma desde un archivo interfile con los factores de normalización.
+	  /**  Este método habilita la corrección por randoms y carga un sinograma para ello.
+	  */
+	  virtual bool setNormalizationFactorsProjection(string normFilename) = 0;
 	  
 	  /// Método que aplica las correcciones habilitadas según se hayan cargado los sinogramas de atenuación, randoms y/o scatter.
 	  virtual bool correctInputSinogram() = 0;

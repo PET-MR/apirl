@@ -20,6 +20,19 @@ Mlem2d::Mlem2d(string configFilename)
   this->likelihoodValues = (float*)malloc(sizeof(float)*1);
 }
 
+bool Mlem2d::setNormalizationFactorsProjection(Sinogram2D* normSinogram)
+{
+  normalizationCorrectionFactorsProjection = normSinogram->Copy();
+  enableNormalization = true;
+}
+
+bool Mlem2d::setNormalizationFactorsProjection(string normFilename)
+{
+  // Problema porque sinogram2d no tiene get lor para hacer backprojection
+  //normalizationCorrectionFactorsProjection = new Sinogram2DinCylindrical3Dpet((char*)normFilename.c_str(), inputProjection->getRadioFov_mm());
+  enableNormalization = true;
+}
+
 /// Método público que realiza la reconstrucción en base a los parámetros pasados al objeto Mlem instanciado
 bool Mlem2d::Reconstruct()
 {
@@ -59,23 +72,23 @@ bool Mlem2d::Reconstruct()
   /// Me fijo si la sensitivity image la tengo que cargar desde archivo o calcularla
   if(sensitivityImageFromFile)
   {
-	  /// Leo el sensitivity volume desde el archivo
-	  sensitivityImage->readFromInterfile((char*) sensitivityFilename.c_str());
-	  ptrSensitivityPixels = sensitivityImage->getPixelsPtr();
-	  updateUpdateThreshold();
+    /// Leo el sensitivity volume desde el archivo
+    sensitivityImage->readFromInterfile((char*) sensitivityFilename.c_str());
+    ptrSensitivityPixels = sensitivityImage->getPixelsPtr();
+    updateUpdateThreshold();
   }
   else
   {
-	  /// Calculo el sensitivity volume
-	  if(computeSensitivity(sensitivityImage)==false)
-	  {
-	    strError = "Error al calcular la sensitivity Image.";
-	    return false;
-	  }
-	  // La guardo en disco.
-	  string sensitivityFileName = outputFilenamePrefix;
-	  sensitivityFileName.append("_sensitivity");
-	  sensitivityImage->writeInterfile((char*)sensitivityFileName.c_str());
+    /// Calculo el sensitivity volume
+    if(computeSensitivity(sensitivityImage)==false)
+    {
+      strError = "Error al calcular la sensitivity Image.";
+      return false;
+    }
+    // La guardo en disco.
+    string sensitivityFileName = outputFilenamePrefix;
+    sensitivityFileName.append("_sensitivity");
+    sensitivityImage->writeInterfile((char*)sensitivityFileName.c_str());
   }
   /// Inicializo el volumen a reconstruir con la imagen del initial estimate:
   reconstructionImage = new Image(initialEstimate);
@@ -114,13 +127,24 @@ bool Mlem2d::Reconstruct()
 	  /// Proyección de la imagen:
 	  forwardprojector->Project(reconstructionImage, estimatedProjection);
 	  clock_t finalClockProjection = clock();
+	  /// Si hay normalización, la aplico luego de la proyección:
+	  if(enableNormalization)
+	    estimatedProjection->multiplyBinToBin(normalizationCorrectionFactorsProjection);
 	  /// Guardo el likelihood (Siempre va una iteración atrás, ya que el likelihhod se calcula a partir de la proyección
 	  /// estimada, que es el primer paso del algoritmo). Se lo calculo al sinograma
 	  /// proyectado, respecto del de entrada.
 	  this->likelihoodValues[t] = estimatedProjection->getLikelihoodValue(inputProjection);
+	  
 	  /// Pongo en cero la proyección estimada, y hago la backprojection.
 	  backprojectedImage->fillConstant(0);
-	  backprojector->DivideAndBackproject(inputProjection, estimatedProjection, backprojectedImage);
+	  /// Divido input sinogram por el estimated:
+	  estimatedProjection->inverseDivideBinToBin(inputProjection);
+	  /// Si hay normalización, la aplico luego de la proyección:
+	  if(enableNormalization)
+	    estimatedProjection->multiplyBinToBin(normalizationCorrectionFactorsProjection);
+	  /// Retroproyecto
+	  backprojector->Backproject(estimatedProjection, backprojectedImage);
+	  ///backprojector->DivideAndBackproject(inputProjection, estimatedProjection, backprojectedImage);
 	  clock_t finalClockBackprojection = clock();
 	  /// Actualización del Pixel
 	  for(int k = 0; k < nPixels; k++)
@@ -218,11 +242,17 @@ bool Mlem2d::Reconstruct()
 bool Mlem2d::computeSensitivity(Image* outputImage)
 {
   /// Creo un Sinograma ·D igual que el de entrada.
-  Sinogram2D* constantSinogram2D = inputProjection->Copy();
-  /// Lo lleno con un valor constante
-  constantSinogram2D->FillConstant(1);
+  Sinogram2D* backprojectSinogram2D; 
+  /// Si no hay normalización lo lleno con un valor constante, de lo contrario bakcprojec normalizacion:
+  if (enableNormalization)
+    backprojectSinogram2D = normalizationCorrectionFactorsProjection;
+  else
+  {
+    backprojectSinogram2D = inputProjection->Copy();
+    backprojectSinogram2D->FillConstant(1);
+  }
   /// Por último hago la backprojection
-  backprojector->Backproject(constantSinogram2D, outputImage);
+  backprojector->Backproject(backprojectSinogram2D, outputImage);
   updateUpdateThreshold();
   return true;
 }

@@ -51,6 +51,13 @@ bool Mlem2dMultiple::setRandomCorrectionProjection(string randomsFilename)
   enableRandomsCorrection = true;
 }
 
+bool Mlem2dMultiple::setNormalizationFactorsProjection(string normFilename)
+{
+  // Seteo un valor arbitro de radio del scanner para que sea más grande que el fov.
+  normalizationCorrectionFactorsProjection= new Sinograms2DinCylindrical3Dpet((char*)normFilename.c_str(), inputProjection->getRadioFov_mm(), inputProjection->getAxialFoV_mm(), inputProjection->getRadioFov_mm()*1.4);
+  enableNormalization = true;
+}
+
 /// Método que aplica las correcciones habilitadas según se hayan cargado los sinogramas de atenuación, randoms y/o scatter.
 bool Mlem2dMultiple::correctInputSinogram()
 {
@@ -116,6 +123,9 @@ bool Mlem2dMultiple::Reconstruct()
     // Por practicidad no guardo los datos de cada MLEM.
     //mlem2d = new Mlem2d((Sinogram2D*) this->inputProjection->getSinogram2D(i), slice, this->pathSalida, outputPrefixForSlice, this->numIterations, 0, 0,this->sensitivityImageFromFile, this->forwardprojector, this->backprojector);
     mlem2d = new Mlem2d(this->inputProjection->getSinogram2D(i), slice, this->pathSalida, outputPrefixForSlice, this->numIterations, this->saveIterationInterval, this->saveIntermediateProjectionAndBackprojectedImage,this->sensitivityImageFromFile, this->forwardprojector, this->backprojector);
+    // Set the normalization if its enabled:
+    if(enableNormalization)
+      mlem2d->setNormalizationFactorsProjection(this->normalizationCorrectionFactorsProjection->getSinogram2D(i));
     mlem2d->Reconstruct();
     // Con el slice ya reconstruido lo debo copiar al volumen. Ya previamente verifiqué que tenía un sinograma por slice, así que simplemente lo copio:
     reconstructionImage->setSlice(i, mlem2d->getReconstructedImage());
