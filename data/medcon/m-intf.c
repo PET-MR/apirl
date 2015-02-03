@@ -1911,10 +1911,10 @@ const char *MdcReadINTF(FILEINFO *fi)
   if (fi->image[0].pixel_ysize == 0. ) fi->pixdim[2]=1.;
   else fi->pixdim[2] = fi->image[0].pixel_ysize;
   /// Modificado por Martin Belzunce
-  if ((fi->pixdim[0] == 0)&&(fi->image[0].slice_width == 0))
+  /*if ((fi->pixdim[0] == 0)&&(fi->image[0].slice_width == 0))
     fi->pixdim[3]= (fi->pixdim[1] + fi->pixdim[2]) / 2. ;
   else 
-    fi->pixdim[3]=fi->image[0].slice_width;
+    fi->pixdim[3]=fi->image[0].slice_width;*/
 
   /* loop final time through all images */
   for (i=0; i<fi->number; i++) {

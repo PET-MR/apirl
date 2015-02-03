@@ -112,7 +112,7 @@ bool MlemSinogram3d::Reconstruct()
   /// Puntero del array con los tiempos de pixel update por iteración.
   float* timesPixelUpdate_mseg;
   /// String de c para utlizar en los mensajes de logueo.
-  char c_string[512];
+  char c_string[512]; string outputFilename;
   /// Pido memoria para los arrays, que deben tener tantos elementos como iteraciones:
   timesIteration_mseg = (float*)malloc(sizeof(float)*this->numIterations);
   timesBackprojection_mseg = (float*)malloc(sizeof(float)*this->numIterations);
@@ -187,71 +187,81 @@ bool MlemSinogram3d::Reconstruct()
   int nPixels = reconstructionImage->getPixelCount();
   for(unsigned int t = 0; t < this->numIterations; t++)
   {
-	  clock_t initialClockIteration = clock();
-	  printf("Iteración Nº: %d\n", t);
-	  /// Proyección de la imagen:
-	  forwardprojector->Project(reconstructionImage, estimatedProjection);
-	  clock_t finalClockProjection = clock();
-	  /// Guardo el likelihood (Siempre va una iteración atrás, ya que el likelihhod se calcula a partir de la proyección
-	  /// estimada, que es el primer paso del algoritmo). Se lo calculo al sinograma
-	  /// proyectado, respecto del de entrada.
-	  this->likelihoodValues[t] = estimatedProjection->getLikelihoodValue(inputProjection);
-	  /// Pongo en cero la proyección estimada, y hago la backprojection.
-	  backprojectedImage->fillConstant(0);
-	  backprojector->DivideAndBackproject(inputProjection, estimatedProjection, backprojectedImage);
-	  clock_t finalClockBackprojection = clock();
-	  /// Actualización del Pixel
-	  for(int k = 0; k < nPixels; k++)
-	  {
-	      /// Si el coeficiente de sensitivity es menor que 1 puedo, plantear distintas alternativas, pero algo
-	      /// hay que hacer sino el valor del píxel tiende a crecer demasiado. .
-	      if(ptrSensitivityPixels[k]>=updateThreshold)
-	      {
-		ptrPixels[k] = ptrPixels[k] * ptrBackprojectedPixels[k] / ptrSensitivityPixels[k];
-	      }
-	      else
-	      {
-		/// Si la sensitivity image es distinta de cero significa que estoy fuera del fov de reconstrucción
-		/// por lo que pongo en cero dicho píxel:
-		ptrPixels[k] = 0;
-	      }
-	  }
-	  /// Verifico
-	  if(saveIterationInterval != 0)
-	  {
-	    if((t%saveIterationInterval)==0)
-	    {
-	      sprintf(c_string, "%s_iter_%d", outputFilenamePrefix.c_str(), t); /// La extensión se le agrega en write interfile.
-	      string outputFilename;
-	      outputFilename.assign(c_string);
-	      reconstructionImage->writeInterfile((char*)outputFilename.c_str());
-	      /// Termino con el log de los resultados:
-	      sprintf(c_string, "Imagen de iteración %d guardada en: %s", t, outputFilename.c_str());
-	      logger->writeLine(c_string);
-	      if(saveIntermediateProjectionAndBackprojectedImage)
-	      {
-		// Tengo que guardar la estimated projection, y la backprojected image.
-		sprintf(c_string, "%s_projection_iter_%d", outputFilenamePrefix.c_str(), t); /// La extensión se le agrega en write interfile.
-		outputFilename.assign(c_string);
-		estimatedProjection->writeInterfile((char*)outputFilename.c_str());
-		sprintf(c_string, "%s_backprojected_iter_%d", outputFilenamePrefix.c_str(), t); /// La extensión se le agrega en write interfile.
-		outputFilename.assign(c_string);
-		backprojectedImage->writeInterfile((char*)outputFilename.c_str());
-	      }
-	    }
-	  }
-	  clock_t finalClockIteration = clock();
-	  /// Cargo los tiempos:
-	  timesIteration_mseg[t] = (float)(finalClockIteration-initialClockIteration)*1000/(float)CLOCKS_PER_SEC;
-	  timesBackprojection_mseg[t] = (float)(finalClockBackprojection-finalClockProjection)*1000/(float)CLOCKS_PER_SEC;
-	  timesForwardprojection_mseg[t] = (float)(finalClockProjection-initialClockIteration)*1000/(float)CLOCKS_PER_SEC;
-	  timesPixelUpdate_mseg[t] = (float)(finalClockIteration-finalClockBackprojection)*1000/(float)CLOCKS_PER_SEC;
+    clock_t initialClockIteration = clock();
+    printf("Iteración Nº: %d\n", t);
+    /// Proyección de la imagen:
+    forwardprojector->Project(reconstructionImage, estimatedProjection);
+    clock_t finalClockProjection = clock();
+    /// Si hay normalización, la aplico luego de la proyección:
+    if(enableNormalization)
+      estimatedProjection->multiplyBinToBin(normalizationCorrectionFactorsProjection);
+    // Si hay que guardar la proyección, lo hago acá porque después se modifica:
+    if((saveIterationInterval != 0) && ((t%saveIterationInterval)==0) && saveIntermediateProjectionAndBackprojectedImage)
+    {
+      // Tengo que guardar la estimated projection, y la backprojected image.
+      sprintf(c_string, "%s_projection_iter_%d", outputFilenamePrefix.c_str(), t); /// La extensión se le agrega en write interfile.
+      outputFilename.assign(c_string);
+      estimatedProjection->writeInterfile((char*)outputFilename.c_str());
+    }
+    /// Guardo el likelihood (Siempre va una iteración atrás, ya que el likelihhod se calcula a partir de la proyección
+    /// estimada, que es el primer paso del algoritmo). Se lo calculo al sinograma
+    /// proyectado, respecto del de entrada.
+    this->likelihoodValues[t] = estimatedProjection->getLikelihoodValue(inputProjection);
+    /// Pongo en cero la proyección estimada, y hago la backprojection.
+    backprojectedImage->fillConstant(0);
+    // backprojector->DivideAndBackproject(inputProjection, estimatedProjection, backprojectedImage);
+    /// Divido input sinogram por el estimated:
+    estimatedProjection->inverseDivideBinToBin(inputProjection);
+    /// Si hay normalización, la aplico luego de la proyección:
+    if(enableNormalization)
+      estimatedProjection->multiplyBinToBin(normalizationCorrectionFactorsProjection);
+    /// Retroproyecto
+    backprojector->Backproject(estimatedProjection, backprojectedImage);
+    
+    clock_t finalClockBackprojection = clock();
+    /// Actualización del Pixel
+    for(int k = 0; k < nPixels; k++)
+    {
+      /// Si el coeficiente de sensitivity es menor que 1 puedo, plantear distintas alternativas, pero algo
+      /// hay que hacer sino el valor del píxel tiende a crecer demasiado. .
+      if(ptrSensitivityPixels[k]>=updateThreshold)
+      {
+	ptrPixels[k] = ptrPixels[k] * ptrBackprojectedPixels[k] / ptrSensitivityPixels[k];
+      }
+      else
+      {
+	/// Si la sensitivity image es distinta de cero significa que estoy fuera del fov de reconstrucción
+	/// por lo que pongo en cero dicho píxel:
+	ptrPixels[k] = 0;
+      }
+    }
+    /// Verifico
+    if((saveIterationInterval != 0) && ((t%saveIterationInterval)==0))
+    {
+      sprintf(c_string, "%s_iter_%d", outputFilenamePrefix.c_str(), t); /// La extensión se le agrega en write interfile.
+      outputFilename.assign(c_string);
+      reconstructionImage->writeInterfile((char*)outputFilename.c_str());
+      /// Termino con el log de los resultados:
+      sprintf(c_string, "Imagen de iteración %d guardada en: %s", t, outputFilename.c_str());
+      logger->writeLine(c_string);
+      if(saveIntermediateProjectionAndBackprojectedImage)
+      {
+	sprintf(c_string, "%s_backprojected_iter_%d", outputFilenamePrefix.c_str(), t); /// La extensión se le agrega en write interfile.
+	outputFilename.assign(c_string);
+	backprojectedImage->writeInterfile((char*)outputFilename.c_str());
+      }
+    }
+    clock_t finalClockIteration = clock();
+    /// Cargo los tiempos:
+    timesIteration_mseg[t] = (float)(finalClockIteration-initialClockIteration)*1000/(float)CLOCKS_PER_SEC;
+    timesBackprojection_mseg[t] = (float)(finalClockBackprojection-finalClockProjection)*1000/(float)CLOCKS_PER_SEC;
+    timesForwardprojection_mseg[t] = (float)(finalClockProjection-initialClockIteration)*1000/(float)CLOCKS_PER_SEC;
+    timesPixelUpdate_mseg[t] = (float)(finalClockIteration-finalClockBackprojection)*1000/(float)CLOCKS_PER_SEC;
 
   }
 
   clock_t finalClock = clock();
   sprintf(c_string, "%s_final", outputFilenamePrefix.c_str()); /// La extensión se le agrega en write interfile.
-  string outputFilename;
   outputFilename.assign(c_string);
   reconstructionImage->writeInterfile((char*)outputFilename.c_str());
   /// Termino con el log de los resultados:
@@ -296,11 +306,17 @@ bool MlemSinogram3d::Reconstruct()
 bool MlemSinogram3d::computeSensitivity(Image* outputImage)
 {
   /// Creo un Sinograma ·D igual que el de entrada.
-  Sinogram3D* constantSinogram2D = inputProjection->Copy();
-  /// Lo lleno con un valor constante
-  constantSinogram2D->FillConstant(1);
+  Sinogram3D* backprojectSinogram3D; 
+  /// Si no hay normalización lo lleno con un valor constante, de lo contrario bakcprojec normalizacion:
+  if (enableNormalization)
+    backprojectSinogram3D = normalizationCorrectionFactorsProjection;
+  else
+  {
+    backprojectSinogram3D = inputProjection->Copy();
+    backprojectSinogram3D->FillConstant(1);
+  }
   /// Por último hago la backprojection
-  backprojector->Backproject(constantSinogram2D, outputImage);
+  backprojector->Backproject(backprojectSinogram3D, outputImage);
   // Umbral para la actualización de píxel:
   updateUpdateThreshold();
   return true;

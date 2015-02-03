@@ -191,7 +191,7 @@ int main (int argc, char *argv[])
   string strForwardprojector;
   string strBackprojector;
   string attenMapFilename;
-  string acfFilename, estimatedRandomsFilename, estimatedScatterFilename;
+  string acfFilename, estimatedRandomsFilename, estimatedScatterFilename, normFilename;
   Projector* forwardprojector;
   Projector* backprojector;
   int saveIterationInterval;
@@ -347,6 +347,10 @@ int main (int argc, char *argv[])
   // Pido los singoramas de corrección si es que están disponibles:
   if(getCorrectionSinogramNames(parameterFileName, "MLEM", &acfFilename, &estimatedRandomsFilename, &estimatedScatterFilename))
     return -1;
+  // Idem para normalización:
+  if(getNormalizationSinogramName(parameterFileName,  "MLEM",&normFilename))
+    return -1;
+  
   // Lectura de proyecciones y reconstrucción, depende del tipo de dato de entrada:
   if(inputType.compare("Sinogram2D")==0)
   {
@@ -499,6 +503,11 @@ int main (int argc, char *argv[])
     mlem->setScatterCorrectionProjection(estimatedScatterFilename);
   // Aplico las correciones:
   mlem->correctInputSinogram();
+  // Y normalización:
+  if (normFilename != "")
+  {
+    mlem->setNormalizationFactorsProjection(normFilename);
+  }
   // Reconstruyo:
   mlem->Reconstruct();
 //	mlem->reconstructionImage->writeInterfile(sprintf("%s_end", outputPrefix.c_str()));

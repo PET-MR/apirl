@@ -40,7 +40,7 @@ mu_mass_ge = 1.03E-01;
 densidad_ge = 1;
 mu_ge_resine_1_mm = mu_mass_ge * densidad_ge / 10;
 % Size of the phantom
-radiusGeCylinder_mm = 82;
+radiusGeCylinder_mm = 100;
 heightGeCylinder_mm = 275;
 indexGeCylinder = (sqrt((X-0).^2+(Y-0).^2) < radiusGeCylinder_mm)  & (Z>-(heightGeCylinder_mm/2))&(Z<(heightGeCylinder_mm/2));
 imageAtenuation(indexGeCylinder) = mu_ge_resine_1_mm;

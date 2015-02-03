@@ -66,18 +66,17 @@ Sinogram2D::Sinogram2D(unsigned int myNumProj, unsigned int myNumR, float myRadi
   float PhiIncrement = (float)maxAng_deg / (numProj);
   for(unsigned int i = 0; i < numProj; i ++)
   {
-	  // Initialization of Phi Values
-	  ptrAngValues_deg[i] = PhiIncrement/2 + i * PhiIncrement;
-	  for(unsigned int j = 0; j < numR; j++)
-	  {
-		  if(i == 0)
-		  {
-			  // ptrRvalues initialization is necesary just one time
-			  
-			  ptrRvalues_mm[j] = RIncrement/2 + j * RIncrement - radioFov_mm;
-		  }
-		  ptrSinogram[i * numR + j] = 0;
-	  }
+    // Initialization of Phi Values
+    ptrAngValues_deg[i] = PhiIncrement/2 + i * PhiIncrement;
+    for(unsigned int j = 0; j < numR; j++)
+    {
+      if(i == 0)
+      {
+	// ptrRvalues initialization is necesary just one time
+	ptrRvalues_mm[j] = RIncrement/2 + j * RIncrement - radioFov_mm;
+      }
+      ptrSinogram[i * numR + j] = 0;
+    }
   }
 }
 
@@ -184,21 +183,21 @@ void Sinogram2D::divideBinToBin(Sinogram2D* sinogramDivisor)
   float numerador, denominador;
   for(int i = 0; i < numProj; i ++)
   {
-	for(int j = 0; j < numR; j++)
-	{
-	  // Para 0/0 lo dejo en cero. Como este cociente se hace para la reconstrucción, en realidad
-	  // si el numerador es cero, directamente lo dejo en cero, porque no tengo cuentas en ese bin.
-	  numerador = this->getSinogramBin(i,j);
-	  denominador = sinogramDivisor->getSinogramBin(i,j);
-	  if((numerador != 0)&&(denominador!=0))
-	  {
-		this->setSinogramBin(i,j, numerador/denominador);
-	  }
-	  else
-	  {
-		this->setSinogramBin(i,j, 0);
-	  }
-	}
+    for(int j = 0; j < numR; j++)
+    {
+      // Para 0/0 lo dejo en cero. Como este cociente se hace para la reconstrucción, en realidad
+      // si el numerador es cero, directamente lo dejo en cero, porque no tengo cuentas en ese bin.
+      numerador = this->getSinogramBin(i,j);
+      denominador = sinogramDivisor->getSinogramBin(i,j);
+      if((numerador != 0)&&(denominador!=0))
+      {
+	this->setSinogramBin(i,j, numerador/denominador);
+      }
+      else
+      {
+	this->setSinogramBin(i,j, 0);
+      }
+    }
   }
 }
 
@@ -206,10 +205,10 @@ void Sinogram2D::multiplyBinToBin(Sinogram2D* sinogramFactor)
 {
   for(int i = 0; i < numProj; i ++)
   {
-	for(int j = 0; j < numR; j++)
-	{
-	  this->setSinogramBin(i,j, this->getSinogramBin(i,j)*sinogramFactor->getSinogramBin(i,j));
-	}
+    for(int j = 0; j < numR; j++)
+    {
+      this->setSinogramBin(i,j, this->getSinogramBin(i,j)*sinogramFactor->getSinogramBin(i,j));
+    }
   }
 }
 
@@ -218,21 +217,21 @@ void Sinogram2D::inverseDivideBinToBin(Sinogram2D* sinogramDividend)
   float numerador, denominador;
   for(int i = 0; i < numProj; i ++)
   {
-	for(int j = 0; j < numR; j++)
-	{
-	  // Para 0/0 lo dejo en cero. Como este cociente se hace para la reconstrucción, en realidad
-	  // si el numerador es cero, directamente lo dejo en cero, porque no tengo cuentas en ese bin.
-	  denominador = this->getSinogramBin(i,j);
-	  numerador = sinogramDividend->getSinogramBin(i,j);
-	  if((numerador != 0)&&(denominador!=0))
-	  {
-		this->setSinogramBin(i,j, numerador/denominador);
-	  }
-	  else
-	  {
-		this->setSinogramBin(i,j, 0);
-	  }
-	}
+    for(int j = 0; j < numR; j++)
+    {
+      // Para 0/0 lo dejo en cero. Como este cociente se hace para la reconstrucción, en realidad
+      // si el numerador es cero, directamente lo dejo en cero, porque no tengo cuentas en ese bin.
+      denominador = this->getSinogramBin(i,j);
+      numerador = sinogramDividend->getSinogramBin(i,j);
+      if((numerador != 0)&&(denominador!=0))
+      {
+	this->setSinogramBin(i,j, numerador/denominador);
+      }
+      else
+      {
+	this->setSinogramBin(i,j, 0);
+      }
+    }
   }
 }
 

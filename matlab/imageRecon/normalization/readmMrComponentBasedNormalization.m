@@ -119,18 +119,31 @@ componentLabels = {'Geometric Effects','Crystal Interference','Crystal Efficenci
 if visualize==1
     % Plot the normalization parameters:
     h = figure;
+    set(gcf, 'Position', [0 0 1600 1200]);
     showImageWithColorbar(geomEffects, colormap);
     title(componentLabels{1});
     
     h = figure;
+    set(gcf, 'Position', [0 0 1600 1200]);
     subplot(1,2,1);
     imshow(crystalInterf'./max(max(crystalInterf)));
     title(componentLabels{2});
     subplot(1,2,2);
     imshow(crystalEff./max(max(crystalEff)));
     title(componentLabels{3});
-
     h = figure;
+    set(gcf, 'Position', [0 0 1600 1200]);
+    plot(crystalEff(:,1:10));
+    title('Crystal Efficencies for the First 10 Rings');
+    for i = 1 : 10
+        labels{i} = sprintf('Ring %d', i);
+    end
+    text(200, 200, sprintf('StdDev: %f %%', std(crystalEff(:))));
+    legend(labels);
+    
+    h = figure;
+    set(gcf, 'Position', [0 0 1600 1200]);
+    set(gcf, 'Position', [0 0 1600 1200]);
     subplot(1,2,1);
     plot(axialEffects);
     title(componentLabels{4});
@@ -139,6 +152,7 @@ if visualize==1
     title(componentLabels{8});
 
     h = figure;
+    set(gcf, 'Position', [0 0 1600 1200]);
     subplot(1,3,1);
     plot(parRingDT);
     title(componentLabels{5});

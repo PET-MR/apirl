@@ -47,7 +47,7 @@ bool OsemSinogram3d::Reconstruct()
   /// Puntero del array con los tiempos de pixel update por iteración.
   float* timesPixelUpdate_mseg;
   /// String de c para utlizar en los mensajes de logueo.
-  char c_string[512];
+  char c_string[512]; string outputFilename;
   /// Pido memoria para los arrays, que deben tener tantos elementos como iteraciones:
   timesIteration_mseg = (float*)malloc(sizeof(float)*this->numIterations);
   timesBackprojection_mseg = (float*)malloc(sizeof(float)*this->numIterations);
@@ -58,13 +58,13 @@ bool OsemSinogram3d::Reconstruct()
   /// con el initialEstimate y termina con la imagen reconstruida.
   if(this->likelihoodValues == NULL)
   {
-	  /// No había sido alocado previamente así que utilizo malloc.
-	  this->likelihoodValues = (float*)malloc(sizeof(float)*(this->numIterations +1));
+    /// No había sido alocado previamente así que utilizo malloc.
+    this->likelihoodValues = (float*)malloc(sizeof(float)*(this->numIterations +1));
   }
   else
   {
-	  /// Ya había sido alocado previamente, lo realoco.
-	  this->likelihoodValues = (float*)realloc(this->likelihoodValues, sizeof(float)*(this->numIterations + 1));
+    /// Ya había sido alocado previamente, lo realoco.
+    this->likelihoodValues = (float*)realloc(this->likelihoodValues, sizeof(float)*(this->numIterations + 1));
   }
   /// Calculo todas los sensitivty volume, tengo tantos como subset. Sino alcancanzar la ram
   /// para almacenar todos, debería calcularlos dentro del for por cada iteración:
@@ -130,7 +130,17 @@ bool OsemSinogram3d::Reconstruct()
       printf("Iteración Nº: %d\n", t);
       /// Proyección de la imagen:
       forwardprojector->Project(reconstructionImage, estimatedProjection);
-
+      /// Si hay normalización, la aplico luego de la proyección:
+      if(enableNormalization)
+	estimatedProjection->multiplyBinToBin(normalizationCorrectionFactorsProjection->getSubset(s, numSubsets));
+      // Si hay que guardar la proyección, lo hago acá porque después se modifica:
+      if((saveIterationInterval != 0) && ((t%saveIterationInterval)==0) && saveIntermediateProjectionAndBackprojectedImage)
+      {
+	// Tengo que guardar la estimated projection, y la backprojected image.
+	sprintf(c_string, "%s_projection_iter_%d", outputFilenamePrefix.c_str(), t); /// La extensión se le agrega en write interfile.
+	outputFilename.assign(c_string);
+	estimatedProjection->writeInterfile((char*)outputFilename.c_str());
+      }
       //clock_t finalClockProjection = clock();
       /// Guardo el likelihood (Siempre va una iteración atrás, ya que el likelihhod se calcula a partir de la proyección
       /// estimada, que es el primer paso del algoritmo). Se lo calculo al sinograma
@@ -138,7 +148,14 @@ bool OsemSinogram3d::Reconstruct()
       this->likelihoodValues[t] = estimatedProjection->getLikelihoodValue(inputSubset);
       /// Pongo en cero la proyección estimada, y hago la backprojection.
       backprojectedImage->fillConstant(0);
-      backprojector->DivideAndBackproject(inputSubset, estimatedProjection, backprojectedImage);
+      //backprojector->DivideAndBackproject(inputSubset, estimatedProjection, backprojectedImage);
+      /// Divido input sinogram por el estimated:
+      estimatedProjection->inverseDivideBinToBin(inputProjection->getSubset(s, numSubsets));
+      /// Si hay normalización, la aplico luego de la proyección:
+      if(enableNormalization)
+	estimatedProjection->multiplyBinToBin(normalizationCorrectionFactorsProjection->getSubset(s, numSubsets));
+      /// Retroproyecto
+      backprojector->Backproject(estimatedProjection, backprojectedImage);
       //clock_t finalClockBackprojection = clock();
       
       // Obtengo el puntero de la snesitivity image (Si no me alcanzar la ram para tenrlas todas almacenadas, acá debería calcularla):
@@ -165,26 +182,22 @@ bool OsemSinogram3d::Reconstruct()
 	  ptrPixels[k] = 0;
 	}
       }
-      if(saveIterationInterval != 0)
+      if((saveIterationInterval != 0) && ((t%saveIterationInterval)==0))
       {
-	if((t%saveIterationInterval)==0)
+	// Cuando me piden guardar a cada intervalo solo guardo una imagen del subset al menos que esta habilitado el
+	// saveIntermediateProjectionAndBackprojectedImage
+	if(saveIntermediateProjectionAndBackprojectedImage)
 	{
-	  // Cuando me piden guardar a cada intervalo solo guardo una imagen del subset al menos que esta habilitado el
-	  // saveIntermediateProjectionAndBackprojectedImage
-	  if(saveIntermediateProjectionAndBackprojectedImage)
-	  {
-	    sprintf(c_string, "%s_iter_%d_subset_%d", outputFilenamePrefix.c_str(), t,s); /// La extensión se le agrega en write interfile.
-	    string outputFilename;
-	    outputFilename.assign(c_string);
-	    reconstructionImage->writeInterfile((char*)outputFilename.c_str());
-	    // Tengo que guardar la estimated projection, y la backprojected image.
-	    sprintf(c_string, "%s_projection_iter_%d_subset_%d", outputFilenamePrefix.c_str(), t); /// La extensión se le agrega en write interfile.
-	    outputFilename.assign(c_string);
-	    estimatedProjection->writeInterfile((char*)outputFilename.c_str());
-	    sprintf(c_string, "%s_backprojected_iter_%d_subset_%d", outputFilenamePrefix.c_str(), t); /// La extensión se le agrega en write interfile.
-	    outputFilename.assign(c_string);
-	    backprojectedImage->writeInterfile((char*)outputFilename.c_str());
-	  }
+	  sprintf(c_string, "%s_iter_%d_subset_%d", outputFilenamePrefix.c_str(), t,s); /// La extensión se le agrega en write interfile.
+	  outputFilename.assign(c_string);
+	  reconstructionImage->writeInterfile((char*)outputFilename.c_str());
+	  // Tengo que guardar la estimated projection, y la backprojected image.
+	  sprintf(c_string, "%s_projection_iter_%d_subset_%d", outputFilenamePrefix.c_str(), t); /// La extensión se le agrega en write interfile.
+	  outputFilename.assign(c_string);
+	  estimatedProjection->writeInterfile((char*)outputFilename.c_str());
+	  sprintf(c_string, "%s_backprojected_iter_%d_subset_%d", outputFilenamePrefix.c_str(), t); /// La extensión se le agrega en write interfile.
+	  outputFilename.assign(c_string);
+	  backprojectedImage->writeInterfile((char*)outputFilename.c_str());
 	}
       }
       // Elimino el subset.
@@ -215,7 +228,6 @@ bool OsemSinogram3d::Reconstruct()
 
   clock_t finalClock = clock();
   sprintf(c_string, "%s_final", outputFilenamePrefix.c_str()); /// La extensión se le agrega en write interfile.
-  string outputFilename;
   outputFilename.assign(c_string);
   reconstructionImage->writeInterfile((char*)outputFilename.c_str());
   /// Termino con el log de los resultados:
@@ -260,10 +272,16 @@ bool OsemSinogram3d::Reconstruct()
 bool OsemSinogram3d::computeSensitivity(Image* outputImage, int indexSubset)
 {
   /// Creo un Sinograma del subset correspondiente:
-  Sinogram3D* constantSinogram3D = inputProjection->getSubset(indexSubset, numSubsets);
-  /// Lo lleno con un valor constante
-  constantSinogram3D->FillConstant(1);
+  Sinogram3D* backprojectSinogram3D;
+  /// Si no hay normalización lo lleno con un valor constante, de lo contrario bakcprojec normalizacion:
+  if (enableNormalization)
+    backprojectSinogram3D = normalizationCorrectionFactorsProjection->getSubset(indexSubset, numSubsets);
+  else
+  {
+    backprojectSinogram3D = inputProjection->getSubset(indexSubset, numSubsets);
+    backprojectSinogram3D->FillConstant(1);
+  }
   /// Por último hago la backprojection
-  backprojector->Backproject(constantSinogram3D, outputImage);
+  backprojector->Backproject(backprojectSinogram3D, outputImage);
   return true;
 }

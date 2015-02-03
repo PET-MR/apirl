@@ -589,20 +589,20 @@ bool Sinogram3D::writeInterfile(string headerFilename)
   fileStream << "!matrix size [3] := {";
   for(int i = 0; i< this->getNumSegments()-1; i++)
   {
-	fileStream << this->getSegment(i)->getNumSinograms() << ",";
+    fileStream << this->getSegment(i)->getNumSinograms() << ",";
   }
   fileStream << this->getSegment(this->getNumSegments()-1)->getNumSinograms() << "}" << eol;
   // Diferencia entre anillos:
   fileStream << "minimum ring difference per segment := {";
   for(int i = 0; i< this->getNumSegments()-1; i++)
   {
-	fileStream << this->getSegment(i)->getMinRingDiff() << ",";
+    fileStream << this->getSegment(i)->getMinRingDiff() << ",";
   }
   fileStream << this->getSegment(this->getNumSegments()-1)->getMinRingDiff() << "}" << eol;
   fileStream << "maximum ring difference per segment := {";
   for(int i = 0; i< this->getNumSegments()-1; i++)
   {
-	fileStream << this->getSegment(i)->getMaxRingDiff() << ",";
+    fileStream << this->getSegment(i)->getMaxRingDiff() << ",";
   }
   fileStream << this->getSegment(this->getNumSegments()-1)->getMaxRingDiff() << "}" << eol;
   
@@ -613,17 +613,17 @@ bool Sinogram3D::writeInterfile(string headerFilename)
   float max = this->getSinogramBin(0,0);
   for(int i = 0; i < this->numSegments; i++)
   {
-	for(int j = 0; j < this->getSegment(i)->getNumSinograms(); j++)
+    for(int j = 0; j < this->getSegment(i)->getNumSinograms(); j++)
+    {
+      for(int k = 0; k <  this->getSegment(i)->getSinogram2D(j)->getNumProj(); k++)
+      {
+	for(int l = 0; l < this->getSegment(i)->getSinogram2D(j)->getNumR(); l++)
 	{
-	  for(int k = 0; k <  this->getSegment(i)->getSinogram2D(j)->getNumProj(); k++)
-	  {
-		for(int l = 0; l < this->getSegment(i)->getSinogram2D(j)->getNumR(); l++)
-		{
-		  if(this->getSegment(i)->getSinogram2D(j)->getSinogramBin(k,l) > max)
-			max = this->getSegment(i)->getSinogram2D(j)->getSinogramBin(k,l);
-		}
-	  }
+	  if(this->getSegment(i)->getSinogram2D(j)->getSinogramBin(k,l) > max)
+	    max = this->getSegment(i)->getSinogram2D(j)->getSinogramBin(k,l);
 	}
+      }
+    }
   }
   fileStream << "!maximum pixel count := " << max << eol;
   fileStream << "!END OF INTERFILE :=\n" << eol;
@@ -644,4 +644,75 @@ bool Sinogram3D::writeInterfile(string headerFilename)
 bool correctSinogram (string acfSinogram, string delayedSinogram, string scatterSinogram)
 {
   
+}
+
+void Sinogram3D::divideBinToBin(Sinogram3D* sinogramDivisor)
+{
+  float numerador, denominador;
+  for(int i = 0; i < this->numSegments; i++)
+  {
+    for(int j = 0; j < this->getSegment(i)->getNumSinograms(); j++)
+    {
+      for(int k = 0; k <  this->getSegment(i)->getSinogram2D(j)->getNumProj(); k++)
+      {
+	for(int l = 0; l < this->getSegment(i)->getSinogram2D(j)->getNumR(); l++)
+	{
+	  numerador = this->getSegment(i)->getSinogram2D(j)->getSinogramBin(k,l);
+	  denominador = sinogramDivisor->getSegment(i)->getSinogram2D(j)->getSinogramBin(k,l);
+	  if((numerador != 0)&&(denominador!=0))
+	  {
+	    this->getSegment(i)->getSinogram2D(j)->setSinogramBin(k,l, numerador/denominador);
+	  }
+	  else
+	  {
+	    this->getSegment(i)->getSinogram2D(j)->setSinogramBin(k,l, 0);
+	  }
+	}
+      }
+    }
+  }
+}
+
+void Sinogram3D::multiplyBinToBin(Sinogram3D* sinogramFactor)
+{
+  for(int i = 0; i < this->numSegments; i++)
+  {
+    for(int j = 0; j < this->getSegment(i)->getNumSinograms(); j++)
+    {
+      for(int k = 0; k <  this->getSegment(i)->getSinogram2D(j)->getNumProj(); k++)
+      {
+	for(int l = 0; l < this->getSegment(i)->getSinogram2D(j)->getNumR(); l++)
+	{
+	  this->getSegment(i)->getSinogram2D(j)->setSinogramBin(k,l, this->getSegment(i)->getSinogram2D(j)->getSinogramBin(k,l)*sinogramFactor->getSegment(i)->getSinogram2D(j)->getSinogramBin(k,l));
+	}
+      }
+    }
+  }
+}
+
+void Sinogram3D::inverseDivideBinToBin(Sinogram3D* sinogramDividend)
+{
+  float numerador, denominador;
+  for(int i = 0; i < this->numSegments; i++)
+  {
+    for(int j = 0; j < this->getSegment(i)->getNumSinograms(); j++)
+    {
+      for(int k = 0; k <  this->getSegment(i)->getSinogram2D(j)->getNumProj(); k++)
+      {
+	for(int l = 0; l < this->getSegment(i)->getSinogram2D(j)->getNumR(); l++)
+	{
+	  numerador = sinogramDividend->getSegment(i)->getSinogram2D(j)->getSinogramBin(k,l);
+	  denominador = this->getSegment(i)->getSinogram2D(j)->getSinogramBin(k,l);
+	  if((numerador != 0)&&(denominador!=0))
+	  {
+	    this->getSegment(i)->getSinogram2D(j)->setSinogramBin(k,l, numerador/denominador);
+	  }
+	  else
+	  {
+	    this->getSegment(i)->getSinogram2D(j)->setSinogramBin(k,l, 0);
+	  }
+	}
+      }
+    }
+  }
 }
