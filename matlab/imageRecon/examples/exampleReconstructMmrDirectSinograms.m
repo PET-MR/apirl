@@ -51,17 +51,22 @@ gaps_sinogram(nongap_indices) = 1.0;
 normSinoGeom = 1./ imresize(double(componentFactors{1}'), [structSizeSino3d.numTheta structSizeSino3d.numR]);
 figure;
 set(gcf, 'Position', [0 0 1600 1200]);
-imshow((1./normSinoGeom) ./max(max((1./normSinoGeom))));
+imshow((normSinoGeom) ./max(max((normSinoGeom))));
+title('Geometry Normalization Correction Factors');
 % Crystal interference, its a pattern that is repeated peridoically:
 crystalInterf = double(componentFactors{2});
 crystalInterf = 1./repmat(crystalInterf,structSizeSino3d.numTheta/size(crystalInterf,1),1);
 % Geometric Normalization and crystal interference:
 figure;
 imshow(crystalInterf ./max(max(crystalInterf)));
+title('Crystal Interference Normalization Correction Factors');
+set(gcf, 'Position', [0 0 1600 1200]);
 % Generate one norm factor:
 normSinoGeomInterf = normSinoGeom .* crystalInterf;
-title('Sinogram Correction For Crystal Interference and Geometry');
+figure;
+imshow(normSinoGeomInterf ./max(max(normSinoGeomInterf)));
 set(gcf, 'Position', [0 0 1600 1200]);
+title('Sinogram Correction For Crystal Interference and Geometry');
 % Generate the sinograms for crystal efficencies:
 for i = 1 : structSizeSino2d.numZ
     sinoEfficencies(:,:,i) = createSinogram2dFromDetectorsEfficency(componentFactors{3}(:,i), structSizeSino2d, 0);
@@ -290,117 +295,117 @@ set(gcf, 'Position', [0 0 1600 1200]);
 image = getImageFromSlices(atteNormFactorsDirect,10,1,1);
 imshow(image);
 title('Normalization and Attenuation Factors for Direct Sinograms');
-%% 2D RECONSTRUCTION OF DIRECT SINOGRAMS WITH ONLY ATTENUATION CORRECTION
-% Create initial estimate for reconstruction:
-% Size of the image to cover the full fov:
-sizeImage_mm = [structSizeSino2d.rFov_mm*2 structSizeSino2d.rFov_mm*2 structSizeSino2d.zFov_mm];
-% The size in pixels based in numR and the number of rings:
-sizeImage_pixels = [structSizeSino2d.numR structSizeSino2d.numR structSizeSino2d.numZ];
-% Size of the pixels:
-sizePixel_mm = sizeImage_mm ./ sizeImage_pixels;
-% Inititial estimate:
-initialEstimate = ones(sizeImage_pixels, 'single');
-filenameInitialEstimate = [outputPath '/initialEstimateDirect'];
-interfilewrite(initialEstimate, filenameInitialEstimate, sizePixel_mm);
-
-% Reconstruction space dimensions
-nx = floor(structSizeSino2d.numR/sqrt(2))-1;
-ny = floor(structSizeSino2d.numR/sqrt(2))-1;
-mm_x = 2.0445;
-
-% Reconstruction
-for slice = 1 : structSizeSino2d.numZ
-    disp(sprintf('Reconstrucción de Slice %d', slice));
-    em_recon(:,:,slice) = mlem_mmr( nx, ny, mm_x, structSizeSino2d.numR, directSinograms(:,:,slice)', gaps_sinogram', acfsDirectSinograms(:,:,slice)', gaps_sinogram', structSizeSino2d.thetaValues_deg, 40, 1);
-end
-
-outputVolumeName = [outputPath '/reconstructedVolDirectSinogramsAten'];
-interfilewrite(single(em_recon), outputVolumeName, sizePixel_mm);
-
-h = figure;
-set(gcf, 'Position', [0 0 1600 1200]);
-image = getImageFromSlices(em_recon, 12,1,0);
-imshow(image);
-title('Reconstructed Volume with Attenuation Correction');
-h = figure;
-set(gcf, 'Position', [0 0 1600 1200]);
-subplot(1,2,1);
-plot(em_recon(round(sizeImage_pixels(1)/2),:,round(structSizeSino2d.numZ/2)));
-title('Plot of Central Columnd of Central Slice');
-subplot(1,2,1);
-countsPerSlice = sum(sum(em_recon));
-countsPerSlice = permute(countsPerSlice, [3 1 2]);
-plot(countsPerSlice);
-title('Counts Per Slice');
-%% 2D RECONSTRUCTION OF DIRECT SINOGRAMS WITH ATTENUATION CORRECTION AND NORMALIZATION
-% Create initial estimate for reconstruction:
-% Size of the image to cover the full fov:
-sizeImage_mm = [structSizeSino2d.rFov_mm*2 structSizeSino2d.rFov_mm*2 structSizeSino2d.zFov_mm];
-% The size in pixels based in numR and the number of rings:
-sizeImage_pixels = [structSizeSino2d.numR structSizeSino2d.numR structSizeSino2d.numZ];
-% Size of the pixels:
-sizePixel_mm = sizeImage_mm ./ sizeImage_pixels;
-% Inititial estimate:
-initialEstimate = ones(sizeImage_pixels, 'single');
-filenameInitialEstimate = [outputPath '/initialEstimateDirect'];
-interfilewrite(initialEstimate, filenameInitialEstimate, sizePixel_mm);
-
-% Reconstruction space dimensions
-nx = floor(structSizeSino2d.numR/sqrt(2))-1;
-ny = floor(structSizeSino2d.numR/sqrt(2))-1;
-mm_x = 2.0445;
-
-% Reconstruction
-for slice = 1 : structSizeSino2d.numZ
-    disp(sprintf('Reconstrucción de Slice %d', slice));
-    em_recon(:,:,slice) = mlem_mmr( nx, ny, mm_x, structSizeSino2d.numR, directSinograms(:,:,slice)', gaps_sinogram', atteNormPrecorrectionFactorsDirect(:,:,slice)', gaps_sinogram', structSizeSino2d.thetaValues_deg, 40, 1);
-end
-
-outputVolumeName = [outputPath '/reconstructedVolDirectSinogramsAtenNorm'];
-interfilewrite(single(em_recon), outputVolumeName, sizePixel_mm);
-
-h = figure;
-set(gcf, 'Position', [0 0 1600 1200]);
-image = getImageFromSlices(em_recon, 12,1,0);
-imshow(image);
-title('Reconstructed Volume with Attenuation Correction and Normalization');
-h = figure;
-set(gcf, 'Position', [0 0 1600 1200]);
-subplot(1,2,1);
-plot(em_recon(round(sizeImage_pixels(1)/2),:,round(structSizeSino2d.numZ/2)));
-title('Plot of Central Columnd of Central Slice');
-subplot(1,2,1);
-countsPerSlice = sum(sum(em_recon));
-countsPerSlice = permute(countsPerSlice, [3 1 2]);
-plot(countsPerSlice);
-title('Counts Per Slice');
-
-%% 2D RECONSTRUCTION OF DIRECT SINOGRAMS WITH ATTENUATION CORRECTION AND NORMALIZATION WITH CRYSTAL EFFICENCIES
-% Apply crystal efficencies to the normalization factors:
-atteNormCrystefficPrecorrectionFactorsDirect = atteNormPrecorrectionFactorsDirect;
-atteNormCrystefficPrecorrectionFactorsDirect(sinoEfficencies>0) = atteNormPrecorrectionFactorsDirect(sinoEfficencies>0) ./ sinoEfficencies(sinoEfficencies>0);
-
-% Reconstruction
-for slice = 1 : structSizeSino2d.numZ
-    disp(sprintf('Reconstrucción de Slice %d', slice));
-    em_recon(:,:,slice) = mlem_mmr( nx, ny, mm_x, structSizeSino2d.numR, directSinograms(:,:,slice)', gaps_sinogram', atteNormCrystefficPrecorrectionFactorsDirect(:,:,slice)', gaps_sinogram', structSizeSino2d.thetaValues_deg, 40, 0);
-end
-
-outputVolumeName = [outputPath '/reconstructedVolDirectSinogramsAtenNormCrystEffic'];
-interfilewrite(single(em_recon), outputVolumeName, sizePixel_mm);
-
-h = figure;
-set(gcf, 'Position', [0 0 1600 1200]);
-image = getImageFromSlices(em_recon, 12,1,0);
-imshow(image);
-title('Reconstructed Volume with Attenuation Correction and Normalization including Crystal Effic');
-h = figure;
-set(gcf, 'Position', [0 0 1600 1200]);
-subplot(1,2,1);
-plot(em_recon(round(sizeImage_pixels(1)/2),:,round(structSizeSino2d.numZ/2)));
-title('Plot of Central Columnd of Central Slice');
-subplot(1,2,1);
-countsPerSlice = sum(sum(em_recon));
-countsPerSlice = permute(countsPerSlice, [3 1 2]);
-plot(countsPerSlice);
-title('Counts Per Slice');
+% %% 2D RECONSTRUCTION OF DIRECT SINOGRAMS WITH ONLY ATTENUATION CORRECTION
+% % Create initial estimate for reconstruction:
+% % Size of the image to cover the full fov:
+% sizeImage_mm = [structSizeSino2d.rFov_mm*2 structSizeSino2d.rFov_mm*2 structSizeSino2d.zFov_mm];
+% % The size in pixels based in numR and the number of rings:
+% sizeImage_pixels = [structSizeSino2d.numR structSizeSino2d.numR structSizeSino2d.numZ];
+% % Size of the pixels:
+% sizePixel_mm = sizeImage_mm ./ sizeImage_pixels;
+% % Inititial estimate:
+% initialEstimate = ones(sizeImage_pixels, 'single');
+% filenameInitialEstimate = [outputPath '/initialEstimateDirect'];
+% interfilewrite(initialEstimate, filenameInitialEstimate, sizePixel_mm);
+% 
+% % Reconstruction space dimensions
+% nx = floor(structSizeSino2d.numR/sqrt(2))-1;
+% ny = floor(structSizeSino2d.numR/sqrt(2))-1;
+% mm_x = 2.0445;
+% 
+% % Reconstruction
+% for slice = 1 : structSizeSino2d.numZ
+%     disp(sprintf('Reconstrucción de Slice %d', slice));
+%     em_recon(:,:,slice) = mlem_mmr( nx, ny, mm_x, structSizeSino2d.numR, directSinograms(:,:,slice)', gaps_sinogram', acfsDirectSinograms(:,:,slice)', gaps_sinogram', structSizeSino2d.thetaValues_deg, 40, 1);
+% end
+% 
+% outputVolumeName = [outputPath '/reconstructedVolDirectSinogramsAten'];
+% interfilewrite(single(em_recon), outputVolumeName, sizePixel_mm);
+% 
+% h = figure;
+% set(gcf, 'Position', [0 0 1600 1200]);
+% image = getImageFromSlices(em_recon, 12,1,0);
+% imshow(image);
+% title('Reconstructed Volume with Attenuation Correction');
+% h = figure;
+% set(gcf, 'Position', [0 0 1600 1200]);
+% subplot(1,2,1);
+% plot(em_recon(round(sizeImage_pixels(1)/2),:,round(structSizeSino2d.numZ/2)));
+% title('Plot of Central Columnd of Central Slice');
+% subplot(1,2,1);
+% countsPerSlice = sum(sum(em_recon));
+% countsPerSlice = permute(countsPerSlice, [3 1 2]);
+% plot(countsPerSlice);
+% title('Counts Per Slice');
+% %% 2D RECONSTRUCTION OF DIRECT SINOGRAMS WITH ATTENUATION CORRECTION AND NORMALIZATION
+% % Create initial estimate for reconstruction:
+% % Size of the image to cover the full fov:
+% sizeImage_mm = [structSizeSino2d.rFov_mm*2 structSizeSino2d.rFov_mm*2 structSizeSino2d.zFov_mm];
+% % The size in pixels based in numR and the number of rings:
+% sizeImage_pixels = [structSizeSino2d.numR structSizeSino2d.numR structSizeSino2d.numZ];
+% % Size of the pixels:
+% sizePixel_mm = sizeImage_mm ./ sizeImage_pixels;
+% % Inititial estimate:
+% initialEstimate = ones(sizeImage_pixels, 'single');
+% filenameInitialEstimate = [outputPath '/initialEstimateDirect'];
+% interfilewrite(initialEstimate, filenameInitialEstimate, sizePixel_mm);
+% 
+% % Reconstruction space dimensions
+% nx = floor(structSizeSino2d.numR/sqrt(2))-1;
+% ny = floor(structSizeSino2d.numR/sqrt(2))-1;
+% mm_x = 2.0445;
+% 
+% % Reconstruction
+% for slice = 1 : structSizeSino2d.numZ
+%     disp(sprintf('Reconstrucción de Slice %d', slice));
+%     em_recon(:,:,slice) = mlem_mmr( nx, ny, mm_x, structSizeSino2d.numR, directSinograms(:,:,slice)', gaps_sinogram', atteNormPrecorrectionFactorsDirect(:,:,slice)', gaps_sinogram', structSizeSino2d.thetaValues_deg, 40, 1);
+% end
+% 
+% outputVolumeName = [outputPath '/reconstructedVolDirectSinogramsAtenNorm'];
+% interfilewrite(single(em_recon), outputVolumeName, sizePixel_mm);
+% 
+% h = figure;
+% set(gcf, 'Position', [0 0 1600 1200]);
+% image = getImageFromSlices(em_recon, 12,1,0);
+% imshow(image);
+% title('Reconstructed Volume with Attenuation Correction and Normalization');
+% h = figure;
+% set(gcf, 'Position', [0 0 1600 1200]);
+% subplot(1,2,1);
+% plot(em_recon(round(sizeImage_pixels(1)/2),:,round(structSizeSino2d.numZ/2)));
+% title('Plot of Central Columnd of Central Slice');
+% subplot(1,2,1);
+% countsPerSlice = sum(sum(em_recon));
+% countsPerSlice = permute(countsPerSlice, [3 1 2]);
+% plot(countsPerSlice);
+% title('Counts Per Slice');
+% 
+% %% 2D RECONSTRUCTION OF DIRECT SINOGRAMS WITH ATTENUATION CORRECTION AND NORMALIZATION WITH CRYSTAL EFFICENCIES
+% % Apply crystal efficencies to the normalization factors:
+% atteNormCrystefficPrecorrectionFactorsDirect = atteNormPrecorrectionFactorsDirect;
+% atteNormCrystefficPrecorrectionFactorsDirect(sinoEfficencies>0) = atteNormPrecorrectionFactorsDirect(sinoEfficencies>0) ./ sinoEfficencies(sinoEfficencies>0);
+% 
+% % Reconstruction
+% for slice = 1 : structSizeSino2d.numZ
+%     disp(sprintf('Reconstrucción de Slice %d', slice));
+%     em_recon(:,:,slice) = mlem_mmr( nx, ny, mm_x, structSizeSino2d.numR, directSinograms(:,:,slice)', gaps_sinogram', atteNormCrystefficPrecorrectionFactorsDirect(:,:,slice)', gaps_sinogram', structSizeSino2d.thetaValues_deg, 40, 0);
+% end
+% 
+% outputVolumeName = [outputPath '/reconstructedVolDirectSinogramsAtenNormCrystEffic'];
+% interfilewrite(single(em_recon), outputVolumeName, sizePixel_mm);
+% 
+% h = figure;
+% set(gcf, 'Position', [0 0 1600 1200]);
+% image = getImageFromSlices(em_recon, 12,1,0);
+% imshow(image);
+% title('Reconstructed Volume with Attenuation Correction and Normalization including Crystal Effic');
+% h = figure;
+% set(gcf, 'Position', [0 0 1600 1200]);
+% subplot(1,2,1);
+% plot(em_recon(round(sizeImage_pixels(1)/2),:,round(structSizeSino2d.numZ/2)));
+% title('Plot of Central Columnd of Central Slice');
+% subplot(1,2,1);
+% countsPerSlice = sum(sum(em_recon));
+% countsPerSlice = permute(countsPerSlice, [3 1 2]);
+% plot(countsPerSlice);
+% title('Counts Per Slice');

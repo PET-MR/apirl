@@ -264,6 +264,10 @@ public:
 	
 	/// Copia los valores de una imagen, tiene que tener el mismo tamaño.
 	bool CopyFromImage(Image* copyImage);
+	
+	/// Método que busca negativos y los fuerza a cero. Devuelve la cantidad de números negativos encontrados.
+	int forcePositive();
+	
 protected:
 
 private:

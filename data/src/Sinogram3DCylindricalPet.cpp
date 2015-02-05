@@ -14,7 +14,7 @@ Sinogram3DCylindricalPet::Sinogram3DCylindricalPet(char* fileHeaderPath, float r
   //Segmentos = (Segmento**) malloc(sizeof(Segmento*));
   numSegments = 0;
   // Reemplazo la función que lee el interfile del discovery STE por la genérica:
-  if(readFromInterfile(fileHeaderPath))
+  if(readFromInterfile(fileHeaderPath, rScanner_mm))
   {
     return;
   }
@@ -49,8 +49,10 @@ Sinogram3DCylindricalPet::~Sinogram3DCylindricalPet()
   {
     delete segments[i];
   }
+  
   free(segments);
-  free(ptrAxialvalues_mm);
+  // Ya liberada en la clase base sinogram3d.
+  //free(ptrAxialvalues_mm);
 }
 
 // Constructor que genera un nuevo sinograma 3D a aprtir de los subsets.
@@ -82,13 +84,21 @@ Sinogram3D* Sinogram3DCylindricalPet::Copy()
 
 Sinogram3D* Sinogram3DCylindricalPet::getSubset(int indexSubset, int numSubsets)
 {
+  // El tamaño del nuevo sinograma sería del mismo que el original, luego se hace un setSinogram2d para todos los sinos 
+  // de los segmentos y debería quedar del tamaño correcto. No se pierde memoria porque setSinogram2D hace un delete primero
+  // y luego crea el nuevo.
   Sinogram3DCylindricalPet* sino3dSubset = new Sinogram3DCylindricalPet(this);
+  Sinogram2DinCylindrical3Dpet* auxSinos2d;
   // Tengo una copia del sinograma, debo cambiar los sinogramas
   for(int i = 0; i < numSegments; i++)
   {
       for(int j = 0; j < this->segments[i]->getNumSinograms(); j++)
       {
-	sino3dSubset->getSegment(i)->setSinogram2D(new Sinogram2DinCylindrical3Dpet(this->getSegment(i)->getSinogram2D(j), indexSubset, numSubsets), j);
+	// Create new sinogram2d with the correct dimensiones:
+	auxSinos2d = new Sinogram2DinCylindrical3Dpet(this->getSegment(i)->getSinogram2D(j), indexSubset, numSubsets);
+	sino3dSubset->getSegment(i)->setSinogram2D(auxSinos2d, j);
+	// delete the aux sinogram because set sinograms makes a copy:
+	delete auxSinos2d;
       }
   }
   return (Sinogram3D*)sino3dSubset;

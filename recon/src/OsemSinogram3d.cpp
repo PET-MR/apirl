@@ -29,6 +29,7 @@ bool OsemSinogram3d::Reconstruct()
   /// Proyección auxiliar, donde guardo el sinograma proyectado:
   Sinogram3D* estimatedProjection; // = new Sinogram3D(inputProjection);
   Sinogram3D *inputSubset;
+  Sinogram3D *normalizationSubset; // Pointer to a sinogram3d to get each subset of normalization factors.
   //estimatedProjection->FillConstant(0);
   /// Imagen donde guardo la backprojection.
   Image* backprojectedImage = new Image(reconstructionImage->getSize());
@@ -81,7 +82,10 @@ bool OsemSinogram3d::Reconstruct()
     sprintf(c_string, "_sensitivity_subset_%d", s);
     sensitivityFileName.append(c_string);
     sensitivityImages[s]->writeInterfile((char*)sensitivityFileName.c_str());
-    updateThresholds[s] = sensitivityImages[s]->getMaxValue()*0.05;
+    // Sometimes it can be a negative number in a border (precision problems):
+    sensitivityImages[s]->forcePositive();
+    updateThresholds[s] = sensitivityImages[s]->getMinValue() + (sensitivityImages[s]->getMaxValue()-sensitivityImages[s]->getMinValue()) * 0.001;
+    printf("Umbral: %f\n", updateThresholds[s]);
   }
   /// Inicializo el volumen a reconstruir con la imagen del initial estimate:
   reconstructionImage = new Image(initialEstimate);
@@ -132,7 +136,10 @@ bool OsemSinogram3d::Reconstruct()
       forwardprojector->Project(reconstructionImage, estimatedProjection);
       /// Si hay normalización, la aplico luego de la proyección:
       if(enableNormalization)
-	estimatedProjection->multiplyBinToBin(normalizationCorrectionFactorsProjection->getSubset(s, numSubsets));
+      {
+	normalizationSubset = normalizationCorrectionFactorsProjection->getSubset(s, numSubsets);
+	estimatedProjection->multiplyBinToBin(normalizationSubset);
+      }
       // Si hay que guardar la proyección, lo hago acá porque después se modifica:
       if((saveIterationInterval != 0) && ((t%saveIterationInterval)==0) && saveIntermediateProjectionAndBackprojectedImage)
       {
@@ -150,10 +157,15 @@ bool OsemSinogram3d::Reconstruct()
       backprojectedImage->fillConstant(0);
       //backprojector->DivideAndBackproject(inputSubset, estimatedProjection, backprojectedImage);
       /// Divido input sinogram por el estimated:
-      estimatedProjection->inverseDivideBinToBin(inputProjection->getSubset(s, numSubsets));
+      estimatedProjection->inverseDivideBinToBin(inputSubset);
       /// Si hay normalización, la aplico luego de la proyección:
       if(enableNormalization)
-	estimatedProjection->multiplyBinToBin(normalizationCorrectionFactorsProjection->getSubset(s, numSubsets));
+      {
+	// The subset was already generated in the projection process.
+	estimatedProjection->multiplyBinToBin(normalizationSubset);
+	// Free memory
+	delete normalizationSubset;
+      }
       /// Retroproyecto
       backprojector->Backproject(estimatedProjection, backprojectedImage);
       //clock_t finalClockBackprojection = clock();
@@ -283,5 +295,7 @@ bool OsemSinogram3d::computeSensitivity(Image* outputImage, int indexSubset)
   }
   /// Por último hago la backprojection
   backprojector->Backproject(backprojectSinogram3D, outputImage);
+  /// Free memory:
+  delete backprojectSinogram3D;
   return true;
 }

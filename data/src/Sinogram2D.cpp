@@ -67,7 +67,8 @@ Sinogram2D::Sinogram2D(unsigned int myNumProj, unsigned int myNumR, float myRadi
   for(unsigned int i = 0; i < numProj; i ++)
   {
     // Initialization of Phi Values
-    ptrAngValues_deg[i] = PhiIncrement/2 + i * PhiIncrement;
+    //ptrAngValues_deg[i] = PhiIncrement/2 + i * PhiIncrement;
+    ptrAngValues_deg[i] = i * PhiIncrement;	// Modification now goes from 0, phiincrement, ...180-phiincrement.
     for(unsigned int j = 0; j < numR; j++)
     {
       if(i == 0)
@@ -160,7 +161,8 @@ void Sinogram2D::initParameters()
   for(unsigned int i = 0; i < numProj; i ++)
   {
 	  // Initialization of Phi Values
-	  ptrAngValues_deg[i] = PhiIncrement/2 + i * PhiIncrement;
+	  //ptrAngValues_deg[i] = PhiIncrement/2 + i * PhiIncrement;
+	  ptrAngValues_deg[i] = i * PhiIncrement;	// Modification now goes from 0, phiincrement, ...180-phiincrement.
   }
   for(unsigned int j = 0; j < numR; j++)
   {	  

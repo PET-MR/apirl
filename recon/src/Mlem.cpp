@@ -39,7 +39,7 @@ Mlem::Mlem(string configFilename)
 
 void Mlem::updateUpdateThreshold()
 {
-  updateThreshold = sensitivityImage->getMinValue() + (sensitivityImage->getMaxValue()-sensitivityImage->getMinValue()) * 0.01;
+  updateThreshold = sensitivityImage->getMinValue() + (sensitivityImage->getMaxValue()-sensitivityImage->getMinValue()) * 0.001;
   
 }
 

@@ -155,8 +155,10 @@ class DLLEXPORT Sinogram3D : public Sinogram2D
 	*/
 	Sinogram3D(Sinogram3D* srcSinogram3D);
 	
-	///	Destructor.
-	~Sinogram3D();
+	/// Destructor.
+	/** Es virtual para que cuando se haga un delete de un objeto de una clase derivada, desde un puntero a esta clase
+	 * también se llame al destructor de la clase derivada. */
+	virtual ~Sinogram3D();
 	
 	/** Método que deveulve una copia del sinograma3d. Se unsa en vez del constructor en las clases derivadas para mantener abstracción.
 		@return puntero a un objeto sinograma3d copia del objetco actual.
@@ -216,6 +218,8 @@ class DLLEXPORT Sinogram3D : public Sinogram2D
 	// expected Michelogram are the ones loaded in the constructor of the class
 	bool readFromFile(string fileHeaderPath){};
 	bool readFromInterfile(string fileHeaderPath);
+	/** Overload to be used in cylindrical scanners in order to set the scanner diameter for each sinogram. */
+	bool readFromInterfile(string fileHeaderPath, float radioScanner_mm);
 	bool SaveInFile(char* filePath);
 
 	/** Método que escribe el sinograma 2d en formato interfile. 

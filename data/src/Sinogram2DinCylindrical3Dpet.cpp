@@ -40,7 +40,8 @@ Sinogram2DinCylindrical3Dpet::Sinogram2DinCylindrical3Dpet(unsigned int nProj, u
   for(unsigned int i = 0; i < numProj; i ++)
   {
     // Initialization of Phi Values
-    ptrAngValues_deg[i] = PhiIncrement/2 + i * PhiIncrement;
+    ptrAngValues_deg[i] = i * PhiIncrement;	// Modification now goes from 0, phiincrement, ...180-phiincrement.
+    //ptrAngValues_deg[i] = PhiIncrement/2 + i * PhiIncrement;
     for(unsigned int j = 0; j < numR; j++)
     {
       if(i == 0)
@@ -177,7 +178,7 @@ bool Sinogram2DinCylindrical3Dpet::getPointsFromLor(int indexProj, int indexR, i
 {
   float r = this->getRValue(indexR);
   float rad_PhiAngle = this->getAngValue(indexProj) * DEG_TO_RAD;
-  float auxValue = sqrt(this->radioFov_mm * this->radioFov_mm - r * r);
+  float auxValue = sqrt(this->radioScanner_mm * this->radioScanner_mm - r * r);
   *geomFactor = 1;
   p1->X = r * cos(rad_PhiAngle) + sin(rad_PhiAngle) * auxValue;
   p1->Y = r * sin(rad_PhiAngle) - cos(rad_PhiAngle) * auxValue;

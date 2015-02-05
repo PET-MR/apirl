@@ -75,7 +75,9 @@ class DLLEXPORT Sinogram2D : public Projection
 		
 		
 		/** Destructor. */
-		~Sinogram2D();
+		/** Es virtual para que cuando se haga un delete de un objeto de una clase derivada, desde un puntero a esta clase
+		* también se llame al destructor de la clase derivada. */
+		virtual ~Sinogram2D();
 		
 		/** Función de inicialización de parámetros, se debe llamar cuando se actualizaron algunos
 		  de los parámetros del sinograma como numR o numProj. */

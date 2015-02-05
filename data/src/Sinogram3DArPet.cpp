@@ -84,14 +84,17 @@ Sinogram3D* Sinogram3DArPet::Copy()
 Sinogram3D* Sinogram3DArPet::getSubset(int indexSubset, int numSubsets)
 {
   Sinogram3DArPet* sino3dSubset = new Sinogram3DArPet(this);
+  Sinogram2Din3DArPet* auxSino2d;
   // Tengo una copia del sinograma, debo cambiar los sinogramas
   for(int i = 0; i < numSegments; i++)
   {
     for(int j = 0; j < this->segments[i]->getNumSinograms(); j++)
     {
-      sino3dSubset->getSegment(i)->setSinogram2D(new Sinogram2Din3DArPet(this->getSegment(i)->getSinogram2D(j), indexSubset, numSubsets), j);
+      auxSino2d = new Sinogram2Din3DArPet(this->getSegment(i)->getSinogram2D(j));
+      sino3dSubset->getSegment(i)->setSinogram2D(auxSino2d, j);
       sino3dSubset->getSegment(i)->getSinogram2D(j)->setMinDiffDetectors(this->getMinDiffDetectors());
       sino3dSubset->getSegment(i)->getSinogram2D(j)->setBlindLength(this->getLengthOfBlindArea());
+      delete auxSino2d;
     }
   }
   return (Sinogram3D*)sino3dSubset;

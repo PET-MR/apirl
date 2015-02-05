@@ -54,27 +54,97 @@ float Siddon (Line3D LOR, Image* image, SiddonSegment** weightsList, unsigned in
 	}*/
   lengthList[0] = 0;
   
-  // Cálculo de intersección de la lor con un fov cilíndrico.
-  // Las lors siempre interesectan las caras curvas del cilindro y no las tapas. Ya
-  // que el fov de los scanner está limitado por eso.
+//   // Cálculo de intersección de la lor con un fov cilíndrico.
+//   // Las lors siempre interesectan las caras curvas del cilindro y no las tapas. Ya
+//   // que el fov de los scanner está limitado por eso.
+//   
+//   // Lo calculo como la intersección entre la recta y una circunferencia de radio rFov_mm. La ecuación a resolver es:
+//   // (X0+alpha*Vx).^2+(Y0+alpha*Vy).^2=rFov_mm.^2
+//   // alpha = (-2*(Vx+Vy)+sqrt(4*Vx^2*(1-c)+4*Vy^2*(1-c) + 8(Vx+Vy)))/(2*(Vx^2+Vy^2))
+//   //float c = LOR.P0.X*LOR.P0.X + LOR.P0.Y*LOR.P0.Y - rFov_mm*rFov_mm;
+//   float segundoTermino = sqrt(4*(LOR.Vx*LOR.Vx*(rFov_mm*rFov_mm-LOR.P0.Y*LOR.P0.Y)
+// 	  +LOR.Vy*LOR.Vy*(rFov_mm*rFov_mm-LOR.P0.X*LOR.P0.X)) + 8*LOR.Vx*LOR.P0.X*LOR.Vy*LOR.P0.Y);
+//   // Obtengo los valores de alpha donde se intersecciona la recta con la circunferencia.
+//   // Como la debería cruzar en dos puntos hay dos soluciones.
+//   alpha_xy_1 = (-2*(LOR.Vx*LOR.P0.X+LOR.Vy*LOR.P0.Y) + segundoTermino)/(2*(LOR.Vx*LOR.Vx+LOR.Vy*LOR.Vy));
+//   alpha_xy_2 = (-2*(LOR.Vx*LOR.P0.X+LOR.Vy*LOR.P0.Y) - segundoTermino)/(2*(LOR.Vx*LOR.Vx+LOR.Vy*LOR.Vy));
+//   
+//   // Valores de alpha de entrada y de salida. El de entrada es el menor, porque la lor
+//   // se recorre desde P0 a P1.
+//   alpha_min = min(alpha_xy_1, alpha_xy_2);
+//   alpha_max = max(alpha_xy_1, alpha_xy_2);
+
   
-  // Lo calculo como la intersección entre la recta y una circunferencia de radio rFov_mm. La ecuación a resolver es:
-  // (X0+alpha*Vx).^2+(Y0+alpha*Vy).^2=rFov_mm.^2
-  // alpha = (-2*(Vx+Vy)+sqrt(4*Vx^2*(1-c)+4*Vy^2*(1-c) + 8(Vx+Vy)))/(2*(Vx^2+Vy^2))
-  //float c = LOR.P0.X*LOR.P0.X + LOR.P0.Y*LOR.P0.Y - rFov_mm*rFov_mm;
-  float segundoTermino = sqrt(4*(LOR.Vx*LOR.Vx*(rFov_mm*rFov_mm-LOR.P0.Y*LOR.P0.Y)
-	  +LOR.Vy*LOR.Vy*(rFov_mm*rFov_mm-LOR.P0.X*LOR.P0.X)) + 8*LOR.Vx*LOR.P0.X*LOR.Vy*LOR.P0.Y);
-  // Obtengo los valores de alpha donde se intersecciona la recta con la circunferencia.
-  // Como la debería cruzar en dos puntos hay dos soluciones.
-  alpha_xy_1 = (-2*(LOR.Vx*LOR.P0.X+LOR.Vy*LOR.P0.Y) + segundoTermino)/(2*(LOR.Vx*LOR.Vx+LOR.Vy*LOR.Vy));
-  alpha_xy_2 = (-2*(LOR.Vx*LOR.P0.X+LOR.Vy*LOR.P0.Y) - segundoTermino)/(2*(LOR.Vx*LOR.Vx+LOR.Vy*LOR.Vy));
+  // Para FOV cuadrado:
+  // Obtengo la intersección de la lor con las rectas x=-rFov_mm x=rFov_mm y=-rFov_mm y =rFov_mm
+  // Para dichos valores verifico que la otra coordenada este dentro de los valores, y obtengo
+  // los puntos de entrada y salida de la lor. No me fijo z, porque no debería ingresar por las
+  // tapas del cilindro, al menos que haya algún error entre el sinograma y la imagen de entrada.
+  float minValueX_mm = -rFov_mm;
+  float minValueY_mm = -rFov_mm;
+  float maxValueX_mm = rFov_mm;
+  float maxValueY_mm = rFov_mm;
   
-  // Valores de alpha de entrada y de salida. El de entrada es el menor, porque la lor
-  // se recorre desde P0 a P1.
-  alpha_min = min(alpha_xy_1, alpha_xy_2);
-  alpha_max = max(alpha_xy_1, alpha_xy_2);
   
-  // Coordenadas dentro de la imagen de los dos puntos de entrada:
+  // Calculates alpha values for the inferior planes (entry planes) of the FOV
+  if(LOR.Vx == 0) // Parallel to x axis
+  {
+    alpha_y_1 = (minValueY_mm - LOR.P0.Y) / LOR.Vy; 
+    alpha_y_2 = (maxValueY_mm - LOR.P0.Y) / LOR.Vy;
+    if(alpha_y_1 < alpha_y_2)
+    {
+      alpha_min = alpha_y_1;
+      alpha_max = alpha_y_2;
+    }
+    else
+    {
+      alpha_min = alpha_y_2;
+      alpha_max = alpha_y_1;
+    }
+  }
+  else if(LOR.Vy == 0) // Parallel to y axis.
+  {
+    alpha_x_1 = (minValueX_mm - LOR.P0.X) / LOR.Vx;
+    alpha_x_2 = (maxValueX_mm - LOR.P0.X) / LOR.Vx;
+    if(alpha_x_1 < alpha_x_2)
+    {
+      alpha_min = alpha_x_1;
+      alpha_max = alpha_x_2;
+    }
+    else
+    {
+      alpha_min = alpha_x_2;
+      alpha_max = alpha_x_1;
+    }
+  }
+  else
+  {
+    alpha_x_1 = (minValueX_mm - LOR.P0.X) / LOR.Vx;
+    alpha_y_1 = (minValueY_mm - LOR.P0.Y) / LOR.Vy;  
+    // Calculates alpha values for superior planes ( going out planes) of the fov
+    alpha_x_2 = (maxValueX_mm - LOR.P0.X) / LOR.Vx;	// ValuesX has one more element than pixels in X, thats we can use InputVolume->SizeX as index for the las element
+    alpha_y_2 = (maxValueY_mm - LOR.P0.Y) / LOR.Vy;
+    //alpha min
+    alpha_x_min = min(alpha_x_1, alpha_x_2);
+    alpha_y_min = min(alpha_y_1, alpha_y_2);
+    //alpha_y_min = max((float)0, alpha_y_min);
+    alpha_min = max(alpha_x_min, alpha_y_min); //
+    //alpha max
+    alpha_x_max = max(alpha_x_1, alpha_x_2);
+    alpha_y_max = max(alpha_y_1, alpha_y_2);
+    alpha_max = min(alpha_x_max, alpha_y_max);
+  }
+    
+  
+  // if the radius of the scanner is less than the diagonal (alpha less than 0), the entry point should be P0
+  if ((alpha_min<0)||(alpha_min>1)) // I added (alpha_min>1), because for aprallel lors to an axis, both alphas can be positiver or negative.
+    alpha_min = 0;
+  // if the radius of the scanner is less than the diagonal (alpha less than 0), the entry point should be P0
+  if ((alpha_max>1)||(alpha_max<0)) 
+    alpha_max = 1;
+  // Fin para Fov Cuadrado.
+  
+  //   // Coordenadas dentro de la imagen de los dos puntos de entrada:
   x_1_mm = LOR.P0.X + LOR.Vx * alpha_min;
   y_1_mm = LOR.P0.Y + LOR.Vy * alpha_min;
   z_1_mm = LOR.P0.Z + LOR.Vz * alpha_min;
@@ -82,7 +152,6 @@ float Siddon (Line3D LOR, Image* image, SiddonSegment** weightsList, unsigned in
   x_2_mm = LOR.P0.X + LOR.Vx * alpha_max;
   y_2_mm = LOR.P0.Y + LOR.Vy * alpha_max;
   z_2_mm = LOR.P0.Z + LOR.Vz * alpha_max;
-  
   /// Esto después hay que cambiarlo! Tiene que ir en la clase Michelogram!!!!!!!!!!!!!
   /// Necesito tener el dato del zfov del michelograma, que no lo tengo accesible ahora. Lo pongo a mano, pero
   /// cambiarlo de maner aurgente lo antes posible.!!!

@@ -41,7 +41,7 @@ bool MlemSinogram3d::setRandomCorrectionProjection(string randomsFilename)
 
 bool MlemSinogram3d::setNormalizationFactorsProjection(string normFilename)
 {
-  normalizationCorrectionFactorsProjection = new Sinogram3DCylindricalPet((char*)normFilename.c_str(), inputProjection->getRadioFov_mm(), inputProjection->getAxialFoV_mm(), inputProjection->getRadioFov_mm());
+  normalizationCorrectionFactorsProjection = new Sinogram3DCylindricalPet((char*)normFilename.c_str(), inputProjection->getRadioFov_mm(), inputProjection->getAxialFoV_mm(), ((Sinogram3DCylindricalPet*)inputProjection)->getRadioScanner_mm());
   enableNormalization = true;
 }
 
@@ -309,7 +309,7 @@ bool MlemSinogram3d::computeSensitivity(Image* outputImage)
   Sinogram3D* backprojectSinogram3D; 
   /// Si no hay normalización lo lleno con un valor constante, de lo contrario bakcprojec normalizacion:
   if (enableNormalization)
-    backprojectSinogram3D = normalizationCorrectionFactorsProjection;
+    backprojectSinogram3D = normalizationCorrectionFactorsProjection->Copy();
   else
   {
     backprojectSinogram3D = inputProjection->Copy();
@@ -319,5 +319,7 @@ bool MlemSinogram3d::computeSensitivity(Image* outputImage)
   backprojector->Backproject(backprojectSinogram3D, outputImage);
   // Umbral para la actualización de píxel:
   updateUpdateThreshold();
+  // Free memory
+  delete backprojectSinogram3D;
   return true;
 }

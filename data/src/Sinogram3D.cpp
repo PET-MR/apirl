@@ -63,7 +63,6 @@ Sinogram3D::Sinogram3D(Sinogram3D* srcSinogram3D)
 /// Desctructor
 Sinogram3D::~Sinogram3D()
 {
-	
   free(ptrAxialvalues_mm);
 }
 
@@ -92,7 +91,16 @@ int Sinogram3D::getNumSinograms()
   return numSinos;
 }
 
+
 bool Sinogram3D::readFromInterfile(string headerFilename)
+{
+  // Set a dummy value for the radio of the scanner and then call the funcion that actully reads the file:
+  float radioScanner_mm = radioFov_mm;
+  readFromInterfile(headerFilename, radioScanner_mm);
+}
+
+
+bool Sinogram3D::readFromInterfile(string headerFilename, float radioScanner_mm)
 {
   const int sizeBuffer = 512;
   char buffer[sizeBuffer];	// Buffer que voy a utilizar para ir leyendo el archivo de configuración
@@ -403,7 +411,7 @@ bool Sinogram3D::readFromInterfile(string headerFilename)
       {
 	// Si entré acá significa que hay combinaciones de anillos para este sinograma. Lo leo del i33 y lo cargo:
 	// Leo un sinograma del i33 y lo asigno al sinograma del segmento correspondiente:
-	Sinogram2DinCylindrical3Dpet* auxSino = new Sinogram2DinCylindrical3Dpet(numProj, numR, radioFov_mm, axialFov_mm);
+	Sinogram2DinCylindrical3Dpet* auxSino = new Sinogram2DinCylindrical3Dpet(numProj, numR, radioFov_mm, radioScanner_mm);
 	auxSino->setMultipleRingConfig(numSinosZ1inSegment, listaRing1, listaRing2, listaZ1_mm, listaZ2_mm);      
 	// Leo el binario, y lo cargo en el sinograma:
 	unsigned int numBytes = fread(rawSino, sizeof(float), numProj*numR, fp);
@@ -716,3 +724,4 @@ void Sinogram3D::inverseDivideBinToBin(Sinogram3D* sinogramDividend)
     }
   }
 }
+

@@ -380,26 +380,40 @@ bool Image::readFromInterfile(char* filePath)
 	return true;
 }
 
+int Image::forcePositive()
+{
+  int numNegatives = 0;
+  for(int i = 0; i < this->nPixels; i++)
+  {
+    if(this->pixels[i] < 0)
+    {
+      numNegatives++;
+      this->pixels[i] = 0;
+    }
+  }
+  return numNegatives;
+}
+
 float Image::getMinValue()
 {
   // Recorro todos los píxeles de la imagen. Busco el mínimo distinto de cero.
-  float minValue = this->pixels[0];
+  float minValue = numeric_limits<float>::max();
   for(int i = 0; i < this->nPixels; i++)
   {
-	if((this->pixels[i] != 0) && (minValue!=0))
-	{
-	  if(this->pixels[i] < minValue)
-	  {
-		minValue = this->pixels[i];
-	  }
-	}
-	else
-	{
-	  if(this->pixels[i] != 0)
-	  {
-		 minValue = this->pixels[0];
-	  }
-	}
+    if((this->pixels[i] != 0) && (minValue!=0))
+    {
+      if(this->pixels[i] < minValue)
+      {
+	minValue = this->pixels[i];
+      }
+    }
+    else
+    {
+      if(this->pixels[i] != 0)
+      {
+	minValue = this->pixels[0];
+      }
+    }
   }
   return minValue;
 }
@@ -410,10 +424,10 @@ float Image::getMaxValue()
   float maxValue = this->pixels[0];
   for(int i = 0; i < this->nPixels; i++)
   {
-	  if(this->pixels[i] > maxValue)
-	  {
-		maxValue = this->pixels[i];
-	  }
+    if(this->pixels[i] > maxValue)
+    {
+      maxValue = this->pixels[i];
+    }
   }
   return maxValue;
 }

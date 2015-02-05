@@ -99,8 +99,10 @@ class Segment
 	*/
 	Segment(Segment* srcSegmento);
 	
-	/** Destructor. */
-	~Segment();
+	/// Destructor.
+	/** Es virtual para que cuando se haga un delete de un objeto de una clase derivada, desde un puntero a esta clase
+	 * también se llame al destructor de la clase derivada. */
+	virtual ~Segment();
 	
 	/// Método que devuelve la cantidad de sinogramas de este segmento.
 	/**	@return número entero con la cantidad de sinogramas del segmento.
@@ -114,9 +116,9 @@ class Segment
 	virtual Sinogram2DinCylindrical3Dpet* getSinogram2D(int indexSinogram2D) = 0;
 	
 	/** Método que deveulve un puntero al Sinograma2D elegido.
-		@param sinogram2D sinograma 2D que se desea asignar, debe tener previamente cargados la lista de combinación de anillos que representa dicho sinograma.
-		@param indexInSegment índice dentro del segmento del sinograma.
-		@return true si salió todo bien.
+	    @param sinogram2D sinograma 2D que se desea asignar, debe tener previamente cargados la lista de combinación de anillos que representa dicho sinograma.
+	    @param indexInSegment índice dentro del segmento del sinograma.
+	    @return true si salió todo bien.
 	*/
 	virtual bool setSinogram2D(Sinogram2DinCylindrical3Dpet* sinogram2D, int indexInSegment) = 0;
 	

@@ -125,11 +125,11 @@ if visualize==1
     
     h = figure;
     set(gcf, 'Position', [0 0 1600 1200]);
-    subplot(1,2,1);
-    imshow(crystalInterf'./max(max(crystalInterf)));
+    subplot(2,1,1);
+    imshow(crystalInterf./max(max(crystalInterf)));
     title(componentLabels{2});
-    subplot(1,2,2);
-    imshow(crystalEff./max(max(crystalEff)));
+    subplot(2,1,2);
+    imshow(crystalEff'./max(max(crystalEff)));
     title(componentLabels{3});
     h = figure;
     set(gcf, 'Position', [0 0 1600 1200]);
