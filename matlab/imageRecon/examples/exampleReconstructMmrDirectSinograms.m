@@ -69,8 +69,12 @@ set(gcf, 'Position', [0 0 1600 1200]);
 title('Sinogram Correction For Crystal Interference and Geometry');
 % Generate the sinograms for crystal efficencies:
 for i = 1 : structSizeSino2d.numZ
-    sinoEfficencies(:,:,i) = createSinogram2dFromDetectorsEfficency(componentFactors{3}(:,i), structSizeSino2d, 0);
+    % First method:
+    %sinoEfficencies(:,:,i) = createSinogram2dFromDetectorsEfficency(componentFactors{3}(:,i), structSizeSino2d, 1, 0);
+    % Second method ( abit faster):
+    sinoEfficencies(:,:,i) = createSinogram2dFromDetectorsEfficency(componentFactors{3}(:,i), structSizeSino2d, 2, 0);
 end
+%%
 figure;
 imshow(sinoEfficencies(:,:,1) ./max(max(sinoEfficencies(:,:,1))));
 set(gcf, 'Position', [0 0 1600 1200]);
