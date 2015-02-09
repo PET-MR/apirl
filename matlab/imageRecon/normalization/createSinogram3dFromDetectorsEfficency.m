@@ -20,7 +20,7 @@ function sinoEfficencies = createSinogram3dFromDetectorsEfficency(efficenciesPer
 
 % Size of the sinogram:
 
-sinoEfficencies = zeros(structSizeSino3d.numTheta, structSizeSino3d.numR, sum(structSizeSino3d.sinogramsPerSegment));
+sinoEfficencies = zeros(structSizeSino3d.numTheta, structSizeSino3d.numR, sum(structSizeSino3d.sinogramsPerSegment), 'single');
 
 % First we create a map with the indexes fo each crystal element in each
 % transverse 2d sinogram.

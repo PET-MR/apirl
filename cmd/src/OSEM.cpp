@@ -403,7 +403,7 @@ int main (int argc, char *argv[])
     mlem = new OsemSinogram3d(inputProjection, initialEstimate, "", outputPrefix, numIterations, saveIterationInterval, saveIntermediateData, bSensitivityFromFile, forwardprojector, backprojector,numberOfSubsets);
     if(bSensitivityFromFile)
     {
-	  mlem->setSensitivityFilename(sensitivityFilename);
+      mlem->setSensitivityFilename(sensitivityFilename);
     }
   }
   else if(inputType.compare("Sinogram3DArPet")==0)

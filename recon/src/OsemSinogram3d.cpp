@@ -17,8 +17,19 @@ OsemSinogram3d::OsemSinogram3d(Sinogram3D* cInputProjection, Image* cInitialEsti
 
 OsemSinogram3d::OsemSinogram3d(string configFilename):MlemSinogram3d(configFilename)
 {
-    /// Inicializo las variables con sus valores por default
-	
+    /// Inicializo las variables con sus valores por default	
+}
+
+/// Override the updateUpdateThreshold function of mlem. For osem we have an update threshold per subset.
+void OsemSinogram3d::updateUpdateThreshold()
+{
+  for(int s = 0; s < numSubsets; s++)
+  {
+    updateThresholds[s] = sensitivityImages[s]->getMinValue() + (sensitivityImages[s]->getMaxValue()-sensitivityImages[s]->getMinValue()) * 0.0001;  
+    #ifdef __DEBUG__
+      printf("Threshold: %f\n", updateThresholds[s]);
+    #endif
+  }
 }
 
 /// Método público que realiza la reconstrucción en base a los parámetros pasados al objeto Mlem instanciado
@@ -67,26 +78,45 @@ bool OsemSinogram3d::Reconstruct()
     /// Ya había sido alocado previamente, lo realoco.
     this->likelihoodValues = (float*)realloc(this->likelihoodValues, sizeof(float)*(this->numIterations + 1));
   }
-  /// Calculo todas los sensitivty volume, tengo tantos como subset. Sino alcancanzar la ram
-  /// para almacenar todos, debería calcularlos dentro del for por cada iteración:
-  for(int s = 0; s < numSubsets; s++)
+  
+  /// Me fijo si la sensitivity image la tengo que cargar desde archivo o calcularla
+  if(sensitivityImageFromFile)
   {
-    /// Calculo el sensitivity volume
-    if(computeSensitivity(sensitivityImages[s], s)==false)
+    /// Leo todas las imágenes:
+    for(int s = 0; s < numSubsets; s++)
     {
-      strError = "Error al calcular la sensitivity Image.";
-      return false;
+      /// Leo las distintas imágnes de sensibilidad. Para osem el sensitivity filename, tiene que tener el
+      /// prefijo de los nombres, y luego de les agrega un _%d, siendo %d el índice de subset.
+      sprintf(c_string, "%s_subset_%d.h33", sensitivityFilename.c_str(), s);
+      /// Leo el sensitivity volume desde el archivo
+      sensitivityImages[s]->readFromInterfile(c_string);
+      sensitivityImages[s]->forcePositive();
     }
-    // La guardo en disco.
-    string sensitivityFileName = outputFilenamePrefix;
-    sprintf(c_string, "_sensitivity_subset_%d", s);
-    sensitivityFileName.append(c_string);
-    sensitivityImages[s]->writeInterfile((char*)sensitivityFileName.c_str());
-    // Sometimes it can be a negative number in a border (precision problems):
-    sensitivityImages[s]->forcePositive();
-    updateThresholds[s] = sensitivityImages[s]->getMinValue() + (sensitivityImages[s]->getMaxValue()-sensitivityImages[s]->getMinValue()) * 0.001;
-    printf("Umbral: %f\n", updateThresholds[s]);
   }
+  else
+  {
+    /// Calculo todas los sensitivty volume, tengo tantos como subset. Sino alcancanzar la ram
+    /// para almacenar todos, debería calcularlos dentro del for por cada iteración:
+    for(int s = 0; s < numSubsets; s++)
+    {
+      /// Calculo el sensitivity volume
+      if(computeSensitivity(sensitivityImages[s], s)==false)
+      {
+	strError = "Error al calcular la sensitivity Image.";
+	return false;
+      }
+      // La guardo en disco.
+      string sensitivityFileName = outputFilenamePrefix;
+      sprintf(c_string, "_sensitivity_subset_%d", s);
+      sensitivityFileName.append(c_string);
+      sensitivityImages[s]->writeInterfile((char*)sensitivityFileName.c_str());
+      // Sometimes it can be a negative number in a border (precision problems):
+      sensitivityImages[s]->forcePositive();
+    }
+  }
+  // Update the thresholds:
+  updateUpdateThreshold();
+  
   /// Inicializo el volumen a reconstruir con la imagen del initial estimate:
   reconstructionImage = new Image(initialEstimate);
   ptrPixels = reconstructionImage->getPixelsPtr();
@@ -124,6 +154,13 @@ bool OsemSinogram3d::Reconstruct()
   {
     clock_t initialClockIteration = clock();
     // Por cada iteración debo repetir la operación para todos los subsets.
+    #ifdef __DEBUG__
+      // En debug imprimo los ángulos que forman cada susbset:
+      for(unsigned int s = 0; s < this->numSubsets; s++)
+      {
+	inputSubset = inputProjection->getSubset(s, numSubsets);
+      }
+    #endif
     for(unsigned int s = 0; s < this->numSubsets; s++)
     {
       // Tengo que generar el subset del sinograma correspondiente para reconstruir con ese:

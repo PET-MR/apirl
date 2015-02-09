@@ -134,23 +134,23 @@ bool MlemSinogram3d::Reconstruct()
   /// Me fijo si la sensitivity image la tengo que cargar desde archivo o calcularla
   if(sensitivityImageFromFile)
   {
-	  /// Leo el sensitivity volume desde el archivo
-	  sensitivityImage->readFromInterfile((char*) sensitivityFilename.c_str());
-	  ptrSensitivityPixels = sensitivityImage->getPixelsPtr();
-	  updateUpdateThreshold();
+    /// Leo el sensitivity volume desde el archivo
+    sensitivityImage->readFromInterfile((char*) sensitivityFilename.c_str());
+    ptrSensitivityPixels = sensitivityImage->getPixelsPtr();
+    updateUpdateThreshold();
   }
   else
   {
-	  /// Calculo el sensitivity volume
-	  if(computeSensitivity(sensitivityImage)==false)
-	  {
-	    strError = "Error al calcular la sensitivity Image.";
-	    return false;
-	  }
-	  // La guardo en disco.
-	  string sensitivityFileName = outputFilenamePrefix;
-	  sensitivityFileName.append("_sensitivity");
-	  sensitivityImage->writeInterfile((char*)sensitivityFileName.c_str());
+    /// Calculo el sensitivity volume
+    if(computeSensitivity(sensitivityImage)==false)
+    {
+      strError = "Error al calcular la sensitivity Image.";
+      return false;
+    }
+    // La guardo en disco.
+    string sensitivityFileName = outputFilenamePrefix;
+    sensitivityFileName.append("_sensitivity");
+    sensitivityImage->writeInterfile((char*)sensitivityFileName.c_str());
   }
   /// Inicializo el volumen a reconstruir con la imagen del initial estimate:
   reconstructionImage = new Image(initialEstimate);

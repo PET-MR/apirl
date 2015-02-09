@@ -92,14 +92,26 @@ Sinogram3D* Sinogram3DCylindricalPet::getSubset(int indexSubset, int numSubsets)
   // Tengo una copia del sinograma, debo cambiar los sinogramas
   for(int i = 0; i < numSegments; i++)
   {
-      for(int j = 0; j < this->segments[i]->getNumSinograms(); j++)
-      {
-	// Create new sinogram2d with the correct dimensiones:
-	auxSinos2d = new Sinogram2DinCylindrical3Dpet(this->getSegment(i)->getSinogram2D(j), indexSubset, numSubsets);
-	sino3dSubset->getSegment(i)->setSinogram2D(auxSinos2d, j);
-	// delete the aux sinogram because set sinograms makes a copy:
-	delete auxSinos2d;
-      }
+    for(int j = 0; j < this->segments[i]->getNumSinograms(); j++)
+    {
+      // Create new sinogram2d with the correct dimensiones:
+      auxSinos2d = new Sinogram2DinCylindrical3Dpet(this->getSegment(i)->getSinogram2D(j), indexSubset, numSubsets);
+      sino3dSubset->getSegment(i)->setSinogram2D(auxSinos2d, j);
+      // if debug, printf ang values:
+      #ifdef __DEBUG__
+	if ((i==0)&&(j==0))
+	{
+	  printf("Angulos para subset %d de %d: \n", indexSubset, numSubsets);
+	  for(int ang = 0; ang < auxSinos2d->getNumProj(); ang++)
+	  {
+	    printf("%f\t", auxSinos2d->getAngValue(ang));
+	  }
+	  printf("\n");
+	}
+      #endif
+      // delete the aux sinogram because set sinograms makes a copy:
+      delete auxSinos2d;
+    }
   }
   return (Sinogram3D*)sino3dSubset;
 }

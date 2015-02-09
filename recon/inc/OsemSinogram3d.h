@@ -80,14 +80,17 @@ class DLLEXPORT OsemSinogram3d : public MlemSinogram3d
 	  
   public:
     /// Constructores de la clase.
-    /* Constructor que carga los parámetros base de una reconstrucción MLEM para Sinogram3D. */
+    /** Constructor que carga los parámetros base de una reconstrucción MLEM para Sinogram3D. */
     OsemSinogram3d(Sinogram3D* cInputProjection, Image* cInitialEstimate, string cPathSalida, string cOutputPrefix, int cNumIterations, int cSaveIterationInterval, bool cSaveIntermediate, bool cSensitivityImageFromFile, Projector* cForwardprojector, Projector* cBackprojector, int cNumSubsets);
     
     /// Constructores de la clase a partir de un archivo de configuración.
-    /* Constructor que carga los parámetros base de una reconstrucción MLEM
+    /** Constructor que carga los parámetros base de una reconstrucción MLEM
     a partir de un archivo de configuración con cierto formato dado. */
     OsemSinogram3d(string configFilename);
     
+    /// Override of the updateUpdateThreshold of the Mlem.
+    /** For the osem algorithm, I have one threshold per subset. */
+    void updateUpdateThreshold();
     
     /// Método que realiza la reconstrucción de las proyecciones. 
     bool Reconstruct();
