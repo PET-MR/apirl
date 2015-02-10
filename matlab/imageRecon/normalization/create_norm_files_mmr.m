@@ -4,7 +4,7 @@
 %  Fecha de Creación: 09/02/2015
 %  *********************************************************************
 %  function [overall_ncf_3d, scan_independent_ncf_3d, scan_dependent_ncf_3d, used_xtal_efficiencies, used_deadtimefactors] = ...
-%       create_norm_files_mmr(cbn_filename, my_selection_of_xtal_efficiencies, my_choice_of_deadtimefactors, span_choice)
+%       create_norm_files_mmr(cbn_filename, my_selection_of_xtal_efficiencies, my_choice_of_deadtimefactors, singles_rates_per_bucket, span_choice)
 % 
 %  This functions read the component based normalization file of the mMr
 %  and creates the normalization factors for 3d sinograms with a
@@ -18,8 +18,12 @@
 %       want to stick with the efficencies of the .n file, just use an
 %       empty vector in this parameter [].
 %   -my_choice_of_deadtimefactors: this is an optinal parameter. If you
-%   want to use different dead time factors from the ones in the .n files.
-%   If not just use an empty vector for this parameter [].
+%       want to use different dead time factors from the ones in the .n files.
+%       If not just use an empty vector for this parameter [].
+%   -singles_rates_per_bucket: singles rate per bucket used to estimate
+%       dead time factors. Its an array of 228 elements (number of buckets in
+%       the whole scanner). The order is the same than in the interfile
+%       sinogram of an acquisition. If empty the dead time is not used.
 %   -span_choice: span of the 3d sinogram. At the moment it's only
 %       available for span 11. 
 %
@@ -33,13 +37,14 @@
 %       dependant factors (dead-time and crystal efficencies).
 %   -used_xtal_efficiencies: crystal effincecies factors used in the
 %       overall_ncf_3d. 
-%   -used_deadtimefactors: dead time factors used in the overall_ncf_3d.
+%   -used_deadtimefactors: dead time contstants used for compute the dead
+%   time factors.
 % 
 %  The size of each component matrix are hardcoded for the mMr scanner and
 %  are
 
 function [overall_ncf_3d, scan_independent_ncf_3d, scan_dependent_ncf_3d, used_xtal_efficiencies, used_deadtimefactors] = ...
-   create_norm_files_mmr(cbn_filename, my_selection_of_xtal_efficiencies, my_choice_of_deadtimefactors, span_choice)
+   create_norm_files_mmr(cbn_filename, my_selection_of_xtal_efficiencies, my_choice_of_deadtimefactors, singles_rates_per_bucket, span_choice)
 
 % 1) Read the .n files and get each component in a cell array:
 [componentFactors, componentLabels]  = readmMrComponentBasedNormalization(cbn_filename, 0);
@@ -102,7 +107,11 @@ scan_dependent_ncf_3d(nonzeros) = 1./ scan_dependent_ncf_3d(nonzeros);
  
 % b) Get dead-time:
 % Not implemented yet.
-
+if(~isempty(singles_rates_per_bucket))
+    % Compute dead time factors, is equivalent to an efficency factor.
+    % Thus, a factor for each crystal unit is computed, and then both
+    % factors are multiplied.
+end
 % 6) Overall factor:
 overall_ncf_3d = scan_independent_ncf_3d .* scan_dependent_ncf_3d;
 
