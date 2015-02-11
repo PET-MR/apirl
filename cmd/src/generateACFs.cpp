@@ -49,7 +49,7 @@
 
 #define FOV_axial 162
 #define FOV_radial 582
-#define FIXED_KEYS 4
+//#define FIXED_KEYS 4
 using namespace std;
 using	std::string;
 /**

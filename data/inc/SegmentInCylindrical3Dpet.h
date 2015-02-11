@@ -63,12 +63,12 @@ class SegmentInCylindrical3Dpet: public Segment
 	/// Función que inicializa los sinogramas del segmento.
 	/** 
 	 */
-	void initSinograms(int nProj, int nR, float rFov_mm, float zFov_mm);
+	virtual void initSinograms(int nProj, int nR, float rFov_mm, float zFov_mm);
 	
 	/// Función que inicializa los sinogramas del segmento a partir de los de otro segmento.
 	/** 
 	 */
-	void initSinogramsFromSegment(Segment* srcSegment);
+	virtual void initSinogramsFromSegment(Segment* srcSegment);
 	
 	float radioScanner;
 	
@@ -95,7 +95,7 @@ class SegmentInCylindrical3Dpet: public Segment
 	SegmentInCylindrical3Dpet(SegmentInCylindrical3Dpet* srcSegmento);
 	
 	/** Destructor. */
-	~SegmentInCylindrical3Dpet();
+	virtual ~SegmentInCylindrical3Dpet();
 	
 	/** Método que deveulve un puntero al Sinograma2D elegido.
 		@param indexSegment sinograma que se desea obtener.

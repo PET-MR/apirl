@@ -33,8 +33,6 @@ SegmentInCylindrical3Dpet::SegmentInCylindrical3Dpet(SegmentInCylindrical3Dpet* 
 {
   // Las propiedades básicas fueron copiadas en segment.
   this->radioScanner = srcSegment->radioScanner;
-  /// Instancio los sinogramas 2D
-  this->sinograms2D = new Sinogram2DinCylindrical3Dpet*[numSinograms];
   this->initSinogramsFromSegment(srcSegment);
 }
 
@@ -60,6 +58,8 @@ void SegmentInCylindrical3Dpet::initSinograms(int nProj, int nR, float rFov_mm, 
 
 void SegmentInCylindrical3Dpet::initSinogramsFromSegment(Segment* srcSegment)
 {
+  /// Instancio los sinogramas 2D
+  this->sinograms2D = new Sinogram2DinCylindrical3Dpet*[numSinograms];
   for(int i = 0; i < numSinograms; i++)
   {
     sinograms2D[i] = new Sinogram2DinCylindrical3Dpet(srcSegment->getSinogram2D(i));

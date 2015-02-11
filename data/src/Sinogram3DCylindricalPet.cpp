@@ -8,6 +8,12 @@ std::ostringstream os;
 
 //using namespace::iostream;
 
+Sinogram3DCylindricalPet::Sinogram3DCylindricalPet(float rFov_mm, float zFov_mm):Sinogram3D(rFov_mm, zFov_mm)
+{
+  radioFov_mm = rFov_mm;
+  axialFov_mm = zFov_mm;
+}
+
 Sinogram3DCylindricalPet::Sinogram3DCylindricalPet(char* fileHeaderPath, float rFov_mm, float zFov_mm, float rScanner_mm):Sinogram3D(rFov_mm, zFov_mm)
 {
   radioScanner_mm = rScanner_mm;
@@ -31,11 +37,7 @@ Sinogram3DCylindricalPet::Sinogram3DCylindricalPet(Sinogram3DCylindricalPet* src
   /// Copio todas las propiedaddes del objeto fuente al objeto siendo instanciado en el constructor de Sinogram3d.
   /// Ahora hago la copia de los objetos Segmento
   /// Instancio los sinogramas 2D
-  segments = new SegmentInCylindrical3Dpet*[numSegments];
-  for(int i = 0; i < numSegments; i++)
-  {
-    segments[i] = new SegmentInCylindrical3Dpet(srcSinogram3D->getSegment(i));
-  }
+  inicializarSegmentos();
   // El radio del scnnaer también:
   radioScanner_mm = srcSinogram3D->getRadioScanner_mm();
 }

@@ -72,10 +72,10 @@ int Sinogram3D::getBinCount()
   // Obtengo la cantidad total de bins que tiene el sinograma 3D.
   for(int i = 0; i < this->numSegments; i++)
   {
-	for(int j = 0; j < this->getSegment(i)->getNumSinograms(); j++)
-	{
-	  numBins += this->getSegment(i)->getSinogram2D(j)->getNumProj() * this->getSegment(i)->getSinogram2D(j)->getNumR();
-	}
+    for(int j = 0; j < this->getSegment(i)->getNumSinograms(); j++)
+    {
+      numBins += this->getSegment(i)->getSinogram2D(j)->getNumProj() * this->getSegment(i)->getSinogram2D(j)->getNumR();
+    }
   }
   return numBins;
 }
@@ -411,21 +411,16 @@ bool Sinogram3D::readFromInterfile(string headerFilename, float radioScanner_mm)
       {
 	// Si entré acá significa que hay combinaciones de anillos para este sinograma. Lo leo del i33 y lo cargo:
 	// Leo un sinograma del i33 y lo asigno al sinograma del segmento correspondiente:
-	Sinogram2DinCylindrical3Dpet* auxSino = new Sinogram2DinCylindrical3Dpet(numProj, numR, radioFov_mm, radioScanner_mm);
-	auxSino->setMultipleRingConfig(numSinosZ1inSegment, listaRing1, listaRing2, listaZ1_mm, listaZ2_mm);      
-	// Leo el binario, y lo cargo en el sinograma:
 	unsigned int numBytes = fread(rawSino, sizeof(float), numProj*numR, fp);
 	if (numBytes != (numProj*numR))
 	{
 	  cout << "Falló la lectura de los datos del sinograma3d, puede que no coincida la cantidad de bytes a leer con los del archivo .i33" << endl;
 	  return false;
 	}
-	float* ptrSino = auxSino->getSinogramPtr();
+	float* ptrSino = this->getSegment(i)->getSinogram2D(numSinosThisSegment)->getSinogramPtr();
+	this->getSegment(i)->getSinogram2D(numSinosThisSegment)->setMultipleRingConfig(numSinosZ1inSegment, listaRing1, listaRing2, listaZ1_mm, listaZ2_mm);
 	memcpy(ptrSino, rawSino, sizeof(float) * numProj * numR);
 
-	// Asigno la memoria:
-	setSinogramInSegment(i, numSinosThisSegment, auxSino);
-	//segments[i]->setSinogram2D(auxSino, numSinosThisSegment);
 	// Cuenta la cantidad de segmentos para verificar que se cumpla:
 	numSinosThisSegment = numSinosThisSegment + 1;
 	indiceSino = indiceSino + 1;

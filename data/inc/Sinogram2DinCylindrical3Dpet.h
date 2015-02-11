@@ -99,12 +99,12 @@ class DLLEXPORT Sinogram2DinCylindrical3Dpet : public Sinogram2D
 	  Sinogram2DinCylindrical3Dpet(const Sinogram2DinCylindrical3Dpet* srcSinogram2DinCylindrical3Dpet, int indexSubset, int numSubsets);
 	  
 	  /** Destructor. */
-	  ~Sinogram2DinCylindrical3Dpet();
+	  virtual ~Sinogram2DinCylindrical3Dpet();
 	  
 	  /** Método que deveulve una copia del sinograma2d. Se unsa en vez del constructor en las clases derivadas para mantener abstracción.
 		@return puntero a un objeto sinograma2d copia del objetco actual.
 	  */
-	  Sinogram2D* Copy(){ Sinogram2DinCylindrical3Dpet* sino2dcopy = new Sinogram2DinCylindrical3Dpet(this); return (Sinogram2D*)sino2dcopy;};	
+	  virtual Sinogram2D* Copy(){ Sinogram2DinCylindrical3Dpet* sino2dcopy = new Sinogram2DinCylindrical3Dpet(this); return (Sinogram2D*)sino2dcopy;};	
 	  
 	  /** Método que devuelve cantidad de combinación de anillos que representa este sinograma.
 		  Solo se tiene en cuenta cuando es parte de un sinograma 3d y hay polar mashing.

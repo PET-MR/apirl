@@ -43,8 +43,8 @@
 %  The size of each component matrix are hardcoded for the mMr scanner and
 %  are
 
-function [overall_ncf_3d, scan_independent_ncf_3d, scan_dependent_ncf_3d, used_xtal_efficiencies, used_deadtimefactors] = ...
-   create_norm_files_mmr(cbn_filename, my_selection_of_xtal_efficiencies, my_choice_of_deadtimefactors, singles_rates_per_bucket, span_choice)
+function [overall_ncf_3d, scanner_time_invariant_ncf_3d, scanner_time_variant_ncf_3d, acquisition_dependant_ncf_3d, used_xtal_efficiencies, used_deadtimefactors, used_axial_factors] = ...
+   create_norm_files_mmr(cbn_filename, my_axial_factors, my_selection_of_xtal_efficiencies, my_choice_of_deadtimefactors, singles_rates_per_bucket, span_choice)
 
 % 1) Read the .n files and get each component in a cell array:
 [componentFactors, componentLabels]  = readmMrComponentBasedNormalization(cbn_filename, 0);
@@ -58,8 +58,9 @@ structSizeSino3d = getSizeSino3dFromSpan(numTheta, numR, numRings, rFov_mm, zFov
 numSinograms = sum(structSizeSino3d.sinogramsPerSegment);
 % Generate the sinograms:
 overall_ncf_3d = zeros(numTheta, numR, numSinograms, 'single');
-scan_independent_ncf_3d = zeros(numTheta, numR, numSinograms, 'single');
-scan_dependent_ncf_3d = zeros(numTheta, numR, numSinograms, 'single');
+scanner_time_invariant_ncf_3d = zeros(numTheta, numR, numSinograms, 'single');
+scanner_time_variant_ncf_3d = zeros(numTheta, numR, numSinograms, 'single');
+acquisition_dependant_ncf_3d = zeros(numTheta, numR, numSinograms, 'single');
 
 % 3) Selection of dead-time parameters and crystal efficencies:
 if isempty(my_selection_of_xtal_efficiencies)
@@ -91,19 +92,19 @@ axialFactors = 1./(componentFactors{4}.*componentFactors{8});
 
 for i = 1 : sum(structSizeSino3d.sinogramsPerSegment)
     % First the geomeitric, crystal interference factors:
-    scan_independent_ncf_3d(:,:,i) = 1./(geometricFactor .* crystalInterfFactor);
+    scanner_time_invariant_ncf_3d(:,:,i) = 1./(geometricFactor .* crystalInterfFactor);
     % Axial factor:
-    scan_independent_ncf_3d(:,:,i) = scan_independent_ncf_3d(:,:,i) .* (1./axialFactors(i));
+    scanner_time_invariant_ncf_3d(:,:,i) = scanner_time_invariant_ncf_3d(:,:,i) .* (1./axialFactors(i));
 end
 
 % 5) We generate the scan_dependent_ncf_3d, that is compound by the
 % dead-time and crystal-efficencies.
 % a) Crystal efficencies. A sinogram is generated from the crystal
 % efficencies:
-scan_dependent_ncf_3d = createSinogram3dFromDetectorsEfficency(used_xtal_efficiencies, structSizeSino3d, 0);
+scanner_time_variant_ncf_3d = createSinogram3dFromDetectorsEfficency(used_xtal_efficiencies, structSizeSino3d, 0);
 % the ncf is 1/efficency:
-nonzeros = scan_dependent_ncf_3d ~= 0;
-scan_dependent_ncf_3d(nonzeros) = 1./ scan_dependent_ncf_3d(nonzeros);
+nonzeros = scanner_time_variant_ncf_3d ~= 0;
+scanner_time_variant_ncf_3d(nonzeros) = 1./ scanner_time_variant_ncf_3d(nonzeros);
  
 % b) Get dead-time:
 % Not implemented yet.
@@ -113,7 +114,7 @@ if(~isempty(singles_rates_per_bucket))
     % factors are multiplied.
 end
 % 6) Overall factor:
-overall_ncf_3d = scan_independent_ncf_3d .* scan_dependent_ncf_3d;
+overall_ncf_3d = scanner_time_invariant_ncf_3d .* scanner_time_variant_ncf_3d;
 
 
 

@@ -103,38 +103,38 @@ axialFactors = 1./(componentFactors{4}.*componentFactors{8});
 %% ATTENUATION CORRECTION - PICK A OR B AND COMMENT THE NOT USED 
 %% COMPUTE THE ACFS (OPTION A)
 % Read the phantom and then generate the ACFs with apirl:
-% imageSize_pixels = [344 344 127];
-% filenameAttenMap = '/workspaces/Martin/KCL/Biograph_mMr/Mediciones/2601/interfile/PET_ACQ_16_20150116131121-0_PRR_1000001_20150126152442_umap_human_00.v';
-% fid = fopen(filenameAttenMap, 'r');
-% if fid == -1
-%     ferror(fid);
-% end
-% attenMap = fread(fid, imageSize_pixels(1)*imageSize_pixels(2)*imageSize_pixels(3), 'single');
-% attenMap = reshape(attenMap, imageSize_pixels);
-% fclose(fid);
-% % visualization
-% figure;
-% image = getImageFromSlices(attenMap, 12, 1, 0);
-% imshow(image);
-% title('Attenuation Map Shifted');
-% % Size of the image to cover the full fov:
-% sizeImage_mm = [structSizeSino3d.rFov_mm*2 structSizeSino3d.rFov_mm*2 structSizeSino3d.zFov_mm];
-% sizePixel_mm = sizeImage_mm ./ imageSize_pixels;
-% 
-% % The phantom was not perfectly centered, so the attenuation map is
-% % shifted. I repeat the slcie 116 until the end:
-% for i = 117 : size(attenMap,3)
-%     attenMap(:,:,i) = attenMap(:,:,116);
-% end
-% figure;
-% image = getImageFromSlices(attenMap, 12, 1, 0);
-% imshow(image);
-% title('Attenuation Map Manualy Completed');
-% % Create ACFs of a computed phatoms with the linear attenuation
-% % coefficients:
-% acfFilename = ['acfsSinogramSpan11'];
-% filenameSinogram = [outputPath 'sinogramSpan11'];
-% acfs3dSpan11 = createACFsFromImage(attenMap, sizePixel_mm, outputPath, acfFilename, filenameSinogram, structSizeSino3dSpan11, 1);
+imageSize_pixels = [344 344 127];
+filenameAttenMap = '/workspaces/Martin/KCL/Biograph_mMr/Mediciones/2601/interfile/PET_ACQ_16_20150116131121-0_PRR_1000001_20150126152442_umap_human_00.v';
+fid = fopen(filenameAttenMap, 'r');
+if fid == -1
+    ferror(fid);
+end
+attenMap = fread(fid, imageSize_pixels(1)*imageSize_pixels(2)*imageSize_pixels(3), 'single');
+attenMap = reshape(attenMap, imageSize_pixels);
+fclose(fid);
+% visualization
+figure;
+image = getImageFromSlices(attenMap, 12, 1, 0);
+imshow(image);
+title('Attenuation Map Shifted');
+% Size of the image to cover the full fov:
+sizeImage_mm = [structSizeSino3d.rFov_mm*2 structSizeSino3d.rFov_mm*2 structSizeSino3d.zFov_mm];
+sizePixel_mm = sizeImage_mm ./ imageSize_pixels;
+
+% The phantom was not perfectly centered, so the attenuation map is
+% shifted. I repeat the slcie 116 until the end:
+for i = 117 : size(attenMap,3)
+    attenMap(:,:,i) = attenMap(:,:,116);
+end
+figure;
+image = getImageFromSlices(attenMap, 12, 1, 0);
+imshow(image);
+title('Attenuation Map Manualy Completed');
+% Create ACFs of a computed phatoms with the linear attenuation
+% coefficients:
+acfFilename = ['acfsSinogramSpan11'];
+filenameSinogram = [outputPath 'sinogramSpan11'];
+acfsSinogramSpan11 = createACFsFromImage(attenMap, sizePixel_mm, outputPath, acfFilename, filenameSinogram, structSizeSino3dSpan11, 1);
 %% READ THE ACFS (OPTION B)
 % Span11 Sinogram:
 acfFilename = [outputPath 'acfsSinogramSpan11'];
@@ -225,7 +225,7 @@ interfileWriteSino(single(normFactorsSpan11), outputSinogramName, structSizeSino
 
 % We also generate the ncf:
 normCorrectionFactorsSpan11 = zeros(size(sinogramSpan11));
-normCorrectionFactorsSpan11(normFactorsSpan11~=0) = 1 ./ normCorrectionFactorsSpan11(normFactorsSpan11~=0);
+normCorrectionFactorsSpan11(normFactorsSpan11~=0) = 1 ./ normFactorsSpan11(normFactorsSpan11~=0);
 outputSinogramName = [outputPath '/NCF_Span11'];
 interfileWriteSino(single(normCorrectionFactorsSpan11), outputSinogramName, structSizeSino3dSpan11.sinogramsPerSegment, structSizeSino3dSpan11.minRingDiff, structSizeSino3dSpan11.maxRingDiff);
 

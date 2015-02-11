@@ -79,6 +79,8 @@ class DLLEXPORT Sinogram3DCylindricalPet : public Sinogram3D
 	/** String donde se guardan mensajes del último error ocurrido durante la ejecución. */
 	string strError;
   public:	
+	/// Constructor para clases derivadas que no pueden utilizar los otros métodos.
+	Sinogram3DCylindricalPet(float rFov_mm, float zFov_mm);
 	/// Constructor para cargar los datos de sinogramas a partir del encabezado interfile de un Sinogram3D.
 	/** Constructor para cargar los datos de sinogramas a partir del encabezado interfile de un Sinogram3D como está
 		definido por el stir. Cono en el interfile no está defnido el tamaño del Fov del scanner ni las dimensiones
@@ -104,7 +106,7 @@ class DLLEXPORT Sinogram3DCylindricalPet : public Sinogram3D
 	Sinogram3DCylindricalPet(Sinogram3DCylindricalPet* srcSinogram3D);
 	
 	///	Destructor.
-	~Sinogram3DCylindricalPet();
+	virtual ~Sinogram3DCylindricalPet();
 	
 	/** Método que deveulve una copia del sinograma3d. Se unsa en vez del constructor en las clases derivadas para mantener abstracción.
 		@return puntero a un objeto sinograma3d copia del objetco actual.

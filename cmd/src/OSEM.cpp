@@ -47,6 +47,7 @@
 #include <Sinograms2Din3DArPet.h>
 #include <Sinogram3DArPet.h>
 #include <Sinogram3DCylindricalPet.h>
+#include <Sinogram3DSiemensMmr.h>
 #include <ParametersFile.h>
 #include <Projector.h>
 #include <SiddonProjector.h>
@@ -86,7 +87,7 @@ using	std::string;
 	Cada parámetro es ingresado en el archivo a través de keyword := value, siendo keyword el nombre del parámetros y value el valor
 	que se le asigna. Hay campos obligatorios, y otros opcionales.
 	Campos Obligatorios:
-		- "input type" : tipo de entrada a reconstruir. Los valores posibles son: Sinogram2D, Sinogram2Dtgs, Sinogram3D y Michelogram.
+		- "input type" : tipo de entrada a reconstruir. Los valores posibles son: Sinogram2D, Sinogram2Dtgs, Sinogram3D, Sinogram3DCylindricalPet, Sinogram3DSiemensMmr y Michelogram.
 		- "input file" : nombre del archivo header (*.hs) del sinograma a reconstruir en formato interfile.
 		- "number of subsets": cantidad de subsets en la que se divide cada sinograma.
 		- "output filename prefix" : prefijo para los nombres de archivo de salida (principalmente nombres de las imágenes).
@@ -211,8 +212,8 @@ int main (int argc, char *argv[])
   // Verificación de que se llamo al comando con el nombre de archivo de parámetros como argumento.
   if(argc != 2)
   {
-	  cout << "El comando OSEM debe llamarse indicando el archivo de Parámetros de Reconstrucción: OSEM Param.par." << endl;
-	  return -1;
+    cout << "El comando OSEM debe llamarse indicando el archivo de Parámetros de Reconstrucción: OSEM Param.par." << endl;
+    return -1;
   }
   // Los parámetros de reconstrucción son los correctos.
   // Se verifica que el archivo tenga la extensión .par.
@@ -220,9 +221,9 @@ int main (int argc, char *argv[])
   //strcpy(parameterFileName, argv[1]);
   if(parameterFileName.compare(parameterFileName.length()-4, 4, ".par"))
   {
-	  // El archivo de parámetro no tiene la extensión .par.
-	  cout<<"El archivo de parámetros no tiene la extensión .par."<<endl;
-	  return -1;
+    // El archivo de parámetro no tiene la extensión .par.
+    cout<<"El archivo de parámetros no tiene la extensión .par."<<endl;
+    return -1;
   }
 
   // Leo cada uno de los campos del archivo de parámetros. Para esto utilizo la función parametersFile_readMultipleKeys
@@ -236,9 +237,9 @@ int main (int argc, char *argv[])
   strcpy(keyWords[5], "number of subsets"); 
   if((errorCode=parametersFile_readMultipleKeys((char*)parameterFileName.c_str(), (char*)"OSEM", (char**)keyWords, FIXED_KEYS, (char**)multipleReturnValue, errorMessage)) != 0)
   {
-	  // Hubo un error. Salgo del comando.
-	  cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
-	  return -1;
+    // Hubo un error. Salgo del comando.
+    cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
+    return -1;
   }
   inputType.assign(multipleReturnValue[0]);
   inputFilename.assign(multipleReturnValue[1]);
@@ -277,18 +278,18 @@ int main (int argc, char *argv[])
   // Es opcional, si está el mapa de atenuación se habilita:
   if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), "OSEM", "attenuation image filename", returnValue, errorMessage)) != 0)
   {
-	  // Hubo un error. Salgo del comando.
-	  // Si no encontró el keyoword, está bien porque era opcional, cualquier otro código de error
-	  // signfica que hubo un error.
-	  if(errorCode == PMF_KEY_NOT_FOUND)
-	  {
-	    // No está la keyword, como era opcional se carga con su valor por default.
-	  }
-	  else
-	  {
-	    cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
-	    return -1;
-	  }
+    // Hubo un error. Salgo del comando.
+    // Si no encontró el keyoword, está bien porque era opcional, cualquier otro código de error
+    // signfica que hubo un error.
+    if(errorCode == PMF_KEY_NOT_FOUND)
+    {
+      // No está la keyword, como era opcional se carga con su valor por default.
+    }
+    else
+    {
+      cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
+      return -1;
+    }
   }
   else
   {
@@ -400,6 +401,16 @@ int main (int argc, char *argv[])
     if (getCylindricalScannerParameters(parameterFileName, "OSEM", &radiusFov_mm, &zFov_mm, &radiusScanner_mm))
       return -1;
     Sinogram3D* inputProjection = new Sinogram3DCylindricalPet((char*)inputFilename.c_str(),radiusFov_mm, zFov_mm, radiusScanner_mm);
+    mlem = new OsemSinogram3d(inputProjection, initialEstimate, "", outputPrefix, numIterations, saveIterationInterval, saveIntermediateData, bSensitivityFromFile, forwardprojector, backprojector,numberOfSubsets);
+    if(bSensitivityFromFile)
+    {
+      mlem->setSensitivityFilename(sensitivityFilename);
+    }
+  }
+  else if(inputType.compare("Sinogram3DSiemensMmr")==0)
+  {
+    // Sinograma 3D
+    Sinogram3D* inputProjection = new Sinogram3DSiemensMmr((char*)inputFilename.c_str());
     mlem = new OsemSinogram3d(inputProjection, initialEstimate, "", outputPrefix, numIterations, saveIterationInterval, saveIntermediateData, bSensitivityFromFile, forwardprojector, backprojector,numberOfSubsets);
     if(bSensitivityFromFile)
     {

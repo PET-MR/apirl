@@ -144,4 +144,4 @@ for segment = 1 : numSegments
     % Guardo la cantidad de segmentos:
     sinogramsPerSegment(segment) = numSinosThisSegment;
 end
-structSizeSino3D = getSizeSino3Dstruct(numTheta, numR, numZ, rFov, zFov, sinogramsPerSegment, minRingDiffs, maxRingDiffs, maxAbsRingDiff);
+structSizeSino3D = getSizeSino3dStruct(numTheta, numR, numZ, rFov, zFov, sinogramsPerSegment, minRingDiffs, maxRingDiffs, maxAbsRingDiff);

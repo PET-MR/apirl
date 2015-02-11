@@ -97,7 +97,7 @@ bool OsemSinogram3d::Reconstruct()
   {
     /// Calculo todas los sensitivty volume, tengo tantos como subset. Sino alcancanzar la ram
     /// para almacenar todos, debería calcularlos dentro del for por cada iteración:
-    for(int s = 0; s < numSubsets; s++)
+    for(int s = 10; s < numSubsets; s++)
     {
       /// Calculo el sensitivity volume
       if(computeSensitivity(sensitivityImages[s], s)==false)
@@ -154,13 +154,6 @@ bool OsemSinogram3d::Reconstruct()
   {
     clock_t initialClockIteration = clock();
     // Por cada iteración debo repetir la operación para todos los subsets.
-    #ifdef __DEBUG__
-      // En debug imprimo los ángulos que forman cada susbset:
-      for(unsigned int s = 0; s < this->numSubsets; s++)
-      {
-	inputSubset = inputProjection->getSubset(s, numSubsets);
-      }
-    #endif
     for(unsigned int s = 0; s < this->numSubsets; s++)
     {
       // Tengo que generar el subset del sinograma correspondiente para reconstruir con ese:
@@ -322,6 +315,7 @@ bool OsemSinogram3d::computeSensitivity(Image* outputImage, int indexSubset)
 {
   /// Creo un Sinograma del subset correspondiente:
   Sinogram3D* backprojectSinogram3D;
+  char c_string[100];
   /// Si no hay normalización lo lleno con un valor constante, de lo contrario bakcprojec normalizacion:
   if (enableNormalization)
     backprojectSinogram3D = normalizationCorrectionFactorsProjection->getSubset(indexSubset, numSubsets);
@@ -330,6 +324,9 @@ bool OsemSinogram3d::computeSensitivity(Image* outputImage, int indexSubset)
     backprojectSinogram3D = inputProjection->getSubset(indexSubset, numSubsets);
     backprojectSinogram3D->FillConstant(1);
   }
+  // Tengo que guardar la estimated projection, y la backprojected image.
+	sprintf(c_string, "%s_projection_sens_%d_", outputFilenamePrefix.c_str(), indexSubset); /// La extensión se le agrega en write interfile.
+	backprojectSinogram3D->writeInterfile((char*)c_string);
   /// Por último hago la backprojection
   backprojector->Backproject(backprojectSinogram3D, outputImage);
   /// Free memory:
