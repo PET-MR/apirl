@@ -41,7 +41,10 @@ bool MlemSinogram3d::setRandomCorrectionProjection(string randomsFilename)
 
 bool MlemSinogram3d::setNormalizationFactorsProjection(string normFilename)
 {
-  normalizationCorrectionFactorsProjection = new Sinogram3DCylindricalPet((char*)normFilename.c_str(), inputProjection->getRadioFov_mm(), inputProjection->getAxialFoV_mm(), ((Sinogram3DCylindricalPet*)inputProjection)->getRadioScanner_mm());
+  // Instead of create a new sinogram instantiating a new object, I copy from inputProject. This way, is independent of the type
+  // of derived class od sinogram3d it is being used.
+  normalizationCorrectionFactorsProjection = inputProjection->Copy();
+  normalizationCorrectionFactorsProjection->readFromInterfile((char*)normFilename.c_str());
   enableNormalization = true;
 }
 

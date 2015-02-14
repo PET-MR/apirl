@@ -321,6 +321,8 @@ bool SiddonProjector::Project (Image* inputImage, Sinogram3D* outputProjection)
   // Puntero a los píxeles:
   float* ptrPixels = inputImage->getPixelsPtr();
   float geomFactor = 0;
+  int indexRing1, indexRing2, numZ;
+  float z1_mm, z2_mm;
   // Inicializo el sino 3D con el que voy a trabajar en cero.
   // Lo incializo acá porque despues distintas cobinaciones de z aportan al mismo bin.
   outputProjection->FillConstant(0.0);
@@ -329,11 +331,23 @@ bool SiddonProjector::Project (Image* inputImage, Sinogram3D* outputProjection)
     printf("Forwardprojection con Siddon Segmento: %d\n", i);	  
     for(unsigned int j = 0; j < outputProjection->getSegment(i)->getNumSinograms(); j++)
     {
-      /// Cálculo de las coordenadas z del sinograma
-      for(unsigned int m = 0; m < outputProjection->getSegment(i)->getSinogram2D(j)->getNumZ(); m++)
+      /// Cálculo de las coordenadas z del sinograma, dependiendo si se usan todas las combinaciones
+      /// o solo la posición promedio:
+      if(useMultipleLorsPerBin)
       {
-	int indexRing1 = outputProjection->getSegment(i)->getSinogram2D(j)->getRing1FromList(m);
-	int indexRing2 = outputProjection->getSegment(i)->getSinogram2D(j)->getRing2FromList(m);
+	numZ = outputProjection->getSegment(i)->getSinogram2D(j)->getNumZ();
+      }
+      else
+      {
+	numZ = 1;
+	// The average position is the (axial pos for the first combin + the second for the last comb)/2. For z1 and z2. 
+	z1_mm = (outputProjection->getSegment(i)->getSinogram2D(j)->getAxialValue1FromList(0)  + 
+	  outputProjection->getSegment(i)->getSinogram2D(j)->getAxialValue1FromList(outputProjection->getSegment(i)->getSinogram2D(j)->getNumZ()-1))/2;
+	z2_mm = (outputProjection->getSegment(i)->getSinogram2D(j)->getAxialValue2FromList(0)  + 
+	  outputProjection->getSegment(i)->getSinogram2D(j)->getAxialValue2FromList(outputProjection->getSegment(i)->getSinogram2D(j)->getNumZ()-1))/2;
+      }
+      for(unsigned int m = 0; m < numZ; m++)
+      {
 	unsigned int k, l, n, LengthList;
 	#pragma omp parallel private(k, l, LOR, MyWeightsList, LengthList, n, P1, P2, geomFactor)
 	{
@@ -347,7 +361,18 @@ bool SiddonProjector::Project (Image* inputImage, Sinogram3D* outputProjection)
 	      /// Por lo que cada bin me va a sumar cuentas en lors con distintos ejes axiales.
 	      /// El sinograma de salida lo incializo en cero antes de recorrer los distintos anillos de cada elemento del
 	      /// sinograma, ya que varias LORS deben aportar al mismo bin del sinograma.
-	      if(outputProjection->getSegment(i)->getSinogram2D(j)->getPointsFromLor(k,l,m, &P1, &P2, &geomFactor))
+	      int lorOk;
+	      if(useMultipleLorsPerBin)
+	      {
+		lorOk = outputProjection->getSegment(i)->getSinogram2D(j)->getPointsFromLor(k,l,m, &P1, &P2, &geomFactor);
+	      }
+	      else
+	      {
+		lorOk = outputProjection->getSegment(i)->getSinogram2D(j)->getPointsFromLor(k,l,0, &P1, &P2, &geomFactor);
+		P1.Z = z1_mm;
+		P2.Z = z2_mm;
+	      }
+	      if(lorOk)
 	      {
 		LOR.P0 = P1;
 		LOR.Vx = P2.X - P1.X;
@@ -420,6 +445,8 @@ bool SiddonProjector::Backproject (Sinogram3D* inputProjection, Image* outputIma
   unsigned long indexPixel;
   float geomFactor = 0;
   float newValue;
+  int indexRing1, indexRing2, numZ;
+  float z1_mm, z2_mm;
   #pragma omp parallel private(i, j, k, l, m, LOR, P1, P2, MyWeightsList, LengthList, n, newValue, indexPixel, geomFactor) shared(inputProjection,ptrPixels)
   {
     MyWeightsList = (SiddonSegment**)malloc(sizeof(SiddonSegment*));
@@ -439,13 +466,38 @@ bool SiddonProjector::Backproject (Sinogram3D* inputProjection, Image* outputIma
 	    /// Por lo que cada bin me va a sumar cuentas en lors con distintos ejes axiales.
 	    if(inputProjection->getSegment(i)->getSinogram2D(j)->getSinogramBin(k,l) != 0)
 	    {
-	      for(m = 0; m < inputProjection->getSegment(i)->getSinogram2D(j)->getNumZ(); m++)
+	      /// Cálculo de las coordenadas z del sinograma, dependiendo si se usan todas las combinaciones
+	      /// o solo la posición promedio:
+	      if(useMultipleLorsPerBin)
 	      {
-		int indexRing1 = inputProjection->getSegment(i)->getSinogram2D(j)->getRing1FromList(m);
-		int indexRing2 = inputProjection->getSegment(i)->getSinogram2D(j)->getRing2FromList(m);
+		numZ = inputProjection->getSegment(i)->getSinogram2D(j)->getNumZ();
+	      }
+	      else
+	      {
+		numZ = 1;
+		// The average position is the (axial pos for the first combin + the second for the last comb)/2. For z1 and z2. 
+		z1_mm = (inputProjection->getSegment(i)->getSinogram2D(j)->getAxialValue1FromList(0)  + 
+		  inputProjection->getSegment(i)->getSinogram2D(j)->getAxialValue1FromList(inputProjection->getSegment(i)->getSinogram2D(j)->getNumZ()-1))/2;
+		z2_mm = (inputProjection->getSegment(i)->getSinogram2D(j)->getAxialValue2FromList(0)  + 
+		  inputProjection->getSegment(i)->getSinogram2D(j)->getAxialValue2FromList(inputProjection->getSegment(i)->getSinogram2D(j)->getNumZ()-1))/2;
+	      }
+	      for(m = 0; m < numZ; m++)
+	      {
+		indexRing1 = inputProjection->getSegment(i)->getSinogram2D(j)->getRing1FromList(m);
+		indexRing2 = inputProjection->getSegment(i)->getSinogram2D(j)->getRing2FromList(m);
 		// Devuelve true si encontró los dos cabezales de la LOR:
-		if(inputProjection->getSegment(i)->getSinogram2D(j)->getPointsFromLor(k,l,m, &P1, &P2, &geomFactor))
+		int lorOk;
+		if(useMultipleLorsPerBin)
 		{
+		  lorOk = inputProjection->getSegment(i)->getSinogram2D(j)->getPointsFromLor(k,l,m, &P1, &P2, &geomFactor);
+		}
+		else
+		{
+		  lorOk = inputProjection->getSegment(i)->getSinogram2D(j)->getPointsFromLor(k,l,0, &P1, &P2, &geomFactor);
+		  P1.Z = z1_mm;
+		  P2.Z = z2_mm;
+		}
+		if(lorOk){
 		  LOR.P0 = P1;
 		  LOR.Vx = P2.X - P1.X;
 		  LOR.Vy = P2.Y - P1.Y;
@@ -507,6 +559,8 @@ bool SiddonProjector::DivideAndBackproject (Sinogram3D* InputSinogram3D, Sinogra
   unsigned long indexPixel;
   float newValue;
   float geomFactor = 0;
+  int indexRing1, indexRing2, numZ;
+  float z1_mm, z2_mm;
   #pragma omp parallel private(i, j, k, l, m, LOR, P1, P2, MyWeightsList, LengthList, n, newValue, indexPixel, geomFactor) shared(InputSinogram3D,EstimatedSinogram3D,ptrPixels)
   {
     MyWeightsList = (SiddonSegment**)malloc(sizeof(SiddonSegment*));
@@ -525,11 +579,35 @@ bool SiddonProjector::DivideAndBackproject (Sinogram3D* InputSinogram3D, Sinogra
 	    /// Por lo que cada bin me va a sumar cuentas en lors con distintos ejes axiales.
 	    if(InputSinogram3D->getSegment(i)->getSinogram2D(j)->getSinogramBin(k,l) != 0)
 	    {
-	      for(m = 0; m < InputSinogram3D->getSegment(i)->getSinogram2D(j)->getNumZ(); m++)
+	      /// Cálculo de las coordenadas z del sinograma, dependiendo si se usan todas las combinaciones
+	      /// o solo la posición promedio:
+	      if(useMultipleLorsPerBin)
 	      {
-		int indexRing1 = InputSinogram3D->getSegment(i)->getSinogram2D(j)->getRing1FromList(m);
-		int indexRing2 = InputSinogram3D->getSegment(i)->getSinogram2D(j)->getRing2FromList(m);
-		if(InputSinogram3D->getSegment(i)->getSinogram2D(j)->getPointsFromLor(k,l,m, &P1, &P2, &geomFactor))
+		numZ = InputSinogram3D->getSegment(i)->getSinogram2D(j)->getNumZ();
+	      }
+	      else
+	      {
+		numZ = 1;
+		// The average position is the (axial pos for the first combin + the second for the last comb)/2. For z1 and z2. 
+		z1_mm = (InputSinogram3D->getSegment(i)->getSinogram2D(j)->getAxialValue1FromList(0)  + 
+		  InputSinogram3D->getSegment(i)->getSinogram2D(j)->getAxialValue1FromList(InputSinogram3D->getSegment(i)->getSinogram2D(j)->getNumZ()-1))/2;
+		z2_mm = (InputSinogram3D->getSegment(i)->getSinogram2D(j)->getAxialValue2FromList(0)  + 
+		  InputSinogram3D->getSegment(i)->getSinogram2D(j)->getAxialValue2FromList(InputSinogram3D->getSegment(i)->getSinogram2D(j)->getNumZ()-1))/2;
+	      }
+	      for(m = 0; m < numZ; m++)
+	      {
+		int lorOk;
+		if(useMultipleLorsPerBin)
+		{
+		  lorOk = InputSinogram3D->getSegment(i)->getSinogram2D(j)->getPointsFromLor(k,l,m, &P1, &P2, &geomFactor);
+		}
+		else
+		{
+		  lorOk = InputSinogram3D->getSegment(i)->getSinogram2D(j)->getPointsFromLor(k,l,0, &P1, &P2, &geomFactor);
+		  P1.Z = z1_mm;
+		  P2.Z = z2_mm;
+		}
+		if(lorOk)
 		{
 		  LOR.P0 = P1;
 		  LOR.Vx = P2.X - P1.X;

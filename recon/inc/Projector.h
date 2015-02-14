@@ -46,11 +46,22 @@
 /** Clase abstracta Projector. */
 class DLLEXPORT Projector
 {
+  protected:
+    /// Flag que indica si se desea usar todas las combinaciones axiales.
+    /** Flag que indica si se desea usar todas las combinaciones axial para un bin. Esto es válido solo para
+      * proyectores en 3d. */
+    bool useMultipleLorsPerBin;
   public:
     /** Constructor. */
-    Projector(){};
-	
-	/** Método abstracto de Project para Sinogram2d. */
+    Projector(){ useMultipleLorsPerBin = 0;};
+    
+    /** Método que setea el flag useMultipleLorsPerBin. */
+    void setMultipleLorsPerBin(bool enable) {useMultipleLorsPerBin = enable;};
+    
+    /** Método que obtiene el valor del flag useMultipleLorsPerBin. */
+    bool getMultipleLorsPerBin() {return useMultipleLorsPerBin;};
+    
+    /** Método abstracto de Project para Sinogram2d. */
     virtual bool Project(Image*,Sinogram2D*){};
     /** Método abstracto de Backroject para Sinogram2d. */
     virtual bool Backproject(Sinogram2D*, Image*){};

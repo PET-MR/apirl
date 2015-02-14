@@ -47,6 +47,7 @@
 #include <readParameters.h>
 #include <Sinogram3DArPet.h>
 #include <Sinogram3DCylindricalPet.h>
+#include <Sinogram3DSiemensMmr.h>
 
 #define FOV_axial 162
 #define FOV_radial 582
@@ -543,6 +544,12 @@ int main (int argc, char *argv[])
 	  // Sinograma 3D
 	  Sinogram3D* inputProjection = new Sinogram3DCylindricalPet((char*)inputFilename.c_str(),rFov_mm,axialFov_mm,rScanner_mm);
 	  backprojector->Backproject(inputProjection, outputImage);
+	}
+	else if(inputType.compare("Sinogram3DSiemensMmr")==0)
+	{
+	  // Sinograma 3D mmr, fixed values of rfoc and rscanner
+	  Sinogram3D* inputProjection = new Sinogram3DSiemensMmr((char*)inputFilename.c_str());
+   	  backprojector->Backproject(inputProjection, outputImage);
 	}
 	else if(inputType.compare("Michelogram")==0)
 	{

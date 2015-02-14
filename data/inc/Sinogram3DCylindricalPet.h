@@ -28,25 +28,25 @@
 
 // DLL export/import declaration: visibility of objects
 #ifndef LINK_STATIC
-	#ifdef WIN32               // Win32 build
-		#ifdef DLL_BUILD    // this applies to DLL building
-			#define DLLEXPORT __declspec(dllexport)
-		#else                   // this applies to DLL clients/users
-			#define DLLEXPORT __declspec(dllimport)
-		#endif
-		#define DLLLOCAL        // not explicitly export-marked objects are local by default on Win32
-	#else
-		#ifdef HAVE_GCCVISIBILITYPATCH   // GCC 4.x and patched GCC 3.4 under Linux
-			#define DLLEXPORT __attribute__ ((visibility("default")))
-			#define DLLLOCAL __attribute__ ((visibility("hidden")))
-		#else
-			#define DLLEXPORT
-			#define DLLLOCAL
-		#endif
-	#endif
+  #ifdef WIN32               // Win32 build
+    #ifdef DLL_BUILD    // this applies to DLL building
+      #define DLLEXPORT __declspec(dllexport)
+    #else                   // this applies to DLL clients/users
+      #define DLLEXPORT __declspec(dllimport)
+    #endif
+    #define DLLLOCAL        // not explicitly export-marked objects are local by default on Win32
+  #else
+    #ifdef HAVE_GCCVISIBILITYPATCH   // GCC 4.x and patched GCC 3.4 under Linux
+      #define DLLEXPORT __attribute__ ((visibility("default")))
+      #define DLLLOCAL __attribute__ ((visibility("hidden")))
+    #else
+      #define DLLEXPORT
+      #define DLLLOCAL
+    #endif
+  #endif
 #else                         // static linking
-	#define DLLEXPORT
-	#define DLLLOCAL
+  #define DLLEXPORT
+  #define DLLLOCAL
 #endif
 /*#ifdef __cplusplus
 	extern "C" 
@@ -80,7 +80,8 @@ class DLLEXPORT Sinogram3DCylindricalPet : public Sinogram3D
 	string strError;
   public:	
 	/// Constructor para clases derivadas que no pueden utilizar los otros métodos.
-	Sinogram3DCylindricalPet(float rFov_mm, float zFov_mm);
+	Sinogram3DCylindricalPet(float rFov_mm, float zFov_mm, float rScanner_mm);
+	
 	/// Constructor para cargar los datos de sinogramas a partir del encabezado interfile de un Sinogram3D.
 	/** Constructor para cargar los datos de sinogramas a partir del encabezado interfile de un Sinogram3D como está
 		definido por el stir. Cono en el interfile no está defnido el tamaño del Fov del scanner ni las dimensiones
@@ -105,6 +106,15 @@ class DLLEXPORT Sinogram3DCylindricalPet : public Sinogram3D
 	*/
 	Sinogram3DCylindricalPet(Sinogram3DCylindricalPet* srcSinogram3D);
 	
+	/// Constructor para copia desde otro objeto sinograma3d que solo copia los parámetros.
+	/** Constructor que inicializa un nuevo objeto Sinogram3D a partir de un objeto ya existente. Hace una copia
+	    de todos los parámetros, pero no incializa los segmentos. El parámetro dummy es solo para diferenciarlo
+	    del que si inicializa los segmentos.
+	    @param	srcSinogram3D	sinograma3d que se copiará en esta nueva instancia. 
+	    @param	dummy	no sirve para nada solo diferencia del otro constructor. 
+	*/
+	Sinogram3DCylindricalPet(Sinogram3DCylindricalPet* srcSinogram3D, int dummy);
+	
 	///	Destructor.
 	virtual ~Sinogram3DCylindricalPet();
 	
@@ -127,6 +137,16 @@ class DLLEXPORT Sinogram3DCylindricalPet : public Sinogram3D
 		@return puntero a objeto del tipo SegmentInCylindrical3Dpet con el segmento pedido.
 	*/
 	SegmentInCylindrical3Dpet* getSegment(int indexSegment) {return segments[indexSegment]; };
+	
+	/// Copy all the bins from a source sinograms.
+	/** It copies all the bins values from srcSinogram3D into this value.
+	 */
+	virtual int CopyAllBinsFrom(Sinogram3D* srcSinogram3D);
+	
+	/// Copy the multiple ring configuation of each sinogram 2d.
+	/** Copy the multiple ring configuation of each sinogram 2d in each segment.
+	 */
+	int CopyRingConfigForEachSinogram(Sinogram3D* srcSinogram3D);
 	
 	/** Método que deveulve el radio del scanner cilíndrico. 
 		@return radio del cílindro detector del scanner en mm.

@@ -212,6 +212,11 @@ class DLLEXPORT Sinogram3D : public Sinogram2D
 	/** Método que calcula el likelihood de esta proyección respecto de una de referencia. */
 	float getLikelihoodValue(Sinogram3D* referenceProjection);
 	
+	/// Copy all the bins from a source sinograms.
+	/** It copies all the bins values from srcSinogram3D into this value.
+	 */
+	virtual int CopyAllBinsFrom(Sinogram3D* srcSinogram3D) = 0;
+	
 	bool Fill(Event3D* Events, unsigned int NEvents);
 	bool FillConstant(float Value);
 	// Method that reads the Michelogram data from a file. The dimensions of the

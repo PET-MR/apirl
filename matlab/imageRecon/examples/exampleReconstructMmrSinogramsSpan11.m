@@ -12,7 +12,7 @@ close all
 addpath('/workspaces/Martin/KCL/Biograph_mMr/mmr');
 apirlPath = '/workspaces/Martin/PET/apirl-code/trunk/';
 addpath(genpath([apirlPath '/matlab']));
-setenv('PATH', [getenv('PATH') ':/workspaces/Martin/PET/apirl-code/trunk/build/debug/bin']);
+setenv('PATH', [getenv('PATH') ':/workspaces/Martin/PET/apirl-code/trunk/build/bin']);
 setenv('LD_LIBRARY_PATH', [getenv('LD_LIBRARY_PATH') ':/workspaces/Martin/PET/apirl-code/trunk/build/debug/bin']);
 outputPath = '/workspaces/Martin/KCL/Biograph_mMr/mmr/5hr_ge68/';
 %setenv('LD_LIBRARY_PATH', [getenv('LD_LIBRARY_PATH') ':/usr/lib/x86_64-linux-gnu/']);
@@ -48,20 +48,22 @@ michelogram = generateMichelogramFromSinogram3D(delayedSinogram, structSizeSino3
 delaySinogramSpan11 = reduceMichelogram(michelogram, structSizeSino3dSpan11.sinogramsPerSegment, structSizeSino3dSpan11.minRingDiff, structSizeSino3dSpan11.maxRingDiff);
 clear michelogram
 clear delayedSinogram
+
 % Write to a file in interfile format:
 outputSinogramName = [outputPath 'delaySinogramSpan11'];
 interfileWriteSino(single(delaySinogramSpan11), outputSinogramName, structSizeSino3dSpan11.sinogramsPerSegment, structSizeSino3dSpan11.minRingDiff, structSizeSino3dSpan11.maxRingDiff);
 % In int 16 also:
 outputSinogramName = [outputPath 'delaySinogramSpan11_int16'];
 interfileWriteSino(int16(delaySinogramSpan11), outputSinogramName, structSizeSino3dSpan11.sinogramsPerSegment, structSizeSino3dSpan11.minRingDiff, structSizeSino3dSpan11.maxRingDiff);
+clear delaySinogramSpan11 % Not used in this example.
 %% CREATE INITIAL ESTIMATE FOR RECONSTRUCTION
-% Create initial estimate for reconstruction:
-% Size of the image to cover the full fov:
-sizeImage_mm = [structSizeSino3dSpan11.rFov_mm*2 structSizeSino3dSpan11.rFov_mm*2 structSizeSino3dSpan11.zFov_mm];
-% The size in pixels based in numR and the number of rings:
-sizeImage_pixels = [structSizeSino3dSpan11.numR structSizeSino3dSpan11.numR structSizeSino3dSpan11.sinogramsPerSegment(1)];
+% Create image from the same size than used by siemens:
 % Size of the pixels:
-sizePixel_mm = sizeImage_mm ./ sizeImage_pixels;
+sizePixel_mm = [4.1725 4.1725 2.0312];
+% The size in pixels:
+sizeImage_pixels = [172 172 127];
+% Size of the image to cover the full fov:
+sizeImage_mm = sizePixel_mm .* sizeImage_pixels;
 % Inititial estimate:
 initialEstimate = ones(sizeImage_pixels, 'single');
 filenameInitialEstimate = [outputPath '/initialEstimate3d'];
@@ -101,40 +103,38 @@ set(gcf, 'Position', [0 0 1600 1200]);
 % Axial factors:
 axialFactors = 1./(componentFactors{4}.*componentFactors{8});
 %% ATTENUATION CORRECTION - PICK A OR B AND COMMENT THE NOT USED 
-%% COMPUTE THE ACFS (OPTION A)
-% Read the phantom and then generate the ACFs with apirl:
-imageSize_pixels = [344 344 127];
-filenameAttenMap = '/workspaces/Martin/KCL/Biograph_mMr/Mediciones/2601/interfile/PET_ACQ_16_20150116131121-0_PRR_1000001_20150126152442_umap_human_00.v';
-fid = fopen(filenameAttenMap, 'r');
-if fid == -1
-    ferror(fid);
-end
-attenMap = fread(fid, imageSize_pixels(1)*imageSize_pixels(2)*imageSize_pixels(3), 'single');
-attenMap = reshape(attenMap, imageSize_pixels);
-fclose(fid);
-% visualization
-figure;
-image = getImageFromSlices(attenMap, 12, 1, 0);
-imshow(image);
-title('Attenuation Map Shifted');
-% Size of the image to cover the full fov:
-sizeImage_mm = [structSizeSino3d.rFov_mm*2 structSizeSino3d.rFov_mm*2 structSizeSino3d.zFov_mm];
-sizePixel_mm = sizeImage_mm ./ imageSize_pixels;
-
-% The phantom was not perfectly centered, so the attenuation map is
-% shifted. I repeat the slcie 116 until the end:
-for i = 117 : size(attenMap,3)
-    attenMap(:,:,i) = attenMap(:,:,116);
-end
-figure;
-image = getImageFromSlices(attenMap, 12, 1, 0);
-imshow(image);
-title('Attenuation Map Manualy Completed');
-% Create ACFs of a computed phatoms with the linear attenuation
-% coefficients:
-acfFilename = ['acfsSinogramSpan11'];
-filenameSinogram = [outputPath 'sinogramSpan11'];
-acfsSinogramSpan11 = createACFsFromImage(attenMap, sizePixel_mm, outputPath, acfFilename, filenameSinogram, structSizeSino3dSpan11, 1);
+% %% COMPUTE THE ACFS (OPTION A)
+% % Read the phantom and then generate the ACFs with apirl:
+% imageSizeAtten_pixels = [344 344 127];
+% imageSizeAtten_mm = [2.08626 2.08626 2.0312];
+% filenameAttenMap = '/workspaces/Martin/KCL/Biograph_mMr/Mediciones/2601/interfile/PET_ACQ_16_20150116131121-0_PRR_1000001_20150126152442_umap_human_00.v';
+% fid = fopen(filenameAttenMap, 'r');
+% if fid == -1
+%     ferror(fid);
+% end
+% attenMap = fread(fid, imageSizeAtten_pixels(1)*imageSizeAtten_pixels(2)*imageSizeAtten_pixels(3), 'single');
+% attenMap = reshape(attenMap, imageSizeAtten_pixels);
+% fclose(fid);
+% % visualization
+% figure;
+% image = getImageFromSlices(attenMap, 12, 1, 0);
+% imshow(image);
+% title('Attenuation Map Shifted');
+% 
+% % The phantom was not perfectly centered, so the attenuation map is
+% % shifted. I repeat the slcie 116 until the end:
+% for i = 117 : size(attenMap,3)
+%     attenMap(:,:,i) = attenMap(:,:,116);
+% end
+% figure;
+% image = getImageFromSlices(attenMap, 12, 1, 0);
+% imshow(image);
+% title('Attenuation Map Manualy Completed');
+% % Create ACFs of a computed phatoms with the linear attenuation
+% % coefficients:
+% acfFilename = ['acfsSinogramSpan11'];
+% filenameSinogram = [outputPath 'sinogramSpan11'];
+% acfsSinogramSpan11 = createACFsFromImage(attenMap, imageSizeAtten_mm, outputPath, acfFilename, filenameSinogram, structSizeSino3dSpan11, 1);
 %% READ THE ACFS (OPTION B)
 % Span11 Sinogram:
 acfFilename = [outputPath 'acfsSinogramSpan11'];
@@ -166,7 +166,7 @@ if(numel(axialFactors) ~= sum(structSizeSino3dSpan11.sinogramsPerSegment))
 end
 % Correct sinograms 3d for normalization:
 for i = 1 : sum(structSizeSino3dSpan11.sinogramsPerSegment)
-    sinogramSpan11corrected(:,:,i) = sinogramSpan11(:,:,i) .* (1./geometricFactor) .* (1./crystalInterfFactor) .* (1./axialFactors(i)) .* (acfsSinogramSpan11(:,:,i));
+    sinogramSpan11corrected(:,:,i) = sinogramSpan11(:,:,i) .* (1./geometricFactor) .* (1./crystalInterfFactor) .* (1./axialFactors(i));
     % Crystal efficencies, there are gaps, so avoid zero values:
     nonzero = sinoEfficencies(:,:,i) ~= 0;
     aux = sinogramSpan11corrected(:,:,i);
@@ -174,6 +174,17 @@ for i = 1 : sum(structSizeSino3dSpan11.sinogramsPerSegment)
     aux(nonzero) = aux(nonzero) .* (1./crystalEff(nonzero));
     sinogramSpan11corrected(:,:,i) = aux;
 end
+figure;plot(sinogramSpan11corrected(100,:,50)./max(sinogramSpan11corrected(100,:,50)));
+% Write to a file in interfile formar:
+outputSinogramName = [outputPath '/sinogramSpan11Normalized'];
+interfileWriteSino(single(sinogramSpan11corrected), outputSinogramName, structSizeSino3dSpan11.sinogramsPerSegment, structSizeSino3dSpan11.minRingDiff, structSizeSino3dSpan11.maxRingDiff);
+
+% Attenuation correction:
+sinogramSpan11corrected = sinogramSpan11corrected .* acfsSinogramSpan11;
+% Write to a file in interfile formar:
+outputSinogramName = [outputPath '/sinogramSpan11NormAttenCorrected'];
+interfileWriteSino(single(sinogramSpan11corrected), outputSinogramName, structSizeSino3dSpan11.sinogramsPerSegment, structSizeSino3dSpan11.minRingDiff, structSizeSino3dSpan11.maxRingDiff);
+
 countsPerSinogramCorrected = sum(sum(sinogramSpan11corrected));
 % Compare with the projection of span 11 of a constant image (performed with APIRL):
 constProjFilename = [outputPath 'Image_Span11__projection_iter_0'];
@@ -201,12 +212,10 @@ ylabel('Counts');
 xlabel('Sinogram');
 legend('Uncorrected', 'Corrected', 'Projection of Constant Image', 'Location', 'SouthEast');
 set(gcf, 'Position', [0 0 1600 1200]);
-% Write to a file in interfile formar:
-outputSinogramName = [outputPath '/sinogramSpan11Normalized'];
-interfileWriteSino(single(sinogramSpan11), outputSinogramName, structSizeSino3d.sinogramsPerSegment, structSizeSino3d.minRingDiff, structSizeSino3d.maxRingDiff);
+
 % Delete variables because there is no enough memory:
 clear constSinogramSpan11
-clear sinogramSpan11corrected
+%clear sinogramSpan11corrected
 %% GENERATE ATTENUATION AND NORMALIZATION FACTORS AND CORECCTION FACTORS FOR SPAN11 SINOGRAMS FOR APIRL
 % This factors are not for precorrect but for apply as normalizaiton in
 % each iteration:
@@ -235,11 +244,23 @@ atteNormFactorsSpan11(acfsSinogramSpan11 ~= 0) = atteNormFactorsSpan11(acfsSinog
 outputSinogramName = [outputPath '/ANF_Span11'];
 interfileWriteSino(single(atteNormFactorsSpan11), outputSinogramName, structSizeSino3dSpan11.sinogramsPerSegment, structSizeSino3dSpan11.minRingDiff, structSizeSino3dSpan11.maxRingDiff);
 clear atteNormFactorsSpan11;
-clear normFactorsSpan11;
+%clear normFactorsSpan11;
 
 % The same for the correction factors:
 atteNormCorrectionFactorsSpan11 = normCorrectionFactorsSpan11 .*acfsSinogramSpan11;
 outputSinogramName = [outputPath '/ANCF_Span11'];
 interfileWriteSino(single(atteNormCorrectionFactorsSpan11), outputSinogramName, structSizeSino3dSpan11.sinogramsPerSegment, structSizeSino3dSpan11.minRingDiff, structSizeSino3dSpan11.maxRingDiff);
+clear atteNormCorrectionFactorsSpan11;
 
+% One for just the gaps:
+gaps = sinoEfficencies ~=0;
+outputSinogramName = [outputPath '/GAPS_Span11'];
+interfileWriteSino(single(gaps), outputSinogramName, structSizeSino3dSpan11.sinogramsPerSegment, structSizeSino3dSpan11.minRingDiff, structSizeSino3dSpan11.maxRingDiff);
 
+% One for just the gaps with attenuation:
+gaps = single(sinoEfficencies ~=0);
+gaps(acfsSinogramSpan11 ~= 0) = gaps(acfsSinogramSpan11 ~= 0) ./acfsSinogramSpan11(acfsSinogramSpan11 ~= 0);
+outputSinogramName = [outputPath '/AGAPS_Span11'];
+interfileWriteSino(single(gaps), outputSinogramName, structSizeSino3dSpan11.sinogramsPerSegment, structSizeSino3dSpan11.minRingDiff, structSizeSino3dSpan11.maxRingDiff);
+
+clear gaps

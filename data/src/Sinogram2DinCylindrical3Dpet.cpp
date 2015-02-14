@@ -19,6 +19,10 @@ Sinogram2DinCylindrical3Dpet::Sinogram2DinCylindrical3Dpet(char* fileHeaderPath,
 {
   radioScanner_mm = rScanner_mm;
   numZ = 0;
+  ptrListRing1 = NULL;
+  ptrListRing2 = NULL;
+  ptrListZ1_mm = NULL;
+  ptrListZ2_mm = NULL;
   this->readFromInterfile(fileHeaderPath);
 }
 
@@ -29,6 +33,10 @@ Sinogram2DinCylindrical3Dpet::Sinogram2DinCylindrical3Dpet(unsigned int nProj, u
   numProj = nProj;
   numZ = 0;
   radioScanner_mm = rScanner_mm;
+  ptrListRing1 = NULL;
+  ptrListRing2 = NULL;
+  ptrListZ1_mm = NULL;
+  ptrListZ2_mm = NULL;
   // Allocates Memory for th Sinogram
   ptrSinogram = (float*) malloc(numProj*numR*sizeof(float));
   // Allocates Memory for the value's vectors
@@ -58,12 +66,19 @@ Sinogram2DinCylindrical3Dpet::Sinogram2DinCylindrical3Dpet(unsigned int nProj, u
 Sinogram2DinCylindrical3Dpet::~Sinogram2DinCylindrical3Dpet()
 {
   /// Limpio la memoria
-  
+  free(ptrListRing1);
+  free(ptrListRing2);
+  free(ptrListZ1_mm);
+  free(ptrListZ2_mm);
 }
 
 /// Constructor de Copia
 Sinogram2DinCylindrical3Dpet::Sinogram2DinCylindrical3Dpet(const Sinogram2DinCylindrical3Dpet* srcSinogram2D):Sinogram2D((Sinogram2D*) srcSinogram2D)
 {
+  ptrListRing1 = NULL;
+  ptrListRing2 = NULL;
+  ptrListZ1_mm = NULL;
+  ptrListZ2_mm = NULL;
   // Ahora las variables propias de esta clase derivada:
   radioScanner_mm = srcSinogram2D->radioScanner_mm;
   numZ = srcSinogram2D->numZ;
@@ -98,6 +113,10 @@ Sinogram2DinCylindrical3Dpet::Sinogram2DinCylindrical3Dpet(const Sinogram2DinCyl
 
 Sinogram2DinCylindrical3Dpet::Sinogram2DinCylindrical3Dpet(const Sinogram2DinCylindrical3Dpet* srcSinogram2D, int indexSubset, int numSubsets):Sinogram2D((Sinogram2D*) srcSinogram2D, indexSubset, numSubsets)
 {
+  ptrListRing1 = NULL;
+  ptrListRing2 = NULL;
+  ptrListZ1_mm = NULL;
+  ptrListZ2_mm = NULL;
   // Ahora las variables propias de esta clase derivada:
   radioScanner_mm = srcSinogram2D->radioScanner_mm;
   numZ = srcSinogram2D->numZ;
@@ -141,6 +160,20 @@ void Sinogram2DinCylindrical3Dpet::setMultipleRingConfig(int nZ, int* listRing1,
   memcpy(ptrListRing2, listRing2, sizeof(float) * numZ);
   memcpy(ptrListZ1_mm, listZ1, sizeof(float) * numZ);
   memcpy(ptrListZ2_mm, listZ2, sizeof(float) * numZ);
+}
+
+void Sinogram2DinCylindrical3Dpet::copyMultipleRingConfig(Sinogram2DinCylindrical3Dpet* srcSinogram2D)
+{
+  numZ = srcSinogram2D->numZ;
+  /* La lista de anillos la hago a través de una copia de vectores. */  
+  ptrListRing1 = (int*)realloc(ptrListRing1, sizeof(int) * numZ);
+  ptrListRing2 = (int*)realloc(ptrListRing2, sizeof(int) * numZ);
+  ptrListZ1_mm = (float*)realloc(ptrListZ1_mm, sizeof(float) * numZ);
+  ptrListZ2_mm = (float*)realloc(ptrListZ2_mm, sizeof(float) * numZ);
+  memcpy(ptrListRing1, srcSinogram2D->ptrListRing1, sizeof(float) * numZ);
+  memcpy(ptrListRing2, srcSinogram2D->ptrListRing2, sizeof(float) * numZ);
+  memcpy(ptrListZ1_mm, srcSinogram2D->ptrListZ1_mm, sizeof(float) * numZ);
+  memcpy(ptrListZ2_mm, srcSinogram2D->ptrListZ2_mm, sizeof(float) * numZ);
 }
 
 bool Sinogram2DinCylindrical3Dpet::getFovLimits(Line2D lor, Point2D* limitPoint1, Point2D* limitPoint2)

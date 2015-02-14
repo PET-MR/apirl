@@ -97,7 +97,7 @@ bool OsemSinogram3d::Reconstruct()
   {
     /// Calculo todas los sensitivty volume, tengo tantos como subset. Sino alcancanzar la ram
     /// para almacenar todos, debería calcularlos dentro del for por cada iteración:
-    for(int s = 10; s < numSubsets; s++)
+    for(int s = 0; s < numSubsets; s++)
     {
       /// Calculo el sensitivity volume
       if(computeSensitivity(sensitivityImages[s], s)==false)
@@ -324,9 +324,7 @@ bool OsemSinogram3d::computeSensitivity(Image* outputImage, int indexSubset)
     backprojectSinogram3D = inputProjection->getSubset(indexSubset, numSubsets);
     backprojectSinogram3D->FillConstant(1);
   }
-  // Tengo que guardar la estimated projection, y la backprojected image.
-	sprintf(c_string, "%s_projection_sens_%d_", outputFilenamePrefix.c_str(), indexSubset); /// La extensión se le agrega en write interfile.
-	backprojectSinogram3D->writeInterfile((char*)c_string);
+  
   /// Por último hago la backprojection
   backprojector->Backproject(backprojectSinogram3D, outputImage);
   /// Free memory:

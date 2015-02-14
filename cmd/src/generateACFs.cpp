@@ -46,10 +46,11 @@
 #include <Sinogram3DArPet.h>
 #include <Sinogram3DCylindricalPet.h>
 #include <Sinograms2Din3DArPet.h>
+#include <Sinogram3DSiemensMmr.h>
 
 #define FOV_axial 162
 #define FOV_radial 582
-//#define FIXED_KEYS 4
+#define FIXED_KEYS 4
 using namespace std;
 using	std::string;
 /**
@@ -394,11 +395,16 @@ int main (int argc, char *argv[])
 	  }
 	  outputProjection->writeInterfile(outputFilename);
 	}
-	else if(outputType.compare("Sinogram3D")==0)
+	else if((outputType.compare("Sinogram3D")==0)||(outputType.compare("Sinogram3DSiemensMmr")==0)||(outputType.compare("Sinogram3DArPet")==0))
 	{
 	  // Sinograma 3D
-	  //Sinogram3D* outputProjection = new Sinogram3D((char*)sampleProjection.c_str());
-	  Sinogram3D* outputProjection = new Sinogram3DCylindricalPet((char*)sampleProjection.c_str(),rFov_mm,axialFov_mm,rScanner_mm);
+	  Sinogram3D* outputProjection;
+	  if(outputType.compare("Sinogram3D")==0)
+	    outputProjection = new Sinogram3DCylindricalPet((char*)sampleProjection.c_str(),rFov_mm,axialFov_mm,rScanner_mm);
+	  else if(outputType.compare("Sinogram3DSiemensMmr")==0)
+	    outputProjection = new Sinogram3DSiemensMmr((char*)sampleProjection.c_str());
+   	  else if (outputType.compare("Sinogram3DArPet")==0)
+	    outputProjection = new Sinogram3DArPet((char*)sampleProjection.c_str(),rFov_mm,axialFov_mm);
 	  //Sinogram3D* inputProjection = new Sinogram3DCylindricalPet((char*)sampleProjection.c_str(),rFov_mm,axialFov_mm,rScanner_mm);
 	  //outputProjection->setGeometryDim(rFov_mm,axialFov_mm,rScanner_mm);
 	  forwardprojector->Project(inputImage, outputProjection);
@@ -431,68 +437,6 @@ int main (int argc, char *argv[])
 	  
 	  // Aplico al sinograma de entrada los acf, esto es para probar y obtener un sinograma corregido directamente:
 	  Sinogram3D* inputProjection = new Sinogram3DCylindricalPet((char*)sampleProjection.c_str(),rFov_mm,axialFov_mm,rScanner_mm);
-	  for(int i = 0; i < outputProjection->getNumSegments(); i++)
-	  {
-	    for(int j = 0; j < outputProjection->getSegment(i)->getNumSinograms(); j++)
-	    {
-	      /// Cálculo de las coordenadas z del sinograma
-	      for(int k = 0; k < outputProjection->getSegment(i)->getSinogram2D(j)->getNumProj(); k++)
-	      {
-		    
-		for(int l = 0; l < outputProjection->getSegment(i)->getSinogram2D(j)->getNumR(); l++)
-		{
-		  // Al sinograma debo hacer que tenga solo una configuración de anillos posibles, porque me itneresa tener los largos
-		  // de atenuación por cada píxel. Como esto es complicado, simplemente promedio entre todos los anillos de cada LOR.
-		  inputProjection->getSegment(i)->getSinogram2D(j)->setSinogramBin(k,l,inputProjection->getSegment(i)->getSinogram2D(j)->getSinogramBin(k,l)*
-		    outputProjection->getSegment(i)->getSinogram2D(j)->getSinogramBin(k,l));
-		}
-	      }
-	    }
-	  }
-	  sprintf(returnValue, "%s_attCorrected", outputFilename.c_str());
-	  outputFilename.assign(returnValue);
-	  inputProjection->writeInterfile(outputFilename);
-	}
-	else if(outputType.compare("Sinogram3DArPet")==0)
-	{
-	  // Sinograma 3D
-	  //Sinogram3D* outputProjection = new Sinogram3D((char*)sampleProjection.c_str());
-	  Sinogram3D* outputProjection = new Sinogram3DArPet((char*)sampleProjection.c_str(),rFov_mm,axialFov_mm);
-	  //Sinogram3D* inputProjection = new Sinogram3DCylindricalPet((char*)sampleProjection.c_str(),rFov_mm,axialFov_mm,rScanner_mm);
-	  //outputProjection->setGeometryDim(rFov_mm,axialFov_mm,rScanner_mm);
-	  forwardprojector->Project(inputImage, outputProjection);
-	  // Ahora lo paso a ACF, haciendo el log (supuestamente en la proyección obtuve la suma de los m*l:
-	  for(int i = 0; i < outputProjection->getNumSegments(); i++)
-	  {
-	    for(int j = 0; j < outputProjection->getSegment(i)->getNumSinograms(); j++)
-	    {
-	      /// Cálculo de las coordenadas z del sinograma
-	      for(int k = 0; k < outputProjection->getSegment(i)->getSinogram2D(j)->getNumProj(); k++)
-	      {
-		    
-		for(int l = 0; l < outputProjection->getSegment(i)->getSinogram2D(j)->getNumR(); l++)
-		{
-		  // Al sinograma debo hacer que tenga solo una configuración de anillos posibles, porque me itneresa tener los largos
-		  // de atenuación por cada píxel. Como esto es complicado, simplemente promedio entre todos los anillos de cada LOR.
-		  outputProjection->getSegment(i)->getSinogram2D(j)->setSinogramBin(k,l,outputProjection->getSegment(i)->getSinogram2D(j)->getSinogramBin(k,l)/
-		    outputProjection->getSegment(i)->getSinogram2D(j)->getNumZ());
-		  /// Cada Sinograma 2D me represnta múltiples LORs, según la mínima y máxima diferencia entre anillos.
-		  /// Por lo que cada bin me va a sumar cuentas en lors con distintos ejes axiales.
-		  if(outputProjection->getSegment(i)->getSinogram2D(j)->getSinogramBin(k,l) != 0)
-		  {
-		    outputProjection->getSegment(i)->getSinogram2D(j)->setSinogramBin(k,l,exp(outputProjection->getSegment(i)->getSinogram2D(j)->getSinogramBin(k,l)));
-		  }
-		}
-	      }
-	    }
-	  }
-	  outputProjection->writeInterfile(outputFilename);
-	  
-	  // Aplico al sinograma de entrada los acf, esto es para probar y obtener un sinograma corregido directamente:
-	  Sinogram3D* inputProjection = new Sinogram3DArPet((char*)sampleProjection.c_str(),rFov_mm,axialFov_mm);
-	  sprintf(returnValue, "%s_test", outputFilename.c_str());
-	  outputFilename.assign(returnValue);
-	  inputProjection->writeInterfile(outputFilename);	  
 	  for(int i = 0; i < outputProjection->getNumSegments(); i++)
 	  {
 	    for(int j = 0; j < outputProjection->getSegment(i)->getNumSinograms(); j++)

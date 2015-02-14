@@ -85,9 +85,11 @@ class SegmentInCylindrical3Dpet: public Segment
 		@param nSinograms	Número de sinogramas2d que contiene este segmento.
 		@param nMinRingDiff	Mínima diferencia entre anillos de este segmento.
 		@param nMaxRingDiff Máxima diferencia entre anillos de este segmento.
+		@param initSinos Flag que indica si se desea incializar los sinogramas que forman el segmento.  Debería incializarse
+		  si se quiere usar esta clase como objeto del sinograma, y 0 desde una clase derivada.
 	*/
 	SegmentInCylindrical3Dpet(int nProj, int nR, int nRings, float rFov_mm, float zFov_mm, int rScanner_mm, 
-	  int nSinograms, int nMinRingDiff, int nMaxRingDiff);
+	  int nSinograms, int nMinRingDiff, int nMaxRingDiff, bool initSinos);
 	
 	/** Constructor que realiza una copia de un segmento existente.
 		@param srcSegment objeto del tipo Segment a partir del cual se creará un nuevo objeto copia de este.

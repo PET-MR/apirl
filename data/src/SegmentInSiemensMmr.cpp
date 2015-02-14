@@ -20,7 +20,7 @@ using namespace::std;
 
 SegmentInSiemensMmr::SegmentInSiemensMmr(int nProj, int nR, int nRings, float rFov_mm, float zFov_mm, int rScanner_mm, 
 	  int nSinograms, int nMinRingDiff, int nMaxRingDiff):SegmentInCylindrical3Dpet(nProj, nR, nRings, rFov_mm, zFov_mm, rScanner_mm, 
-	  nSinograms, nMinRingDiff, nMaxRingDiff)
+	  nSinograms, nMinRingDiff, nMaxRingDiff, 0)	// 0 to not init memory of sinograms.
 {
   numSinograms = nSinograms;
   radioScanner = rScanner_mm;
@@ -60,10 +60,13 @@ void SegmentInSiemensMmr::initSinogramsFromSegment(Segment* srcSegment)
     perror("Sinogram2DinSiemensMmr::initSinogramsFromSegment: trying to init sinograms with a different segment (numSinogras or maxRingDiff or minRingDiff)\n");
     exit(1);
   }
+  if(this->sinograms2D == NULL)
+    this->sinograms2D = (Sinogram2DinCylindrical3Dpet**) new Sinogram2DinSiemensMmr*[numSinograms];
   for(int i = 0; i < numSinograms; i++)
   {
     // Free actual sinogram:
-    delete sinograms2D[i];
+    if(sinograms2D[i] != NULL)
+      delete sinograms2D[i];
     sinograms2D[i] = (Sinogram2DinCylindrical3Dpet*) new Sinogram2DinSiemensMmr((Sinogram2DinSiemensMmr*)srcSegment->getSinogram2D(i));
   }
 }

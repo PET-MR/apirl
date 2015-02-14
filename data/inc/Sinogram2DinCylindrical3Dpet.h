@@ -74,7 +74,6 @@ class DLLEXPORT Sinogram2DinCylindrical3Dpet : public Sinogram2D
 	  float* ptrListZ1_mm, *ptrListZ2_mm;
 	  //float* getSinogramPtr(){return this->ptrSinogram;};
 	  
-	  
 
 	public:
 	  Sinogram2DinCylindrical3Dpet(){};
@@ -139,6 +138,11 @@ class DLLEXPORT Sinogram2DinCylindrical3Dpet : public Sinogram2D
 		  @param listZ2 lista de valores axiales en mm de anillos para el anillo 2, debe tener nZ elementos.
 	  */
 	  void setMultipleRingConfig(int nZ, int* listRing1, int* listRing2, float* listZ1, float* listZ2);
+	  
+	  /** Método que copia la configuración para múltiples anillos de otro sinograma 2d.
+		@param srcSinogram sinograma de donde se sacará la configuración de anillos.
+	  */
+	  void copyMultipleRingConfig(Sinogram2DinCylindrical3Dpet* srcSinogram);
 	  
 	  /** Método que devuelve el valor index para el anillo 1 de las listas de combinaciones de anillos
 	    para este sinograma. Esto es válido cuando está dentro de un sinograma 3d, y hay polar mashing. 

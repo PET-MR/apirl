@@ -154,6 +154,11 @@ class DLLEXPORT Sinogram3DArPet : public Sinogram3D
 	 * 
 	 */
 	Sinogram3D* getSubset(int indexSubset, int numSubsets);
+	
+	/// Copy all the bins from a source sinograms.
+	/** It copies all the bins values from srcSinogram3D into this value.
+	 */
+	int CopyAllBinsFrom(Sinogram3D* srcSinogram3D){};
 };
 
 

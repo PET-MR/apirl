@@ -8,10 +8,12 @@ std::ostringstream os;
 
 //using namespace::iostream;
 
-Sinogram3DCylindricalPet::Sinogram3DCylindricalPet(float rFov_mm, float zFov_mm):Sinogram3D(rFov_mm, zFov_mm)
+Sinogram3DCylindricalPet::Sinogram3DCylindricalPet(float rFov_mm, float zFov_mm, float rScanner_mm):Sinogram3D(rFov_mm, zFov_mm)
 {
   radioFov_mm = rFov_mm;
   axialFov_mm = zFov_mm;
+  radioScanner_mm = rScanner_mm;
+  segments = NULL;
 }
 
 Sinogram3DCylindricalPet::Sinogram3DCylindricalPet(char* fileHeaderPath, float rFov_mm, float zFov_mm, float rScanner_mm):Sinogram3D(rFov_mm, zFov_mm)
@@ -19,6 +21,7 @@ Sinogram3DCylindricalPet::Sinogram3DCylindricalPet(char* fileHeaderPath, float r
   radioScanner_mm = rScanner_mm;
   //Segmentos = (Segmento**) malloc(sizeof(Segmento*));
   numSegments = 0;
+  segments = NULL;
   // Reemplazo la función que lee el interfile del discovery STE por la genérica:
   if(readFromInterfile(fileHeaderPath, rScanner_mm))
   {
@@ -36,10 +39,54 @@ Sinogram3DCylindricalPet::Sinogram3DCylindricalPet(Sinogram3DCylindricalPet* src
 {
   /// Copio todas las propiedaddes del objeto fuente al objeto siendo instanciado en el constructor de Sinogram3d.
   /// Ahora hago la copia de los objetos Segmento
+  segments = NULL;
   /// Instancio los sinogramas 2D
   inicializarSegmentos();
+  /// Then copy all the bins:
+  CopyAllBinsFrom(srcSinogram3D);
+  // Copy the ring configuration:
+  CopyRingConfigForEachSinogram(srcSinogram3D);
   // El radio del scnnaer también:
   radioScanner_mm = srcSinogram3D->getRadioScanner_mm();
+}
+
+int Sinogram3DCylindricalPet::CopyAllBinsFrom(Sinogram3D* srcSinogram3D)
+{
+  int numBins = 0;
+  for(int i = 0; i < this->getNumSegments(); i++)
+  {
+    for(int j = 0; j < this->getSegment(i)->getNumSinograms(); j++)
+    {
+      float *ptrSrc, *ptrDst;
+      ptrDst = this->getSegment(i)->getSinogram2D(j)->getSinogramPtr();
+      ptrSrc = srcSinogram3D->getSegment(i)->getSinogram2D(j)->getSinogramPtr();
+      memcpy(ptrDst, ptrSrc, this->getSegment(i)->getSinogram2D(j)->getNumProj()*this->getSegment(i)->getSinogram2D(j)->getNumR()*sizeof(float));
+      numBins += this->getSegment(i)->getSinogram2D(j)->getNumProj()*this->getSegment(i)->getSinogram2D(j)->getNumR();
+    } 
+  }
+  return numBins;
+}
+
+int Sinogram3DCylindricalPet::CopyRingConfigForEachSinogram(Sinogram3D* srcSinogram3D)
+{
+  int numBins = 0;
+  for(int i = 0; i < this->getNumSegments(); i++)
+  {
+    for(int j = 0; j < this->getSegment(i)->getNumSinograms(); j++)
+    {
+      this->getSegment(i)->getSinogram2D(j)->copyMultipleRingConfig(srcSinogram3D->getSegment(i)->getSinogram2D(j));
+    } 
+  }
+  return numBins;
+}
+
+/// Constructor para copia desde otro objeto sinograma3d
+Sinogram3DCylindricalPet::Sinogram3DCylindricalPet(Sinogram3DCylindricalPet* srcSinogram3D, int dummy):Sinogram3D((Sinogram3D*)srcSinogram3D)
+{
+  /// Constructor que copia pero sin inicializar segmentos.
+  // El radio del scnnaer también:
+  radioScanner_mm = srcSinogram3D->getRadioScanner_mm();
+  segments = NULL;
 }
 
 /// Desctructor
@@ -126,7 +173,7 @@ void Sinogram3DCylindricalPet::inicializarSegmentos()
   for(int i = 0; i < numSegments; i++)
   {
     segments[i] = new SegmentInCylindrical3Dpet(numProj, numR, numRings, radioFov_mm, axialFov_mm, radioScanner_mm, 
-	  numSinogramsPerSegment[i], minRingDiffPerSegment[i], maxRingDiffPerSegment[i]);
+	  numSinogramsPerSegment[i], minRingDiffPerSegment[i], maxRingDiffPerSegment[i], 1); // 1 to init memroy.
   }
 }
 	
@@ -166,7 +213,7 @@ bool Sinogram3DCylindricalPet::ReadInterfileDiscoverySTE(char* fileDataPath)
   for(int i = 0; i < numSegments; i++)
   {
     segments[i] = new SegmentInCylindrical3Dpet(numProj, numR, numRings, radioFov_mm, axialFov_mm, radioScanner_mm, 
-						SinogramasPorSegmento[i], MinRingDiffLocal[i], MaxRingDiffLocal[i]);
+						SinogramasPorSegmento[i], MinRingDiffLocal[i], MaxRingDiffLocal[i], 1); // 1 to innit memory.
   }
   FILE* fileSino3D;
   /// Ahora leo los datos binarios y cargo los archivos

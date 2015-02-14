@@ -18,20 +18,23 @@ using namespace::std;
 //using namespace::iostream;
 
 SegmentInCylindrical3Dpet::SegmentInCylindrical3Dpet(int nProj, int nR, int nRings, float rFov_mm, float zFov_mm, int rScanner_mm, 
-	  int nSinograms, int nMinRingDiff, int nMaxRingDiff):Segment(nProj, nR, nRings, rFov_mm, zFov_mm, 
+	  int nSinograms, int nMinRingDiff, int nMaxRingDiff, bool initSinos):Segment(nProj, nR, nRings, rFov_mm, zFov_mm, 
 	  nSinograms, nMinRingDiff, nMaxRingDiff)
 {
   numSinograms = nSinograms;
   radioScanner = rScanner_mm;
   minRingDiff = nMinRingDiff;
   maxRingDiff = nMaxRingDiff;
-  initSinograms(nProj, nR, rFov_mm, zFov_mm);
+  sinograms2D = NULL;
+  if(initSinos)
+    initSinograms(nProj, nR, rFov_mm, zFov_mm);
 }
 
 /// Constructor de copia
 SegmentInCylindrical3Dpet::SegmentInCylindrical3Dpet(SegmentInCylindrical3Dpet* srcSegment):Segment((Segment*)srcSegment)
 {
   // Las propiedades básicas fueron copiadas en segment.
+  sinograms2D = NULL;
   this->radioScanner = srcSegment->radioScanner;
   this->initSinogramsFromSegment(srcSegment);
 }
@@ -63,6 +66,7 @@ void SegmentInCylindrical3Dpet::initSinogramsFromSegment(Segment* srcSegment)
   for(int i = 0; i < numSinograms; i++)
   {
     sinograms2D[i] = new Sinogram2DinCylindrical3Dpet(srcSegment->getSinogram2D(i));
+    sinograms2D[i]->copyMultipleRingConfig(srcSegment->getSinogram2D(i));
   }
 }
 // Asigna un sinograma dentro de la lista del segmento:

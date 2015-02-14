@@ -64,10 +64,10 @@ class DLLEXPORT Sinogram3DSiemensMmr : public Sinogram3DCylindricalPet
 	static const unsigned char sizeBin_bytes = sizeof(float);	// Size in bytes of each element of the Michelogram. float -> 4
   protected:	
 	/** Radio del Scanner en mm. */
-	static const float radioScanner_mm = 656;
+	static const float radioScanner_mm = 656/2;
 	
 	/** Radio del FOV en mm. */
-	static const float radioFov_mm = 594;
+	static const float radioFov_mm = 594/2;
 
 	/** Largo axial del FOV en mm. */
 	static const float axialFov_mm = 258;
@@ -126,6 +126,11 @@ class DLLEXPORT Sinogram3DSiemensMmr : public Sinogram3DCylindricalPet
 	/** It cannot be used the generic Sinogram3DCylindricalPet because it allocates the memory
 	 * inside the function. */
 	Sinogram3D* getSubset(int indexSubset, int numSubsets);
+	
+	/// Copy all the bins from a source sinograms.
+	/** It copies all the bins values from srcSinogram3D into this value.
+	 */
+	int CopyAllBinsFrom(Sinogram3D* srcSinogram3D);
 };
 
 

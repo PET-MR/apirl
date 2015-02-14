@@ -25,7 +25,7 @@ end
 % Sinogram type: 
 % Type of sinogram, depending of the size structure type:
 if isfield(structSizeSino,'sinogramsPerSegment')
-    sinogramType = 'Sinogram3D';
+    sinogramType = 'Sinogram3DSiemensMmr';
 else
     sinogramType = 'Sinograms2D';
 end

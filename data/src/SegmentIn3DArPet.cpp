@@ -24,6 +24,7 @@ SegmentIn3DArPet::SegmentIn3DArPet(int nProj, int nR, int nRings, float rFov_mm,
   numSinograms = nSinograms;
   minRingDiff = nMinRingDiff;
   maxRingDiff = nMaxRingDiff;
+  sinograms2D = NULL;
   initSinograms(nProj, nR, rFov_mm, zFov_mm);
 }
 

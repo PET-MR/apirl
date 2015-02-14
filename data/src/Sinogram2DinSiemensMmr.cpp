@@ -44,9 +44,9 @@ Sinogram2DinSiemensMmr::Sinogram2DinSiemensMmr(unsigned int nProj, unsigned int 
 	lr = (binSize_mm/2 + binSize_mm*(j-(float)(numR/2)));
 	// 2) Now I get the x coordinate for that r.
 	ptrRvalues_mm[j] = radioScanner_mm * cos(M_PI / 2 - (lr/(radioScanner_mm)));
-	#ifdef __DEBUG__
-	  printf("\t%f", ptrRvalues_mm[j]);
-	#endif
+// 	#ifdef __DEBUG__
+// 	  printf("\t%f", ptrRvalues_mm[j]);
+// 	#endif
       }
       ptrSinogram[i * numR + j] = 0;
     }

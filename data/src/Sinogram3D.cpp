@@ -53,12 +53,13 @@ Sinogram3D::Sinogram3D(Sinogram3D* srcSinogram3D)
   }
   // Configuración de los segmentos:
   numSinogramsPerSegment = (int*) malloc(sizeof(int)*numSegments);
-  memcpy(numSinogramsPerSegment, srcSinogram3D->numSinogramsPerSegment, numSegments);
+  memcpy(numSinogramsPerSegment, srcSinogram3D->numSinogramsPerSegment, sizeof(int)*numSegments);
   minRingDiffPerSegment = (int*) malloc(sizeof(int)*numSegments);
-  memcpy(minRingDiffPerSegment, srcSinogram3D->minRingDiffPerSegment, numSegments);
+  memcpy(minRingDiffPerSegment, srcSinogram3D->minRingDiffPerSegment, sizeof(int)*numSegments);
   maxRingDiffPerSegment = (int*) malloc(sizeof(int)*numSegments);
-  memcpy(maxRingDiffPerSegment, srcSinogram3D->maxRingDiffPerSegment, numSegments);
+  memcpy(maxRingDiffPerSegment, srcSinogram3D->maxRingDiffPerSegment, sizeof(int)*numSegments);
 }
+
 
 /// Desctructor
 Sinogram3D::~Sinogram3D()

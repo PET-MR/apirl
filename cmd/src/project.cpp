@@ -49,6 +49,7 @@
 #include <Sinogram3DCylindricalPet.h>
 #include <Sinogram2Din3DArPet.h>
 #include <Sinograms2Din3DArPet.h>
+#include <Sinogram3DSiemensMmr.h>
 
 
 #define FIXED_KEYS 5
@@ -388,6 +389,14 @@ int main (int argc, char *argv[])
 	  }
 	  Sinogram3D* outputProjection = new Sinogram3DCylindricalPet((char*)sampleProjection.c_str(),rFov_mm,axialFov_mm,rScanner_mm);
 	  //outputProjection->setGeometryDim(rFov_mm,axialFov_mm,rScanner_mm);
+	  forwardprojector->Project(inputImage, outputProjection);
+	  outputProjection->writeInterfile(outputFilename);
+	}
+	else if(outputType.compare("Sinogram3DSiemensMmr")==0)
+	{
+	  // Sinograma 3D mmr, fixed values of rfoc and rscanner
+	  Sinogram3D* outputProjection = new Sinogram3DSiemensMmr((char*)sampleProjection.c_str());
+   	  //outputProjection->setGeometryDim(rFov_mm,axialFov_mm,rScanner_mm);
 	  forwardprojector->Project(inputImage, outputProjection);
 	  outputProjection->writeInterfile(outputFilename);
 	}

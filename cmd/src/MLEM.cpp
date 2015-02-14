@@ -50,6 +50,7 @@
 #include <Sinograms2DinCylindrical3Dpet.h>
 #include <Sinograms2Din3DArPet.h>
 #include <Sinogram3DArPet.h>
+#include <Sinogram3DSiemensMmr.h>
 #include <Sinogram3DCylindricalPet.h>
 #include <ParametersFile.h>
 #include <Projector.h>
@@ -454,6 +455,16 @@ int main (int argc, char *argv[])
     if(bSensitivityFromFile)
     {
 	  mlem->setSensitivityFilename(sensitivityFilename);
+    }
+  }
+  else if(inputType.compare("Sinogram3DSiemensMmr")==0)
+  {
+    // Sinograma 3D
+    Sinogram3D* inputProjection = new Sinogram3DSiemensMmr((char*)inputFilename.c_str());
+    mlem = new MlemSinogram3d(inputProjection, initialEstimate, "", outputPrefix, numIterations, saveIterationInterval, saveIntermediateData, bSensitivityFromFile, forwardprojector, backprojector);
+    if(bSensitivityFromFile)
+    {
+      mlem->setSensitivityFilename(sensitivityFilename);
     }
   }
   else if(inputType.compare("Sinogram3D")==0)

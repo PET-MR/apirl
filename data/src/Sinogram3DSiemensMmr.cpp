@@ -5,7 +5,7 @@
 
 //using namespace::iostream;
 
-Sinogram3DSiemensMmr::Sinogram3DSiemensMmr(char* fileHeaderPath):Sinogram3DCylindricalPet(this->radioFov_mm, this->axialFov_mm)
+Sinogram3DSiemensMmr::Sinogram3DSiemensMmr(char* fileHeaderPath):Sinogram3DCylindricalPet(this->radioFov_mm, this->axialFov_mm, this->radioScanner_mm)
 {
   if(readFromInterfile(fileHeaderPath, this->radioScanner_mm))
   {
@@ -14,9 +14,14 @@ Sinogram3DSiemensMmr::Sinogram3DSiemensMmr(char* fileHeaderPath):Sinogram3DCylin
 }
 
 /// Constructor para copia desde otro objeto sinograma3d
-Sinogram3DSiemensMmr::Sinogram3DSiemensMmr(Sinogram3DSiemensMmr* srcSinogram3D):Sinogram3DCylindricalPet(srcSinogram3D)
+Sinogram3DSiemensMmr::Sinogram3DSiemensMmr(Sinogram3DSiemensMmr* srcSinogram3D):Sinogram3DCylindricalPet(srcSinogram3D,0)
 {
-
+  // Como uso el constructor que inicializa los segemntos, lo hago acá.
+  inicializarSegmentos();
+  // Copy the content of all the sinograms.
+  CopyAllBinsFrom(srcSinogram3D);
+  // Copy ring configurations:
+  CopyRingConfigForEachSinogram(srcSinogram3D);
 }
 
 /// Desctructor
@@ -50,6 +55,22 @@ Sinogram3D* Sinogram3DSiemensMmr::Copy()
 {
   Sinogram3DSiemensMmr* sino3dcopy = new Sinogram3DSiemensMmr(this);
   return (Sinogram3D*)sino3dcopy;
+}
+
+int Sinogram3DSiemensMmr::CopyAllBinsFrom(Sinogram3D* srcSinogram3D)
+{
+  int numBins = 0;
+  for(int i = 0; i < this->getNumSegments(); i++)
+  {
+    for(int j = 0; j < this->getSegment(i)->getNumSinograms(); j++)
+    {
+      float *ptrSrc, *ptrDst;
+      ptrDst = this->getSegment(i)->getSinogram2D(j)->getSinogramPtr();
+      ptrSrc = srcSinogram3D->getSegment(i)->getSinogram2D(j)->getSinogramPtr();
+      memcpy(ptrDst, ptrSrc, this->getSegment(i)->getSinogram2D(j)->getNumProj()*this->getSegment(i)->getSinogram2D(j)->getNumR()*sizeof(float));
+      numBins += this->getSegment(i)->getSinogram2D(j)->getNumProj()*this->getSegment(i)->getSinogram2D(j)->getNumR();
+    } 
+  }
 }
 
 Sinogram3D* Sinogram3DSiemensMmr::getSubset(int indexSubset, int numSubsets)
@@ -89,6 +110,18 @@ Sinogram3D* Sinogram3DSiemensMmr::getSubset(int indexSubset, int numSubsets)
 /// Función que inicializa los segmentos.
 void Sinogram3DSiemensMmr::inicializarSegmentos()
 {
+  // First check if there is memory allocated for the segment, and free it in that case:
+  if(segments != NULL)
+  {
+    for(int i = 0; i < numSegments; i++)
+    {
+      if(segments[i] != NULL)
+      {
+	delete segments[i];
+      }
+    }
+    delete segments;
+  }
   /// Instancio los sinogramas 2D
   segments = (SegmentInCylindrical3Dpet**) new SegmentInSiemensMmr*[numSegments];
   for(int i = 0; i < numSegments; i++)
