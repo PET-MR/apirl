@@ -93,7 +93,7 @@ geometricFactor = repmat(single(componentFactors{1}(:,1))', structSizeSino3d.num
 crystalInterfFactor = single(componentFactors{2});
 crystalInterfFactor = repmat(crystalInterfFactor,structSizeSino3d.numTheta/size(crystalInterfFactor,1),1);
 % c) Axial factors:
-axialFactors = 1./(componentFactors{4}.*componentFactors{8});
+axialFactors = structSizeSino3d.numSinosMashed;%ones(size(componentFactors{4}));%1./(componentFactors{4}.*componentFactors{8});
 
 for i = 1 : sum(structSizeSino3d.sinogramsPerSegment)
     % First the geomeitric, crystal interference factors:

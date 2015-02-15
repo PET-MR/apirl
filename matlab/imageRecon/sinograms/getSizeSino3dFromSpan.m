@@ -66,6 +66,10 @@ thetaValues_deg = (deltaTheta/2) : deltaTheta : (180 - deltaTheta/2);
 deltaZ = zFov / numZ;
 zValues_mm = -(zFov/2 - deltaZ/2) : deltaZ : (zFov/2 - deltaZ/2);
 
+% Agrego para guardar la cantidad de posiciones axiales que representa un
+% sinogra2d, esto sirve para normalizar:
+numSinosMashed = [];
+
 % Ahora determino toda la estructura del sinograma 3D. El span me indica,
 % la cantidad de sinogramas que tengo en las combinaciones pares e impares
 % del axial mashing.
@@ -138,6 +142,7 @@ for segment = 1 : numSegments
             z1_aux = z1_aux - 1;
         end
         if(numSinosZ1inSegment>0)
+            numSinosMashed = [numSinosMashed numSinosZ1inSegment];
             numSinosThisSegment = numSinosThisSegment + 1;
         end
     end 
@@ -145,3 +150,4 @@ for segment = 1 : numSegments
     sinogramsPerSegment(segment) = numSinosThisSegment;
 end
 structSizeSino3D = getSizeSino3dStruct(numTheta, numR, numZ, rFov, zFov, sinogramsPerSegment, minRingDiffs, maxRingDiffs, maxAbsRingDiff);
+structSizeSino3D.numSinosMashed = numSinosMashed;

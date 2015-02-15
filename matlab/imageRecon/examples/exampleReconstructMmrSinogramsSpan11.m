@@ -13,7 +13,7 @@ addpath('/workspaces/Martin/KCL/Biograph_mMr/mmr');
 apirlPath = '/workspaces/Martin/PET/apirl-code/trunk/';
 addpath(genpath([apirlPath '/matlab']));
 setenv('PATH', [getenv('PATH') ':/workspaces/Martin/PET/apirl-code/trunk/build/bin']);
-setenv('LD_LIBRARY_PATH', [getenv('LD_LIBRARY_PATH') ':/workspaces/Martin/PET/apirl-code/trunk/build/debug/bin']);
+setenv('LD_LIBRARY_PATH', [getenv('LD_LIBRARY_PATH') ':/workspaces/Martin/PET/apirl-code/trunk/build/bin']);
 outputPath = '/workspaces/Martin/KCL/Biograph_mMr/mmr/5hr_ge68/';
 %setenv('LD_LIBRARY_PATH', [getenv('LD_LIBRARY_PATH') ':/usr/lib/x86_64-linux-gnu/']);
 %% READING THE SINOGRAMS
@@ -101,7 +101,7 @@ title('Crystal Efficencies for Sinogram 200');
 set(gcf, 'Position', [0 0 1600 1200]);
 
 % Axial factors:
-axialFactors = 1./(componentFactors{4}.*componentFactors{8});
+axialFactors = structSizeSino3dSpan11.numSinosMashed; % 1./(componentFactors{4}.*componentFactors{8});
 %% ATTENUATION CORRECTION - PICK A OR B AND COMMENT THE NOT USED 
 % %% COMPUTE THE ACFS (OPTION A)
 % % Read the phantom and then generate the ACFs with apirl:
