@@ -62,10 +62,10 @@ structSizeSino3d = getSizeSino3dFromSpan(numTheta, numR, numRings, rFov_mm, zFov
 % Total number of singorams per 3d sinogram:
 numSinograms = sum(structSizeSino3d.sinogramsPerSegment);
 % Generate the sinograms:
-overall_ncf_3d = zeros(numTheta, numR, numSinograms, 'single');
-scanner_time_invariant_ncf_3d = zeros(numTheta, numR, numSinograms, 'single');
-scanner_time_variant_ncf_3d = zeros(numTheta, numR, numSinograms, 'single');
-acquisition_dependant_ncf_3d = zeros(numTheta, numR, numSinograms, 'single');
+overall_ncf_3d = zeros(numR, numTheta, numSinograms, 'single');
+scanner_time_invariant_ncf_3d = zeros(numR, numTheta, numSinograms, 'single');
+scanner_time_variant_ncf_3d = zeros(numR, numTheta, numSinograms, 'single');
+acquisition_dependant_ncf_3d = zeros(numR, numTheta, numSinograms, 'single');
 
 % 3) Selection of dead-time parameters and crystal efficencies:
 if isempty(my_selection_of_xtal_efficiencies)
@@ -88,10 +88,10 @@ end
 % geometricFactor, the crystal interference and the axial effects:
 % a) Geometric Factor. The geomtric factor is one projection profile per
 % plane. But it's the same for all planes, so I just use one of them.
-geometricFactor = repmat(single(componentFactors{1}(:,1))', structSizeSino3d.numTheta, 1);
+geometricFactor = repmat(single(componentFactors{1}(:,1)), 1, structSizeSino3d.numTheta);
 % b) Crystal interference, its a pattern that is repeated peridoically:
 crystalInterfFactor = single(componentFactors{2});
-crystalInterfFactor = repmat(crystalInterfFactor,structSizeSino3d.numTheta/size(crystalInterfFactor,1),1);
+crystalInterfFactor = repmat(crystalInterfFactor', 1, structSizeSino3d.numTheta/size(crystalInterfFactor,1));
 % c) Axial factors:
 axialFactors = structSizeSino3d.numSinosMashed;%ones(size(componentFactors{4}));%1./(componentFactors{4}.*componentFactors{8});
 

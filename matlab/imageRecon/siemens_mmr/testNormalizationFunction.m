@@ -40,11 +40,11 @@ figure;
 subplot(1,2,1);
 imshow(overall_ncf_3d(:,:,1));
 subplot(1,2,2);
-imshow(norm_factors_segment0(:,:,1)');
+imshow(norm_factors_segment0(:,:,1));
 
 %% COMPARISON
 for i = 1 : 127
-    compSino2d =(overall_ncf_3d(:,:,i)' >= norm_factors_segment0(:,:,i)*0.999)&(overall_ncf_3d(:,:,i)' <= norm_factors_segment0(:,:,i)*1.001);
+    compSino2d =(overall_ncf_3d(:,:,i) >= norm_factors_segment0(:,:,i)*0.999)&(overall_ncf_3d(:,:,i) <= norm_factors_segment0(:,:,i)*1.001);
     if(sum(compSino2d(:)) ~= numel(compSino2d))
         disp(sprintf('Se detectaron eficiencias diferentes en el sinograma %d del segmento 0.\n',i));
         figure;imshow(~compSino2d);title(sprintf('Valores de Eficiencia Distintos para Sinograma %d',i));

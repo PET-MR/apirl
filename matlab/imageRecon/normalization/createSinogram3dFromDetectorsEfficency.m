@@ -19,13 +19,12 @@
 function sinoEfficencies = createSinogram3dFromDetectorsEfficency(efficenciesPerDetector, structSizeSino3d, visualization)
 
 % Size of the sinogram:
-
-sinoEfficencies = zeros(structSizeSino3d.numTheta, structSizeSino3d.numR, sum(structSizeSino3d.sinogramsPerSegment), 'single');
+sinoEfficencies = zeros(structSizeSino3d.numR, structSizeSino3d.numTheta, sum(structSizeSino3d.sinogramsPerSegment), 'single');
 
 % First we create a map with the indexes fo each crystal element in each
 % transverse 2d sinogram.
-mapaDet1Ids = zeros(structSizeSino3d.numTheta, structSizeSino3d.numR, 'uint16');
-mapaDet2Ids = zeros(structSizeSino3d.numTheta, structSizeSino3d.numR, 'uint16');
+mapaDet1Ids = zeros(structSizeSino3d.numR, structSizeSino3d.numTheta, 'uint16');
+mapaDet2Ids = zeros(structSizeSino3d.numR, structSizeSino3d.numTheta, 'uint16');
 numDetectors = size(efficenciesPerDetector,1);
 numRings = size(efficenciesPerDetector,2);
 if numRings ~= structSizeSino3d.numZ
@@ -46,7 +45,7 @@ histRingsUsed = zeros(1, numRings);
 % detector 2:
 theta = [0:structSizeSino3d.numTheta-1]'; % The index of thetas goes from 0 to numTheta-1 (in stir)
 r = (-structSizeSino3d.numR/2):(-structSizeSino3d.numR/2+structSizeSino3d.numR-1);
-[R, THETA] = meshgrid(r, theta);
+[THETA, R] = meshgrid(theta,r);
 mapaDet1Ids = rem((THETA + floor(R/2) + numDetectors), numDetectors) + 1;   % The +1 is added in matlab version respect than c version, because here we have 1-base indexes.
 mapaDet2Ids = rem((THETA - floor((R+1)/2) + numDetectors/2), numDetectors) + 1; % The +1 is added in matlab version respect than c version, because here we have 1-base indexes.
 histDetIds = hist([mapaDet1Ids(:); mapaDet2Ids(:)], detectorIds);
