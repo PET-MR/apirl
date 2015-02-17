@@ -421,8 +421,8 @@ int main (int argc, char *argv[])
 		{
 		  // Al sinograma debo hacer que tenga solo una configuración de anillos posibles, porque me itneresa tener los largos
 		  // de atenuación por cada píxel. Como esto es complicado, simplemente promedio entre todos los anillos de cada LOR.
-		  outputProjection->getSegment(i)->getSinogram2D(j)->setSinogramBin(k,l,outputProjection->getSegment(i)->getSinogram2D(j)->getSinogramBin(k,l)/
-		    outputProjection->getSegment(i)->getSinogram2D(j)->getNumZ());
+		  // Update 16/02/14: ahora el proyector no usa todo los numZ al menos que se lo configure. Por lo tanto, saco la normalizacion por numz.
+		  outputProjection->getSegment(i)->getSinogram2D(j)->setSinogramBin(k,l,outputProjection->getSegment(i)->getSinogram2D(j)->getSinogramBin(k,l));
 		  /// Cada Sinograma 2D me represnta múltiples LORs, según la mínima y máxima diferencia entre anillos.
 		  /// Por lo que cada bin me va a sumar cuentas en lors con distintos ejes axiales.
 		  if(outputProjection->getSegment(i)->getSinogram2D(j)->getSinogramBin(k,l) != 0)

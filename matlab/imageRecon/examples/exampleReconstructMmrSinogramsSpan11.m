@@ -9,23 +9,24 @@
 clear all 
 close all
 %% PATHS FOR EXTERNAL FUNCTIONS AND RESULTS
-addpath('/workspaces/Martin/KCL/Biograph_mMr/mmr');
-apirlPath = '/workspaces/Martin/PET/apirl-code/trunk/';
+addpath('/home/mab15/workspace/KCL/Biograph_mMr/mmr');
+apirlPath = '/home/mab15/workspace/apirl-code/trunk/';
 addpath(genpath([apirlPath '/matlab']));
-setenv('PATH', [getenv('PATH') ':/workspaces/Martin/PET/apirl-code/trunk/build/bin']);
-setenv('LD_LIBRARY_PATH', [getenv('LD_LIBRARY_PATH') ':/workspaces/Martin/PET/apirl-code/trunk/build/bin']);
-outputPath = '/workspaces/Martin/KCL/Biograph_mMr/mmr/5hr_ge68/';
+setenv('PATH', [getenv('PATH') ':' apirlPath '/build/bin']);
+setenv('LD_LIBRARY_PATH', [getenv('LD_LIBRARY_PATH') ':' apirlPath '/build/bin']);
+outputPath = '/home/mab15/workspace/KCL/Biograph_mMr/mmr/5hr_ge68/span11/';
+mkdir(outputPath);
 %setenv('LD_LIBRARY_PATH', [getenv('LD_LIBRARY_PATH') ':/usr/lib/x86_64-linux-gnu/']);
 %% READING THE SINOGRAMS
 % Read the sinograms:
 %filenameUncompressedMmr = '/workspaces/Martin/KCL/Biograph_mMr/mmr/test.s';
 %outFilenameIntfSinograms = '/workspaces/Martin/KCL/Biograph_mMr/mmr/testIntf';
-filenameUncompressedMmr = '/workspaces/Martin/KCL/Biograph_mMr/mmr/5hr_ge68/cylinder_5hours.s';
-outFilenameIntfSinograms = '/workspaces/Martin/KCL/Biograph_mMr/mmr/5hr_ge68/cylinder_5hoursIntf';
+filenameUncompressedMmr = '/home/mab15/workspace/KCL/Biograph_mMr/mmr/5hr_ge68/cylinder_5hours.s';
+outFilenameIntfSinograms = '/home/mab15/workspace/KCL/Biograph_mMr/mmr/5hr_ge68/cylinder_5hoursIntf';
 [sinogram, delayedSinogram, structSizeSino3d] = getIntfSinogramsFromUncompressedMmr(filenameUncompressedMmr, outFilenameIntfSinograms);
 
 % Read the normalization factors:
-filenameRawData = '/workspaces/Martin/KCL/Biograph_mMr/mmr/Norm_20141008101010.n';
+filenameRawData = '/home/mab15/workspace/KCL/Biograph_mMr/mmr/Norm_20141008101010.n';
 [componentFactors, componentLabels]  = readmMrComponentBasedNormalization(filenameRawData, 1);
 %% CREATE SINOGRAMS3D SPAN 11
 % Create sinogram span 11:
@@ -116,38 +117,38 @@ set(gcf, 'Position', [0 0 1600 1200]);
 % Axial factors:
 axialFactors = structSizeSino3dSpan11.numSinosMashed; % 1./(componentFactors{4}.*componentFactors{8});
 %% ATTENUATION CORRECTION - PICK A OR B AND COMMENT THE NOT USED 
-% %% COMPUTE THE ACFS (OPTION A)
-% % Read the phantom and then generate the ACFs with apirl:
-% imageSizeAtten_pixels = [344 344 127];
-% imageSizeAtten_mm = [2.08626 2.08626 2.0312];
-% filenameAttenMap = '/workspaces/Martin/KCL/Biograph_mMr/Mediciones/2601/interfile/PET_ACQ_16_20150116131121-0_PRR_1000001_20150126152442_umap_human_00.v';
-% fid = fopen(filenameAttenMap, 'r');
-% if fid == -1
-%     ferror(fid);
-% end
-% attenMap = fread(fid, imageSizeAtten_pixels(1)*imageSizeAtten_pixels(2)*imageSizeAtten_pixels(3), 'single');
-% attenMap = reshape(attenMap, imageSizeAtten_pixels);
-% fclose(fid);
-% % visualization
-% figure;
-% image = getImageFromSlices(attenMap, 12, 1, 0);
-% imshow(image);
-% title('Attenuation Map Shifted');
-% 
-% % The phantom was not perfectly centered, so the attenuation map is
-% % shifted. I repeat the slcie 116 until the end:
-% for i = 117 : size(attenMap,3)
-%     attenMap(:,:,i) = attenMap(:,:,116);
-% end
-% figure;
-% image = getImageFromSlices(attenMap, 12, 1, 0);
-% imshow(image);
-% title('Attenuation Map Manualy Completed');
-% % Create ACFs of a computed phatoms with the linear attenuation
-% % coefficients:
-% acfFilename = ['acfsSinogramSpan11'];
-% filenameSinogram = [outputPath 'sinogramSpan11'];
-% acfsSinogramSpan11 = createACFsFromImage(attenMap, imageSizeAtten_mm, outputPath, acfFilename, filenameSinogram, structSizeSino3dSpan11, 1);
+%% COMPUTE THE ACFS (OPTION A)
+% Read the phantom and then generate the ACFs with apirl:
+imageSizeAtten_pixels = [344 344 127];
+imageSizeAtten_mm = [2.08626 2.08626 2.0312];
+filenameAttenMap = '/home/mab15/workspace/KCL/Biograph_mMr/Mediciones/2601/interfile/PET_ACQ_16_20150116131121-0_PRR_1000001_20150126152442_umap_human_00.v';
+fid = fopen(filenameAttenMap, 'r');
+if fid == -1
+    ferror(fid);
+end
+attenMap = fread(fid, imageSizeAtten_pixels(1)*imageSizeAtten_pixels(2)*imageSizeAtten_pixels(3), 'single');
+attenMap = reshape(attenMap, imageSizeAtten_pixels);
+fclose(fid);
+% visualization
+figure;
+image = getImageFromSlices(attenMap, 12, 1, 0);
+imshow(image);
+title('Attenuation Map Shifted');
+
+% The phantom was not perfectly centered, so the attenuation map is
+% shifted. I repeat the slcie 116 until the end:
+for i = 117 : size(attenMap,3)
+    attenMap(:,:,i) = attenMap(:,:,116);
+end
+figure;
+image = getImageFromSlices(attenMap, 12, 1, 0);
+imshow(image);
+title('Attenuation Map Manualy Completed');
+% Create ACFs of a computed phatoms with the linear attenuation
+% coefficients:
+acfFilename = ['acfsSinogramSpan11'];
+filenameSinogram = [outputPath 'sinogramSpan11'];
+acfsSinogramSpan11 = createACFsFromImage(attenMap, imageSizeAtten_mm, outputPath, acfFilename, filenameSinogram, structSizeSino3dSpan11, 1);
 %% READ THE ACFS (OPTION B)
 % Span11 Sinogram:
 acfFilename = [outputPath 'acfsSinogramSpan11'];
