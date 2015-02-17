@@ -150,8 +150,8 @@ if strcmp(tipo,'sinogram2D')
     % Cantidad de imágenes, sería la tercera dimensión:
     fprintf(fid,'!number of images/window := 1\n');
     % Ahora cantidad de filas y columnas:
-    fprintf(fid,'!matrix size [1] := %d\n', size(sinogram,2));
-    fprintf(fid,'!matrix size [2] := %d\n', size(sinogram,1));
+    fprintf(fid,'!matrix size [1] := %d\n', size(sinogram,1));
+    fprintf(fid,'!matrix size [2] := %d\n', size(sinogram,2));
     % Tipo de dato. Los formatos disponibles son:
     % signed integer|unsigned integer|long float|short float|bit|ASCII
     % Para esto busco el tipo de dato de la variable imagen:
@@ -191,8 +191,8 @@ if strcmp(tipo,'sinogram2D')
     % (x,y):
     if(nargin==3)
         if(numel(sizePixel)==3)
-            fprintf(fid,'scaling factor (mm/pixel) [1] := %f\n', sizePixel(2));
-            fprintf(fid,'scaling factor (mm/pixel) [2] := %f\n', sizePixel(1));
+            fprintf(fid,'scaling factor (mm/pixel) [1] := %f\n', sizePixel(1));
+            fprintf(fid,'scaling factor (mm/pixel) [2] := %f\n', sizePixel(2));
         else
             disp('Error: el tamaño del pixel debe pasarse en un vector con 3 elementos.');
         end
@@ -277,7 +277,7 @@ elseif strcmp(tipo,'sinogram3D')
     fprintf(fid,'matrix axis label [4] := segment\n');
     fprintf(fid,'!matrix size [4] := %d\n', numel(sinogramsPerSegment));
     fprintf(fid,'matrix axis label [2] := view\n');
-    fprintf(fid,'!matrix size [2] := %d\n', size(sinogram,1));
+    fprintf(fid,'!matrix size [2] := %d\n', size(sinogram,2));
     fprintf(fid,'matrix axis label [3] := axial coordinate\n');
     fprintf(fid,'!matrix size [3] := {');
     fprintf(fid,' %d', sinogramsPerSegment(1));
@@ -286,7 +286,7 @@ elseif strcmp(tipo,'sinogram3D')
     end
     fprintf(fid,' }\n');
     fprintf(fid,'matrix axis label [1] := tangential coordinate\n');
-    fprintf(fid,'!matrix size [1] := %d\n', size(sinogram,2));
+    fprintf(fid,'!matrix size [1] := %d\n', size(sinogram,1));
     fprintf(fid,'minimum ring difference per segment := { ');
     fprintf(fid,' %d', minRingDiff(1));
     for i = 2 : numel(minRingDiff)
