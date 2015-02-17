@@ -29,8 +29,8 @@ eventsPerRead = 10^6;
 % Filas que ocupa cada evento:
 numRowsPerEvent = 10;
 % Inicializo el sinograma 2d a partir del tamaño definido en la estructura:
-michelogram = single(zeros(structSizeSino3D.numTheta,structSizeSino3D.numR, structSizeSino3D.numZ, structSizeSino3D.numZ));
-michelogram_scatter = single(zeros(structSizeSino3D.numTheta,structSizeSino3D.numR, structSizeSino3D.numZ, structSizeSino3D.numZ));
+michelogram = single(zeros(structSizeSino3D.numR, structSizeSino3D.numTheta, structSizeSino3D.numZ, structSizeSino3D.numZ));
+michelogram_scatter = single(zeros(structSizeSino3D.numR, structSizeSino3D.numTheta, structSizeSino3D.numZ, structSizeSino3D.numZ));
 % Indice de filas útiles:
 rowEnergy1 = 4;
 rowEnergy2 = 9;
@@ -75,14 +75,14 @@ michelogram_corregido(michelogram_corregido<0) = 0;
 fclose(fid);
 %% GUARDO EL SINOGRAMA EN INTERFILE
 % Sinograma principal:
-fid = fopen(sprintf('%s_%d_%d_%d_%d.bin', outputFilename, structSizeSino3D.numTheta,structSizeSino3D.numR, structSizeSino3D.numZ, structSizeSino3D.numZ), 'wb');
+fid = fopen(sprintf('%s_%d_%d_%d_%d.bin', outputFilename, structSizeSino3D.numR, structSizeSino3D.numTheta, structSizeSino3D.numZ, structSizeSino3D.numZ), 'wb');
 fwrite(fid, michelogram, 'single');
 fclose(fid);
 % Sinograma de scatter:
-fid = fopen(sprintf('%s_scatter_%d_%d_%d_%d.bin', outputFilename, structSizeSino3D.numTheta,structSizeSino3D.numR, structSizeSino3D.numZ, structSizeSino3D.numZ), 'wb');
+fid = fopen(sprintf('%s_scatter_%d_%d_%d_%d.bin', outputFilename, structSizeSino3D.numR, structSizeSino3D.numTheta, structSizeSino3D.numZ, structSizeSino3D.numZ), 'wb');
 fwrite(fid, michelogram_scatter, 'single');
 fclose(fid);
 % Sinograma corregido:
-fid = fopen(sprintf('%s_scatterCorrected_%d_%d_%d_%d.bin', outputFilename, structSizeSino3D.numTheta,structSizeSino3D.numR, structSizeSino3D.numZ, structSizeSino3D.numZ), 'wb');
+fid = fopen(sprintf('%s_scatterCorrected_%d_%d_%d_%d.bin', outputFilename, structSizeSino3D.numR, structSizeSino3D.numTheta, structSizeSino3D.numZ, structSizeSino3D.numZ), 'wb');
 fwrite(fid, michelogram_corregido, 'single');
 fclose(fid);

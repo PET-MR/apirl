@@ -24,9 +24,9 @@ eventsPerRead = 10^6;
 % Filas que ocupa cada evento:
 numRowsPerEvent = 10;
 % Inicializo el sinograma 2d a partir del tamaño definido en la estructura:
-sinograms2D = single(zeros(structSizeSino2D.numTheta, structSizeSino2D.numR, ...
+sinograms2D = single(zeros(structSizeSino2D.numR, structSizeSino2D.numTheta, ...
     structSizeSino2D.numZ));
-sinograms2Dscatter = single(zeros(structSizeSino2D.numTheta, structSizeSino2D.numR, ...
+sinograms2Dscatter = single(zeros(structSizeSino2D.numR, structSizeSino2D.numTheta, ...
     structSizeSino2D.numZ));
 % Indice de filas útiles:
 rowEnergy1 = 4;
@@ -75,8 +75,8 @@ while(~feof(fid))
         matrizEventos(indicesFueraFov,:) = [];
         % Acumulo todo en el array de sinogramas 2D utilizando la
         % función creada hist4.
-        sinograms2D = sinograms2D + hist4([theta r_sino matrizEventos(:,3)], ...
-            {structSizeSino2D.thetaValues_deg structSizeSino2D.rValues_mm structSizeSino2D.zValues_mm});
+        sinograms2D = sinograms2D + hist4([r_sino theta matrizEventos(:,3)], ...
+            {structSizeSino2D.rValues_mm structSizeSino2D.thetaValues_deg structSizeSino2D.zValues_mm});
 
         % Ahora lleno los sinogramas. Para esto convierto el par de
         % eventos (X1,Y1,Z1) y (X2,Y2,Z2) en lors del tipo (Thita,r,z).
@@ -92,8 +92,8 @@ while(~feof(fid))
         matrizEventosScatter(indicesFueraFov,:) = [];
         % Acumulo todo en el array de sinogramas 2D utilizando la
         % función creada hist4.
-        sinograms2Dscatter = sinograms2Dscatter + hist4([theta r_sino matrizEventosScatter(:,3)], ...
-            {structSizeSino2D.thetaValues_deg structSizeSino2D.rValues_mm structSizeSino2D.zValues_mm});
+        sinograms2Dscatter = sinograms2Dscatter + hist4([r_sino theta matrizEventosScatter(:,3)], ...
+            {structSizeSino2D.rValues_mm structSizeSino2D.thetaValues_deg structSizeSino2D.zValues_mm});
     elseif strcmp(rebinningMethod, 'msrb')
         sinograms2D = sinograms2D + msrb(matrizEventos, structSizeSino2D);
         sinograms2Dscatter = sinograms2Dscatter + msrb(matrizEventosScatter, structSizeSino2D);

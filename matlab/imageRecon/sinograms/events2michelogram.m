@@ -11,7 +11,7 @@
 function michelograma = Events2Michelogram(MatrizCoincidencias, structSizeMichelogram)
 
 % Creo el michelograma.
-michelograma = single(zeros(structSizeMichelogram.numTheta, structSizeMichelogram.numR, structSizeMichelogram.numZ, structSizeMichelogram.numZ));
+michelograma = single(zeros(structSizeMichelogram.numR, structSizeMichelogram.numTheta, structSizeMichelogram.numZ, structSizeMichelogram.numZ));
 
 %  structSizeMichelogram.numTheta : cantidad de ángulos de las proyecciones.
 % 
@@ -35,5 +35,5 @@ r_sino(indicesFueraFov) = [];
 theta(indicesFueraFov) = [];
 MatrizCoincidencias(indicesFueraFov,:) = [];
 % Ahora cumulo todo en el michelograma:
-michelograma = hist5([theta r_sino MatrizCoincidencias(:,3) MatrizCoincidencias(:,6)], {structSizeMichelogram.thetaValues_deg, structSizeMichelogram.rValues_mm, ...
+michelograma = hist5([r_sino theta MatrizCoincidencias(:,3) MatrizCoincidencias(:,6)], {structSizeMichelogram.rValues_mm, structSizeMichelogram.thetaValues_deg,  ...
     structSizeMichelogram.zValues_mm, structSizeMichelogram.zValues_mm});

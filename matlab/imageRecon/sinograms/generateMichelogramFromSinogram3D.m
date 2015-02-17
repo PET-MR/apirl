@@ -7,11 +7,11 @@
 % 
 %  Michelogram is a sinogram 3d without span. The difference in a sinogra3d
 %  with span 1, is that in the michelogram a 4d matrix is used with
-%  (theta,r,z1,z2).
+%  (r, theta,z1,z2).
 
 function michelogram = generateMichelogramFromSinogram3D(sinogram3d, structSizeSino3d)
 
-michelogram = zeros(structSizeSino3d.numTheta, structSizeSino3d.numR, structSizeSino3d.numZ, structSizeSino3d.numZ);
+michelogram = zeros( structSizeSino3d.numR, structSizeSino3d.numTheta, structSizeSino3d.numZ, structSizeSino3d.numZ);
 
 % Recorro todos los sinogramas 3d y los asigno a donde corresponde:
 % Recorro todos los segmentos, y voy analizando la diferencia entre

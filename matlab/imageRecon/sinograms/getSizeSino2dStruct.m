@@ -11,10 +11,10 @@
 %  representación dentro del campo de visión.
 %  Esta estructura se utiliza como parámetro en las funciones que
 %  manejan sinogramas, y contiene los siguientes campos:
-%  
-%  structSizeSino2D.numTheta : cantidad de ángulos de las proyecciones.
 % 
 %  structSizeSino2D.numR: cantidad de desplazamientos de las proyecciones.
+%  
+%  structSizeSino2D.numTheta : cantidad de ángulos de las proyecciones.
 %
 %  structSizeSino2D.numZ: número de slices o anillos. Será la cantidad de
 %  sinogramas 2d.
@@ -40,7 +40,7 @@
 %   structSizeSino3D = getSizeSino3Dstruct(192, 192, 24, 300, 200)
 
 
-function structSizeSino2D = getSizeSino2Dstruct(numTheta, numR, numZ, rFov, zFov)
+function structSizeSino2D = getSizeSino2Dstruct(numR, numTheta, numZ, rFov, zFov)
 
 % Genero un vector con los valores de r:
 deltaR = (2*rFov) / numR;

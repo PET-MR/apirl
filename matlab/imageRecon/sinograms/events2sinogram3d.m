@@ -13,7 +13,7 @@ function sinogram3D = Events2Sinogram3D(MatrizCoincidencias, structSizeSino3D)
 addpath('/sources/MATLAB/WorkingCopy/ImageRecon');
 addpath('/sources/MATLAB/WorkingCopy/utils');
 % Creo el sinograma 3d.
-sinogram3D = single(zeros(structSizeSino3D.numTheta,structSizeSino3D.numR, sum(structSizeSino3D.sinogramsPerSegment)));
+sinogram3D = single(zeros(structSizeSino3D.numR, structSizeSino3D.numTheta, sum(structSizeSino3D.sinogramsPerSegment)));
 
 
 % Necesito generar los theta y luego los r, los z se mantienen los de los
@@ -37,6 +37,6 @@ MatrizCoincidencias(indicesFueraZfov,:) = [];
 r_sino(indicesFueraZfov) = [];
 theta(indicesFueraZfov) = [];
 % Primero genero un michelograma y luego reduzco a un sinograma:
-michelograma = hist5([theta r_sino MatrizCoincidencias(:,3) MatrizCoincidencias(:,6)], {structSizeSino3D.thetaValues_deg, structSizeSino3D.rValues_mm, ...
+michelograma = hist5([r_sino theta MatrizCoincidencias(:,3) MatrizCoincidencias(:,6)], {structSizeSino3D.rValues_mm, structSizeSino3D.thetaValues_deg,  ...
     structSizeSino3D.zValues_mm, structSizeSino3D.zValues_mm});
 sinogram3D = reduceMichelogram(michelograma, structSizeSino3D.sinogramsPerSegment, structSizeSino3D.minRingDiff, structSizeSino3D.maxRingDiff);

@@ -6,7 +6,7 @@
 
 % Función que reduce un michelograma completo, a un sinograma 3d reducido
 % por segmentos para mejorar la estadística del mismo. Recibe el
-% michelograma, que es una matriz de 4 dimensiones con tamaño (Nproy, NR,
+% michelograma, que es una matriz de 4 dimensiones con tamaño (NR, Nproy,
 % NZ, NZ), y tres vectores con los sinogramas por segmento, y la máxima y
 % mínima diferencia entre anillos de ellos.
 
@@ -23,11 +23,11 @@ if(size(michelogram,3) ~= size(michelogram,4))
     printf('Error: El michelograma no tiene la misma cantidad de anillos para z1 que para z2');
 end
 
-numProj = size(michelogram,1);
-numR = size(michelogram,2);
+numR = size(michelogram,1);
+numProj = size(michelogram,2);
 numRings = size(michelogram,3);
 numSegments = numel(sinogramsPerSegment);
-% Creo el sinogram 3D, que va a tener 3 dimensiones, (Nproy, Nr,
+% Creo el sinogram 3D, que va a tener 3 dimensiones, (Nr, Nproy, 
 % SinogramIndex), si lo quisiera hacer de 4 dimensiones indexado por
 % segmento debería usar un cell array porque cada segmento tiene distinta
 % cantidad de sinogramas.
@@ -35,7 +35,7 @@ numSegments = numel(sinogramsPerSegment);
 % Recorro todos los segmentos, y voy analizando la diferencia entre
 % anillos.
 indiceSino = 1; % indice del sinogram 3D.
-sinogram3D = single(zeros(numProj, numR, sum(sinogramsPerSegment)));
+sinogram3D = single(zeros(numR, numProj, sum(sinogramsPerSegment)));
 for segment = 1 : numSegments
     % Por cada segmento, voy generando los sinogramas correspondientes y
     % contándolos, debería coincidir con los sinogramas para ese segmento: 

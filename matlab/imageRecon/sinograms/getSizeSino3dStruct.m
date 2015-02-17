@@ -3,7 +3,7 @@
 %  Autor: Martín Belzunce. UTN-FRBA.
 %  Fecha de Creación: 23/08/2011
 %  *********************************************************************
-%  function structSizeSino3D = getSizeSino3Dstruct(numTheta, numR, numZ, rFov, zFov, sinogramsPerSegment, minRingDiff, maxRingDiff)
+%  function structSizeSino3D = getSizeSino3Dstruct(numR, numTheta, numZ, rFov, zFov, sinogramsPerSegment, minRingDiff, maxRingDiff)
 % 
 %  Función que genera una estructura con la información del tamaño de un
 %  sinograma de 3 dimensiones, tanto el tamaño en bines como su
@@ -14,10 +14,10 @@
 %  diferencias entre anillos para ellos.
 %  Esta estructura se utiliza como parámetro en las funciones que
 %  manejan sinogramas, y contiene los siguientes campos:
-%  
-%  structSizeSino3D.numTheta : cantidad de ángulos de las proyecciones.
 % 
 %  structSizeSino3D.numR: cantidad de desplazamientos de las proyecciones.
+%  
+%  structSizeSino3D.numTheta : cantidad de ángulos de las proyecciones.
 %
 %  structSizeSino3D.numZ: número de slices o anillos. Será la cantidad de
 %  sinogramas 2d.
@@ -56,7 +56,7 @@
 %   structSizeSino3D = getSizeSino3Dstruct(192, 192, 24, 300, 200, sinogramsPerSegment, minRingDiff, maxRingDiff)
 
 
-function structSizeSino3D = getSizeSino3Dstruct(numTheta, numR, numZ, rFov, zFov, sinogramsPerSegment, minRingDiff, maxRingDiff, maxAbsRingDiff)
+function structSizeSino3D = getSizeSino3Dstruct(numR, numTheta, numZ, rFov, zFov, sinogramsPerSegment, minRingDiff, maxRingDiff, maxAbsRingDiff)
 
 if nargin < 9
     maxAbsRingDiff = numZ;

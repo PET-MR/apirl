@@ -8,17 +8,21 @@
 % la matriz de entrada debe tener 2 dimensiones para el caso de 1 solo
 % sinograma, y 3 dimensiones para el caso de múltiples sinogramas 2d.
 % Cuando el sinograma es 3d, el sinograma tiene que tener 4 dimensiones.
-%
+% Update 16/02/2015: Dimensión 1 pasa a ser distancia al centro, y
+% dimensión 2 ángulo de proyección. Esto es apra mantener compatibilidad
+% con otras bibliotecas de reconstrucción, y para mantener la misma de la
+% de cpp (evitando el permute que ahcía antes). Para visualizar hayq ue
+% trasponer.
 % Sinograma 2D:
-% dimensión 1: ángulo de la proyección
-% dimensión 2: distancia al centro del aproyección dentro del plano
+% dimensión 1: distancia al centro del aproyección dentro del plano
 % transversal
+% dimensión 2: ángulo de la proyección
 % dimensión 3: eje axial, o sea, número de plano transversal 
 % 
 % Sinograma 3D:
-% dimensión 1: ángulo de la proyección
-% dimensión 2: distancia al centro del aproyección dentro del plano
+% dimensión 1: distancia al centro del aproyección dentro del plano
 % transversal
+% dimensión 2: ángulo de la proyección
 % dimensión 3: vista (view)
 % dimensión 4: segmento (segment)
 %
@@ -309,9 +313,5 @@ fid = fopen(filenameSino, 'wb');
 if(fid == -1)
     fprintf('No se pudo crear el archivo %s.', filenameImage);
 end
-% Para escribirla uso la traspuesta, porque matlab guarda en memoria
-% recorriendo primero filas y después pasa a la siguiente columna. Mientras
-% que las imágenes por lo general se guardan recorriendo columnas - filas.
-orderedImage = permute(sinogram,[2 1 3]);
-fwrite(fid, orderedImage, structDato.class);
+fwrite(fid, sinogram, structDato.class);
 fclose(fid);

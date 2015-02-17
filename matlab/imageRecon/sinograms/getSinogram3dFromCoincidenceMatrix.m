@@ -29,8 +29,8 @@ eventsPerRead = 10^6;
 % Filas que ocupa cada evento:
 numRowsPerEvent = 10;
 % Inicializo el sinograma 2d a partir del tamaño definido en la estructura:
-sinogram3D = single(zeros(structSizeSino3D.numTheta,structSizeSino3D.numR, sum(structSizeSino3D.sinogramsPerSegment)));
-sinogram3Dscatter = single(zeros(structSizeSino3D.numTheta,structSizeSino3D.numR, sum(structSizeSino3D.sinogramsPerSegment)));
+sinogram3D = single(zeros(structSizeSino3D.numR, structSizeSino3D.numTheta, sum(structSizeSino3D.sinogramsPerSegment)));
+sinogram3Dscatter = single(zeros(structSizeSino3D.numR, structSizeSino3D.numTheta, sum(structSizeSino3D.sinogramsPerSegment)));
 % Indice de filas útiles:
 rowEnergy1 = 4;
 rowEnergy2 = 9;

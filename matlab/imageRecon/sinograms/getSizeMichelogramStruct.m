@@ -11,10 +11,10 @@
 %  representación dentro del campo de visión.
 %  Esta estructura se utiliza como parámetro en las funciones que
 %  manejan sinogramas, y contiene los siguientes campos:
-%  
-%  structSizeMichelogram.numTheta : cantidad de ángulos de las proyecciones.
 % 
 %  structSizeMichelogram.numR: cantidad de desplazamientos de las proyecciones.
+%  
+%  structSizeMichelogram.numTheta : cantidad de ángulos de las proyecciones.
 %
 %  structSizeMichelogram.numZ: número de slices o anillos.
 %
@@ -41,7 +41,7 @@
 %   structSizeSino3D = getSizeMichelogramStruct(192, 192, 24, 19, 300, 200)
 
 
-function structSizeMichelogram = getSizeMichelogramStruct(numTheta, numR, numZ, maxRingDiffs, rFov, zFov)
+function structSizeMichelogram = getSizeMichelogramStruct(numR, numTheta, numZ, maxRingDiffs, rFov, zFov)
 
 % Genero un vector con los valores de r:
 deltaR = (2*rFov) / numR;

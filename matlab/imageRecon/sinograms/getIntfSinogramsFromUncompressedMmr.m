@@ -25,7 +25,7 @@ function [sinograms, delayedSinograms, structSizeSino3d] = getIntfSinogramsFromU
 
 % Size of mMr Sinogram's
 numTheta = 252; numR = 344; numRings = 64; maxAbsRingDiff = 60; rFov_mm = 594/2; zFov_mm = 258; span = 1;
-structSizeSino3d = getSizeSino3dFromSpan(numTheta, numR, numRings, rFov_mm, zFov_mm, span, maxAbsRingDiff);
+structSizeSino3d = getSizeSino3dFromSpan(numR, numTheta, numRings, rFov_mm, zFov_mm, span, maxAbsRingDiff);
 % Total number of singorams per 3d sinogram:
 numSinograms = sum(structSizeSino3d.sinogramsPerSegment);
 
@@ -42,13 +42,8 @@ end
 fclose(fid);
 
 % Rearrange in a 3d matrix:
-sinograms = reshape(sinograms, [  numR numTheta numSinograms]);
-delayedSinograms = reshape(delayedSinograms, [  numR numTheta numSinograms]);
-% Matlab reads in a column-wise order that why angles are in the columns.
-% We want to have it in the rows since APIRL and STIR and other libraries
-% use row-wise order:
-sinograms = permute(sinograms,[2 1 3]);
-delayedSinograms = permute(delayedSinograms,[2 1 3]);
+sinograms = reshape(sinograms, [numR numTheta numSinograms]);
+delayedSinograms = reshape(delayedSinograms, [numR numTheta numSinograms]);
 % Wirte the interfile prompt sinogram:
 interfileWriteSino(sinograms, outFilenameIntfSinograms, structSizeSino3d.sinogramsPerSegment, structSizeSino3d.minRingDiff, structSizeSino3d.maxRingDiff);
 % Wirte the interfile delayed sinogram:

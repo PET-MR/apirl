@@ -30,7 +30,7 @@ filenameRawData = '/workspaces/Martin/KCL/Biograph_mMr/mmr/Norm_20141008101010.n
 %% CREATE SINOGRAMS3D SPAN 11
 % Create sinogram span 11:
 michelogram = generateMichelogramFromSinogram3D(sinogram, structSizeSino3d);
-structSizeSino3dSpan11 = getSizeSino3dFromSpan(structSizeSino3d.numTheta, structSizeSino3d.numR, structSizeSino3d.numZ, ...
+structSizeSino3dSpan11 = getSizeSino3dFromSpan(structSizeSino3d.numR, structSizeSino3d.numTheta, structSizeSino3d.numZ, ...
     structSizeSino3d.rFov_mm, structSizeSino3d.zFov_mm, 11, structSizeSino3d.maxAbsRingDiff);
 sinogramSpan11 = reduceMichelogram(michelogram, structSizeSino3dSpan11.sinogramsPerSegment, structSizeSino3dSpan11.minRingDiff, structSizeSino3dSpan11.maxRingDiff);
 clear michelogram
@@ -68,6 +68,19 @@ sizeImage_mm = sizePixel_mm .* sizeImage_pixels;
 initialEstimate = ones(sizeImage_pixels, 'single');
 filenameInitialEstimate = [outputPath '/initialEstimate3d'];
 interfilewrite(initialEstimate, filenameInitialEstimate, sizePixel_mm);
+
+% Another image of high resolution:
+% Size of the pixels:
+factor = 2;
+sizePixelHighRes_mm = [4.1725/factor 4.1725/factor 2.0312];
+% The size in pixels:
+sizeImageHighRes_pixels = [172*factor 172*factor 127];
+% Size of the image to cover the full fov:
+sizeImage_mm = sizePixelHighRes_mm .* sizeImageHighRes_pixels;
+% Inititial estimate:
+initialEstimateHighRes = ones(sizeImageHighRes_pixels, 'single');
+filenameInitialEstimateHighRes = [outputPath '/initialEstimate3dHighRes'];
+interfilewrite(initialEstimateHighRes, filenameInitialEstimateHighRes, sizePixelHighRes_mm);
 %% NORMALIZATION FACTORS
 % A set of 2d sinograms with normalization effects is generated. The
 % geomtric normalization and crystal interference are the same for each
@@ -75,17 +88,17 @@ interfilewrite(initialEstimate, filenameInitialEstimate, sizePixel_mm);
 
 % Geometric Factor. The geomtric factor is one projection profile per
 % plane. But it's the same for all planes, so I just use one of them.
-geometricFactor = repmat(double(componentFactors{1}(:,1))', structSizeSino3d.numTheta, 1);
+geometricFactor = repmat(double(componentFactors{1}(:,1)), 1, structSizeSino3d.numTheta);
 figure;
 set(gcf, 'Position', [0 0 1600 1200]);
-imshow(geometricFactor ./max(max(geometricFactor)));
+imshow(geometricFactor' ./max(max(geometricFactor)));
 title('Geometric Factor');
 % Crystal interference, its a pattern that is repeated peridoically:
-crystalInterfFactor = double(componentFactors{2});
-crystalInterfFactor = repmat(crystalInterfFactor,structSizeSino3d.numTheta/size(crystalInterfFactor,1),1);
+crystalInterfFactor = single(componentFactors{2})';
+crystalInterfFactor = repmat(crystalInterfFactor, 1, structSizeSino3d.numTheta/size(crystalInterfFactor,2));
 % Geometric Normalization and crystal interference:
 figure;
-imshow(crystalInterfFactor ./max(max(crystalInterfFactor)));
+imshow(crystalInterfFactor' ./max(max(crystalInterfFactor)));
 title('Crystal Interference Factors');
 set(gcf, 'Position', [0 0 1600 1200]);
 
@@ -93,10 +106,10 @@ set(gcf, 'Position', [0 0 1600 1200]);
 sinoEfficencies = createSinogram3dFromDetectorsEfficency(componentFactors{3}, structSizeSino3dSpan11, 1);
 figure;
 subplot(1,2,1);
-imshow(sinoEfficencies(:,:,1) ./max(max(sinoEfficencies(:,:,1))));
+imshow(sinoEfficencies(:,:,1)' ./max(max(sinoEfficencies(:,:,1))));
 title('Crystal Efficencies for Sinogram 1');
 subplot(1,2,2);
-imshow(sinoEfficencies(:,:,200) ./max(max(sinoEfficencies(:,:,200))));
+imshow(sinoEfficencies(:,:,200)' ./max(max(sinoEfficencies(:,:,200))));
 title('Crystal Efficencies for Sinogram 200');
 set(gcf, 'Position', [0 0 1600 1200]);
 
@@ -142,10 +155,6 @@ fid = fopen([acfFilename '.i33'], 'r');
 numSinos = sum(structSizeSino3dSpan11.sinogramsPerSegment);
 [acfsSinogramSpan11, count] = fread(fid, structSizeSino3dSpan11.numTheta*structSizeSino3dSpan11.numR*numSinos, 'single=>single');
 acfsSinogramSpan11 = reshape(acfsSinogramSpan11, [structSizeSino3dSpan11.numR structSizeSino3dSpan11.numTheta numSinos]);
-% Matlab reads in a column-wise order that why angles are in the columns.
-% We want to have it in the rows since APIRL and STIR and other libraries
-% use row-wise order:
-acfsSinogramSpan11 = permute(acfsSinogramSpan11,[2 1 3]);
 % Close the file:
 fclose(fid);
 
@@ -167,13 +176,15 @@ end
 % Correct sinograms 3d for normalization:
 for i = 1 : sum(structSizeSino3dSpan11.sinogramsPerSegment)
     sinogramSpan11corrected(:,:,i) = sinogramSpan11(:,:,i) .* (1./geometricFactor) .* (1./crystalInterfFactor) .* (1./axialFactors(i));
-    % Crystal efficencies, there are gaps, so avoid zero values:
-    nonzero = sinoEfficencies(:,:,i) ~= 0;
-    aux = sinogramSpan11corrected(:,:,i);
-    crystalEff = sinoEfficencies(:,:,i);
-    aux(nonzero) = aux(nonzero) .* (1./crystalEff(nonzero));
-    sinogramSpan11corrected(:,:,i) = aux;
 end
+
+% Crystal efficencies, there are gaps, so avoid zero values:
+nonzero = sinoEfficencies ~= 0;
+% Apply efficency:
+sinogramSpan11corrected(nonzero) = sinogramSpan11corrected(nonzero) ./ sinoEfficencies(nonzero);
+% And gaps:
+sinogramSpan11corrected(~nonzero) = 0;
+
 figure;plot(sinogramSpan11corrected(100,:,50)./max(sinogramSpan11corrected(100,:,50)));
 % Write to a file in interfile formar:
 outputSinogramName = [outputPath '/sinogramSpan11Normalized'];
@@ -192,10 +203,6 @@ fid = fopen([constProjFilename '.i33'], 'r');
 numSinos = sum(structSizeSino3dSpan11.sinogramsPerSegment);
 [constSinogramSpan11, count] = fread(fid, structSizeSino3dSpan11.numTheta*structSizeSino3dSpan11.numR*numSinos, 'single=>single');
 constSinogramSpan11 = reshape(constSinogramSpan11, [structSizeSino3dSpan11.numR structSizeSino3dSpan11.numTheta numSinos]);
-% Matlab reads in a column-wise order that why angles are in the columns.
-% We want to have it in the rows since APIRL and STIR and other libraries
-% use row-wise order:
-constSinogramSpan11 = permute(constSinogramSpan11,[2 1 3]);
 
 % Close the file:
 fclose(fid);
@@ -210,6 +217,7 @@ plot([countsPerSinogram./max(countsPerSinogram) countsPerSinogramCorrected./max(
 title('Counts Per Sinogram Span 11 with Normalization');
 ylabel('Counts');
 xlabel('Sinogram');
+
 legend('Uncorrected', 'Corrected', 'Projection of Constant Image', 'Location', 'SouthEast');
 set(gcf, 'Position', [0 0 1600 1200]);
 
