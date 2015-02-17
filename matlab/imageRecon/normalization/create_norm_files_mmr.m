@@ -58,7 +58,7 @@ used_axial_factors = [];
 % selected span:
 % Size of mMr Sinogram's
 numTheta = 252; numR = 344; numRings = 64; maxAbsRingDiff = 60; rFov_mm = 594/2; zFov_mm = 258;
-structSizeSino3d = getSizeSino3dFromSpan(numTheta, numR, numRings, rFov_mm, zFov_mm, span_choice, maxAbsRingDiff);
+structSizeSino3d = getSizeSino3dFromSpan(numR, numTheta, numRings, rFov_mm, zFov_mm, span_choice, maxAbsRingDiff);
 % Total number of singorams per 3d sinogram:
 numSinograms = sum(structSizeSino3d.sinogramsPerSegment);
 % Generate the sinograms:
@@ -93,7 +93,7 @@ geometricFactor = repmat(single(componentFactors{1}(:,1)), 1, structSizeSino3d.n
 crystalInterfFactor = single(componentFactors{2});
 crystalInterfFactor = repmat(crystalInterfFactor', 1, structSizeSino3d.numTheta/size(crystalInterfFactor,1));
 % c) Axial factors:
-axialFactors = structSizeSino3d.numSinosMashed;%ones(size(componentFactors{4}));%1./(componentFactors{4}.*componentFactors{8});
+axialFactors = structSizeSino3d.numSinosMashed' .* (componentFactors{4}.*componentFactors{8});
 
 for i = 1 : sum(structSizeSino3d.sinogramsPerSegment)
     % First the geomeitric, crystal interference factors:

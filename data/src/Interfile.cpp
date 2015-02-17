@@ -67,18 +67,18 @@
  * 3  interfile header cold not be opened for reading (returned value is empty (i.e. contains '/0's only)),
  * 4  wrong file format?! (No '!INTERFILE' in the first line) (returned value is empty (i.e. contains '/0's only))
  */
-int interfile_read(char headerName[256], char searchWord[256], char returnValue[256], char errorMessage[300]) {
+int interfile_read(char* headerName, char* searchWord, char* returnValue, char* errorMessage) {
   short int  i, pos;
   short int  count=0;    /* counter: How often appears keyword in the header? */
   int        n;
   char       c[1];
-  char       keyword[256], value[256];
+  char       keyword[1024], value[1024];
   char       line[512];  /* max length of a line accepted in interfile header */
   FILE       *interfileHeader;
 
-                                                        /* initialise strings */
-  for (i=0;i<256;i++) returnValue[i] = '\0';
-  for (i=0;i<300;i++) errorMessage[i] = '\0';
+  /* initialise strings */
+  returnValue[0] = '\0';
+  errorMessage[0] = '\0';
 
                                          /* open interfile header for reading */
   if ((interfileHeader = fopen(headerName,"r"))==NULL) {
@@ -122,7 +122,7 @@ int interfile_read(char headerName[256], char searchWord[256], char returnValue[
              /* \n = end of line, \r = carriage return. Lines in  ASCII files */
              /* on Sun-Solaris end with \n, on Intel-Windows with \r\n        */
     //while (memcmp(c,"\r",1) && memcmp(c,"\n",1) && i<516) {
-    while (memcmp(c,"\n",1) && i<516) {	// En linux es solo \n
+    while (memcmp(c,"\n",1) && i<1024) {	// En linux es solo \n
       memcpy(&line[i],c,1);
       n=fread(&c,1,1,interfileHeader); if(n<1) {
         strcpy(errorMessage,"wrong file header format: ");
@@ -140,7 +140,7 @@ int interfile_read(char headerName[256], char searchWord[256], char returnValue[
         if (line[pos] == '=' && line[pos-1] == ':') break; 
                                     /* now get the first and the second field */
       for (i=0;i<pos-2 && i<256;i++) keyword[i] = line[i];
-      for (i=pos+2;i<256+pos+2 && i<512;i++) {
+      for (i=pos+2;i<256+pos+2 && i<1024;i++) {
         if (!memcmp(&line[i],"\0",1) || !memcmp(&line[i],"\r",1) || !memcmp(&line[i],"\n",1)) 
           break;                                 /* stop at the end of "line" */
         value[i-pos-2] = line[i];

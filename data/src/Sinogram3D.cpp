@@ -103,7 +103,7 @@ bool Sinogram3D::readFromInterfile(string headerFilename)
 
 bool Sinogram3D::readFromInterfile(string headerFilename, float radioScanner_mm)
 {
-  const int sizeBuffer = 512;
+  const int sizeBuffer = 1024;
   char buffer[sizeBuffer];	// Buffer que voy a utilizar para ir leyendo el archivo de configuración
   char errorMessage[sizeBuffer];
   char filename_i33[sizeBuffer];

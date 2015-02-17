@@ -81,7 +81,7 @@ end;
 % Std:
 devMain = std(allComponents);
 % plot:
-figure;plot(dev);
+figure;plot(devMain);
 title('Standard Deviation of Main Axial Factors Component');
 ylabel('Factor Standard Deviation');
 xlabel('Number of Sinogram');
