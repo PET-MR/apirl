@@ -335,10 +335,21 @@ bool Sinogram3D::readFromInterfile(string headerFilename, float radioScanner_mm)
     }
   }
   else  {
-    cout << "Error en interfile: La dimensión 3 debe ser tangential coordinate." << endl;return false;}
+    cout << "Error en interfile: La dimensión 1 debe ser tangential coordinate." << endl;return false;}
   
-  // La cantidad de anillos, la obtengo de la cantidad de sinogramas del primer segmento:
-  numRings = round((numSinogramsPerSegment[0]+1)/2);
+  // La cantidad de anillos, la obtengo de una entrada del interfile, y si no esta disponible supongo que la cantidad de rings es (numSinosPrimerSegmento+1)/2
+  // como seria apara cuaqlueri valor de span distinto de uno:
+  if (!interfile_read((char*)headerFilename.c_str(), "number of rings", buffer, errorMessage)) 
+  { 
+    // Se encontro el campo intefilwrite:
+    numRings = atoi(buffer);
+  }
+  else
+  {
+    // No estaba la leyenda por lo que calculo para un segmento distinto de 1:
+    numRings = round((numSinogramsPerSegment[0]+1)/2);
+  }
+  
   // Con la cantidad de anillos genero las coordenadas de los anillos:
   ptrAxialvalues_mm = (float*) malloc(numRings*sizeof(float));
   float zIncrement = (float)axialFov_mm/numRings;

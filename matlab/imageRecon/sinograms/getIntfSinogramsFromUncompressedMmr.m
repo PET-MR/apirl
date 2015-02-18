@@ -41,10 +41,13 @@ end
 % Close the file:
 fclose(fid);
 
+%Convert to single:
+sinograms = single(sinograms);
+delayedSinograms = single(delayedSinograms);
 % Rearrange in a 3d matrix:
 sinograms = reshape(sinograms, [numR numTheta numSinograms]);
 delayedSinograms = reshape(delayedSinograms, [numR numTheta numSinograms]);
 % Wirte the interfile prompt sinogram:
-interfileWriteSino(sinograms, outFilenameIntfSinograms, structSizeSino3d.sinogramsPerSegment, structSizeSino3d.minRingDiff, structSizeSino3d.maxRingDiff);
+interfileWriteSino(sinograms, outFilenameIntfSinograms, structSizeSino3d);
 % Wirte the interfile delayed sinogram:
-interfileWriteSino(delayedSinograms, [outFilenameIntfSinograms '_delay'], structSizeSino3d.sinogramsPerSegment, structSizeSino3d.minRingDiff, structSizeSino3d.maxRingDiff);
+interfileWriteSino(delayedSinograms, [outFilenameIntfSinograms '_delay'], structSizeSino3d);

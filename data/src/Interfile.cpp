@@ -73,7 +73,7 @@ int interfile_read(char* headerName, char* searchWord, char* returnValue, char* 
   int        n;
   char       c[1];
   char       keyword[1024], value[1024];
-  char       line[512];  /* max length of a line accepted in interfile header */
+  char       line[1024];  /* max length of a line accepted in interfile header */
   FILE       *interfileHeader;
 
   /* initialise strings */
@@ -115,9 +115,9 @@ int interfile_read(char* headerName, char* searchWord, char* returnValue, char* 
 
                                                     /* read file line by line */
  while (fread(&c,1,1,interfileHeader) == 1) {
-    for (i=0;i<516;i++) line[i] = '\0';                    /* initialise line */
-    for (i=0;i<256;i++) keyword[i] = '\0';              /* initialise keyword */
-    for (i=0;i<256;i++) value[i] = '\0';                  /* initialise value */
+    for (i=0;i<1024;i++) line[i] = '\0';                    /* initialise line */
+    for (i=0;i<1024;i++) keyword[i] = '\0';              /* initialise keyword */
+    for (i=0;i<1024;i++) value[i] = '\0';                  /* initialise value */
     i=0;
              /* \n = end of line, \r = carriage return. Lines in  ASCII files */
              /* on Sun-Solaris end with \n, on Intel-Windows with \r\n        */
@@ -136,11 +136,11 @@ int interfile_read(char* headerName, char* searchWord, char* returnValue, char* 
     if (strncmp(&line[0],";",1)) {
                                            /* get keyword and value from line */
                                  /* find position of the field seperator ':=' */
-      for (pos=1; pos<516; pos++)
+      for (pos=1; pos<512; pos++)
         if (line[pos] == '=' && line[pos-1] == ':') break; 
                                     /* now get the first and the second field */
-      for (i=0;i<pos-2 && i<256;i++) keyword[i] = line[i];
-      for (i=pos+2;i<256+pos+2 && i<1024;i++) {
+      for (i=0;i<pos-2 && i<1024;i++) keyword[i] = line[i];
+      for (i=pos+2;i<1024+pos+2 && i<1024;i++) {
         if (!memcmp(&line[i],"\0",1) || !memcmp(&line[i],"\r",1) || !memcmp(&line[i],"\n",1)) 
           break;                                 /* stop at the end of "line" */
         value[i-pos-2] = line[i];

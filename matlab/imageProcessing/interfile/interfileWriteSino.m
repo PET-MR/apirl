@@ -8,11 +8,15 @@
 % la matriz de entrada debe tener 2 dimensiones para el caso de 1 solo
 % sinograma, y 3 dimensiones para el caso de múltiples sinogramas 2d.
 % Cuando el sinograma es 3d, el sinograma tiene que tener 4 dimensiones.
+
 % Update 16/02/2015: Dimensión 1 pasa a ser distancia al centro, y
 % dimensión 2 ángulo de proyección. Esto es apra mantener compatibilidad
 % con otras bibliotecas de reconstrucción, y para mantener la misma de la
 % de cpp (evitando el permute que ahcía antes). Para visualizar hayq ue
 % trasponer.
+% Update 17/02/2015. Add number the rings in the interfile. Receives an
+% struct with the size of the sino.
+
 % Sinograma 2D:
 % dimensión 1: distancia al centro del aproyección dentro del plano
 % transversal
@@ -58,6 +62,7 @@
 % !matrix size [1] := 329
 % minimum ring difference per segment := { -1, 2, -3, 4, -5, 6, -7, 8, -9, 10, -11, 12, -13, 14, -15, 16, -17, 18, -19, 20, -21, 22, -23 }
 % maximum ring difference per segment := { 1, 3, -2, 5, -4, 7, -6, 9, -8, 11, -10, 13, -12, 15, -14, 17, -16, 19, -18, 21, -20, 23, -22  }
+% number of rings:= 64
 % data offset in bytes[1] := 0
 % number of time frames := 1
 % !END OF INTERFILE :=
@@ -65,15 +70,7 @@
 % Especificación en: http://www.medphys.ucl.ac.uk/interfile/
 
 
-% Se le agrega la opción de grabar el tamaño de píxel, para esto se le pasa
-% un tercer argumento que es un vector con el tamaño de pixel en mm en x,
-% y, z. Dicho argumento es opcional por lo que se la puede llamar sin
-% definir el tamaño de píxel. Y en ese caso, esos campos del interfile son
-% omitidos.
-% interfilewrite(sinogram, 'sinogramName', sizePixel)
-% interfilewrite(sinogram, 'sinogramName')
-
-function interfileWriteSino(sinogram, filename, sinogramsPerSegment, minRingDiff, maxRingDiff)
+function interfileWriteSino(sinogram, filename, structSizeSino)
 
 % Debo agregar la extensión para los nombres de ambos archivos:
 filenameHeader = sprintf('%s.h33', filename);
@@ -83,13 +80,23 @@ filenameSino = sprintf('%s.i33', filename);
 % puede ser un sinograma2d por slice, o un conjunto de sinogramas 3d. Para
 % este último se deben cargar los parámetros de sinogramsPerSegment, min..
 % y max...
-if (ndims(sinogram) == 2) || ((ndims(sinogram) == 3) & (nargin == 2))
+if (~isfield(structSizeSino, 'numSegments'))
     tipo = 'sinogram2D';
-elseif (ndims(sinogram) == 4) || ((ndims(sinogram) == 3) & (nargin == 5))
+else
     % Michelograma
     tipo = 'sinogram3D';
 end
 
+% Check the structure with the sinogram:
+if (structSizeSino.numR ~= size(sinogram,1)) || (structSizeSino.numTheta ~= size(sinogram,2))
+    perror('interfilewritesino: the size of the sinogram does not match the structure with its size.');
+end
+if strcmp(tipo,'sinogram2D') && (structSizeSino.numZ ~= size(sinogram,3))
+    perror('interfilewritesino: the size of the sinogram does not match the structure with its size.');
+end
+if strcmp(tipo,'sinogram3D') && (sum(structSizeSino.sinogramsPerSegment) ~= size(sinogram,3))
+    perror('interfilewritesino: the size of the sinogram does not match the structure with its size.');
+end
 % Primero genero el archivo de encabezado.
 fid = fopen(filenameHeader, 'w');
 if(fid == -1)
@@ -135,7 +142,7 @@ if strcmp(tipo,'sinogram2D')
     fprintf(fid,'!GENERAL IMAGE DATA :=\n');
     fprintf(fid,'!type of data := Tomographic\n');
     % Cantidad de imágenes (slices):
-    fprintf(fid,'!total number of images := %d\n', size(sinogram,3));
+    fprintf(fid,'!total number of images := %d\n', structSizeSino.numZ);
     fprintf(fid,'!imagedata byte order := LITTLEENDIAN\n');
     fprintf(fid,'!number of energy windows := 1\n');
     fprintf(fid,'energy window [1] := F18m\n');
@@ -150,8 +157,8 @@ if strcmp(tipo,'sinogram2D')
     % Cantidad de imágenes, sería la tercera dimensión:
     fprintf(fid,'!number of images/window := 1\n');
     % Ahora cantidad de filas y columnas:
-    fprintf(fid,'!matrix size [1] := %d\n', size(sinogram,1));
-    fprintf(fid,'!matrix size [2] := %d\n', size(sinogram,2));
+    fprintf(fid,'!matrix size [1] := %d\n', structSizeSino.numR);
+    fprintf(fid,'!matrix size [2] := %d\n', structSizeSino.numTheta);
     % Tipo de dato. Los formatos disponibles son:
     % signed integer|unsigned integer|long float|short float|bit|ASCII
     % Para esto busco el tipo de dato de la variable imagen:
@@ -187,18 +194,18 @@ if strcmp(tipo,'sinogram2D')
     end
     fprintf(fid,'!number format := %s\n', strFormat);
     fprintf(fid,'!number of bytes per pixel := %d\n', numBytesPerPixel);
-    % Si recibí el tamaño de píxel, lo agrego. En esta sección van los de
-    % (x,y):
-    if(nargin==3)
-        if(numel(sizePixel)==3)
-            fprintf(fid,'scaling factor (mm/pixel) [1] := %f\n', sizePixel(1));
-            fprintf(fid,'scaling factor (mm/pixel) [2] := %f\n', sizePixel(2));
-        else
-            disp('Error: el tamaño del pixel debe pasarse en un vector con 3 elementos.');
-        end
-    end
+%     % Si recibí el tamaño de píxel, lo agrego. En esta sección van los de
+%     % (x,y):
+%     if(nargin==3)
+%         if(numel(sizePixel)==3)
+%             fprintf(fid,'scaling factor (mm/pixel) [1] := %f\n', sizePixel(1));
+%             fprintf(fid,'scaling factor (mm/pixel) [2] := %f\n', sizePixel(2));
+%         else
+%             disp('Error: el tamaño del pixel debe pasarse en un vector con 3 elementos.');
+%         end
+%     end
     % Cantidad de proyecciones 2D:
-    fprintf(fid, '!number of projections := %d\n', size(sinogram,3));
+    fprintf(fid, '!number of projections := %d\n', structSizeSino.numZ);
     fprintf(fid,'!extent of rotation := 360\n');
     fprintf(fid,'!process status := acquired\n');
     % Valor máximo en la iamgen:
@@ -275,31 +282,31 @@ elseif strcmp(tipo,'sinogram3D')
     fprintf(fid,'!number of bytes per pixel := %d\n', numBytesPerPixel);
     fprintf(fid,'number of dimensions := 4\n');
     fprintf(fid,'matrix axis label [4] := segment\n');
-    fprintf(fid,'!matrix size [4] := %d\n', numel(sinogramsPerSegment));
+    fprintf(fid,'!matrix size [4] := %d\n', numel(structSizeSino.sinogramsPerSegment));
     fprintf(fid,'matrix axis label [2] := view\n');
-    fprintf(fid,'!matrix size [2] := %d\n', size(sinogram,2));
+    fprintf(fid,'!matrix size [2] := %d\n', structSizeSino.numTheta);
     fprintf(fid,'matrix axis label [3] := axial coordinate\n');
     fprintf(fid,'!matrix size [3] := {');
-    fprintf(fid,' %d', sinogramsPerSegment(1));
-    for i = 2 : numel(sinogramsPerSegment)
-         fprintf(fid,', %d', sinogramsPerSegment(i));
+    fprintf(fid,' %d', structSizeSino.sinogramsPerSegment(1));
+    for i = 2 : numel(structSizeSino.sinogramsPerSegment)
+         fprintf(fid,', %d', structSizeSino.sinogramsPerSegment(i));
     end
     fprintf(fid,' }\n');
     fprintf(fid,'matrix axis label [1] := tangential coordinate\n');
-    fprintf(fid,'!matrix size [1] := %d\n', size(sinogram,1));
+    fprintf(fid,'!matrix size [1] := %d\n', structSizeSino.numR);
     fprintf(fid,'minimum ring difference per segment := { ');
-    fprintf(fid,' %d', minRingDiff(1));
-    for i = 2 : numel(minRingDiff)
-         fprintf(fid,', %d', minRingDiff(i));
+    fprintf(fid,' %d', structSizeSino.minRingDiff(1));
+    for i = 2 : numel(structSizeSino.minRingDiff)
+         fprintf(fid,', %d', structSizeSino.minRingDiff(i));
     end
     fprintf(fid,' }\n');
     fprintf(fid,'maximum ring difference per segment := { ');
-    fprintf(fid,' %d', maxRingDiff(1));
-    for i = 2 : numel(maxRingDiff)
-         fprintf(fid,', %d', maxRingDiff(i));
+    fprintf(fid,' %d', structSizeSino.maxRingDiff(1));
+    for i = 2 : numel(structSizeSino.maxRingDiff)
+         fprintf(fid,', %d', structSizeSino.maxRingDiff(i));
     end
     fprintf(fid,' }\n');
-    
+    fprintf(fid,'number of rings := %d\n', structSizeSino.numZ);
     fprintf(fid,'data offset in bytes[1] := 0\n');
     fprintf(fid,'number of time frames := 1\n');
     fprintf(fid,'!END OF INTERFILE :=\n');

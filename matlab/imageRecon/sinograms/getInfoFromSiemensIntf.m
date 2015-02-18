@@ -3,17 +3,18 @@
 %  Autor: Martín Belzunce. Kings College London.
 %  Fecha de Creación: 10/02/2015
 %  *********************************************************************
-%  function [componentFactors, componentLabels]  = readmMrComponentBasedNormalization(filenameRawData, visualize)
+%  function [structInfo]  = getInfoFromSiemensIntf(filenameRawData, visualize)
 % 
 %  This function reads the header of an interfile sinograms and gets some
 %  useful information from it. Such as the filename of the raw data, the
 %  singles rates per bucket,..
+%  It is absed on the interfile read
 
-function [structInterfile, structSizeSino3d] = getInfoFromSiemensIntf(filenameInterfileHeader)
+function [info] = getInfoFromSiemensIntf(filename)
 
-
+info = [];
 % check header file extension
-if (isempty(filenameInterfileHeader) || ~ischar(filenameInterfileHeader))
+if (isempty(filename) || ~ischar(filename))
     error('getInfoFromSiemensIntf:filenameNotChar', ...
           'Filename must be a character array.')
 end
@@ -30,7 +31,7 @@ if fid == -1
 end
 
 % initialize variables
-bad_chars = '!()[]/-_';
+bad_chars = '!()[]/-_%:+';    % Added %,:, siemens interfile sues it.
 dates = ['DateOfKeys' 'ProgramDate' 'PatientDob' 'StudyDate'];
 times = ['StudyTime' 'ImageStartTime'];
 found_header = 0;
@@ -117,12 +118,18 @@ while (true)
                             else
                                 str = [str(1:i-1) str(i+1:length(str))];
                             end
+                            % Added:
+                            % If I take out one chrarachter I need to check
+                            % that position again, if not when two non valid
+                            % characters are found the second one is not detected:
+                            i = i-1;
                         end
 
                         i = i+1;
                     end
-                    
-                    field = [field upper(str(1)) str(2:length(str))];
+                    if ~isempty(str) % Just in case a word is formed by all illegal characters
+                        field = [field upper(str(1)) str(2:length(str))];
+                    end
                 end
                 
                 field_str_ind = field_str_ind+nextindex-1;
@@ -189,13 +196,35 @@ while (true)
     end
 end
 
-% check for end of file marker
-if (found_end == 0)
-    fclose(fid);
-    err_id = 'Images:interfileinfo:unexpectedEOF';
-    err_msg = 'Unexpected end of file.';
-    error(err_id, err_msg);
-end
+% In the siemens interfile there is no enfofinterfile line.
+% % check for end of file marker
+% if (found_end == 0)
+%     fclose(fid);
+%     err_id = 'Images:interfileinfo:unexpectedEOF';
+%     err_msg = 'Unexpected end of file.';
+%     error(err_id, err_msg);
+% end
 
 % close file
 fclose(fid);
+
+% Post processing, some fields are processed to get them in a more useful
+% format:
+if (isfield(info, 'NumberOfBuckets'))
+    numBuckets = info.NumberOfBuckets;
+    singlesPerBucket = zeros(1, numBuckets);
+else
+    perror('The number of bucket was not found.');
+end
+for i = 1 : numBuckets
+    field = sprintf('BucketSinglesRate%d',i);
+    if (isfield(info, field))
+        singlesPerBucket(i) = info.(field);
+    else
+        perror(sprintf('The singles per bucket for the bucket number %d was not found.', i));
+    end
+    % After processing it I remove the field, because I will put just an
+    % array:
+    info = rmfield(info, field);
+end
+info.SinglesPerBucket = singlesPerBucket;

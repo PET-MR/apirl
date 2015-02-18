@@ -29,10 +29,10 @@ numTheta = 252; numR = 344; numRings = 64; maxAbsRingDiff = 60; rFov_mm = 594/2;
 structSizeSino3dSpan11 = getSizeSino3dFromSpan(numR, numTheta, numRings, rFov_mm, zFov_mm, span, maxAbsRingDiff);
 
 outputSinogramName = [outputPath '/NCF_Span11_withFunc'];
-interfileWriteSino(single(overall_ncf_3d), outputSinogramName, structSizeSino3dSpan11.sinogramsPerSegment, structSizeSino3dSpan11.minRingDiff, structSizeSino3dSpan11.maxRingDiff);
+interfileWriteSino(single(overall_ncf_3d), outputSinogramName, structSizeSino3dSpan11);
 
 outputSinogramName = [outputPath '/NF_Span11_withFunc'];
-interfileWriteSino(single(overall_nf_3d), outputSinogramName, structSizeSino3dSpan11.sinogramsPerSegment, structSizeSino3dSpan11.minRingDiff, structSizeSino3dSpan11.maxRingDiff);
+interfileWriteSino(single(overall_nf_3d), outputSinogramName, structSizeSino3dSpan11);
 %% COMPLETE THE FACTORS WITH ATTENUATION
 % Span11 Sinogram:
 acfFilename = [outputPath 'acfsSinogramSpan11'];
@@ -45,9 +45,9 @@ fclose(fid);
 %% ANCF
 ancf = overall_ncf_3d .* acfsSinogramSpan11;
 outputSinogramName = [outputPath '/ANCF_Span11_withFunc'];
-interfileWriteSino(single(ancf), outputSinogramName, structSizeSino3dSpan11.sinogramsPerSegment, structSizeSino3dSpan11.minRingDiff, structSizeSino3dSpan11.maxRingDiff);
+interfileWriteSino(single(ancf), outputSinogramName, structSizeSino3dSpan11);
 % invert for anf:
 anf = ancf;
 anf(ancf ~= 0) = 1./ancf(ancf ~= 0);
 outputSinogramName = [outputPath '/ANF_Span11_withFunc'];
-interfileWriteSino(single(anf), outputSinogramName, structSizeSino3dSpan11.sinogramsPerSegment, structSizeSino3dSpan11.minRingDiff, structSizeSino3dSpan11.maxRingDiff);
+interfileWriteSino(single(anf), outputSinogramName, structSizeSino3dSpan11);

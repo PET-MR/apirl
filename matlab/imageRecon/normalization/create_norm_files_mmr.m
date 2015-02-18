@@ -93,8 +93,13 @@ geometricFactor = repmat(single(componentFactors{1}(:,1)), 1, structSizeSino3d.n
 crystalInterfFactor = single(componentFactors{2});
 crystalInterfFactor = repmat(crystalInterfFactor', 1, structSizeSino3d.numTheta/size(crystalInterfFactor,1));
 % c) Axial factors:
-axialFactors = structSizeSino3d.numSinosMashed' .* (componentFactors{4}.*componentFactors{8});
+if span == 11
+    axialFactors = structSizeSino3d.numSinosMashed' .* (componentFactors{4}.*componentFactors{8});
+else
+    axialFactors = structSizeSino3d.numSinosMashed';
+end
 
+% Generate scanner time invariant:
 for i = 1 : sum(structSizeSino3d.sinogramsPerSegment)
     % First the geomeitric, crystal interference factors:
     scanner_time_invariant_ncf_3d(:,:,i) = 1./(geometricFactor .* crystalInterfFactor);
