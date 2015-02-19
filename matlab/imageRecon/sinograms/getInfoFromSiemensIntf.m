@@ -3,14 +3,16 @@
 %  Autor: Martín Belzunce. Kings College London.
 %  Fecha de Creación: 10/02/2015
 %  *********************************************************************
-%  function [structInfo]  = getInfoFromSiemensIntf(filenameRawData, visualize)
+%  function [info, structSizeSino]  = getInfoFromSiemensIntf(filename)
 % 
 %  This function reads the header of an interfile sinograms and gets some
 %  useful information from it. Such as the filename of the raw data, the
 %  singles rates per bucket,..
-%  It is absed on the interfile read
+%  It is based on the interfileinfo of matlab.
+% Optionally it also returns an structure with the size of the sinogram.
 
-function [info] = getInfoFromSiemensIntf(filename)
+
+function [info, structSizeSino] = getInfoFromSiemensIntf(filename)
 
 info = [];
 % check header file extension
@@ -228,3 +230,25 @@ for i = 1 : numBuckets
     info = rmfield(info, field);
 end
 info.SinglesPerBucket = singlesPerBucket;
+
+% Process the segment table. Take out spaces and {}:
+charsToRemove = ['{','}',' '];
+for i = 1 : numel(charsToRemove)
+    pos = find(info.SegmentTable == charsToRemove(i));
+    info.SegmentTable(pos) = [];
+end
+% Separate by , and convert to number array
+cellStrNum = strsplit(info.SegmentTable,',');
+% Replace SegmentTable field for a numeric array:
+info.SegmentTable = zeros(1,numel(cellStrNum));
+if numel(cellStrNum) ~=  info.NumberOfSegments
+    perror('The number of segments is different than the number of elements in the segment table.');
+end
+for i = 1 : numel(cellStrNum)
+    info.SegmentTable(i) = str2num(cellStrNum{i});
+end
+
+% Get sino struct:
+rFov_mm = (info.MatrixSize1 * info.ScaleFactorMmPixel1) / 2;
+zFov_mm = (info.ScaleFactorMmPixel3 * (2*info.NumberOfRings+1));
+structSizeSino = getSizeSino3dFromSpan(info.MatrixSize1, info.MatrixSize2, info.NumberOfRings, rFov_mm, zFov_mm, info.AxialCompression, info.MaximumRingDifference);
