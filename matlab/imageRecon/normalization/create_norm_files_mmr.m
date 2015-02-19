@@ -19,7 +19,9 @@
 %       empty vector in this parameter [].
 %   -my_choice_of_deadtimefactors: this is an optinal parameter. If you
 %       want to use different dead time factors from the ones in the .n files.
-%       If not just use an empty vector for this parameter [].
+%       If not just use an empty vector for this parameter []. It's a
+%       matrix of numRings x 2. The first column is paralyzing dead time
+%       and the second column non-paralyzing.
 %   -singles_rates_per_bucket: singles rate per bucket used to estimate
 %       dead time factors. Its an array of 228 elements (number of buckets in
 %       the whole scanner). The order is the same than in the interfile
@@ -61,6 +63,16 @@ numTheta = 252; numR = 344; numRings = 64; maxAbsRingDiff = 60; rFov_mm = 594/2;
 structSizeSino3d = getSizeSino3dFromSpan(numR, numTheta, numRings, rFov_mm, zFov_mm, span_choice, maxAbsRingDiff);
 % Total number of singorams per 3d sinogram:
 numSinograms = sum(structSizeSino3d.sinogramsPerSegment);
+% Parameters of the buckets:
+numberOfTransverseBlocksPerBucket = 2;
+numberOfAxialBlocksPerBucket = 1;
+numberOfBuckets = 224;
+numberofAxialBlocks = 8;
+numberofTransverseBlocksPerRing = 8;
+numberOfBucketsInRing = numberOfBuckets / (numberofTransverseBlocksPerRing);
+numberOfBlocksInBucketRing = numberOfBuckets / (numberofTransverseBlocksPerRing*numberOfAxialBlocksPerBucket);
+numberOfTransverseCrystalsPerBlock = 9; % includes the gap
+numberOfAxialCrystalsPerBlock = 8;
 % Generate the sinograms:
 overall_ncf_3d = zeros(numR, numTheta, numSinograms, 'single');
 scanner_time_invariant_ncf_3d = zeros(numR, numTheta, numSinograms, 'single');
@@ -77,8 +89,11 @@ else
 end
 
 if isempty(my_choice_of_deadtimefactors)
-    % Use the deadtime of the .n file:
-    used_deadtimefactors = componentFactors{6};
+    % Use the deadtime of the .n file. We hace to compute the sinogram with
+    % the paralyzed and non-paralyzed dead time factors:
+    paralyzed_ring_dead_time = componentFactors{5};
+    non_paralyzed_ring_dead_time = componentFactors{6};
+    used_deadtimefactors = [paralyzed_ring_dead_time non_paralyzed_ring_dead_time];
 else
     % Use the deadtime efficencies received in the parameter file:
     used_deadtimefactors = my_choice_of_deadtimefactors;
@@ -93,7 +108,7 @@ geometricFactor = repmat(single(componentFactors{1}(:,1)), 1, structSizeSino3d.n
 crystalInterfFactor = single(componentFactors{2});
 crystalInterfFactor = repmat(crystalInterfFactor', 1, structSizeSino3d.numTheta/size(crystalInterfFactor,1));
 % c) Axial factors:
-if span == 11
+if span_choice == 11
     axialFactors = structSizeSino3d.numSinosMashed' .* (componentFactors{4}.*componentFactors{8});
 else
     axialFactors = structSizeSino3d.numSinosMashed';
@@ -115,14 +130,68 @@ scanner_time_variant_ncf_3d = createSinogram3dFromDetectorsEfficency(used_xtal_e
 % the ncf is 1/efficency:
 nonzeros = scanner_time_variant_ncf_3d ~= 0;
 scanner_time_variant_ncf_3d(nonzeros) = 1./ scanner_time_variant_ncf_3d(nonzeros);
- 
-% b) Get dead-time:
-% Not implemented yet.
-if(~isempty(singles_rates_per_bucket))
+
+% 6) Generate acquisition_dependant_ncf_3d (sinogram)
+% a) Get dead-time:
+if ~isempty(singles_rates_per_bucket)
+    % Get the single rate per ring:
+    singles_rates_per_ring = singles_rates_per_bucket / (numberOfAxialBlocksPerBucket}numberOfAxialCrystalsPerBlock);
     % Compute dead time factors, is equivalent to an efficency factor.
     % Thus, a factor for each crystal unit is computed, and then both
     % factors are multiplied.
+    % Detector Ids:
+    [mapDet1Ids, mapDet2Ids] = createMmrDetectorsIdInSinogram();
+    % BucketId:
+    mapBucket1Ids = ceil(mapDet1Ids/(numberOfTransverseBlocksPerBucket*numberOfTransverseCrystalsPerBlock));
+    mapBucket2Ids = ceil(mapDet2Ids/(numberOfTransverseBlocksPerBucket*numberOfTransverseCrystalsPerBlock));
+    % Now we start going through each possible sinogram, then get the rings of
+    % each sinogram and get the crystal efficency for that ring in det1 and the
+    % crystal effiencies for the sencdo ring with det2. When there is axial
+    % compression the efficency is computed as an average of each of them. For
+    % example an sinogram compressed from two different axial position:
+    % det1(ring1_a)*det2(ring2_a)+det1(ring1_b)*det2(ring2_b)
+    indiceSino = 1; % indice del sinogram 3D.
+    for segment = 1 : structSizeSino3d.numSegments
+        % Por cada segmento, voy generando los sinogramas correspondientes y
+        % contándolos, debería coincidir con los sinogramas para ese segmento: 
+        numSinosThisSegment = 0;
+        % Recorro todos los z1 para ir rellenando
+        for z1 = 1 : (structSizeSino3d.numZ*2)
+            numSinosZ1inSegment = 0;   % Cantidad de sinogramas para z1 en este segmento
+            % Recorro completamente z2 desde y me quedo con los que están entre
+            % minRingDiff y maxRingDiff. Se podría hacer sin recorrer todo el
+            % sinograma pero se complica un poco.
+            z1_aux = z1;    % z1_aux la uso para recorrer.
+            for z2 = 1 : structSizeSino3d.numZ
+                % Ahora voy avanzando en los sinogramas correspondientes,
+                % disminuyendo z1 y aumentnado z2 hasta que la diferencia entre
+                % anillos llegue a maxRingDiff.
+                if ((z1_aux-z2)<=structSizeSino3d.maxRingDiff(segment))&&((z1_aux-z2)>=structSizeSino3d.minRingDiff(segment))
+                    % Me asguro que esté dentro del tamaño del michelograma:
+                    if(z1_aux>0)&&(z2>0)&&(z1_aux<=structSizeSino3d.numZ)&&(z2<=structSizeSino3d.numZ)
+                        numSinosZ1inSegment = numSinosZ1inSegment + 1;
+                        % Get the singles rate for each ring:
+                        axialBucket1 = ceil(z1_aux / (numberOfAxialBlocksPerBucket*numberOfAxialCrystalsPerBlock));
+                        axialBucket2 = ceil(z2 / (numberOfAxialBlocksPerBucket*numberOfAxialCrystalsPerBlock));
+                        bucketsId1 = mapBucket1Ids + (axialBucket1-1)*numberOfBucketsInRing;
+                        bucketsId2 = mapBucket2Ids + (axialBucket2-1)*numberOfBucketsInRing;
+                        acquisition_dependant_ncf_3d(:,:,indiceSino) = acquisition_dependant_ncf_3d(:,:,indiceSino) + singles_rates_per_bucket(bucketsId1) .* singles_rates_per_bucket(bucketsId2);
+                    end
+                end
+                % Pase esta combinación de (z1,z2), paso a la próxima:
+                z1_aux = z1_aux - 1;
+            end
+            if(numSinosZ1inSegment>0)
+                % I average the efficencies dividing by the number of axial
+                % combinations used for this sino:
+                %acquisition_dependant_ncf_3d(:,:,indiceSino) = acquisition_dependant_ncf_3d(:,:,indiceSino) / numSinosZ1inSegment;
+                numSinosThisSegment = numSinosThisSegment + 1;
+                indiceSino = indiceSino + 1;
+            end
+        end    
+    end
 end
+
 % 6) Overall factor:
 overall_ncf_3d = scanner_time_invariant_ncf_3d .* scanner_time_variant_ncf_3d;
 

@@ -17,10 +17,16 @@ setenv('PATH', [getenv('PATH') ':' apirlPath '/build/bin']);
 setenv('LD_LIBRARY_PATH', [getenv('LD_LIBRARY_PATH') ':' apirlPath '/build/bin']);
 outputPath = '/home/mab15/workspace/KCL/Biograph_mMr/mmr/5hr_ge68/span11/';
 mkdir(outputPath);
+%% READ A SINOGRAM
+% To get single data example:
+filenameUncompressedMmr = '/home/mab15/workspace/KCL/Biograph_mMr/mmr/5hr_ge68/cylinder_5hours.s.hdr';
+outFilenameIntfSinograms = '/home/mab15/workspace/KCL/Biograph_mMr/mmr/5hr_ge68/cylinder_5hoursIntf';
+[structInterfile, structSizeSino] = getInfoFromSiemensIntf(filenameUncompressedMmr);
+[sinogram, delayedSinogram, structSizeSino3d] = getIntfSinogramsFromUncompressedMmr('/home/mab15/workspace/KCL/Biograph_mMr/mmr/5hr_ge68/cylinder_5hours.s', outFilenameIntfSinograms);
 %% TEST NORM FUNCTION
 % ncf:
 [overall_ncf_3d, scanner_time_invariant_ncf_3d, scanner_time_variant_ncf_3d, used_xtal_efficiencies, used_deadtimefactors, used_axial_factors] = ...
-   create_norm_files_mmr('/home/mab15/workspace/KCL/Biograph_mMr/mmr/Norm_20141008101010.n', [], [], [], [], 11);
+   create_norm_files_mmr('/home/mab15/workspace/KCL/Biograph_mMr/mmr/Norm_20141008101010.n', [], [], [], structInterfile.SinglesPerBucket, 11);
 % invert for nf:
 overall_nf_3d = overall_ncf_3d;
 overall_nf_3d(overall_ncf_3d ~= 0) = 1./overall_nf_3d(overall_ncf_3d ~= 0);
