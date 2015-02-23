@@ -34,8 +34,8 @@ end
 
 % initialize variables
 bad_chars = '!()[]/-_%:+';    % Added %,:, siemens interfile sues it.
-dates = ['DateOfKeys' 'ProgramDate' 'PatientDob' 'StudyDate'];
-times = ['StudyTime' 'ImageStartTime'];
+dates = {'DateOfKeys' 'ProgramDate' 'PatientDob' 'StudyDate'};
+times = {'StudyTime' 'ImageStartTime'};
 found_header = 0;
 found_end = 0;
 line_num = 0;
@@ -159,7 +159,7 @@ while (true)
             end
                 
             [x, ok] = str2num(value);
-            if ((ok ~= 0) && (isempty(strfind(dates, field))) && (isempty(strfind(times, field))))
+            if (~isempty(x) && (ok ~= 0)) % && (isempty(strfind(dates, field))) && (isempty(strfind(times, field))))
                 value = x;
             end
             

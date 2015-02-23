@@ -109,7 +109,7 @@ crystalInterfFactor = single(componentFactors{2});
 crystalInterfFactor = repmat(crystalInterfFactor', 1, structSizeSino3d.numTheta/size(crystalInterfFactor,1));
 % c) Axial factors:
 if span_choice == 11
-    axialFactors = structSizeSino3d.numSinosMashed' .* (componentFactors{4}.*componentFactors{8});
+    axialFactors = structSizeSino3d.numSinosMashed';% .* (componentFactors{4}.*componentFactors{8});
 else
     axialFactors = structSizeSino3d.numSinosMashed';
 end
@@ -135,7 +135,7 @@ scanner_time_variant_ncf_3d(nonzeros) = 1./ scanner_time_variant_ncf_3d(nonzeros
 % a) Get dead-time:
 if ~isempty(singles_rates_per_bucket)
     % Get the single rate per ring:
-    singles_rates_per_ring = singles_rates_per_bucket / (numberOfAxialBlocksPerBucket}numberOfAxialCrystalsPerBlock);
+    singles_rates_per_ring = singles_rates_per_bucket / (numberOfAxialBlocksPerBucket*numberOfAxialCrystalsPerBlock);
     % Compute dead time factors, is equivalent to an efficency factor.
     % Thus, a factor for each crystal unit is computed, and then both
     % factors are multiplied.
