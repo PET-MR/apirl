@@ -196,7 +196,7 @@ for i = 1 : numel(sinogramsPerSegment_stir)
     % Get the index of sinos for this segment counting the sinograms:
     indiceBaseSino = 0;
     for j = 1 : indexSegmentSino-1
-        indiceBaseSino = indiceBaseSino + structSizeSino.sinogramsPerSegment(j)
+        indiceBaseSino = indiceBaseSino + structSizeSino.sinogramsPerSegment(j);
     end
     indicesSino = (indiceBaseSino+1) : (indiceBaseSino+ structSizeSino.sinogramsPerSegment(indexSegmentSino));
     sinogram_stir_thisSegment = sinogram(:,:,indicesSino);

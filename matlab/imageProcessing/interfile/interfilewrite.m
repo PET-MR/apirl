@@ -165,7 +165,7 @@ switch(structDato.class)
         strFormat = 'signed integer';
         numBytesPerPixel = 4;
     case 'single'
-        strFormat = 'short float';
+        strFormat = 'float';
         numBytesPerPixel = 4;
     case 'double'
         strFormat = 'long float';
@@ -197,22 +197,16 @@ fprintf(fid,'!number of slices := %d\n', size(image,3));
 fprintf(fid,'!slice orientation := Transverse\n');
 % Esto en imágenes normales no debería cambiar. En realidad es el tamaño de
 % píxel en z, por lo menos así lo toma el gate en el interfile.
-if(nargin==3)
-    if(numel(sizePixel)==3)
-        %fprintf(fid,'slice thickness (pixels) := %f\n', sizePixel(3)); %
-        %Esto es solo valido para gate.
-        fprintf(fid,'slice thickness (pixels) := 1\n');
-    else
-        fprintf(fid,'slice thickness (pixels) := 1\n');
-    end
-end
-if(nargin==3)
-    if(numel(sizePixel)==3)
-        fprintf(fid,'scaling factor (mm/pixel) [3] := %f\n', sizePixel(3));
-    else
-        disp('Error: el tamaño del pixel debe pasarse en un vector con 3 elementos.');
-    end
-end
+% if(nargin==3)
+%     if(numel(sizePixel)==3)
+%         fprintf(fid,'slice thickness (pixels) := %f\n', sizePixel(3)); %
+%         %Esto es solo valido para gate.
+%         %fprintf(fid,'slice thickness (pixels) := 1\n');
+%     else
+%         fprintf(fid,'slice thickness (pixels) := 1\n');
+%     end
+% end
+
 %fprintf(fid,'centre-centre slice separation (pixels) := 1\n');
 fprintf(fid,'scatter corrected := N\n');
 fprintf(fid,'method of scatter correction:= none\n');

@@ -349,9 +349,8 @@ float Siddon (Line3D LOR, Image* image, SiddonSegment** weightsList, unsigned in
   {
       // Cruce por el plano x: avanzo en i.
     weightsList[0][m].IndexX = i;
-    // El índice en Y de las coordenadas de píxeles crece de forma inversa que las coordenadas geométricas,
-    // por eso en vez de guardar el j, guardo nPixelsY -j - 1;
-    weightsList[0][m].IndexY = sizeImage.nPixelsY - 1 - j;
+    // En y avanza también (antes se hacía al revés que la rpimera fila era la de arriba).
+    weightsList[0][m].IndexY = j;
     weightsList[0][m].IndexZ = k;
     if((alpha_x <= alpha_y) && (alpha_x <= alpha_z))
     {
@@ -618,9 +617,8 @@ float Siddon (Line2D LOR, Image* image, SiddonSegment** weightsList, unsigned in
 	{
 	  // Cruce por el plano x: avanzo en i.
 	  weightsList[0][m].IndexX = i;
-	  // El índice en Y de las coordenadas de píxeles crece de forma inversa que las coordenadas geométricas,
-	  // por eso en vez de guardar el j, guardo nPixelsY -j - 1;
-	  weightsList[0][m].IndexY = sizeImage.nPixelsY - 1 - j;
+	  // El índice en Y crece igual que el x. La primera fila es la de abajo (antes era al revés).
+	  weightsList[0][m].IndexY = j;
 	  weightsList[0][m].Segment = (alpha_x - alpha_c) * rayLength_mm * factor;
 	  i += i_incr;
 	  alpha_c = alpha_x;
@@ -630,7 +628,8 @@ float Siddon (Line2D LOR, Image* image, SiddonSegment** weightsList, unsigned in
 	{
 	  // Cruce por el plano y: avanzo en j.
 	  weightsList[0][m].IndexX = i;
-	  weightsList[0][m].IndexY = sizeImage.nPixelsY - 1 - j;
+	  // El índice en Y crece igual que el x. La primera fila es la de abajo (antes era al revés).
+	  weightsList[0][m].IndexY = j;
 	  weightsList[0][m].Segment = (alpha_y - alpha_c) * rayLength_mm * factor;
 	  j += j_incr;
 	  alpha_c = alpha_y;

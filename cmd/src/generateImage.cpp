@@ -320,7 +320,7 @@ int main (int argc, char *argv[])
 						// Puedo meter las dos condiciones, de la siguiente manera:
 						// x_mm = (i-(int)(sizeImage.nPixelsX/2)) * sizeImage.sizePixelX_mm + (sizeImage.nPixelsX%2);
 						x_mm = (i-(int)(sizeImage.nPixelsX/2)) * sizeImage.sizePixelX_mm + (1-sizeImage.nPixelsX%2) * sizeImage.sizePixelX_mm/2;
-						y_mm = ((int)(sizeImage.nPixelsY/2)-j) * sizeImage.sizePixelY_mm + (1-sizeImage.nPixelsY%2) * sizeImage.sizePixelY_mm/2;
+						y_mm = (j-(int)(sizeImage.nPixelsY/2)) * sizeImage.sizePixelY_mm + (1-sizeImage.nPixelsY%2) * sizeImage.sizePixelY_mm/2;
 						if(((x_mm-origin_mm.X)*(x_mm-origin_mm.X) + (y_mm-origin_mm.Y)*(y_mm-origin_mm.Y)) < (radius_mm*radius_mm))
 						{
 							// Estoy dentro del cilindro!
@@ -415,7 +415,7 @@ int main (int argc, char *argv[])
 						// Puedo meter las dos condiciones, de la siguiente manera:
 						// x_mm = (i-(int)(sizeImage.nPixelsX/2)) * sizeImage.sizePixelX_mm + (sizeImage.nPixelsX%2);
 						x_mm = (i-(int)(sizeImage.nPixelsX/2)) * sizeImage.sizePixelX_mm + (1-sizeImage.nPixelsX%2) * sizeImage.sizePixelX_mm/2;
-						y_mm = ((int)(sizeImage.nPixelsY/2)-j) * sizeImage.sizePixelY_mm + (1-sizeImage.nPixelsY%2) * sizeImage.sizePixelY_mm/2;
+						y_mm = (j-(int)(sizeImage.nPixelsY/2)) * sizeImage.sizePixelY_mm + (1-sizeImage.nPixelsY%2) * sizeImage.sizePixelY_mm/2;
 						if((abs(x_mm-origin_mm.X)<(lengthX_mm/2)) && (abs(y_mm-origin_mm.Y)<(lengthY_mm/2)))
 						{
 							// Estoy dentro del cilindro!
