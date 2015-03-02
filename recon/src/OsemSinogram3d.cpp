@@ -165,16 +165,16 @@ bool OsemSinogram3d::Reconstruct()
       /// Proyección de la imagen:
       forwardprojector->Project(reconstructionImage, estimatedProjection);
       /// Si hay normalización, la aplico luego de la proyección:
-      if(enableNormalization)
+      /*if(enableNormalization)
       {
 	normalizationSubset = normalizationCorrectionFactorsProjection->getSubset(s, numSubsets);
 	estimatedProjection->multiplyBinToBin(normalizationSubset);
-      }
+      }*/
       // Si hay que guardar la proyección, lo hago acá porque después se modifica:
       if((saveIterationInterval != 0) && ((t%saveIterationInterval)==0) && saveIntermediateProjectionAndBackprojectedImage)
       {
 	// Tengo que guardar la estimated projection, y la backprojected image.
-	sprintf(c_string, "%s_projection_iter_%d", outputFilenamePrefix.c_str(), t); /// La extensión se le agrega en write interfile.
+	sprintf(c_string, "%s_projection_iter_%d_subset_%d", outputFilenamePrefix.c_str(), t, s); /// La extensión se le agrega en write interfile.
 	outputFilename.assign(c_string);
 	estimatedProjection->writeInterfile((char*)outputFilename.c_str());
       }
@@ -188,14 +188,23 @@ bool OsemSinogram3d::Reconstruct()
       //backprojector->DivideAndBackproject(inputSubset, estimatedProjection, backprojectedImage);
       /// Divido input sinogram por el estimated:
       estimatedProjection->inverseDivideBinToBin(inputSubset);
+      // Si hay que guardar la proyección, lo hago acá porque después se modifica:
+      if((saveIterationInterval != 0) && ((t%saveIterationInterval)==0) && saveIntermediateProjectionAndBackprojectedImage)
+      {
+	// Tengo que guardar la estimated projection, y la backprojected image.
+	sprintf(c_string, "%s_divProjection_iter_%d_subset_%d", outputFilenamePrefix.c_str(), t, s); /// La extensión se le agrega en write interfile.
+	outputFilename.assign(c_string);
+	estimatedProjection->writeInterfile((char*)outputFilename.c_str());
+      }
       /// Si hay normalización, la aplico luego de la proyección:
-      if(enableNormalization)
+      /*if(enableNormalization)
       {
 	// The subset was already generated in the projection process.
 	estimatedProjection->multiplyBinToBin(normalizationSubset);
 	// Free memory
 	delete normalizationSubset;
-      }
+      }*/
+      
       /// Retroproyecto
       backprojector->Backproject(estimatedProjection, backprojectedImage);
       //clock_t finalClockBackprojection = clock();
@@ -233,10 +242,7 @@ bool OsemSinogram3d::Reconstruct()
 	  sprintf(c_string, "%s_iter_%d_subset_%d", outputFilenamePrefix.c_str(), t,s); /// La extensión se le agrega en write interfile.
 	  outputFilename.assign(c_string);
 	  reconstructionImage->writeInterfile((char*)outputFilename.c_str());
-	  // Tengo que guardar la estimated projection, y la backprojected image.
-	  sprintf(c_string, "%s_projection_iter_%d_subset_%d", outputFilenamePrefix.c_str(), t); /// La extensión se le agrega en write interfile.
-	  outputFilename.assign(c_string);
-	  estimatedProjection->writeInterfile((char*)outputFilename.c_str());
+	  // Tengo que guardar la backprojected image.
 	  sprintf(c_string, "%s_backprojected_iter_%d_subset_%d", outputFilenamePrefix.c_str(), t); /// La extensión se le agrega en write interfile.
 	  outputFilename.assign(c_string);
 	  backprojectedImage->writeInterfile((char*)outputFilename.c_str());

@@ -109,7 +109,7 @@ crystalInterfFactor = single(componentFactors{2});
 crystalInterfFactor = repmat(crystalInterfFactor', 1, structSizeSino3d.numTheta/size(crystalInterfFactor,1));
 % c) Axial factors:
 if span_choice == 11
-    axialFactors = structSizeSino3d.numSinosMashed';% .* (componentFactors{4}.*componentFactors{8});
+    axialFactors = structSizeSino3d.numSinosMashed'.* (componentFactors{4}.*componentFactors{8});
 else
     axialFactors = structSizeSino3d.numSinosMashed';
 end

@@ -28,10 +28,13 @@ interfilewrite(single(attenuationMap_1_cm), attenuationMapFilename, sizePixel_mm
 % generateACFs:
 genAcfFilename = [outputPath 'genACFs_' acfFilename '.par'];
 % I have to add the extensions of the interfiles:
-CreateGenAcfConfigFile(genAcfFilename, structSizeSinos, [filenameSinogram '.h33'], [attenuationMapFilename '.h33'], acfFilename);
+CreateGenAcfConfigFile(genAcfFilename, structSizeSinos, [filenameSinogram '.h33'], [attenuationMapFilename '.h33'], [outputPath acfFilename]);
 
 % Then execute APIRL:
 status = system(['generateACFs ' genAcfFilename]); 
+
+% Move the sinogram to the output path:
+status = system(['mv ' genAcfFilename]); 
 
 % Read the generated acfs:
 if isfield(structSizeSinos,'sinogramsPerSegment')
@@ -40,13 +43,10 @@ else
     numSinos = structSizeSinos.numZ;
 end
 
-fid = fopen([acfFilename '.i33'], 'r');
+fid = fopen([outputPath acfFilename '.i33'], 'r');
 [acfs, count] = fread(fid, structSizeSinos.numTheta*structSizeSinos.numR*numSinos, 'single=>single');
 acfs = reshape(acfs, [structSizeSinos.numR structSizeSinos.numTheta numSinos]);
-% Matlab reads in a column-wise order that why angles are in the columns.
-% We want to have it in the rows since APIRL and STIR and other libraries
-% use row-wise order:
-acfs = permute(acfs,[2 1 3]);
+
 % Close the file:
 fclose(fid);
 

@@ -21,41 +21,25 @@ mkdir(outputPath);
 % Read the sinograms:
 sinogramsPath = '/home/mab15/workspace/KCL/Biograph_mMr/Mediciones/NEMA_IQ_20_02_2014/';
 filenameUncompressedMmr = [sinogramsPath 'PET_ACQ_194_20150220154553-0uncomp.s'];
-outFilenameIntfSinograms = [sinogramsPath 'NemaIq20_02_2014_ApirlIntf.s'];
-[sinogram, delayedSinogram, structSizeSino3d] = getIntfSinogramsFromUncompressedMmr(filenameUncompressedMmr, outFilenameIntfSinograms);
+outFilenameIntfSinograms = [sinogramsPath 'NemaIq20_02_2014_ApirlIntf_Span1.s'];
+[sinogramSpan1, delaySinogramSpan1, structSizeSino3dSpan1] = getIntfSinogramsFromUncompressedMmr(filenameUncompressedMmr, outFilenameIntfSinograms);
 
-% Read the normalization factors:
-filenameRawData = '/home/mab15/workspace/KCL/Biograph_mMr/Normalization/NormFiles/Norm_20150210112413.n';
-[componentFactors, componentLabels]  = readmMrComponentBasedNormalization(filenameRawData, 1);
-%% CREATE SINOGRAMS3D SPAN 11
-% Create sinogram span 11:
-michelogram = generateMichelogramFromSinogram3D(sinogram, structSizeSino3d);
-structSizeSino3dSpan11 = getSizeSino3dFromSpan(structSizeSino3d.numR, structSizeSino3d.numTheta, structSizeSino3d.numZ, ...
-    structSizeSino3d.rFov_mm, structSizeSino3d.zFov_mm, 11, structSizeSino3d.maxAbsRingDiff);
-sinogramSpan11 = reduceMichelogram(michelogram, structSizeSino3dSpan11.sinogramsPerSegment, structSizeSino3dSpan11.minRingDiff, structSizeSino3dSpan11.maxRingDiff);
-clear michelogram
-clear sinogram
+%% SAVE SINOGRAMS3D SPAN 1
 % Write to a file in interfile format:
-outputSinogramName = [outputPath 'sinogramSpan11'];
-interfileWriteSino(single(sinogramSpan11), outputSinogramName, structSizeSino3dSpan11);
+outputSinogramName = [outputPath 'sinogramSpan1'];
+interfileWriteSino(single(sinogramSpan1), outputSinogramName, structSizeSino3dSpan1);
 % In int 16 also:
-outputSinogramName = [outputPath 'sinogramSpan11_int16'];
-interfileWriteSino(int16(sinogramSpan11), outputSinogramName, structSizeSino3dSpan11);
+outputSinogramName = [outputPath 'sinogramSpan1_int16'];
+interfileWriteSino(int16(sinogramSpan1), outputSinogramName, structSizeSino3dSpan1);
 
-% The same for the delayed:
-% Create sinogram span 11:
-michelogram = generateMichelogramFromSinogram3D(delayedSinogram, structSizeSino3d);
-delaySinogramSpan11 = reduceMichelogram(michelogram, structSizeSino3dSpan11.sinogramsPerSegment, structSizeSino3dSpan11.minRingDiff, structSizeSino3dSpan11.maxRingDiff);
-clear michelogram
-clear delayedSinogram
 
 % Write to a file in interfile format:
-outputSinogramName = [outputPath 'delaySinogramSpan11'];
-interfileWriteSino(single(delaySinogramSpan11), outputSinogramName, structSizeSino3dSpan11);
+outputSinogramName = [outputPath 'delaySinogramSpan1'];
+interfileWriteSino(single(delaySinogramSpan1), outputSinogramName, structSizeSino3dSpan1);
 % In int 16 also:
-outputSinogramName = [outputPath 'delaySinogramSpan11_int16'];
-interfileWriteSino(int16(delaySinogramSpan11), outputSinogramName, structSizeSino3dSpan11);
-clear delaySinogramSpan11 % Not used in this example.
+outputSinogramName = [outputPath 'delaySinogramSpan1_int16'];
+interfileWriteSino(int16(delaySinogramSpan1), outputSinogramName, structSizeSino3dSpan1);
+
 %% CREATE INITIAL ESTIMATE FOR RECONSTRUCTION
 % Create image from the same size than used by siemens:
 % Size of the pixels:
@@ -82,39 +66,12 @@ initialEstimateHighRes = ones(sizeImageHighRes_pixels, 'single');
 filenameInitialEstimateHighRes = [outputPath '/initialEstimate3dHighRes'];
 interfilewrite(initialEstimateHighRes, filenameInitialEstimateHighRes, sizePixelHighRes_mm);
 %% NORMALIZATION FACTORS
-% A set of 2d sinograms with normalization effects is generated. The
-% geomtric normalization and crystal interference are the same for each
-% sinogram.
-
-% Geometric Factor. The geomtric factor is one projection profile per
-% plane. But it's the same for all planes, so I just use one of them.
-geometricFactor = repmat(double(componentFactors{1}(:,1)), 1, structSizeSino3d.numTheta);
-figure;
-set(gcf, 'Position', [0 0 1600 1200]);
-imshow(geometricFactor' ./max(max(geometricFactor)));
-title('Geometric Factor');
-% Crystal interference, its a pattern that is repeated peridoically:
-crystalInterfFactor = single(componentFactors{2})';
-crystalInterfFactor = repmat(crystalInterfFactor, 1, structSizeSino3d.numTheta/size(crystalInterfFactor,2));
-% Geometric Normalization and crystal interference:
-figure;
-imshow(crystalInterfFactor' ./max(max(crystalInterfFactor)));
-title('Crystal Interference Factors');
-set(gcf, 'Position', [0 0 1600 1200]);
-
-% Generate the sinograms for crystal efficencies:
-sinoEfficencies = createSinogram3dFromDetectorsEfficency(componentFactors{3}, structSizeSino3dSpan11, 1);
-figure;
-subplot(1,2,1);
-imshow(sinoEfficencies(:,:,1)' ./max(max(sinoEfficencies(:,:,1))));
-title('Crystal Efficencies for Sinogram 1');
-subplot(1,2,2);
-imshow(sinoEfficencies(:,:,200)' ./max(max(sinoEfficencies(:,:,200))));
-title('Crystal Efficencies for Sinogram 200');
-set(gcf, 'Position', [0 0 1600 1200]);
-
-% Axial factors:
-axialFactors = structSizeSino3dSpan11.numSinosMashed; % 1./(componentFactors{4}.*componentFactors{8});
+% ncf:
+[overall_ncf_3d, scanner_time_invariant_ncf_3d, scanner_time_variant_ncf_3d, used_xtal_efficiencies, used_deadtimefactors, used_axial_factors] = ...
+   create_norm_files_mmr('/home/mab15/workspace/KCL/Biograph_mMr/Mediciones/NEMA_IQ_20_02_2014/norm/Norm_20150210112413.n', [], [], [], [], 1);
+% invert for nf:
+overall_nf_3d = overall_ncf_3d;
+overall_nf_3d(overall_ncf_3d ~= 0) = 1./overall_nf_3d(overall_ncf_3d ~= 0);
 %% ATTENUATION CORRECTION - PICK A OR B AND COMMENT THE NOT USED 
 %% COMPUTE THE ACFS (OPTION A)
 % Read the phantom and then generate the ACFs with apirl. There are two
@@ -159,78 +116,43 @@ title('Attenuation Map Shifted');
 
 % Create ACFs of a computed phatoms with the linear attenuation
 % coefficients:
-acfFilename = ['acfsSinogramSpan11'];
-filenameSinogram = [outputPath 'sinogramSpan11'];
-acfsSinogramSpan11 = createACFsFromImage(attenMap, imageSizeAtten_mm, outputPath, acfFilename, filenameSinogram, structSizeSino3dSpan11, 1);
+acfFilename = ['acfsSinogramSpan1'];
+filenameSinogram = [outputPath 'sinogramSpan1'];
+acfsSinogramSpan1 = createACFsFromImage(attenMap, imageSizeAtten_mm, outputPath, acfFilename, filenameSinogram, structSizeSino3dSpan1, 1);
 %% READ THE ACFS (OPTION B)
 % Span11 Sinogram:
-acfFilename = [outputPath 'acfsSinogramSpan11'];
+acfFilename = [outputPath 'acfsSinogramSpan1'];
 fid = fopen([acfFilename '.i33'], 'r');
-numSinos = sum(structSizeSino3dSpan11.sinogramsPerSegment);
-[acfsSinogramSpan11, count] = fread(fid, structSizeSino3dSpan11.numTheta*structSizeSino3dSpan11.numR*numSinos, 'single=>single');
-acfsSinogramSpan11 = reshape(acfsSinogramSpan11, [structSizeSino3dSpan11.numR structSizeSino3dSpan11.numTheta numSinos]);
+numSinos = sum(structSizeSino3dSpan1.sinogramsPerSegment);
+[acfsSinogramSpan1, count] = fread(fid, structSizeSino3dSpan1.numTheta*structSizeSino3dSpan1.numR*numSinos, 'single=>single');
+acfsSinogramSpan1 = reshape(acfsSinogramSpan1, [structSizeSino3dSpan1.numR structSizeSino3dSpan1.numTheta numSinos]);
 % Close the file:
 fclose(fid);
-%% CORRECTION OF SPAN 11 SINOGRAMS
-sinogramSpan11corrected = zeros(size(sinogramSpan11));
-if(numel(axialFactors) ~= sum(structSizeSino3dSpan11.sinogramsPerSegment))
-    perror('La cantidad de factores de correccion axial es distinto a la cantidad de sinograms');
-end
-% Correct sinograms 3d for normalization:
-for i = 1 : sum(structSizeSino3dSpan11.sinogramsPerSegment)
-    sinogramSpan11corrected(:,:,i) = sinogramSpan11(:,:,i) .* (1./geometricFactor) .* (1./crystalInterfFactor) .* (1./axialFactors(i));
-end
 
-% Crystal efficencies, there are gaps, so avoid zero values:
-nonzero = sinoEfficencies ~= 0;
-% Apply efficency:
-sinogramSpan11corrected(nonzero) = sinogramSpan11corrected(nonzero) ./ sinoEfficencies(nonzero);
-% And gaps:
-sinogramSpan11corrected(~nonzero) = 0;
-
-figure;plot(sinogramSpan11corrected(100,:,50)./max(sinogramSpan11corrected(100,:,50)));
-% Write to a file in interfile formar:
-outputSinogramName = [outputPath '/sinogramSpan11Normalized'];
-interfileWriteSino(single(sinogramSpan11corrected), outputSinogramName, structSizeSino3dSpan11);
-
-% Attenuation correction:
-sinogramSpan11corrected = sinogramSpan11corrected .* acfsSinogramSpan11;
-% Write to a file in interfile formar:
-outputSinogramName = [outputPath '/sinogramSpan11NormAttenCorrected'];
-interfileWriteSino(single(sinogramSpan11corrected), outputSinogramName, structSizeSino3dSpan11);
-
-%% GENERATE ATTENUATION AND NORMALIZATION FACTORS AND CORECCTION FACTORS FOR SPAN11 SINOGRAMS FOR APIRL
-% This factors are not for precorrect but for apply as normalizaiton in
-% each iteration:
-normFactorsSpan11 = zeros(size(sinogramSpan11));
-for i = 1 : sum(structSizeSino3dSpan11.sinogramsPerSegment)
-    % First the geomeitric, crystal interference factors:
-    normFactorsSpan11(:,:,i) = geometricFactor .* crystalInterfFactor;
-    % Axial factor:
-    normFactorsSpan11(:,:,i) = normFactorsSpan11(:,:,i) .* axialFactors(i);
-end
-% Then apply the crystal efficiencies:
-normFactorsSpan11 = normFactorsSpan11 .* sinoEfficencies;
+%% GENERATE AND SAVE ATTENUATION AND NORMALIZATION FACTORS AND CORECCTION FACTORS FOR SPAN11 SINOGRAMS FOR APIRL
 % Save:
-outputSinogramName = [outputPath '/NF_Span11'];
-interfileWriteSino(single(normFactorsSpan11), outputSinogramName, structSizeSino3dSpan11);
+outputSinogramName = [outputPath '/NF_Span1'];
+interfileWriteSino(single(overall_nf_3d), outputSinogramName, structSizeSino3dSpan1);
 
 % We also generate the ncf:
-normCorrectionFactorsSpan11 = zeros(size(sinogramSpan11));
-normCorrectionFactorsSpan11(normFactorsSpan11~=0) = 1 ./ normFactorsSpan11(normFactorsSpan11~=0);
-outputSinogramName = [outputPath '/NCF_Span11'];
-interfileWriteSino(single(normCorrectionFactorsSpan11), outputSinogramName, structSizeSino3dSpan11);
+outputSinogramName = [outputPath '/NCF_Span1'];
+interfileWriteSino(single(overall_ncf_3d), outputSinogramName, structSizeSino3dSpan1);
 
 % Compose with acfs:
-atteNormFactorsSpan11 = normFactorsSpan11;
-atteNormFactorsSpan11(acfsSinogramSpan11 ~= 0) = atteNormFactorsSpan11(acfsSinogramSpan11 ~= 0) ./acfsSinogramSpan11(acfsSinogramSpan11 ~= 0);
-outputSinogramName = [outputPath '/ANF_Span11'];
-interfileWriteSino(single(atteNormFactorsSpan11), outputSinogramName, structSizeSino3dSpan11);
-clear atteNormFactorsSpan11;
+atteNormFactorsSpan1 = overall_nf_3d;
+atteNormFactorsSpan1(acfsSinogramSpan1 ~= 0) = overall_nf_3d(acfsSinogramSpan1 ~= 0) ./acfsSinogramSpan1(acfsSinogramSpan1 ~= 0);
+outputSinogramName = [outputPath '/ANF_Span1'];
+interfileWriteSino(single(atteNormFactorsSpan1), outputSinogramName, structSizeSino3dSpan1);
+clear atteNormFactorsSpan1;
 %clear normFactorsSpan11;
 
 % The same for the correction factors:
-atteNormCorrectionFactorsSpan11 = normCorrectionFactorsSpan11 .*acfsSinogramSpan11;
-outputSinogramName = [outputPath '/ANCF_Span11'];
-interfileWriteSino(single(atteNormCorrectionFactorsSpan11), outputSinogramName, structSizeSino3dSpan11);
-clear atteNormCorrectionFactorsSpan11;
+atteNormCorrectionFactorsSpan1 = overall_ncf_3d .*acfsSinogramSpan1;
+outputSinogramName = [outputPath '/ANCF_Span1'];
+interfileWriteSino(single(atteNormCorrectionFactorsSpan1), outputSinogramName, structSizeSino3dSpan1);
+clear atteNormCorrectionFactorsSpan1;
+
+% Creat a phantom with ones:
+onesWithGaps = overall_nf_3d ~= 0;
+outputSinogramName = [outputPath '/GAPS_Span1'];
+interfileWriteSino(single(onesWithGaps), outputSinogramName, structSizeSino3dSpan1);

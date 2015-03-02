@@ -33,29 +33,29 @@ filenameRawData = '/home/mab15/workspace/KCL/Biograph_mMr/mmr/Norm_2014100810101
 michelogram = generateMichelogramFromSinogram3D(sinogram, structSizeSino3d);
 structSizeSino3dSpan11 = getSizeSino3dFromSpan(structSizeSino3d.numR, structSizeSino3d.numTheta, structSizeSino3d.numZ, ...
     structSizeSino3d.rFov_mm, structSizeSino3d.zFov_mm, 11, structSizeSino3d.maxAbsRingDiff);
-sinogramSpan11 = reduceMichelogram(michelogram, structSizeSino3dSpan11.sinogramsPerSegment, structSizeSino3dSpan11.minRingDiff, structSizeSino3dSpan11.maxRingDiff);
+sinogramSpan11 = reduceMichelogram(michelogram, structSizeSino3dSpan11);
 clear michelogram
 clear sinogram
 % Write to a file in interfile format:
 outputSinogramName = [outputPath 'sinogramSpan11'];
-interfileWriteSino(single(sinogramSpan11), outputSinogramName, structSizeSino3dSpan11.sinogramsPerSegment, structSizeSino3dSpan11.minRingDiff, structSizeSino3dSpan11.maxRingDiff);
+interfileWriteSino(single(sinogramSpan11), outputSinogramName, structSizeSino3dSpan11);
 % In int 16 also:
 outputSinogramName = [outputPath 'sinogramSpan11_int16'];
-interfileWriteSino(int16(sinogramSpan11), outputSinogramName, structSizeSino3dSpan11.sinogramsPerSegment, structSizeSino3dSpan11.minRingDiff, structSizeSino3dSpan11.maxRingDiff);
+interfileWriteSino(int16(sinogramSpan11), outputSinogramName, structSizeSino3dSpan11);
 
 % The same for the delayed:
 % Create sinogram span 11:
 michelogram = generateMichelogramFromSinogram3D(delayedSinogram, structSizeSino3d);
-delaySinogramSpan11 = reduceMichelogram(michelogram, structSizeSino3dSpan11.sinogramsPerSegment, structSizeSino3dSpan11.minRingDiff, structSizeSino3dSpan11.maxRingDiff);
+delaySinogramSpan11 = reduceMichelogram(michelogram, structSizeSino3dSpan11);
 clear michelogram
 clear delayedSinogram
 
 % Write to a file in interfile format:
 outputSinogramName = [outputPath 'delaySinogramSpan11'];
-interfileWriteSino(single(delaySinogramSpan11), outputSinogramName, structSizeSino3dSpan11.sinogramsPerSegment, structSizeSino3dSpan11.minRingDiff, structSizeSino3dSpan11.maxRingDiff);
+interfileWriteSino(single(delaySinogramSpan11), outputSinogramName, structSizeSino3dSpan11);
 % In int 16 also:
 outputSinogramName = [outputPath 'delaySinogramSpan11_int16'];
-interfileWriteSino(int16(delaySinogramSpan11), outputSinogramName, structSizeSino3dSpan11.sinogramsPerSegment, structSizeSino3dSpan11.minRingDiff, structSizeSino3dSpan11.maxRingDiff);
+interfileWriteSino(int16(delaySinogramSpan11), outputSinogramName, structSizeSino3dSpan11);
 clear delaySinogramSpan11 % Not used in this example.
 %% CREATE INITIAL ESTIMATE FOR RECONSTRUCTION
 % Create image from the same size than used by siemens:
@@ -189,37 +189,26 @@ sinogramSpan11corrected(~nonzero) = 0;
 figure;plot(sinogramSpan11corrected(100,:,50)./max(sinogramSpan11corrected(100,:,50)));
 % Write to a file in interfile formar:
 outputSinogramName = [outputPath '/sinogramSpan11Normalized'];
-interfileWriteSino(single(sinogramSpan11corrected), outputSinogramName, structSizeSino3dSpan11.sinogramsPerSegment, structSizeSino3dSpan11.minRingDiff, structSizeSino3dSpan11.maxRingDiff);
+interfileWriteSino(single(sinogramSpan11corrected), outputSinogramName, structSizeSino3dSpan11);
 
 % Attenuation correction:
 sinogramSpan11corrected = sinogramSpan11corrected .* acfsSinogramSpan11;
 % Write to a file in interfile formar:
 outputSinogramName = [outputPath '/sinogramSpan11NormAttenCorrected'];
-interfileWriteSino(single(sinogramSpan11corrected), outputSinogramName, structSizeSino3dSpan11.sinogramsPerSegment, structSizeSino3dSpan11.minRingDiff, structSizeSino3dSpan11.maxRingDiff);
+interfileWriteSino(single(sinogramSpan11corrected), outputSinogramName, structSizeSino3dSpan11);
 
 countsPerSinogramCorrected = sum(sum(sinogramSpan11corrected));
-% Compare with the projection of span 11 of a constant image (performed with APIRL):
-constProjFilename = [outputPath 'Image_Span11__projection_iter_0'];
-fid = fopen([constProjFilename '.i33'], 'r');
-numSinos = sum(structSizeSino3dSpan11.sinogramsPerSegment);
-[constSinogramSpan11, count] = fread(fid, structSizeSino3dSpan11.numTheta*structSizeSino3dSpan11.numR*numSinos, 'single=>single');
-constSinogramSpan11 = reshape(constSinogramSpan11, [structSizeSino3dSpan11.numR structSizeSino3dSpan11.numTheta numSinos]);
 
-% Close the file:
-fclose(fid);
-countsPerSinogramConstImage = sum(sum(constSinogramSpan11));
-countsPerSinogramConstImage = permute(countsPerSinogramConstImage,[3 1 2]);
 
 % Change vecor in 3rd dimension for 1st, to plot:
 countsPerSinogramCorrected = permute(countsPerSinogramCorrected,[3 1 2]);
 h = figure;
-plot([countsPerSinogram./max(countsPerSinogram) countsPerSinogramCorrected./max(countsPerSinogramCorrected) ...
-    countsPerSinogramConstImage./max(countsPerSinogramConstImage)], 'LineWidth', 2);
+plot([countsPerSinogram./max(countsPerSinogram) countsPerSinogramCorrected./max(countsPerSinogramCorrected)], 'LineWidth', 2);
 title('Counts Per Sinogram Span 11 with Normalization');
 ylabel('Counts');
 xlabel('Sinogram');
 
-legend('Uncorrected', 'Corrected', 'Projection of Constant Image', 'Location', 'SouthEast');
+legend('Uncorrected', 'Corrected', 'Location', 'SouthEast');
 set(gcf, 'Position', [0 0 1600 1200]);
 
 % Delete variables because there is no enough memory:
@@ -239,37 +228,37 @@ end
 normFactorsSpan11 = normFactorsSpan11 .* sinoEfficencies;
 % Save:
 outputSinogramName = [outputPath '/NF_Span11'];
-interfileWriteSino(single(normFactorsSpan11), outputSinogramName, structSizeSino3dSpan11.sinogramsPerSegment, structSizeSino3dSpan11.minRingDiff, structSizeSino3dSpan11.maxRingDiff);
+interfileWriteSino(single(normFactorsSpan11), outputSinogramName, structSizeSino3dSpan11);
 
 % We also generate the ncf:
 normCorrectionFactorsSpan11 = zeros(size(sinogramSpan11));
 normCorrectionFactorsSpan11(normFactorsSpan11~=0) = 1 ./ normFactorsSpan11(normFactorsSpan11~=0);
 outputSinogramName = [outputPath '/NCF_Span11'];
-interfileWriteSino(single(normCorrectionFactorsSpan11), outputSinogramName, structSizeSino3dSpan11.sinogramsPerSegment, structSizeSino3dSpan11.minRingDiff, structSizeSino3dSpan11.maxRingDiff);
+interfileWriteSino(single(normCorrectionFactorsSpan11), outputSinogramName, structSizeSino3dSpan11);
 
 % Compose with acfs:
 atteNormFactorsSpan11 = normFactorsSpan11;
 atteNormFactorsSpan11(acfsSinogramSpan11 ~= 0) = atteNormFactorsSpan11(acfsSinogramSpan11 ~= 0) ./acfsSinogramSpan11(acfsSinogramSpan11 ~= 0);
 outputSinogramName = [outputPath '/ANF_Span11'];
-interfileWriteSino(single(atteNormFactorsSpan11), outputSinogramName, structSizeSino3dSpan11.sinogramsPerSegment, structSizeSino3dSpan11.minRingDiff, structSizeSino3dSpan11.maxRingDiff);
+interfileWriteSino(single(atteNormFactorsSpan11), outputSinogramName, structSizeSino3dSpan11);
 clear atteNormFactorsSpan11;
 %clear normFactorsSpan11;
 
 % The same for the correction factors:
 atteNormCorrectionFactorsSpan11 = normCorrectionFactorsSpan11 .*acfsSinogramSpan11;
 outputSinogramName = [outputPath '/ANCF_Span11'];
-interfileWriteSino(single(atteNormCorrectionFactorsSpan11), outputSinogramName, structSizeSino3dSpan11.sinogramsPerSegment, structSizeSino3dSpan11.minRingDiff, structSizeSino3dSpan11.maxRingDiff);
+interfileWriteSino(single(atteNormCorrectionFactorsSpan11), outputSinogramName, structSizeSino3dSpan11);
 clear atteNormCorrectionFactorsSpan11;
 
 % One for just the gaps:
 gaps = sinoEfficencies ~=0;
 outputSinogramName = [outputPath '/GAPS_Span11'];
-interfileWriteSino(single(gaps), outputSinogramName, structSizeSino3dSpan11.sinogramsPerSegment, structSizeSino3dSpan11.minRingDiff, structSizeSino3dSpan11.maxRingDiff);
+interfileWriteSino(single(gaps), outputSinogramName, structSizeSino3dSpan11);
 
 % One for just the gaps with attenuation:
 gaps = single(sinoEfficencies ~=0);
 gaps(acfsSinogramSpan11 ~= 0) = gaps(acfsSinogramSpan11 ~= 0) ./acfsSinogramSpan11(acfsSinogramSpan11 ~= 0);
 outputSinogramName = [outputPath '/AGAPS_Span11'];
-interfileWriteSino(single(gaps), outputSinogramName, structSizeSino3dSpan11.sinogramsPerSegment, structSizeSino3dSpan11.minRingDiff, structSizeSino3dSpan11.maxRingDiff);
+interfileWriteSino(single(gaps), outputSinogramName, structSizeSino3dSpan11);
 
 clear gaps

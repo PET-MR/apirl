@@ -447,12 +447,14 @@ bool SiddonProjector::Backproject (Sinogram3D* inputProjection, Image* outputIma
   float newValue;
   int indexRing1, indexRing2, numZ;
   float z1_mm, z2_mm;
-  #pragma omp parallel private(i, j, k, l, m, LOR, P1, P2, MyWeightsList, LengthList, n, newValue, indexPixel, geomFactor) shared(inputProjection,ptrPixels)
+  int lorOk;
+  
+  for(i = 0; i < inputProjection->getNumSegments(); i++)
   {
-    MyWeightsList = (SiddonSegment**)malloc(sizeof(SiddonSegment*));
-    for(i = 0; i < inputProjection->getNumSegments(); i++)
+    printf("Backprojection con Siddon Segmento: %d\n", i);
+    #pragma omp parallel private(i, j, k, l, m, LOR, P1, P2, MyWeightsList, LengthList, n, newValue, indexPixel, geomFactor, numZ, lorOk) shared(inputProjection,ptrPixels)
     {
-      printf("Backprojection con Siddon Segmento: %d\n", i);
+      MyWeightsList = (SiddonSegment**)malloc(sizeof(SiddonSegment*));
       #pragma omp for
       for(j = 0; j < inputProjection->getSegment(i)->getNumSinograms(); j++)
       {
@@ -486,7 +488,6 @@ bool SiddonProjector::Backproject (Sinogram3D* inputProjection, Image* outputIma
 		indexRing1 = inputProjection->getSegment(i)->getSinogram2D(j)->getRing1FromList(m);
 		indexRing2 = inputProjection->getSegment(i)->getSinogram2D(j)->getRing2FromList(m);
 		// Devuelve true si encontró los dos cabezales de la LOR:
-		int lorOk;
 		if(useMultipleLorsPerBin)
 		{
 		  lorOk = inputProjection->getSegment(i)->getSinogram2D(j)->getPointsFromLor(k,l,m, &P1, &P2, &geomFactor);
@@ -507,7 +508,6 @@ bool SiddonProjector::Backproject (Sinogram3D* inputProjection, Image* outputIma
 		  // delimits the voxels
 		  // Siddon					
 		  Siddon(LOR, outputImage, MyWeightsList, &LengthList,1);
-		      
 		  for(n = 0; n < LengthList; n++)
 		  {
 		    // for every element of the systema matrix different from zero,we do
@@ -523,10 +523,6 @@ bool SiddonProjector::Backproject (Sinogram3D* inputProjection, Image* outputIma
 			ptrPixels[indexPixel] +=  newValue;	
 		      
 		    }
-		    /*else
-		    {
-			    printf("Siddon fuera de mapa\n");
-		    }*/
 		  }
 		  if(LengthList != 0)
 		  {
