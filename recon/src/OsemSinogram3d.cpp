@@ -25,7 +25,7 @@ void OsemSinogram3d::updateUpdateThreshold()
 {
   for(int s = 0; s < numSubsets; s++)
   {
-    updateThresholds[s] = sensitivityImages[s]->getMinValue() + (sensitivityImages[s]->getMaxValue()-sensitivityImages[s]->getMinValue()) * 0.0001;  
+    updateThresholds[s] = sensitivityImages[s]->getMinValue() + (sensitivityImages[s]->getMaxValue()-sensitivityImages[s]->getMinValue()) * 0.002;  
     #ifdef __DEBUG__
       printf("Threshold: %f\n", updateThresholds[s]);
     #endif

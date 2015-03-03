@@ -51,7 +51,7 @@ end
 % open the image file for reading
 % Modificación Martín Belzunce 15/02/2012
 % Agrego el path relativo:
-params.data_file = [relativePath params.data_file];
+%params.data_file = [relativePath params.data_file];
 fid = fopen(params.data_file, 'r', params.byte_order);
 if (fid == -1)
     err_id = 'Images:interfileread:invalidValue';

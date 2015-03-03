@@ -36,9 +36,9 @@
 %
 function sinoEfficencies = createSinogram2dFromDetectorsEfficency(efficenciesPerDetector, structSizeSino2d, method, visualization)
 
-sinoEfficencies = zeros(structSizeSino2d.numTheta, structSizeSino2d.numR);
-mapaDet1Ids = zeros(structSizeSino2d.numTheta, structSizeSino2d.numR, 'uint16');
-mapaDet2Ids = zeros(structSizeSino2d.numTheta, structSizeSino2d.numR, 'uint16');
+sinoEfficencies = zeros(structSizeSino2d.numR, structSizeSino2d.numTheta);
+mapaDet1Ids = zeros(structSizeSino2d.numR, structSizeSino2d.numTheta, 'uint16');
+mapaDet2Ids = zeros(structSizeSino2d.numR, structSizeSino2d.numTheta, 'uint16');
 numDetectors = numel(efficenciesPerDetector);
 % minDiff between detectors:
 minDiffDetectors = (numDetectors - structSizeSino2d.numR) / 2;
@@ -61,23 +61,23 @@ if(method == 1)
     detector2IdsForFirstProj(detector2IdsForFirstProj>numDetectors) = detector2IdsForFirstProj(detector2IdsForFirstProj>numDetectors) - numDetectors;
     % I use this as a base for the next projections, for each new projection
     % the detector1 id is shifted left and the detector 2 id is shifted right:
-    for idProj = 1 :  size(sinoEfficencies,1)
+    for idProj = 1 :  size(sinoEfficencies,2)
         % Shift left is the same tha sum 1
         idDet1 = detector1IdsForFirstProj + idProj - 1;
         idDet1(idDet1>numDetectors) = idDet1(idDet1>numDetectors) - numDetectors;
         % The opposite for det 2:
         idDet2 = detector2IdsForFirstProj + idProj - 1;
         idDet2(idDet2>numDetectors) = idDet2(idDet2>numDetectors) - numDetectors;
-        sinoEfficencies(idProj, :) = efficenciesPerDetector(idDet1).*efficenciesPerDetector(idDet2);
-        mapaDet1Ids(idProj, :) = idDet1;
-        mapaDet2Ids(idProj, :) = idDet2;
+        sinoEfficencies(:, idProj) = efficenciesPerDetector(idDet1).*efficenciesPerDetector(idDet2);
+        mapaDet1Ids(:, idProj) = idDet1;
+        mapaDet2Ids(:, idProj) = idDet2;
         histDetIds = histDetIds + hist([idDet1 idDet2], detectorIds);
     end
 elseif method == 2
     % Method 2:
     theta = [0:structSizeSino2d.numTheta-1]'; % The index of thetas goes from 0 to numTheta-1 (in stir)
     r = (-structSizeSino2d.numR/2):(-structSizeSino2d.numR/2+structSizeSino2d.numR-1);
-    [R, THETA] = meshgrid(r, theta);
+    [THETA, R] = meshgrid(theta, r);
     mapaDet1Ids = rem((THETA + floor(R/2) + numDetectors), numDetectors) + 1;   % The +1 is added in matlab version respect than c version, because here we have 1-base indexes.
     mapaDet2Ids = rem((THETA - floor((R+1)/2) + numDetectors/2), numDetectors) + 1; % The +1 is added in matlab version respect than c version, because here we have 1-base indexes.
     sinoEfficencies = efficenciesPerDetector(mapaDet1Ids).*efficenciesPerDetector(mapaDet2Ids);

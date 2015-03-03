@@ -14,38 +14,51 @@ apirlPath = '/home/mab15/workspace/apirl-code/trunk/';
 addpath(genpath([apirlPath '/matlab']));
 setenv('PATH', [getenv('PATH') ':' apirlPath '/build/bin']);
 setenv('LD_LIBRARY_PATH', [getenv('LD_LIBRARY_PATH') ':' apirlPath '/build/bin']);
-outputPath = '/home/mab15/workspace/KCL/Biograph_mMr/Mediciones/NEMA_IQ_20_02_2014/Reconstruction/span1/';
+outputPath = '/home/mab15/workspace/KCL/Biograph_mMr/Mediciones/NEMA_IQ_20_02_2014/Reconstruction/span11/';
 mkdir(outputPath);
 %setenv('LD_LIBRARY_PATH', [getenv('LD_LIBRARY_PATH') ':/usr/lib/x86_64-linux-gnu/']);
 %% READING THE SINOGRAMS
 % Read the sinograms:
 sinogramsPath = '/home/mab15/workspace/KCL/Biograph_mMr/Mediciones/NEMA_IQ_20_02_2014/';
 filenameUncompressedMmr = [sinogramsPath 'PET_ACQ_194_20150220154553-0uncomp.s'];
-outFilenameIntfSinograms = [sinogramsPath 'NemaIq20_02_2014_ApirlIntf_Span1.s'];
-[sinogramSpan1, delaySinogramSpan1, structSizeSino3dSpan1] = getIntfSinogramsFromUncompressedMmr(filenameUncompressedMmr, outFilenameIntfSinograms);
+outFilenameIntfSinograms = [sinogramsPath 'NemaIq20_02_2014_ApirlIntf.s'];
+[sinogram, delayedSinogram, structSizeSino3d] = getIntfSinogramsFromUncompressedMmr(filenameUncompressedMmr, outFilenameIntfSinograms);
 
-%% SAVE SINOGRAMS3D SPAN 1
+%% CREATE SINOGRAMS3D SPAN 11
+% Create sinogram span 11:
+michelogram = generateMichelogramFromSinogram3D(sinogram, structSizeSino3d);
+structSizeSino3dSpan11 = getSizeSino3dFromSpan(structSizeSino3d.numR, structSizeSino3d.numTheta, structSizeSino3d.numZ, ...
+    structSizeSino3d.rFov_mm, structSizeSino3d.zFov_mm, 11, structSizeSino3d.maxAbsRingDiff);
+sinogramSpan11 = reduceMichelogram(michelogram, structSizeSino3dSpan11);
+clear michelogram
+clear sinogram
 % Write to a file in interfile format:
-outputSinogramName = [outputPath 'sinogramSpan1'];
-interfileWriteSino(single(sinogramSpan1), outputSinogramName, structSizeSino3dSpan1);
+outputSinogramName = [outputPath 'sinogramSpan11'];
+interfileWriteSino(single(sinogramSpan11), outputSinogramName, structSizeSino3dSpan11);
 % In int 16 also:
-outputSinogramName = [outputPath 'sinogramSpan1_int16'];
-interfileWriteSino(int16(sinogramSpan1), outputSinogramName, structSizeSino3dSpan1);
+outputSinogramName = [outputPath 'sinogramSpan11_int16'];
+interfileWriteSino(int16(sinogramSpan11), outputSinogramName, structSizeSino3dSpan11);
 
+% The same for the delayed:
+% Create sinogram span 11:
+michelogram = generateMichelogramFromSinogram3D(delayedSinogram, structSizeSino3d);
+delaySinogramSpan11 = reduceMichelogram(michelogram, structSizeSino3dSpan11);
+clear michelogram
+clear delayedSinogram
 
 % Write to a file in interfile format:
-outputSinogramName = [outputPath 'delaySinogramSpan1'];
-interfileWriteSino(single(delaySinogramSpan1), outputSinogramName, structSizeSino3dSpan1);
+outputSinogramName = [outputPath 'delaySinogramSpan11'];
+interfileWriteSino(single(delaySinogramSpan11), outputSinogramName, structSizeSino3dSpan11);
 % In int 16 also:
-outputSinogramName = [outputPath 'delaySinogramSpan1_int16'];
-interfileWriteSino(int16(delaySinogramSpan1), outputSinogramName, structSizeSino3dSpan1);
-
+outputSinogramName = [outputPath 'delaySinogramSpan11_int16'];
+interfileWriteSino(int16(delaySinogramSpan11), outputSinogramName, structSizeSino3dSpan11);
+clear delaySinogramSpan11 % Not used in this example.
 %% CREATE INITIAL ESTIMATE FOR RECONSTRUCTION
 % Create image from the same size than used by siemens:
 % Size of the pixels:
 sizePixel_mm = [4.1725 4.1725 2.0312];
 % The size in pixels:
-sizeImage_pixels = [143 143 127]; % For cover the full Fov: 596/4.1725=142.84
+sizeImage_pixels = [144 144 127]; % For cover the full Fov: 596/4.1725=142.84
 % Size of the image to cover the full fov:
 sizeImage_mm = sizePixel_mm .* sizeImage_pixels;
 % Inititial estimate:
@@ -68,7 +81,7 @@ interfilewrite(initialEstimateHighRes, filenameInitialEstimateHighRes, sizePixel
 %% NORMALIZATION FACTORS
 % ncf:
 [overall_ncf_3d, scanner_time_invariant_ncf_3d, scanner_time_variant_ncf_3d, used_xtal_efficiencies, used_deadtimefactors, used_axial_factors] = ...
-   create_norm_files_mmr('/home/mab15/workspace/KCL/Biograph_mMr/Mediciones/NEMA_IQ_20_02_2014/norm/Norm_20150210112413.n', [], [], [], [], 1);
+   create_norm_files_mmr('/home/mab15/workspace/KCL/Biograph_mMr/Mediciones/NEMA_IQ_20_02_2014/norm/Norm_20150210112413.n', [], [], [], [], 11);
 % invert for nf:
 overall_nf_3d = overall_ncf_3d;
 overall_nf_3d(overall_ncf_3d ~= 0) = 1./overall_nf_3d(overall_ncf_3d ~= 0);
@@ -116,46 +129,47 @@ title('Attenuation Map Shifted');
 
 % Create ACFs of a computed phatoms with the linear attenuation
 % coefficients:
-acfFilename = ['acfsSinogramSpan1'];
-filenameSinogram = [outputPath 'sinogramSpan1'];
-acfsSinogramSpan1 = createACFsFromImage(attenMap, imageSizeAtten_mm, outputPath, acfFilename, filenameSinogram, structSizeSino3dSpan1, 1);
+acfFilename = ['acfsSinogramSpan11'];
+filenameSinogram = [outputPath 'sinogramSpan11'];
+acfsSinogramSpan11 = createACFsFromImage(attenMap, imageSizeAtten_mm, outputPath, acfFilename, filenameSinogram, structSizeSino3dSpan11, 1);
 %% READ THE ACFS (OPTION B)
 % Span11 Sinogram:
-acfFilename = [outputPath 'acfsSinogramSpan1'];
+acfFilename = [outputPath 'acfsSinogramSpan11'];
 fid = fopen([acfFilename '.i33'], 'r');
-numSinos = sum(structSizeSino3dSpan1.sinogramsPerSegment);
-[acfsSinogramSpan1, count] = fread(fid, structSizeSino3dSpan1.numTheta*structSizeSino3dSpan1.numR*numSinos, 'single=>single');
-acfsSinogramSpan1 = reshape(acfsSinogramSpan1, [structSizeSino3dSpan1.numR structSizeSino3dSpan1.numTheta numSinos]);
+numSinos = sum(structSizeSino3dSpan11.sinogramsPerSegment);
+[acfsSinogramSpan11, count] = fread(fid, structSizeSino3dSpan11.numTheta*structSizeSino3dSpan11.numR*numSinos, 'single=>single');
+acfsSinogramSpan11 = reshape(acfsSinogramSpan11, [structSizeSino3dSpan11.numR structSizeSino3dSpan11.numTheta numSinos]);
 % Close the file:
 fclose(fid);
 
 %% GENERATE AND SAVE ATTENUATION AND NORMALIZATION FACTORS AND CORECCTION FACTORS FOR SPAN11 SINOGRAMS FOR APIRL
 % Save:
-outputSinogramName = [outputPath '/NF_Span1'];
-interfileWriteSino(single(overall_nf_3d), outputSinogramName, structSizeSino3dSpan1);
+outputSinogramName = [outputPath '/NF_Span11'];
+interfileWriteSino(single(overall_nf_3d), outputSinogramName, structSizeSino3dSpan11);
 
 % We also generate the ncf:
-outputSinogramName = [outputPath '/NCF_Span1'];
-interfileWriteSino(single(overall_ncf_3d), outputSinogramName, structSizeSino3dSpan1);
+outputSinogramName = [outputPath '/NCF_Span11'];
+interfileWriteSino(single(overall_ncf_3d), outputSinogramName, structSizeSino3dSpan11);
 
 % Compose with acfs:
-atteNormFactorsSpan1 = overall_nf_3d;
-atteNormFactorsSpan1(acfsSinogramSpan1 ~= 0) = overall_nf_3d(acfsSinogramSpan1 ~= 0) ./acfsSinogramSpan1(acfsSinogramSpan1 ~= 0);
-outputSinogramName = [outputPath '/ANF_Span1'];
-interfileWriteSino(single(atteNormFactorsSpan1), outputSinogramName, structSizeSino3dSpan1);
-clear atteNormFactorsSpan1;
+atteNormFactorsSpan11 = overall_nf_3d;
+atteNormFactorsSpan11(acfsSinogramSpan11 ~= 0) = overall_nf_3d(acfsSinogramSpan11 ~= 0) ./acfsSinogramSpan11(acfsSinogramSpan11 ~= 0);
+outputSinogramName = [outputPath '/ANF_Span11'];
+interfileWriteSino(single(atteNormFactorsSpan11), outputSinogramName, structSizeSino3dSpan11);
+clear atteNormFactorsSpan11;
 %clear normFactorsSpan11;
 
 % The same for the correction factors:
-atteNormCorrectionFactorsSpan1 = overall_ncf_3d .*acfsSinogramSpan1;
-outputSinogramName = [outputPath '/ANCF_Span1'];
-interfileWriteSino(single(atteNormCorrectionFactorsSpan1), outputSinogramName, structSizeSino3dSpan1);
-clear atteNormCorrectionFactorsSpan1;
+atteNormCorrectionFactorsSpan11 = overall_ncf_3d .*acfsSinogramSpan11;
+outputSinogramName = [outputPath '/ANCF_Span11'];
+interfileWriteSino(single(atteNormCorrectionFactorsSpan11), outputSinogramName, structSizeSino3dSpan11);
+clear atteNormCorrectionFactorsSpan11;
 
 % Creat a phantom with ones:
 onesWithGaps = overall_nf_3d ~= 0;
-outputSinogramName = [outputPath '/GAPS_Span1'];
-interfileWriteSino(single(onesWithGaps), outputSinogramName, structSizeSino3dSpan1);
+outputSinogramName = [outputPath '/GAPS_Span11'];
+interfileWriteSino(single(onesWithGaps), outputSinogramName, structSizeSino3dSpan11);
+
 %% GENERATE OSEM AND MLEM RECONSTRUCTION FILES FOR APIRL
 % Low Res:
 numSubsets = 21;
@@ -164,14 +178,14 @@ saveInterval = 1;
 saveIntermediate = 0;
 outputFilenamePrefix = [outputPath sprintf('Nema_Osem%d_LR', numSubsets)];
 filenameOsemConfig_LR = [outputPath sprintf('/Osem3dSubset%d_LR.par', numSubsets)];
-CreateOsemConfigFileForMmr(filenameOsemConfig_LR, [outputPath 'sinogramSpan1.h33'], [filenameInitialEstimate '.h33'], outputFilenamePrefix, numIterations,...
-    numSubsets, saveInterval, saveIntermediate, [], [], [], [outputPath '/ANF_Span1']);
+CreateOsemConfigFileForMmr(filenameOsemConfig_LR, [outputPath 'sinogramSpan11.h33'], [filenameInitialEstimate '.h33'], outputFilenamePrefix, numIterations,...
+    numSubsets, saveInterval, saveIntermediate, [], [], [], [outputPath '/ANF_Span11']);
 
 % High Res:
 outputFilenamePrefix = [outputPath sprintf('Nema_Osem%d_HR', numSubsets)];
 filenameOsemConfig_HR = [outputPath sprintf('/Osem3dSubset%d_HR.par', numSubsets)];
-CreateOsemConfigFileForMmr(filenameOsemConfig_HR, [outputPath 'sinogramSpan1.h33'], [filenameInitialEstimateHighRes '.h33'], outputFilenamePrefix, numIterations,...
-    numSubsets, saveInterval, saveIntermediate, [], [], [], [outputPath '/ANF_Span1.h33']);
+CreateOsemConfigFileForMmr(filenameOsemConfig_HR, [outputPath 'sinogramSpan11.h33'], [filenameInitialEstimateHighRes '.h33'], outputFilenamePrefix, numIterations,...
+    numSubsets, saveInterval, saveIntermediate, [], [], [], [outputPath '/ANF_Span11.h33']);
 
 %% RECONSTRUCTION OF HIGH RES IMAGE
 % Execute APIRL:

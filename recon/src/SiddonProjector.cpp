@@ -452,13 +452,28 @@ bool SiddonProjector::Backproject (Sinogram3D* inputProjection, Image* outputIma
   for(i = 0; i < inputProjection->getNumSegments(); i++)
   {
     printf("Backprojection con Siddon Segmento: %d\n", i);
-    #pragma omp parallel private(i, j, k, l, m, LOR, P1, P2, MyWeightsList, LengthList, n, newValue, indexPixel, geomFactor, numZ, lorOk) shared(inputProjection,ptrPixels)
-    {
-      MyWeightsList = (SiddonSegment**)malloc(sizeof(SiddonSegment*));
-      #pragma omp for
-      for(j = 0; j < inputProjection->getSegment(i)->getNumSinograms(); j++)
+    
+    for(j = 0; j < inputProjection->getSegment(i)->getNumSinograms(); j++)
+    {    
+      /// Cálculo de las coordenadas z del sinograma, dependiendo si se usan todas las combinaciones
+      /// o solo la posición promedio:
+      if(useMultipleLorsPerBin)
       {
-	/// Cálculo de las coordenadas z del sinograma
+	numZ = inputProjection->getSegment(i)->getSinogram2D(j)->getNumZ();
+      }
+      else
+      {
+	numZ = 1;
+	// The average position is the (axial pos for the first combin + the second for the last comb)/2. For z1 and z2. 
+	z1_mm = (inputProjection->getSegment(i)->getSinogram2D(j)->getAxialValue1FromList(0)  + 
+	  inputProjection->getSegment(i)->getSinogram2D(j)->getAxialValue1FromList(inputProjection->getSegment(i)->getSinogram2D(j)->getNumZ()-1))/2;
+	z2_mm = (inputProjection->getSegment(i)->getSinogram2D(j)->getAxialValue2FromList(0)  + 
+	      inputProjection->getSegment(i)->getSinogram2D(j)->getAxialValue2FromList(inputProjection->getSegment(i)->getSinogram2D(j)->getNumZ()-1))/2;
+      }
+      #pragma omp parallel private(k, l, m, LOR, P1, P2, MyWeightsList, LengthList, n, newValue, indexPixel, geomFactor, lorOk) shared(inputProjection,ptrPixels)
+      {
+	MyWeightsList = (SiddonSegment**)malloc(sizeof(SiddonSegment*));
+	#pragma omp for
 	for(k = 0; k < inputProjection->getSegment(i)->getSinogram2D(j)->getNumProj(); k++)
 	{
 	      
@@ -468,21 +483,7 @@ bool SiddonProjector::Backproject (Sinogram3D* inputProjection, Image* outputIma
 	    /// Por lo que cada bin me va a sumar cuentas en lors con distintos ejes axiales.
 	    if(inputProjection->getSegment(i)->getSinogram2D(j)->getSinogramBin(k,l) != 0)
 	    {
-	      /// Cálculo de las coordenadas z del sinograma, dependiendo si se usan todas las combinaciones
-	      /// o solo la posición promedio:
-	      if(useMultipleLorsPerBin)
-	      {
-		numZ = inputProjection->getSegment(i)->getSinogram2D(j)->getNumZ();
-	      }
-	      else
-	      {
-		numZ = 1;
-		// The average position is the (axial pos for the first combin + the second for the last comb)/2. For z1 and z2. 
-		z1_mm = (inputProjection->getSegment(i)->getSinogram2D(j)->getAxialValue1FromList(0)  + 
-		  inputProjection->getSegment(i)->getSinogram2D(j)->getAxialValue1FromList(inputProjection->getSegment(i)->getSinogram2D(j)->getNumZ()-1))/2;
-		z2_mm = (inputProjection->getSegment(i)->getSinogram2D(j)->getAxialValue2FromList(0)  + 
-		  inputProjection->getSegment(i)->getSinogram2D(j)->getAxialValue2FromList(inputProjection->getSegment(i)->getSinogram2D(j)->getNumZ()-1))/2;
-	      }
+
 	      for(m = 0; m < numZ; m++)
 	      {
 		indexRing1 = inputProjection->getSegment(i)->getSinogram2D(j)->getRing1FromList(m);
