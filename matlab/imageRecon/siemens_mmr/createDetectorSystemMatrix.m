@@ -3,10 +3,7 @@
 %  Autor: Martín Belzunce. Kings College London.
 %  Fecha de Creación: 19/02/2015
 %  *********************************************************************
-%  function [mapaDet1Ids mapaDet2Ids] = createMmrDetectorsIdInSinogram()
-%
-%  This functions create two sinograms with the id of each detector in a
-%  bin LOR.
+%  Creates the system matrix for the mlem algorithm
 clear all
 close all
 
@@ -95,3 +92,8 @@ meanEfficency = mean(combEff(combEff~=0))
 combEffNorm = combEff / meanEfficency;
 figure;
 plot(1:numDetectors, crystalEffRing1, 1:numDetectors, combEffNorm);
+%% MATRIX VERSION
+% Forward:
+forwardSino = diag(detector1SystemMatrix * crystalEffRing1)*(crystalEffRing1'*detector2SystemMatrix');
+%% MATRIX VERSION 2
+forwardSino2 = detector1SystemMatrix*(crystalEffRing1*crystalEffRing1');

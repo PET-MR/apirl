@@ -106,10 +106,10 @@ bool Sinogram2DinSiemensMmr::getPointsFromLor(int indexProj, int indexR, int ind
   float rad_PhiAngle = this->getAngValue(indexProj) * DEG_TO_RAD;
   float auxValue = sqrt(this->radioScanner_mm * this->radioScanner_mm - r * r);
   *geomFactor = 1;
-  p1->X = r * cos(rad_PhiAngle) + sin(rad_PhiAngle) * auxValue;
-  p1->Y = r * sin(rad_PhiAngle) - cos(rad_PhiAngle) * auxValue;
-  p2->X = r * cos(rad_PhiAngle) - sin(rad_PhiAngle) * auxValue;
-  p2->Y = r * sin(rad_PhiAngle) + cos(rad_PhiAngle) * auxValue;
+  p2->X = r * cos(rad_PhiAngle) + sin(rad_PhiAngle) * auxValue;
+  p2->Y = r * sin(rad_PhiAngle) - cos(rad_PhiAngle) * auxValue;
+  p1->X = r * cos(rad_PhiAngle) - sin(rad_PhiAngle) * auxValue;
+  p1->Y = r * sin(rad_PhiAngle) + cos(rad_PhiAngle) * auxValue;
   p1->Z = ptrListZ1_mm[indexRingConfig];
   p2->Z = ptrListZ2_mm[indexRingConfig];
   return true;
@@ -126,10 +126,10 @@ bool Sinogram2DinSiemensMmr::getPointsFromLor (int indexAng, int indexR, Point2D
     // El r no puede ser mayor que el rfov:
     return false;
   }
-  p1->X = r * cos(rad_PhiAngle) + sin(rad_PhiAngle) * auxValue;
-  p1->Y = r * sin(rad_PhiAngle) - cos(rad_PhiAngle) * auxValue;
-  p2->X = r * cos(rad_PhiAngle) - sin(rad_PhiAngle) * auxValue;
-  p2->Y = r * sin(rad_PhiAngle) + cos(rad_PhiAngle) * auxValue;
+  p2->X = r * cos(rad_PhiAngle) + sin(rad_PhiAngle) * auxValue;
+  p2->Y = r * sin(rad_PhiAngle) - cos(rad_PhiAngle) * auxValue;
+  p1->X = r * cos(rad_PhiAngle) - sin(rad_PhiAngle) * auxValue;
+  p1->Y = r * sin(rad_PhiAngle) + cos(rad_PhiAngle) * auxValue;
   return true;
 }
 
@@ -145,9 +145,9 @@ bool Sinogram2DinSiemensMmr::getPointsFromLor (int indexAng, int indexR, Point2D
     // El r no puede ser mayor que el rfov:
     return false;
   }
-  p1->X = r * cos(rad_PhiAngle) + sin(rad_PhiAngle) * auxValue;
-  p1->Y = r * sin(rad_PhiAngle) - cos(rad_PhiAngle) * auxValue;
-  p2->X = r * cos(rad_PhiAngle) - sin(rad_PhiAngle) * auxValue;
-  p2->Y = r * sin(rad_PhiAngle) + cos(rad_PhiAngle) * auxValue;
+  p2->X = r * cos(rad_PhiAngle) + sin(rad_PhiAngle) * auxValue;
+  p2->Y = r * sin(rad_PhiAngle) - cos(rad_PhiAngle) * auxValue;
+  p1->X = r * cos(rad_PhiAngle) - sin(rad_PhiAngle) * auxValue;
+  p1->Y = r * sin(rad_PhiAngle) + cos(rad_PhiAngle) * auxValue;
   return true;
 }
