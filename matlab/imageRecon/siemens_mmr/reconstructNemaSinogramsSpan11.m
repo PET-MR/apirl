@@ -121,6 +121,12 @@ fclose(fid);
 % Compose both images:
 attenMap = attenMap_hardware + attenMap_human;
 
+%
+%For debug
+attenMap(:) = 0;
+attenMap(150, 50,5) = 1;
+%
+
 % visualization
 figure;
 image = getImageFromSlices(attenMap, 12, 1, 0);

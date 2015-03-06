@@ -158,8 +158,8 @@ while (true)
                 value = '';
             end
                 
-            [x, ok] = str2num(value);
-            if (~isempty(x) && (ok ~= 0)) % && (isempty(strfind(dates, field))) && (isempty(strfind(times, field))))
+            x = str2double(value);
+            if (~isnan(x)) % && (isempty(strfind(dates, field))) && (isempty(strfind(times, field))))
                 value = x;
             end
             

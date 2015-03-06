@@ -21,7 +21,15 @@ sinogram3D = single(zeros(structSizeSino3D.numR, structSizeSino3D.numTheta, sum(
 % Ahora lleno los sinogramas. Para esto convierto el par de
 % eventos (X1,Y1,Z1) y (X2,Y2,Z2) en lors del tipo (Thita,r,z).
 % El ángulo thita está determinado por atan((Y1-Y2)/(X1-X2))+90
-theta = atand((MatrizCoincidencias(:,2)-MatrizCoincidencias(:,5))./(MatrizCoincidencias(:,1)-MatrizCoincidencias(:,4))) + 90;
+theta = atan2d((MatrizCoincidencias(:,2)-MatrizCoincidencias(:,5)),(MatrizCoincidencias(:,1)-MatrizCoincidencias(:,4)));
+theta0_180 = (theta >= 0) && (theta < 180);
+z1 = MatrizCoincidencias(:,3);
+z2 = MatrizCoincidencias(:,6);
+% Swap depending on phi value:
+z1(~theta0_180) = MatrizCoincidencias(~theta0_180,6);
+z2(~theta0_180) = MatrizCoincidencias(~theta0_180,3);
+theta(~theta0_180) = 180 - theta(~theta0_180);
+theta = theta + 90;
 % El offset r lo puedo obtener reemplazando (x,y) con alguno de
 % los dos puntos en la ecuación: r=x*cos(thita)+y*sin(thita)-
 r_sino = cosd(theta).*MatrizCoincidencias(:,1) + sind(theta).*MatrizCoincidencias(:,2);
@@ -37,6 +45,6 @@ MatrizCoincidencias(indicesFueraZfov,:) = [];
 r_sino(indicesFueraZfov) = [];
 theta(indicesFueraZfov) = [];
 % Primero genero un michelograma y luego reduzco a un sinograma:
-michelograma = hist5([r_sino theta MatrizCoincidencias(:,3) MatrizCoincidencias(:,6)], {structSizeSino3D.rValues_mm, structSizeSino3D.thetaValues_deg,  ...
+michelograma = hist5([r_sino theta z1 z2], {structSizeSino3D.rValues_mm, structSizeSino3D.thetaValues_deg,  ...
     structSizeSino3D.zValues_mm, structSizeSino3D.zValues_mm});
 sinogram3D = reduceMichelogram(michelograma, structSizeSino3D.sinogramsPerSegment, structSizeSino3D.minRingDiff, structSizeSino3D.maxRingDiff);

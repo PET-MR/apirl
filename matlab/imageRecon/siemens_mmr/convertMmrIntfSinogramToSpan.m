@@ -58,13 +58,13 @@ delayedSinograms = reshape(delayedSinograms, [structSizeSino.numR structSizeSino
 michelogram = generateMichelogramFromSinogram3D(sinograms, structSizeSino);
 structSizeSino3dSpanN = getSizeSino3dFromSpan(structSizeSino.numR, structSizeSino.numTheta, structSizeSino.numZ, ...
     structSizeSino.rFov_mm, structSizeSino.zFov_mm, span, structSizeSino.maxAbsRingDiff);
-sinogramSpanN = reduceMichelogram(michelogram, structSizeSino3dSpanN.sinogramsPerSegment, structSizeSino3dSpanN.minRingDiff, structSizeSino3dSpanN.maxRingDiff);
+sinogramSpanN = reduceMichelogram(michelogram, structSizeSino3dSpanN);
 % Wirte the interfile prompt sinogram:
 interfileWriteSino(sinogramSpanN, outFilenameIntfSinograms, structSizeSino3dSpanN);
 
 % The same for delayed:
 michelogram = generateMichelogramFromSinogram3D(delayedSinograms, structSizeSino);
-dealyedSinogramSpanN = reduceMichelogram(michelogram, structSizeSino3dSpanN.sinogramsPerSegment, structSizeSino3dSpanN.minRingDiff, structSizeSino3dSpanN.maxRingDiff);
+dealyedSinogramSpanN = reduceMichelogram(michelogram, structSizeSino3dSpanN);
 % Wirte the interfile delayed sinogram:
 interfileWriteSino(dealyedSinogramSpanN, [outFilenameIntfSinograms '_delay'], structSizeSino3dSpanN);
 
