@@ -121,12 +121,6 @@ fclose(fid);
 % Compose both images:
 attenMap = attenMap_hardware + attenMap_human;
 
-%
-%For debug
-attenMap(:) = 0;
-attenMap(150, 50,5) = 1;
-%
-
 % visualization
 figure;
 image = getImageFromSlices(attenMap, 12, 1, 0);
@@ -206,7 +200,7 @@ filteredVolume = imfilter(reconVolume, H);
 imageToShow = getImageFromSlices(filteredVolume,14);
 figure;
 imshow(imageToShow);
-title('Reconstructed Slices for %fx%fx%f mm³ pixel size', sizePixelHighRes_mm(1), sizePixelHighRes_mm(2), sizePixelHighRes_mm(3));
+title(sprintf('Reconstructed Slices for %fx%fx%f mm³ pixel size', sizePixelHighRes_mm(1), sizePixelHighRes_mm(2), sizePixelHighRes_mm(3)));
 
 % Center Slice:
 figure;

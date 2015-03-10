@@ -170,6 +170,12 @@ bool OsemSinogram3d::Reconstruct()
 	normalizationSubset = normalizationCorrectionFactorsProjection->getSubset(s, numSubsets);
 	estimatedProjection->multiplyBinToBin(normalizationSubset);
       }*/
+      /// After thr projection, see if there is an estimate or randoms:
+      if(randomsCorrectionProjection != NULL)
+      {
+	// Randoms estimate are included as an additive sinogram in the denominator:
+	
+      }
       // Si hay que guardar la proyección, lo hago acá porque después se modifica:
       if((saveIterationInterval != 0) && ((t%saveIterationInterval)==0) && saveIntermediateProjectionAndBackprojectedImage)
       {

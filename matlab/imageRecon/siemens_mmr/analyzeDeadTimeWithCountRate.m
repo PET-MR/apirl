@@ -93,7 +93,7 @@ singlesRatePerBlock = cell(1, numel(sinogramsNames));
 for i = 1 : numel(sinogramsNames)
     for j = 1 : numberOfBucketRings
         singlesRatePerBlock{i}((j-1)*(numberOfAxialBlocksPerBucket*numberOfAxialCrystalsPerBlock)+1:j*(numberOfAxialBlocksPerBucket*numberOfAxialCrystalsPerBlock)) = ...
-            mean(structInterfile1{i}.SinglesPerBucket((j-1)*numberOfBucketsInRing+1 : j*numberOfBucketsInRing)); % ./ (numberOfAxialBlocksPerBucket*numberOfTransverseBlocksPerBucket); % Using per bucket instead per block
+            mean(structInterfile1{i}.SinglesPerBucket((j-1)*numberOfBucketsInRing+1 : j*numberOfBucketsInRing)) ./ (numberOfAxialBlocksPerBucket*numberOfTransverseBlocksPerBucket); % Using per bucket instead per block
     end
 end
 %% CORRECT FOR ACTIVITY DECAY
@@ -158,11 +158,11 @@ ylabel('Single Rates Per Ring Decay Corrected');
 %% CORRECT FOR DEAD TIME
 % Correct singles rate:
 for i = 1 : numel(sinogramsNames)
-    deadtimeFactors1 = (exp(countRatesPerBlock(i,:).*parDeadTime(1)./(1+countRatesPerBlock(i,:).*nonParDeadTime(1)))./(1+countRatesPerBlock(i,:).*nonParDeadTime(1)));
-    correctedSinglesRatePerRing_DeadTimeCorrected1(i,:) = countRatesPerRing(i,:) ./ deadtimeFactors1;
+    deadtimeFactors1(i,:) = (exp(countRatesPerBlock(i,:).*parDeadTime(1)./(1+countRatesPerBlock(i,:).*nonParDeadTime(1)))./(1+countRatesPerBlock(i,:).*nonParDeadTime(1)));
+    correctedSinglesRatePerRing_DeadTimeCorrected1(i,:) = countRatesPerRing(i,:) ./ (deadtimeFactors1(i,:).^2);
     
-    deadtimeFactors2 = (1 + parDeadTime(1)*countRatesPerBlock(i,:) - nonParDeadTime(1).*countRatesPerBlock(i,:).*countRatesPerBlock(i,:));
-    correctedSinglesRatePerRing_DeadTimeCorrected2(i,:) = countRatesPerRing(i,:) ./ deadtimeFactors2;
+    deadtimeFactors2(i,:) = (1 + parDeadTime(1)*countRatesPerBlock(i,:) - nonParDeadTime(1).*countRatesPerBlock(i,:).*countRatesPerBlock(i,:));
+    correctedSinglesRatePerRing_DeadTimeCorrected2(i,:) = countRatesPerRing(i,:) ./ (deadtimeFactors2(i,:).^2);
 end
 
 % for i = 1 : numel(sinogramsNames)
@@ -172,6 +172,24 @@ end
 %     deadtimeFactors2 = (1 + parDeadTime(1)*countRatesPerRing(i,:) - nonParDeadTime(1).*countRatesPerRing(i,:).*countRatesPerRing(i,:));
 %     correctedSinglesRatePerRing_DeadTimeCorrected2(i,:) = countRatesPerRing(i,:) ./ deadtimeFactors2;
 % end
+%% GLOBAL ANALYSIS
+% Plot total trues, prompts and randoms.
+for i = 1 : numel(sinogramsNames)
+    totalNetTrues(i) = structInterfile1{i}.TotalNetTrues;
+    totalRandoms(i) = structInterfile1{i}.TotalRandoms;
+    totalPrompts(i) = structInterfile1{i}.TotalPrompts;
+    % Expected coincidence rate:
+    A2DecayFactor = exp(-log(2)/halfLife_days.*((timeBetween21_sec(end)-timeBetween21_sec(i))/60/60/24));
+    expectedTrues(i) = totalNetTrues(end) ./ A2DecayFactor;
+end
+totalTruesCorrectedPileUp = totalNetTrues ./ (mean(deadtimeFactors1,2)' .* mean(deadtimeFactors1,2)'); % For coincidence is dead time correction * dead time correction. 
+% Plot:
+figure;
+plot(timeBetween21_sec, [totalNetTrues; totalRandoms; totalPrompts; expectedTrues; totalTruesCorrectedPileUp]');
+legend('Total Net Trues', 'Total Randoms', 'Total Prompts', 'Expected Total Net Trues', 'Total Net Trues Pile Up Corrected');
+set(gcf, 'position', [1 25 1920 1069]);
+xlabel('Time [sec]');
+ylabel('Rate [cps]');
 %% ANALYSIS OF EACH BUCKET RING
 % Get the measurement with less activity and get the singles rates expected
 % for the previous measurements:

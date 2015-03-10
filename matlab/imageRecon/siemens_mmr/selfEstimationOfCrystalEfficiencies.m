@@ -9,12 +9,13 @@
 clear all 
 close all
 %% PATHS FOR EXTERNAL FUNCTIONS AND RESULTS
-addpath('/home/mab15/workspace/Biograph_mMr/mmr');
+addpath('/home/mab15/workspace/KCL/Biograph_mMr/mmr');
 apirlPath = '/home/mab15/workspace/apirl-code/trunk/';
 addpath(genpath([apirlPath '/matlab']));
 setenv('PATH', [getenv('PATH') ':/home/mab15/workspace/apirl-code/trunk/build/bin']);
 setenv('LD_LIBRARY_PATH', [getenv('LD_LIBRARY_PATH') ':/home/mab15/workspace/apirl-code/trunk/build/bin']);
-outputPath = '/workspaces/Martin/KCL/Biograph_mMr/mmr/5hr_ge68/';
+outputPath = '/home/mab15/workspace/KCL/Biograph_mMr/Normalization/SelfCrystalEfficiencies/';
+mkdir(outputPath);
 %setenv('LD_LIBRARY_PATH', [getenv('LD_LIBRARY_PATH') ':/usr/lib/x86_64-linux-gnu/']);
 %% READING THE SINOGRAMS
 % Read the sinograms:

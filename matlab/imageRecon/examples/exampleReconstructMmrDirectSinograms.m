@@ -12,32 +12,32 @@
 clear all 
 close all
 %% PATHS FOR EXTERNAL FUNCTIONS AND RESULTS
-addpath('/workspaces/Martin/KCL/Biograph_mMr/mmr');
-apirlPath = '/workspaces/Martin/PET/apirl-code/trunk/';
+addpath('/home/mab15/workspace/KCL/Biograph_mMr/mmr');
+apirlPath = '/home/mab15/workspace/apirl-code/trunk/';
 addpath(genpath([apirlPath '/matlab']));
-setenv('PATH', [getenv('PATH') ':/workspaces/Martin/PET/apirl-code/trunk/build/debug/bin']);
-setenv('LD_LIBRARY_PATH', [getenv('LD_LIBRARY_PATH') ':/workspaces/Martin/PET/apirl-code/trunk/build/debug/bin']);
-outputPath = '/workspaces/Martin/KCL/Biograph_mMr/mmr/5hr_ge68/';
+setenv('PATH', [getenv('PATH') ':/home/mab15/workspace/apirl-code/trunk/build/debug/bin']);
+setenv('LD_LIBRARY_PATH', [getenv('LD_LIBRARY_PATH') ':/home/mab15/workspace/apirl-code/trunk/build/debug/bin']);
+outputPath = '/home/mab15/workspace/KCL/Biograph_mMr/mmr/5hr_ge68/';
 %setenv('LD_LIBRARY_PATH', [getenv('LD_LIBRARY_PATH') ':/usr/lib/x86_64-linux-gnu/']);
 %% READING THE SINOGRAMS
 % Read the sinograms:
 %filenameUncompressedMmr = '/workspaces/Martin/KCL/Biograph_mMr/mmr/test.s';
 %outFilenameIntfSinograms = '/workspaces/Martin/KCL/Biograph_mMr/mmr/testIntf';
-filenameUncompressedMmr = '/workspaces/Martin/KCL/Biograph_mMr/mmr/5hr_ge68/cylinder_5hours.s';
-outFilenameIntfSinograms = '/workspaces/Martin/KCL/Biograph_mMr/mmr/5hr_ge68/cylinder_5hoursIntf';
+filenameUncompressedMmr = '/home/mab15/workspace/KCL/Biograph_mMr/mmr/5hr_ge68/cylinder_5hours.s';
+outFilenameIntfSinograms = '/home/mab15/workspace/KCL/Biograph_mMr/mmr/5hr_ge68/cylinder_5hoursIntf';
 [sinogram, delayedSinogram, structSizeSino3d] = getIntfSinogramsFromUncompressedMmr(filenameUncompressedMmr, outFilenameIntfSinograms);
 
 % Read the normalization factors:
-filenameRawData = '/workspaces/Martin/KCL/Biograph_mMr/mmr/Norm_20141008101010.n';
+filenameRawData = '/home/mab15/workspace/KCL/Biograph_mMr/mmr/Norm_20141008101010.n';
 [componentFactors, componentLabels]  = readmMrComponentBasedNormalization(filenameRawData, 1);
 %% DIRECT SINOGRAMS
 numSinos2d = structSizeSino3d.sinogramsPerSegment(1);
-structSizeSino2d = getSizeSino2Dstruct(structSizeSino3d.numTheta, structSizeSino3d.numR, ...
+structSizeSino2d = getSizeSino2dStruct(structSizeSino3d.numR, structSizeSino3d.numTheta, ...
     numSinos2d, structSizeSino3d.rFov_mm, structSizeSino3d.zFov_mm);
 directSinograms = single(sinogram(:,:,1:structSizeSino2d.numZ));
 % Write to a file in interfile formar:
 outputSinogramName = [outputPath '/directSinograms'];
-interfileWriteSino(single(directSinograms), outputSinogramName);
+interfileWriteSino(single(directSinograms), outputSinogramName, structSizeSino2d);
 %% GAPS
 mean_sinogram = mean(sinogram, 3);
 gaps_sinogram = mean_sinogram;   nongap_indices  = find(mean_sinogram > 0);
@@ -114,10 +114,6 @@ acfFilename = [outputPath 'acfsDirectSinograms'];
 fid = fopen([acfFilename '.i33'], 'r');
 [acfsDirectSinograms, count] = fread(fid, structSizeSino2d.numTheta*structSizeSino2d.numR*structSizeSino2d.numZ, 'single=>single');
 acfsDirectSinograms = reshape(acfsDirectSinograms, [structSizeSino2d.numR structSizeSino2d.numTheta structSizeSino2d.numZ]);
-% Matlab reads in a column-wise order that why angles are in the columns.
-% We want to have it in the rows since APIRL and STIR and other libraries
-% use row-wise order:
-acfsDirectSinograms = permute(acfsDirectSinograms,[2 1 3]);
 % Close the file:
 fclose(fid);
 %% VISUALIZATION OF DIRECT SINOGRAMS 
@@ -127,13 +123,6 @@ h = figure;
 imshow(imageOfDirectSinos);
 title('Direct Sinograms Span 1');
 set(gcf, 'Position', [0 0 1600 1200]);
-% SPAN11
-imageOfDirectSinos = getImageFromSlices(sinogramSpan11(:,:,1: structSizeSino3dSpan11.sinogramsPerSegment(1)), 8, 1,0);
-h = figure;
-imshow(imageOfDirectSinos);
-title('Direct Sinograms Span 11');
-set(gcf, 'Position', [0 0 1600 1200]);
-clear imageOfDirectSinos;
 %% VISUALIZATION OF COUNTS PER SINOGRAM
 % Sum of the sinograms:
 countsPerSinogram = sum(sum(sinogram));
@@ -244,7 +233,7 @@ title('Axial Correction Factors for Direct Sinograms');
 xlabel('Ring');
 
 for i = 1 : structSizeSino2d.numZ
-    directSinogramsCorrected(:,:,i) = single(directSinograms(:,:,i)) .* normSinoGeomInterf .* 1./ axialNormFactorsDirectSinograms(i);
+    directSinogramsCorrected(:,:,i) = single(directSinograms(:,:,i)) .* normSinoGeomInterf' .* 1./ axialNormFactorsDirectSinograms(i);
 end
 % Plot
 h = figure;
@@ -254,7 +243,7 @@ imshow(image);
 title('Direct Sinograms with Normalization');
 % Write to a file in interfile formar:
 outputSinogramName = [outputPath '/directSinogramsNormalized'];
-interfileWriteSino(single(directSinogramsCorrected), outputSinogramName);
+interfileWriteSino(single(directSinogramsCorrected), outputSinogramName, structSizeSino2d);
 
 countsPerSinogram = sum(sum(directSinogramsCorrected));
 % Change vecor in 3rd dimension for 1st, to plot:
@@ -277,13 +266,13 @@ imshow(image);
 title('Direct Sinograms with Normalization and Attenuation');
 % Write to a file in interfile formar:
 outputSinogramName = [outputPath '/directSinogramsNormAttenCorrected'];
-interfileWriteSino(single(directSinogramsCorrected), outputSinogramName);
+interfileWriteSino(single(directSinogramsCorrected), outputSinogramName, structSizeSino2d);
 %% GENERATE ATTENUATION AND NORMALIZATION FACTORS FOR DIRECT SINOGRAMS FOR APIRL
 % This factors are not for precorrect but for apply as normalizaiton in
 % each iteration:
 atteNormFactorsDirect = zeros(size(directSinograms));
 for i = 1 : structSizeSino2d.numZ
-    nonZeroBins = (normSinoGeomInterf~=0) & (acfsDirectSinograms(:,:,i)~=0);
+    nonZeroBins = (normSinoGeomInterf~=0)' & (acfsDirectSinograms(:,:,i)~=0);
     auxAcfs = acfsDirectSinograms(:,:,i);
     atteNormFactorsDirect_i = atteNormFactorsDirect(:,:,i);
     atteNormFactorsDirect_i(nonZeroBins) = 1./ (normSinoGeomInterf(nonZeroBins) .* (axialNormFactorsDirectSinograms(i)) .* auxAcfs(nonZeroBins));
