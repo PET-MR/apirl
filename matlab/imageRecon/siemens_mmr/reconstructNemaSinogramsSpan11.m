@@ -163,13 +163,32 @@ clear atteNormFactorsSpan11;
 atteNormCorrectionFactorsSpan11 = overall_ncf_3d .*acfsSinogramSpan11;
 outputSinogramName = [outputPath '/ANCF_Span11'];
 interfileWriteSino(single(atteNormCorrectionFactorsSpan11), outputSinogramName, structSizeSino3dSpan11);
-clear atteNormCorrectionFactorsSpan11;
+clear overall_ncf_3d
+
 
 % Creat a phantom with ones:
 onesWithGaps = overall_nf_3d ~= 0;
 outputSinogramName = [outputPath '/GAPS_Span11'];
 interfileWriteSino(single(onesWithGaps), outputSinogramName, structSizeSino3dSpan11);
-
+clear onesWithGaps
+clear overall_nf_3d
+%% RANDOMS FROM SINGLES IN BUCKET
+sinoRandomsFromSinglesPerBucket = createRandomsFromSinglesPerBucket([filenameUncompressedMmr '.hdr']);
+% Create span 11
+michelogram = generateMichelogramFromSinogram3D(sinoRandomsFromSinglesPerBucket, structSizeSino3d);
+randomsSinogramSpan11 = reduceMichelogram(michelogram, structSizeSino3dSpan11);
+clear michelogram
+% Write randoms sinogram:
+outputSinogramName = [outputPath '/randomsSpan11'];
+interfileWriteSino(single(randomsSinogramSpan11), outputSinogramName, structSizeSino3dSpan11);
+% Correct for attenuation and normalization (to use in apirl). Since the
+% projector is just geomtric, because its cancel with backprojector, the
+% randoms and the scatter needs to be multiplied for the normalization
+% correction factors and acfs:
+randomsSinogramSpan11 = randomsSinogramSpan11 .* atteNormCorrectionFactorsSpan11;
+outputSinogramName = [outputPath 'randomsSpan11_ancf'];
+interfileWriteSino(single(randomsSinogramSpan11), outputSinogramName, structSizeSino3dSpan11);
+%clear atteNormCorrectionFactorsSpan11;
 %% GENERATE OSEM AND MLEM RECONSTRUCTION FILES FOR APIRL
 % Low Res:
 numSubsets = 21;
@@ -178,13 +197,33 @@ saveInterval = 1;
 saveIntermediate = 0;
 outputFilenamePrefix = [outputPath sprintf('Nema_Osem%d_LR', numSubsets)];
 filenameOsemConfig_LR = [outputPath sprintf('/Osem3dSubset%d_LR.par', numSubsets)];
-CreateOsemConfigFileForMmr(filenameOsemConfig_LR, [outputPath 'sinogramSpan11.h33'], [filenameInitialEstimate '.h33'], outputFilenamePrefix, numIterations,...
-    numSubsets, saveInterval, saveIntermediate, [], [], [], [outputPath '/ANF_Span11']);
+CreateOsemConfigFileForMmr(filenameOsemConfig_LR, [outputPath 'sinogramSpan11.h33'], [filenameInitialEstimate '.h33'], outputFilenamePrefix, numIterations, [outputPath 'Nema_Osem21_HR_sensitivity'], ...
+    numSubsets, saveInterval, saveIntermediate, [], [], [outputPath 'randomsSpan11_ancf.h33'], [outputPath '/ANF_Span11']);
 
 % High Res:
 outputFilenamePrefix = [outputPath sprintf('Nema_Osem%d_HR', numSubsets)];
 filenameOsemConfig_HR = [outputPath sprintf('/Osem3dSubset%d_HR.par', numSubsets)];
-CreateOsemConfigFileForMmr(filenameOsemConfig_HR, [outputPath 'sinogramSpan11.h33'], [filenameInitialEstimateHighRes '.h33'], outputFilenamePrefix, numIterations,...
+CreateOsemConfigFileForMmr(filenameOsemConfig_HR, [outputPath 'sinogramSpan11.h33'], [filenameInitialEstimateHighRes '.h33'], outputFilenamePrefix, numIterations, [outputPath 'Nema_Osem21_HR_sensitivity'],...
+    numSubsets, saveInterval, saveIntermediate, [], [], [outputPath 'randomsSpan11_ancf.h33'], [outputPath '/ANF_Span11.h33']);
+
+%% RECONSTRUCTION OF HIGH RES IMAGE
+% Execute APIRL:
+status = system(['OSEM ' filenameOsemConfig_HR]) 
+%% GENERATE OSEM AND MLEM RECONSTRUCTION FILES FOR APIRL
+% Low Res:
+numSubsets = 21;
+numIterations = 3;
+saveInterval = 1;
+saveIntermediate = 0;
+outputFilenamePrefix = [outputPath sprintf('Nema_Osem%d_LR_withoutRandoms', numSubsets)];
+filenameOsemConfig_LR = [outputPath sprintf('/Osem3dSubset%d_LR_withoutRandoms.par', numSubsets)];
+CreateOsemConfigFileForMmr(filenameOsemConfig_LR, [outputPath 'sinogramSpan11.h33'], [filenameInitialEstimate '.h33'], outputFilenamePrefix, numIterations, [outputPath 'Nema_Osem21_HR_sensitivity'], ...
+    numSubsets, saveInterval, saveIntermediate, [], [], [], [outputPath '/ANF_Span11']);
+
+% High Res:
+outputFilenamePrefix = [outputPath sprintf('Nema_Osem%d_HR_withoutRandoms', numSubsets)];
+filenameOsemConfig_HR = [outputPath sprintf('/Osem3dSubset%d_HR_withoutRandoms.par', numSubsets)];
+CreateOsemConfigFileForMmr(filenameOsemConfig_HR, [outputPath 'sinogramSpan11.h33'], [filenameInitialEstimateHighRes '.h33'], outputFilenamePrefix, numIterations, [outputPath 'Nema_Osem21_HR_sensitivity'],...
     numSubsets, saveInterval, saveIntermediate, [], [], [], [outputPath '/ANF_Span11.h33']);
 
 %% RECONSTRUCTION OF HIGH RES IMAGE

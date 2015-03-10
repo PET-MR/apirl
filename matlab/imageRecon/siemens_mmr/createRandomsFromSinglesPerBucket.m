@@ -9,7 +9,7 @@
 %  receives as a parameter the interfile header of siemens mMr, where the
 %  singles per bucket are defined. Then the tau*si*sj is used.
 
-function sinoRandoms = createRandomsFromSinglesPerBucket(headerFilename)
+function [sinoRandoms, structSizeSino] = createRandomsFromSinglesPerBucket(headerFilename)
 
 % Read interfile header:
 [structInterfile, structSizeSino] = getInfoFromSiemensIntf(headerFilename);
@@ -27,6 +27,8 @@ singles_rates_per_bucket = structInterfile.SinglesPerBucket;
 % Histogram of amount of times has been used each detector:
 detectorIds = 1 : numDetectors;
 % Parameters of the buckets:
+numberOfTransverseCrystalsPerBlock = 8;
+numberOfAxialCrystalsPerBlock = 8;
 numberOfTransverseBlocksPerBucket = 2;
 numberOfAxialBlocksPerBucket = 1;
 numberOfBuckets = 224;
@@ -75,7 +77,7 @@ for segment = 1 : structSizeSino.numSegments
                     axialBucket2 = ceil(z2 / (numberOfAxialBlocksPerBucket*numberOfAxialCrystalsPerBlock));
                     bucketsId1 = mapBucket1Ids + (axialBucket1-1)*numberOfBucketsInRing;
                     bucketsId2 = mapBucket2Ids + (axialBucket2-1)*numberOfBucketsInRing;
-                    sinoRandoms(:,:,indiceSino) = 2*structInterfile.CoincidenceWindowWidthNs*1e-9* singles_rates_per_bucket(bucketsId1) .* singles_rates_per_bucket(bucketsId2);
+                    sinoRandoms(:,:,indiceSino) = 2*structInterfile.CoincidenceWindowWidthNs*1e-9* singles_rates_per_bucket(bucketsId1) .* singles_rates_per_bucket(bucketsId2) ./ (numberOfTransverseCrystalsPerBlock*numberOfAxialCrystalsPerBlock*numberOfTransverseBlocksPerBucket*numberOfAxialBlocksPerBucket); % I need to normalize to singles rate per bin
                 end
             end
             % Pase esta combinación de (z1,z2), paso a la próxima:

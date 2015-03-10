@@ -6,7 +6,7 @@
 % Función que escribe un archivo de configuración de reconstrucción con
 % OSEM para el sinograma Mmr.
 
-function CreateOsemConfigFileForMmr(configfilename, inputFile, initialEstimate, outputFilenamePrefix, numIterations,...
+function CreateOsemConfigFileForMmr(configfilename, inputFile, initialEstimate, outputFilenamePrefix, numIterations, sensitivityImage,...
     numSubsets, saveInterval, saveIntermediate, acfSinogram, scatterSinogram, randomSinograms, normalizationFactors)
 
 % Primero genero el archivo de encabezado.
@@ -21,6 +21,9 @@ fprintf(fid,'input type := Sinogram3DSiemensMmr\n');
 fprintf(fid,'input file := %s\n', inputFile);
 fprintf(fid,'initial estimate := %s\n', initialEstimate);
 fprintf(fid,'output filename prefix := %s\n', outputFilenamePrefix);
+if ~isempty(sensitivityImage)
+    fprintf(fid,'sensitivity filename := %s\n', sensitivityImage);
+end
 % El radio del scanner y del fov no son necesarios porque son fijos para el
 % Sinogram3DSiemensMmr.
 fprintf(fid,'forwardprojector := Siddon\n');

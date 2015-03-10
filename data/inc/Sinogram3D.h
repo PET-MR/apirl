@@ -243,6 +243,13 @@ class DLLEXPORT Sinogram3D : public Sinogram2D
 		@return true si pudo realizar la corrección, false en caso contrario (por ejemplo si los tamaños de los sinogramas no coinciden.).
 	*/
 	bool correctSinogram (string acfSinogram, string delayedSinogram, string scatterSinogram);
+
+	/// Método que suma bin a bin con otro sinograma, y lo asigna en el bin de este sinograma.
+	/** Método que suma bin a bin con otro sinograma, y lo asigna en el bin de este sinograma.
+	  @param sinogramDivisor puntero a objeto del tipo Sinogram3D con que sumará bin a bin este sinograma.
+	  
+	  */
+	void addBinToBin(Sinogram3D* sinogramToAdd);
 	
 	/// Método que divide bin a bin con otro sinograma, y lo asigna en el bin de este sinograma.
 	/** Método que divide bin a bin con otro sinograma, y lo asigna en el bin de este sinograma. El divisor es el singorama de entrada.

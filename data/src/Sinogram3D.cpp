@@ -732,3 +732,20 @@ void Sinogram3D::inverseDivideBinToBin(Sinogram3D* sinogramDividend)
   }
 }
 
+void Sinogram3D::addBinToBin(Sinogram3D* sinogramToAdd)
+{
+  /// Add bin to bin two sinograms.
+  for(int i = 0; i < this->numSegments; i++)
+  {
+    for(int j = 0; j < this->getSegment(i)->getNumSinograms(); j++)
+    {
+      for(int k = 0; k <  this->getSegment(i)->getSinogram2D(j)->getNumProj(); k++)
+      {
+	for(int l = 0; l < this->getSegment(i)->getSinogram2D(j)->getNumR(); l++)
+	{
+	  this->getSegment(i)->getSinogram2D(j)->setSinogramBin(k,l, this->getSegment(i)->getSinogram2D(j)->getSinogramBin(k,l) + sinogramToAdd->getSegment(i)->getSinogram2D(j)->getSinogramBin(k,l));
+	}
+      }
+    }
+  }
+}

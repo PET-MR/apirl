@@ -170,11 +170,17 @@ bool OsemSinogram3d::Reconstruct()
 	normalizationSubset = normalizationCorrectionFactorsProjection->getSubset(s, numSubsets);
 	estimatedProjection->multiplyBinToBin(normalizationSubset);
       }*/
-      /// After thr projection, see if there is an estimate or randoms:
+      /// After thr projection, see if there is an estimate for randoms:
       if(randomsCorrectionProjection != NULL)
       {
 	// Randoms estimate are included as an additive sinogram in the denominator:
-	
+	estimatedProjection->addBinToBin(randomsCorrectionProjection);
+      }
+      /// The same for scatter:
+      if(scatterCorrectionProjection != NULL)
+      {
+	// Randoms estimate are included as an additive sinogram in the denominator:
+	estimatedProjection->addBinToBin(scatterCorrectionProjection);
       }
       // Si hay que guardar la proyección, lo hago acá porque después se modifica:
       if((saveIterationInterval != 0) && ((t%saveIterationInterval)==0) && saveIntermediateProjectionAndBackprojectedImage)
