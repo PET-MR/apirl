@@ -234,53 +234,6 @@ float Siddon (Line3D LOR, Image* image, SiddonSegment** weightsList, unsigned in
 	  k_incr = 1;	// Remeber than in Y and Z the increase in the SystemCoordinate means a decreas in the pixel index
   else if(LOR.Vz < 0)
 	  k_incr = -1;
-
-  // Los alpha min y alpha max los tengo calcular para la entrada
-  // y salida al primer y último píxel en vez del punto de intersección del fov circular.
-  // Entonces a partir del i_min, i_max, j_min, j_max, y las direcciones de las lors, determino
-  // cuales serían los valores alpha para los límites de ese píxel si la lor siguiera (que pueden ser dos,
-  // límite en el borde x (fila) o borde y (col) del píxel. De los 4 segmentos del píxel, me quedan dos, porque
-  // se en que sentido avanza la lor por eso miro la pendiente para el calculo.).
-  // Luego con los dos valores de alpha_min y alpha_max, me quedo con el mayor y el menor respectivamente porque son
-  // los puntos más cercanos al punto de intersección con el fov circular. De esta forma obtengo el punto de la cara
-  // del píxel que se intersecta primero, y ese va a ser la entrada al fov considerando al píxel entero.
-  if (LOR.Vx>0)
-  {
-	alpha_x_min = ( -rFov_mm + i_min * sizeImage.sizePixelX_mm - LOR.P0.X ) / LOR.Vx;	//The formula is (i_min+i_incr) because que want the limit to the next change of pixel
-	alpha_x_max = ( -rFov_mm + (i_max+1) * sizeImage.sizePixelX_mm - LOR.P0.X ) / LOR.Vx;	//The formula is (i_min+i_incr) because que want the limit to the next change of pixel
-  }
-  else if (LOR.Vx<0)
-  {
-	alpha_x_min = ( -rFov_mm + (i_min+1) * sizeImage.sizePixelX_mm - LOR.P0.X ) / LOR.Vx;	// Limit to the left
-	alpha_x_max = ( -rFov_mm + i_max * sizeImage.sizePixelX_mm - LOR.P0.X ) / LOR.Vx;	// Limit to the left
-  }
-  
-  if(LOR.Vy > 0)
-  {
-	alpha_y_min = ( -rFov_mm + j_min * sizeImage.sizePixelY_mm - LOR.P0.Y ) / LOR.Vy;
-	alpha_y_max = ( -rFov_mm + (j_max+1) * sizeImage.sizePixelY_mm - LOR.P0.Y ) / LOR.Vy;
-  }
-  else if (LOR.Vy < 0)
-  {
-	alpha_y_min = ( -rFov_mm + (j_min+1) * sizeImage.sizePixelY_mm - LOR.P0.Y ) / LOR.Vy;
-	alpha_y_max = ( -rFov_mm + j_max * sizeImage.sizePixelY_mm - LOR.P0.Y ) / LOR.Vy;
-  }
-  
-  // Es poco probable que toque la tapa del cilindro pero como en realidad es el borde del píxel,
-  // lo vuelvo a calcular
-  /*if(LOR.Vz > 0)
-  {
-	alpha_z_min = ( offsetZ_mm + k_min * sizeImage.sizePixelZ_mm - LOR.P0.Z ) / LOR.Vz;
-	alpha_z_max = ( offsetZ_mm + (k_max+1) * sizeImage.sizePixelZ_mm - LOR.P0.Z ) / LOR.Vz;
-  }
-  else if (LOR.Vz < 0)
-  {
-	alpha_z_min = ( offsetZ_mm + (k_min+1) * sizeImage.sizePixelZ_mm - LOR.P0.Z ) / LOR.Vz;
-	alpha_z_max = ( offsetZ_mm + k_max * sizeImage.sizePixelZ_mm - LOR.P0.Z ) / LOR.Vz;
-  }*/
-  
-  alpha_min = max(alpha_x_min, alpha_y_min);
-  alpha_max = min(alpha_x_max, alpha_y_max);
     
   // Largo de la los dentro del fov. También podría ir calculándolo sumando todos los segmentos.
   // Si tengo en cuenta que para hacer este calculo tengo que hacer como 10 multiplicaciones
@@ -294,13 +247,13 @@ float Siddon (Line3D LOR, Image* image, SiddonSegment** weightsList, unsigned in
   y_2_mm = LOR.P0.Y + alpha_max * LOR.Vy;
   z_2_mm = LOR.P0.Z + alpha_max * LOR.Vz;
   rayLengthInFov_mm = sqrt((x_2_mm-x_1_mm) * (x_2_mm-x_1_mm) + (y_2_mm-y_1_mm) * (y_2_mm-y_1_mm) + (z_2_mm-z_1_mm) * (z_2_mm-z_1_mm));
-  
+
   // Distancia total de la LOR. Es la distancia entre los puntos P0 y P1, habitualmente, esos son
   // los puntos de la lor sobre el detector.
   rayLength_mm = sqrt(((LOR.P0.X + LOR.Vx) - LOR.P0.X) * ((LOR.P0.X + LOR.Vx) - LOR.P0.X) 
 	  + ((LOR.P0.Y + LOR.Vy) - LOR.P0.Y) * ((LOR.P0.Y + LOR.Vy) - LOR.P0.Y)
 	  + ((LOR.P0.Z + LOR.Vz) - LOR.P0.Z) * ((LOR.P0.Z + LOR.Vz) - LOR.P0.Z));
-	  
+
   // Incremento en los valores de alpha, según se avanza un píxel en x o en y.
   alpha_x_u = fabs(sizeImage.sizePixelX_mm / (LOR.Vx)); //alpha_x_u = DistanciaPixelX / TotalDelRayo - Remember that Vx must be loaded in order to be the diference in X between the two points of the lor
   alpha_y_u = fabs(sizeImage.sizePixelY_mm / (LOR.Vy));
@@ -572,6 +525,7 @@ float Siddon (Line2D LOR, Image* image, SiddonSegment** weightsList, unsigned in
   x_2_mm = LOR.P0.X + alpha_max * LOR.Vx;
   y_2_mm = LOR.P0.Y + alpha_max * LOR.Vy;
   rayLengthInFov_mm = sqrt((x_2_mm-x_1_mm) * (x_2_mm-x_1_mm) + (y_2_mm-y_1_mm) * (y_2_mm-y_1_mm));
+
   
   // Distancia total de la LOR. Es la distancia entre los puntos P0 y P1, habitualmente, esos son
   // los puntos de la lor sobre el detector.

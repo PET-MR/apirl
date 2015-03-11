@@ -126,7 +126,7 @@ end
 function params = get_params(info)
 
 % get version of keys
-params.version = get_val(info, 'VersionOfKeys', 'version of keys', 1);
+params.version = get_val(info, 'VersionOfKeys', 'version of keys', 0);
 if (isempty(params.version))
     params.version = 3.3;
 end
@@ -140,9 +140,11 @@ catch
         offset = get_val(info, 'DataOffsetInBytes', 'data offset in bytes', 1);
         
     catch
+        % No specified, use cero:
+        offset = 0;
         err_id = 'Images:interfileread:missingKey';
         err_msg = 'Missing required key ''data starting block'' or ''data offset in bytes''.';
-        error(err_id, err_msg);
+        warning(err_id, err_msg);
     end
 end
 
@@ -357,8 +359,11 @@ while (i <= window)
         % get process status
         status = get_val(info, 'ProcessStatus', 'process status', 1, fid, (i-1)*num_heads+j);
         if ((isempty(status)) || (strcmpi(status, 'reconstructed')))
-            num_img = get_val(info, 'NumberOfSlices', 'number of slices', 2, fid, (i-1)*num_heads+j);
-            
+            num_img = get_val(info, 'NumberOfSlices', 'number of slices', 0, fid, (i-1)*num_heads+j);
+            % Number of slcies or total number of images
+            if isempty(num_img)
+                num_img = get_val(info, 'MatrixSize3', 'matrix size [3]', 0, fid, (i-1)*num_heads+j);
+            end
         elseif (strcmp(status, 'acquired'))
             num_img = get_val(info, 'NumberOfProjections', 'number of projections', 0, fid, (i-1)*num_heads+j);
         else
@@ -470,6 +475,9 @@ switch (lower(num_format))
         num_type = 'float64';
         
     case ('short float')
+        num_type = 'float32';
+        
+    case ('float')
         num_type = 'float32';
         
     case ('bit')

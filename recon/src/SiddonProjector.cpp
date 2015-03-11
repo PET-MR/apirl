@@ -266,48 +266,48 @@ bool SiddonProjector::DivideAndBackproject (Sinogram2Dtgs* InputSinogram, Sinogr
 
 bool SiddonProjector::Project (Image* inputImage, Sinogram2Dtgs* outputProjection)
 {
-	Point2D P1, P2;
-	Line2D LOR;
-	SiddonSegment** MyWeightsList = (SiddonSegment**)malloc(sizeof(SiddonSegment*));
-	// Tamaño de la imagen:
-	SizeImage sizeImage = inputImage->getSize();
-	// Puntero a los píxeles:
-	float* ptrPixels = inputImage->getPixelsPtr();
-	// I only need to calculate the ForwardProjection of the bins were ara at least one event
-	for(unsigned int i = 0; i < outputProjection->getNumProj(); i++)
-	{
-		for(unsigned int j = 0; j < outputProjection->getNumR(); j++)
-		{
-		  // The bin is different zero so we start calculatin forward project
-		  // First we get the values of the SystemMAtrix for this LOR
-		  // First I get the line parameters for the 3D LOR
-		  // First I get the line parameters for the 3D LOR
-		  /// Modificación para el TGS:
-		  GetPointsFromTgsLor (outputProjection->getAngValue(i), outputProjection->getRValue(j), outputProjection->getDistCrystalToCenterFov(), outputProjection->getLengthColimator_mm(), &P1, &P2);
-		  LOR.P0 = P1;
-		  LOR.Vx = P2.X - P1.X;
-		  LOR.Vy = P2.Y - P1.Y;
-		  // Then I look for the intersection between the 3D LOR and the lines that
-		  // delimits the voxels
-		  // Siddon
-		  
-		  unsigned int LengthList;
-		  Siddon(LOR, inputImage, MyWeightsList, &LengthList,1);
-		  outputProjection->setSinogramBin(i,j,0);
-		  for(unsigned int l = 0; l < LengthList; l++)
-		  {
-			  // for every element of the systema matrix different from zero,we do
-			  // the sum(Aij*Xj) for every J
-			  if((MyWeightsList[0][l].IndexY>=0) && (MyWeightsList[0][l].IndexX>=0))
-				outputProjection->incrementSinogramBin(i,j, MyWeightsList[0][l].Segment * 
-				  ptrPixels[MyWeightsList[0][l].IndexY * sizeImage.nPixelsX + MyWeightsList[0][l].IndexX]);  
-			  //printf("r:%d phi:%d z1:%d z2:%d x:%d y:%d z:%d w:%f", j, i, indexRing1, indexRing2, MyWeightsList[0][l].IndexX, MyWeightsList[0][l].IndexY, MyWeightsList[0][l].IndexZ, MyWeightsList[0][l].Segment);	
-		  
-		  }
-		  free(MyWeightsList[0]);
-		}
-	}
-	return true;
+  Point2D P1, P2;
+  Line2D LOR;
+  SiddonSegment** MyWeightsList = (SiddonSegment**)malloc(sizeof(SiddonSegment*));
+  // Tamaño de la imagen:
+  SizeImage sizeImage = inputImage->getSize();
+  // Puntero a los píxeles:
+  float* ptrPixels = inputImage->getPixelsPtr();
+  // I only need to calculate the ForwardProjection of the bins were ara at least one event
+  for(unsigned int i = 0; i < outputProjection->getNumProj(); i++)
+  {
+    for(unsigned int j = 0; j < outputProjection->getNumR(); j++)
+    {
+      // The bin is different zero so we start calculatin forward project
+      // First we get the values of the SystemMAtrix for this LOR
+      // First I get the line parameters for the 3D LOR
+      // First I get the line parameters for the 3D LOR
+      /// Modificación para el TGS:
+      GetPointsFromTgsLor (outputProjection->getAngValue(i), outputProjection->getRValue(j), outputProjection->getDistCrystalToCenterFov(), outputProjection->getLengthColimator_mm(), &P1, &P2);
+      LOR.P0 = P1;
+      LOR.Vx = P2.X - P1.X;
+      LOR.Vy = P2.Y - P1.Y;
+      // Then I look for the intersection between the 3D LOR and the lines that
+      // delimits the voxels
+      // Siddon
+      
+      unsigned int LengthList;
+      Siddon(LOR, inputImage, MyWeightsList, &LengthList,1);
+      outputProjection->setSinogramBin(i,j,0);
+      for(unsigned int l = 0; l < LengthList; l++)
+      {
+	// for every element of the systema matrix different from zero,we do
+	// the sum(Aij*Xj) for every J
+	if((MyWeightsList[0][l].IndexY>=0) && (MyWeightsList[0][l].IndexX>=0))
+	  outputProjection->incrementSinogramBin(i,j, MyWeightsList[0][l].Segment * 
+	    ptrPixels[MyWeightsList[0][l].IndexY * sizeImage.nPixelsX + MyWeightsList[0][l].IndexX]);  
+	//printf("r:%d phi:%d z1:%d z2:%d x:%d y:%d z:%d w:%f", j, i, indexRing1, indexRing2, MyWeightsList[0][l].IndexX, MyWeightsList[0][l].IndexY, MyWeightsList[0][l].IndexZ, MyWeightsList[0][l].Segment);	
+
+      }
+      free(MyWeightsList[0]);
+    }
+  }
+  return true;
 }
 
 /** Sección para Sinogram3D. */
@@ -381,7 +381,8 @@ bool SiddonProjector::Project (Image* inputImage, Sinogram3D* outputProjection)
 		// Then I look for the intersection between the 3D LOR and the lines that
 		// delimits the voxels
 		// Siddon		
-		Siddon(LOR, inputImage, MyWeightsList, &LengthList,1);
+		float rayLength_mm = Siddon(LOR, inputImage, MyWeightsList, &LengthList,1);
+		geomFactor = 1/rayLength_mm;
 		if(LengthList > 0)
 		{
 		  /// Hay elementos dentro del FOV
@@ -393,13 +394,9 @@ bool SiddonProjector::Project (Image* inputImage, Sinogram3D* outputProjection)
 		    {
 		      // El axial depende del ancho del ring
 		      // Por ahora deshabilito el GeomFactor:
-// 		      outputProjection->getSegment(i)->getSinogram2D(j)->incrementSinogramBin(k, l, MyWeightsList[0][n].Segment * geomFactor *
-// 			    ptrPixels[MyWeightsList[0][n].IndexZ*(sizeImage.nPixelsX*sizeImage.nPixelsY)+MyWeightsList[0][n].IndexY * sizeImage.nPixelsX + MyWeightsList[0][n].IndexX]);
-		      outputProjection->getSegment(i)->getSinogram2D(j)->incrementSinogramBin(k, l, MyWeightsList[0][n].Segment *
+		      outputProjection->getSegment(i)->getSinogram2D(j)->incrementSinogramBin(k, l, MyWeightsList[0][n].Segment * geomFactor *
 			    ptrPixels[MyWeightsList[0][n].IndexZ*(sizeImage.nPixelsX*sizeImage.nPixelsY)+MyWeightsList[0][n].IndexY * sizeImage.nPixelsX + MyWeightsList[0][n].IndexX]);
 		    }	
-		    
-	    
 		  }
 		   
 		  if(LengthList != 0)
@@ -508,7 +505,8 @@ bool SiddonProjector::Backproject (Sinogram3D* inputProjection, Image* outputIma
 		  // Then I look for the intersection between the 3D LOR and the lines that
 		  // delimits the voxels
 		  // Siddon					
-		  Siddon(LOR, outputImage, MyWeightsList, &LengthList,1);
+		  float rayLength_mm = Siddon(LOR, outputImage, MyWeightsList, &LengthList,1);
+		  geomFactor = 1/rayLength_mm;
 		  for(n = 0; n < LengthList; n++)
 		  {
 		    // for every element of the systema matrix different from zero,we do
@@ -518,8 +516,8 @@ bool SiddonProjector::Backproject (Sinogram3D* inputProjection, Image* outputIma
 		      
 		      indexPixel = MyWeightsList[0][n].IndexZ*(sizeImage.nPixelsX*sizeImage.nPixelsY)+MyWeightsList[0][n].IndexY * sizeImage.nPixelsX + MyWeightsList[0][n].IndexX;
 		      // Por ahora deshabilito el GeomFactor:
-// 		      newValue = MyWeightsList[0][n].Segment * geomFactor * inputProjection->getSegment(i)->getSinogram2D(j)->getSinogramBin(k,l);
-		      newValue = MyWeightsList[0][n].Segment * inputProjection->getSegment(i)->getSinogram2D(j)->getSinogramBin(k,l);
+		      newValue = MyWeightsList[0][n].Segment * geomFactor * inputProjection->getSegment(i)->getSinogram2D(j)->getSinogramBin(k,l);
+// 		      newValue = MyWeightsList[0][n].Segment * inputProjection->getSegment(i)->getSinogram2D(j)->getSinogramBin(k,l);
 		      #pragma omp atomic 
 			ptrPixels[indexPixel] +=  newValue;	
 		      
@@ -613,7 +611,8 @@ bool SiddonProjector::DivideAndBackproject (Sinogram3D* InputSinogram3D, Sinogra
 		  // Then I look for the intersection between the 3D LOR and the lines that
 		  // delimits the voxels
 		  // Siddon		
-		  Siddon(LOR, outputImage, MyWeightsList, &LengthList,1);
+		  float rayLength_mm = Siddon(LOR, outputImage, MyWeightsList, &LengthList,1);
+		  geomFactor = 1/rayLength_mm;
 		  for(n = 0; n < LengthList; n++)
 		  {
 		    // for every element of the systema matrix different from zero,we do
@@ -621,12 +620,8 @@ bool SiddonProjector::DivideAndBackproject (Sinogram3D* InputSinogram3D, Sinogra
 		    if((MyWeightsList[0][n].IndexZ<sizeImage.nPixelsZ)&&(MyWeightsList[0][n].IndexY<sizeImage.nPixelsY)&&(MyWeightsList[0][n].IndexX<sizeImage.nPixelsX))
 		    {
 		      indexPixel = MyWeightsList[0][n].IndexZ*(sizeImage.nPixelsX*sizeImage.nPixelsY)+MyWeightsList[0][n].IndexY * sizeImage.nPixelsX + MyWeightsList[0][n].IndexX;
-		      // Por ahora deshabilito el GeomFactor:
-		      /*if(EstimatedSinogram3D->getSegment(i)->getSinogram2D(j)->getSinogramBin(k,l)!=0)
-			newValue = MyWeightsList[0][n].Segment * geomFactor * InputSinogram3D->getSegment(i)->getSinogram2D(j)->getSinogramBin(k,l) /
-			  EstimatedSinogram3D->getSegment(i)->getSinogram2D(j)->getSinogramBin(k,l);*/	
 		      if(EstimatedSinogram3D->getSegment(i)->getSinogram2D(j)->getSinogramBin(k,l)!=0)
-			newValue = MyWeightsList[0][n].Segment * InputSinogram3D->getSegment(i)->getSinogram2D(j)->getSinogramBin(k,l) /
+			newValue = MyWeightsList[0][n].Segment * geomFactor  * InputSinogram3D->getSegment(i)->getSinogram2D(j)->getSinogramBin(k,l) /
 			  EstimatedSinogram3D->getSegment(i)->getSinogram2D(j)->getSinogramBin(k,l);
 		      else if(InputSinogram3D->getSegment(i)->getSinogram2D(j)->getSinogramBin(k,l)!=0)
 		      {

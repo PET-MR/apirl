@@ -56,9 +56,9 @@ clear delaySinogramSpan11 % Not used in this example.
 %% CREATE INITIAL ESTIMATE FOR RECONSTRUCTION
 % Create image from the same size than used by siemens:
 % Size of the pixels:
-sizePixel_mm = [4.1725 4.1725 2.0312];
+sizePixel_mm = [4.1725 4.1725 2.03125];
 % The size in pixels:
-sizeImage_pixels = [144 144 127]; % For cover the full Fov: 596/4.1725=142.84
+sizeImage_pixels = [143 143 127]; % For cover the full Fov: 596/4.1725=142.84
 % Size of the image to cover the full fov:
 sizeImage_mm = sizePixel_mm .* sizeImage_pixels;
 % Inititial estimate:
@@ -68,10 +68,10 @@ interfilewrite(initialEstimate, filenameInitialEstimate, sizePixel_mm);
 
 % Another image of high resolution:
 % Size of the pixels:
-factor = 2;
-sizePixelHighRes_mm = [4.1725/factor 4.1725/factor 2.0312];
+sizePixelHighRes_mm = [2.08626 2.08626 2.03125];
+sizeImageHighRes_pixels = [285 285 127]; 
 % The size in pixels:
-sizeImageHighRes_pixels = [sizeImage_pixels(1)*factor sizeImage_pixels(2)*factor sizeImage_pixels(3)];
+%sizeImageHighRes_pixels = [sizeImage_pixels(1)*factor sizeImage_pixels(2)*factor sizeImage_pixels(3)];
 % Size of the image to cover the full fov:
 sizeImage_mm = sizePixelHighRes_mm .* sizeImageHighRes_pixels;
 % Inititial estimate:
@@ -91,7 +91,7 @@ overall_nf_3d(overall_ncf_3d ~= 0) = 1./overall_nf_3d(overall_ncf_3d ~= 0);
 % attenuation maps, the one of the hardware and the one of the patient or
 % human.
 imageSizeAtten_pixels = [344 344 127];
-imageSizeAtten_mm = [2.08626 2.08626 2.0312];
+imageSizeAtten_mm = [2.08626 2.08626 2.03125];
 filenameAttenMap_human = '/home/mab15/workspace/KCL/Biograph_mMr/Mediciones/NEMA_IQ_20_02_2014/umap/AttenMapCtManuallyRegistered.i33';
 filenameAttenMap_hardware = '/home/mab15/workspace/KCL/Biograph_mMr/Mediciones/NEMA_IQ_20_02_2014/umap/PET_ACQ_194_20150220154553_umap_hardware_00.v';
 % Human:
@@ -189,26 +189,26 @@ randomsSinogramSpan11 = randomsSinogramSpan11 .* atteNormCorrectionFactorsSpan11
 outputSinogramName = [outputPath 'randomsSpan11_ancf'];
 interfileWriteSino(single(randomsSinogramSpan11), outputSinogramName, structSizeSino3dSpan11);
 %clear atteNormCorrectionFactorsSpan11;
-%% GENERATE OSEM AND MLEM RECONSTRUCTION FILES FOR APIRL
-% Low Res:
-numSubsets = 21;
-numIterations = 3;
-saveInterval = 1;
-saveIntermediate = 0;
-outputFilenamePrefix = [outputPath sprintf('Nema_Osem%d_LR', numSubsets)];
-filenameOsemConfig_LR = [outputPath sprintf('/Osem3dSubset%d_LR.par', numSubsets)];
-CreateOsemConfigFileForMmr(filenameOsemConfig_LR, [outputPath 'sinogramSpan11.h33'], [filenameInitialEstimate '.h33'], outputFilenamePrefix, numIterations, [outputPath 'Nema_Osem21_HR_sensitivity'], ...
-    numSubsets, saveInterval, saveIntermediate, [], [], [outputPath 'randomsSpan11_ancf.h33'], [outputPath '/ANF_Span11']);
-
-% High Res:
-outputFilenamePrefix = [outputPath sprintf('Nema_Osem%d_HR', numSubsets)];
-filenameOsemConfig_HR = [outputPath sprintf('/Osem3dSubset%d_HR.par', numSubsets)];
-CreateOsemConfigFileForMmr(filenameOsemConfig_HR, [outputPath 'sinogramSpan11.h33'], [filenameInitialEstimateHighRes '.h33'], outputFilenamePrefix, numIterations, [outputPath 'Nema_Osem21_HR_sensitivity'],...
-    numSubsets, saveInterval, saveIntermediate, [], [], [outputPath 'randomsSpan11_ancf.h33'], [outputPath '/ANF_Span11.h33']);
-
-%% RECONSTRUCTION OF HIGH RES IMAGE
-% Execute APIRL:
-status = system(['OSEM ' filenameOsemConfig_HR]) 
+% %% GENERATE OSEM AND MLEM RECONSTRUCTION FILES FOR APIRL
+% % Low Res:
+% numSubsets = 21;
+% numIterations = 3;
+% saveInterval = 1;
+% saveIntermediate = 0;
+% outputFilenamePrefix = [outputPath sprintf('Nema_Osem%d_LR', numSubsets)];
+% filenameOsemConfig_LR = [outputPath sprintf('/Osem3dSubset%d_LR.par', numSubsets)];
+% CreateOsemConfigFileForMmr(filenameOsemConfig_LR, [outputPath 'sinogramSpan11.h33'], [filenameInitialEstimate '.h33'], outputFilenamePrefix, numIterations, [outputPath 'Nema_Osem21_HR_sensitivity'], ...
+%     numSubsets, saveInterval, saveIntermediate, [], [], [outputPath 'randomsSpan11_ancf.h33'], [outputPath '/ANF_Span11']);
+% 
+% % High Res:
+% outputFilenamePrefix = [outputPath sprintf('Nema_Osem%d_HR', numSubsets)];
+% filenameOsemConfig_HR = [outputPath sprintf('/Osem3dSubset%d_HR.par', numSubsets)];
+% CreateOsemConfigFileForMmr(filenameOsemConfig_HR, [outputPath 'sinogramSpan11.h33'], [filenameInitialEstimateHighRes '.h33'], outputFilenamePrefix, numIterations, [outputPath 'Nema_Osem21_HR_sensitivity'],...
+%     numSubsets, saveInterval, saveIntermediate, [], [], [outputPath 'randomsSpan11_ancf.h33'], [outputPath '/ANF_Span11.h33']);
+% 
+% %% RECONSTRUCTION OF HIGH RES IMAGE
+% % Execute APIRL:
+% status = system(['OSEM ' filenameOsemConfig_HR]) 
 %% GENERATE OSEM AND MLEM RECONSTRUCTION FILES FOR APIRL
 % Low Res:
 numSubsets = 21;
@@ -217,13 +217,13 @@ saveInterval = 1;
 saveIntermediate = 0;
 outputFilenamePrefix = [outputPath sprintf('Nema_Osem%d_LR_withoutRandoms', numSubsets)];
 filenameOsemConfig_LR = [outputPath sprintf('/Osem3dSubset%d_LR_withoutRandoms.par', numSubsets)];
-CreateOsemConfigFileForMmr(filenameOsemConfig_LR, [outputPath 'sinogramSpan11.h33'], [filenameInitialEstimate '.h33'], outputFilenamePrefix, numIterations, [outputPath 'Nema_Osem21_HR_sensitivity'], ...
+CreateOsemConfigFileForMmr(filenameOsemConfig_LR, [outputPath 'sinogramSpan11.h33'], [filenameInitialEstimate '.h33'], outputFilenamePrefix, numIterations, [], ...
     numSubsets, saveInterval, saveIntermediate, [], [], [], [outputPath '/ANF_Span11']);
 
 % High Res:
 outputFilenamePrefix = [outputPath sprintf('Nema_Osem%d_HR_withoutRandoms', numSubsets)];
 filenameOsemConfig_HR = [outputPath sprintf('/Osem3dSubset%d_HR_withoutRandoms.par', numSubsets)];
-CreateOsemConfigFileForMmr(filenameOsemConfig_HR, [outputPath 'sinogramSpan11.h33'], [filenameInitialEstimateHighRes '.h33'], outputFilenamePrefix, numIterations, [outputPath 'Nema_Osem21_HR_sensitivity'],...
+CreateOsemConfigFileForMmr(filenameOsemConfig_HR, [outputPath 'sinogramSpan11.h33'], [filenameInitialEstimateHighRes '.h33'], outputFilenamePrefix, numIterations, [],...
     numSubsets, saveInterval, saveIntermediate, [], [], [], [outputPath '/ANF_Span11.h33']);
 
 %% RECONSTRUCTION OF HIGH RES IMAGE
