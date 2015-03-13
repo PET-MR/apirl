@@ -382,7 +382,7 @@ bool SiddonProjector::Project (Image* inputImage, Sinogram3D* outputProjection)
 		// delimits the voxels
 		// Siddon		
 		float rayLength_mm = Siddon(LOR, inputImage, MyWeightsList, &LengthList,1);
-		geomFactor = 1/rayLength_mm;
+		//geomFactor = 1/rayLength_mm;
 		if(LengthList > 0)
 		{
 		  /// Hay elementos dentro del FOV
@@ -506,7 +506,7 @@ bool SiddonProjector::Backproject (Sinogram3D* inputProjection, Image* outputIma
 		  // delimits the voxels
 		  // Siddon					
 		  float rayLength_mm = Siddon(LOR, outputImage, MyWeightsList, &LengthList,1);
-		  geomFactor = 1/rayLength_mm;
+		  //geomFactor = 1/rayLength_mm;
 		  for(n = 0; n < LengthList; n++)
 		  {
 		    // for every element of the systema matrix different from zero,we do
@@ -612,7 +612,7 @@ bool SiddonProjector::DivideAndBackproject (Sinogram3D* InputSinogram3D, Sinogra
 		  // delimits the voxels
 		  // Siddon		
 		  float rayLength_mm = Siddon(LOR, outputImage, MyWeightsList, &LengthList,1);
-		  geomFactor = 1/rayLength_mm;
+		  //geomFactor = 1/rayLength_mm;
 		  for(n = 0; n < LengthList; n++)
 		  {
 		    // for every element of the systema matrix different from zero,we do

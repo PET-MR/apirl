@@ -61,22 +61,22 @@ bool OsemSinogram3d::Reconstruct()
   /// String de c para utlizar en los mensajes de logueo.
   char c_string[512]; string outputFilename;
   /// Pido memoria para los arrays, que deben tener tantos elementos como iteraciones:
-  timesIteration_mseg = (float*)malloc(sizeof(float)*this->numIterations);
-  timesBackprojection_mseg = (float*)malloc(sizeof(float)*this->numIterations);
-  timesForwardprojection_mseg = (float*)malloc(sizeof(float)*this->numIterations);
-  timesPixelUpdate_mseg = (float*)malloc(sizeof(float)*this->numIterations);
+  timesIteration_mseg = (float*)malloc(sizeof(float)*this->numIterations*this->numSubsets);
+  timesBackprojection_mseg = (float*)malloc(sizeof(float)*this->numIterations*this->numSubsets);
+  timesForwardprojection_mseg = (float*)malloc(sizeof(float)*this->numIterations*this->numSubsets);
+  timesPixelUpdate_mseg = (float*)malloc(sizeof(float)*this->numIterations*this->numSubsets);
   /// El vector de likelihood puede haber estado alocado previamente por lo que eso realloc. Tiene
   /// un elemento más porque el likelihood es previo a la actualización de la imagen, o sea que inicia
   /// con el initialEstimate y termina con la imagen reconstruida.
   if(this->likelihoodValues == NULL)
   {
     /// No había sido alocado previamente así que utilizo malloc.
-    this->likelihoodValues = (float*)malloc(sizeof(float)*(this->numIterations +1));
+    this->likelihoodValues = (float*)malloc(sizeof(float)*(this->numIterations*this->numSubsets +1));
   }
   else
   {
     /// Ya había sido alocado previamente, lo realoco.
-    this->likelihoodValues = (float*)realloc(this->likelihoodValues, sizeof(float)*(this->numIterations + 1));
+    this->likelihoodValues = (float*)realloc(this->likelihoodValues, sizeof(float)*(this->numIterations*this->numSubsets + 1));
   }
   
   /// Me fijo si la sensitivity image la tengo que cargar desde archivo o calcularla
@@ -152,10 +152,10 @@ bool OsemSinogram3d::Reconstruct()
   int nPixels = reconstructionImage->getPixelCount();
   for(unsigned int t = 0; t < this->numIterations; t++)
   {
-    clock_t initialClockIteration = clock();
     // Por cada iteración debo repetir la operación para todos los subsets.
     for(unsigned int s = 0; s < this->numSubsets; s++)
     {
+       clock_t initialClockIteration = clock();
       // Tengo que generar el subset del sinograma correspondiente para reconstruir con ese:
       inputSubset = inputProjection->getSubset(s, numSubsets);
       // La estimated también la cambio, porque van cambiando los ángulos de la proyección.
@@ -190,11 +190,11 @@ bool OsemSinogram3d::Reconstruct()
 	outputFilename.assign(c_string);
 	estimatedProjection->writeInterfile((char*)outputFilename.c_str());
       }
-      //clock_t finalClockProjection = clock();
+      clock_t finalClockProjection = clock();
       /// Guardo el likelihood (Siempre va una iteración atrás, ya que el likelihhod se calcula a partir de la proyección
       /// estimada, que es el primer paso del algoritmo). Se lo calculo al sinograma
       /// proyectado, respecto del de entrada.
-      this->likelihoodValues[t] = estimatedProjection->getLikelihoodValue(inputSubset);
+      this->likelihoodValues[this->numSubsets*t+s] = estimatedProjection->getLikelihoodValue(inputSubset);
       /// Pongo en cero la proyección estimada, y hago la backprojection.
       backprojectedImage->fillConstant(0);
       //backprojector->DivideAndBackproject(inputSubset, estimatedProjection, backprojectedImage);
@@ -219,7 +219,7 @@ bool OsemSinogram3d::Reconstruct()
       
       /// Retroproyecto
       backprojector->Backproject(estimatedProjection, backprojectedImage);
-      //clock_t finalClockBackprojection = clock();
+      clock_t finalClockBackprojection = clock();
       
       // Obtengo el puntero de la snesitivity image (Si no me alcanzar la ram para tenrlas todas almacenadas, acá debería calcularla):
       ptrSensitivityPixels = sensitivityImages[s]->getPixelsPtr();
@@ -260,6 +260,12 @@ bool OsemSinogram3d::Reconstruct()
 	  backprojectedImage->writeInterfile((char*)outputFilename.c_str());
 	}
       }
+      clock_t finalClockIteration = clock();
+      /// Cargo los tiempos:
+      timesIteration_mseg[this->numSubsets*t+s] = (float)(finalClockIteration-initialClockIteration)*1000/(float)CLOCKS_PER_SEC;
+      timesBackprojection_mseg[this->numSubsets*t+s] = (float)(finalClockBackprojection-finalClockProjection)*1000/(float)CLOCKS_PER_SEC;
+      timesForwardprojection_mseg[this->numSubsets*t+s] = (float)(finalClockProjection-initialClockIteration)*1000/(float)CLOCKS_PER_SEC;
+      timesPixelUpdate_mseg[this->numSubsets*t+s] = (float)(finalClockIteration-finalClockBackprojection)*1000/(float)CLOCKS_PER_SEC;
       // Elimino el subset.
       delete inputSubset;
       delete estimatedProjection;
@@ -278,12 +284,6 @@ bool OsemSinogram3d::Reconstruct()
 	logger->writeLine(c_string);
       }
     }
-    clock_t finalClockIteration = clock();
-    /// Cargo los tiempos:
-    timesIteration_mseg[t] = (float)(finalClockIteration-initialClockIteration)*1000/(float)CLOCKS_PER_SEC;
-    //timesBackprojection_mseg[t] = (float)(finalClockBackprojection-finalClockProjection)*1000/(float)CLOCKS_PER_SEC;
-    //timesForwardprojection_mseg[t] = (float)(finalClockProjection-initialClockIteration)*1000/(float)CLOCKS_PER_SEC;
-    //timesPixelUpdate_mseg[t] = (float)(finalClockIteration-finalClockBackprojection)*1000/(float)CLOCKS_PER_SEC;
   }
 
   clock_t finalClock = clock();
@@ -294,8 +294,9 @@ bool OsemSinogram3d::Reconstruct()
   sprintf(c_string, "Imagen final guardada en: %s", outputFilename.c_str());
   logger->writeLine(c_string);
   /// Calculo la proyección de la última imagen para poder calcular el likelihood final:
+  estimatedProjection = inputProjection->Copy();
   forwardprojector->Project(reconstructionImage, estimatedProjection);
-  this->likelihoodValues[this->numIterations] = estimatedProjection->getLikelihoodValue(inputProjection);
+  this->likelihoodValues[this->numIterations*this->numSubsets] = estimatedProjection->getLikelihoodValue(inputProjection);
 
   float tiempoTotal = (float)(finalClock - initialClock)*1000/(float)CLOCKS_PER_SEC;
   /// Termino con el log de los resultados:
@@ -306,20 +307,20 @@ bool OsemSinogram3d::Reconstruct()
   /// Ahora guardo los tiempos por iteración y por etapa, en fila de valores.
   strcpy(c_string, "Tiempos de Reconstrucción por Iteración [mseg]");
   logger->writeLine(c_string, strlen(c_string));
-  logger->writeRowOfNumbers(timesIteration_mseg, this->numIterations);
+  logger->writeRowOfNumbers(timesIteration_mseg, this->numIterations*this->numSubsets);
   strcpy(c_string, "Tiempos de Forwardprojection por Iteración [mseg]");
   logger->writeLine(c_string, strlen(c_string));
-  logger->writeRowOfNumbers(timesForwardprojection_mseg, this->numIterations);
+  logger->writeRowOfNumbers(timesForwardprojection_mseg, this->numIterations*this->numSubsets);
   strcpy(c_string, "Tiempos de Backwardprojection por Iteración [mseg]");
   logger->writeLine(c_string, strlen(c_string));
-  logger->writeRowOfNumbers(timesBackprojection_mseg, this->numIterations);
+  logger->writeRowOfNumbers(timesBackprojection_mseg, this->numIterations*this->numSubsets);
   strcpy(c_string, "Tiempos de UpdatePixel por Iteración [mseg]");
   logger->writeLine(c_string, strlen(c_string));
-  logger->writeRowOfNumbers(timesPixelUpdate_mseg, this->numIterations);
+  logger->writeRowOfNumbers(timesPixelUpdate_mseg, this->numIterations*this->numSubsets);
   /// Por último registro los valores de likelihood:
   strcpy(c_string, "Likelihood por Iteración:");
   logger->writeLine(c_string, strlen(c_string));
-  logger->writeRowOfNumbers(this->likelihoodValues, this->numIterations + 1);
+  logger->writeRowOfNumbers(this->likelihoodValues, this->numIterations*this->numSubsets + 1);
 
   /// Libero la memoria de los arrays:
   free(timesIteration_mseg);

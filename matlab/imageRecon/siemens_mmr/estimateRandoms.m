@@ -17,10 +17,10 @@ outputPath = '/home/mab15/workspace/KCL/Biograph_mMr/Randoms/';
 mkdir(outputPath);
 %setenv('LD_LIBRARY_PATH', [getenv('LD_LIBRARY_PATH') ':/usr/lib/x86_64-linux-gnu/']);
 %% READING THE SINOGRAMS
-% Read the sinograms:
-sinogramsPath = '/home/mab15/workspace/KCL/Biograph_mMr/Mediciones/NEMA_IQ_20_02_2014/';
-filenameUncompressedMmr = [sinogramsPath 'PET_ACQ_194_20150220154553-0uncomp.s'];
-outFilenameIntfSinograms = [sinogramsPath 'NemaIq20_02_2014_ApirlIntf.s'];
+% Read the 5 hours sinogram:
+sinogramsPath = '/home/mab15/workspace/KCL/Biograph_mMr/mmr/5hr_ge68/';
+filenameUncompressedMmr = [sinogramsPath 'cylinder_5hours.s'];
+outFilenameIntfSinograms = [sinogramsPath 'cylinder_5hoursIntf.s'];
 [structInterfile, structSizeSino] = getInfoFromSiemensIntf([filenameUncompressedMmr '.hdr']);
 [sinogram, delayedSinogram, structSizeSino3d] = getIntfSinogramsFromUncompressedMmr(filenameUncompressedMmr, outFilenameIntfSinograms);
 
@@ -38,7 +38,10 @@ structSizeSino3dSpan11 = getSizeSino3dFromSpan(structSizeSino3d.numR, structSize
 michelogram = generateMichelogramFromSinogram3D(delayedSinogram, structSizeSino3d);
 delaySinogramSpan11 = reduceMichelogram(michelogram, structSizeSino3dSpan11);
 clear michelogram
-
+% Normalize to cps:
+delaySinogramSpan11 = delaySinogramSpan11 ./ structInterfile.ImageDurationSec;
+outputSinogramName = [outputPath 'delaySpan11'];
+interfileWriteSino(single(delaySinogramSpan11), outputSinogramName, structSizeSino3dSpan11);
 %% DELAYED SINOGRAMS
 % Plot a few delayed sinograms:
 imagesToShow = getImageFromSlices(delaySinogramSpan11(:,:,1:structInterfile.NumberOfRings*2-1), 12);
@@ -52,7 +55,7 @@ imshow(mean(delaySinogramSpan11(:,:,1:structInterfile.NumberOfRings*2-1),3));
 title('Mean Delayed Sinograms for Direct Sinograms (Span 11)');
 set(gcf, 'Position', [0 0 1600 1200]);
 
-%% DELAYED SINOGRAMS FROM SINGLES IN BUCKET
+%% RANDOM SINOGRAMS SPAN 11 FROM SINGLES IN BUCKET
 sinoRandomsFromSinglesPerBucket = createRandomsFromSinglesPerBucket([filenameUncompressedMmr '.hdr']);
 michelogram = generateMichelogramFromSinogram3D(sinoRandomsFromSinglesPerBucket, structSizeSino3d);
 % Plot direct delayed sinograms:
@@ -62,5 +65,17 @@ imshow(imagesToShow);
 title('Estimated Randoms From Singles per Bucket for Direct Sinograms (Span 1)');
 set(gcf, 'Position', [0 0 1600 1200]);
 % Create span 11
-delaySinogramSpan11 = reduceMichelogram(michelogram, structSizeSino3dSpan11);
+randomsSinogramSpan11 = reduceMichelogram(michelogram, structSizeSino3dSpan11);
 clear michelogram
+% Write randoms sinogram:
+outputSinogramName = [outputPath '/randomsSpan11'];
+interfileWriteSino(single(randomsSinogramSpan11), outputSinogramName, structSizeSino3dSpan11);
+
+% Apply normalization:
+[overall_ncf_3d, scanner_time_invariant_ncf_3d, scanner_time_variant_ncf_3d, acquisition_dependant_ncf_3d, used_xtal_efficiencies, used_deadtimefactors, used_axial_factors] = ...
+   create_norm_files_mmr(cbn_filename, [], [], [], [], 11);
+randomsSinogramSpan11 = randomsSinogramSpan11 .* scanner_time_variant_ncf_3d;
+outputSinogramName = [outputPath 'randomsSpan11_ncf'];
+interfileWriteSino(single(randomsSinogramSpan11), outputSinogramName, structSizeSino3dSpan11);
+outputSinogramName = [outputPath 'used_ncf'];
+interfileWriteSino(single(overall_ncf_3d), outputSinogramName, structSizeSino3dSpan11);
