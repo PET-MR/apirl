@@ -310,7 +310,11 @@ int main (int argc, char *argv[])
   // Inicializo el proyector a utilizar:
   if(strForwardprojector.compare("Siddon") == 0)
   {
-    forwardprojector = (Projector*)new SiddonProjector();
+    int numSamples;
+    if(getSiddonProjectorParameters(parameterFileName, "MLEM", &numSamples))
+      forwardprojector = (Projector*)new SiddonProjector();
+    else
+      forwardprojector = (Projector*)new SiddonProjector(numSamples);
   }
   else if(strForwardprojector.compare("RotationBasedProjector") == 0)
   {
@@ -329,7 +333,12 @@ int main (int argc, char *argv[])
   // Inicializo del backprojector a utilizar. 
   if(strBackprojector.compare("Siddon") == 0)
   {
+    int numSamples;
     backprojector = (Projector*)new SiddonProjector();
+    if(getSiddonProjectorParameters(parameterFileName, "MLEM", &numSamples))
+      backprojector = (Projector*)new SiddonProjector();
+    else
+      backprojector = (Projector*)new SiddonProjector(numSamples);
   }
   else if(strBackprojector.compare("RotationBasedProjector") == 0)
   {

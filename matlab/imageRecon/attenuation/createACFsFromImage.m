@@ -33,8 +33,8 @@ CreateGenAcfConfigFile(genAcfFilename, structSizeSinos, [filenameSinogram '.h33'
 % Then execute APIRL:
 status = system(['generateACFs ' genAcfFilename]); 
 
-% Move the sinogram to the output path:
-status = system(['mv ' genAcfFilename]); 
+% % Move the sinogram to the output path:
+% status = system(['mv ' genAcfFilename]); 
 
 % Read the generated acfs:
 if isfield(structSizeSinos,'sinogramsPerSegment')

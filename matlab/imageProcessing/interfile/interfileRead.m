@@ -54,9 +54,12 @@ end
 %params.data_file = [relativePath params.data_file];
 fid = fopen(params.data_file, 'r', params.byte_order);
 if (fid == -1)
-    err_id = 'Images:interfileread:invalidValue';
-    err_msg = 'Invalid value found at key ''name of data file''.';
-    error(err_id, err_msg);
+    fid = fopen([relativePath params.data_file], 'r', params.byte_order);
+    if (fid == -1)
+        err_id = 'Images:interfileread:invalidValue';
+        err_msg = 'Invalid value found at key ''name of data file''.';
+        error(err_id, err_msg);
+    end
 end
 
 fseek(fid, params.offset, 'cof');

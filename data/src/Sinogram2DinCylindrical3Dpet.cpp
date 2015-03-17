@@ -258,3 +258,35 @@ bool Sinogram2DinCylindrical3Dpet::getPointsFromLor (int indexAng, int indexR, P
   p2->Y = r * sin(rad_PhiAngle) + cos(rad_PhiAngle) * auxValue;
   return true;
 }
+
+bool Sinogram2DinCylindrical3Dpet::getPointsFromOverSampledLor (int indexAng, int indexR, int indexSubsample, int numSubsamples, Point2D* p1, Point2D* p2, float* geomFactor)
+{
+  float r = this->getRValue(indexR);
+  float rad_PhiAngle = this->getAngValue(indexAng) * DEG_TO_RAD;
+  float incrementR = this->getDeltaR(indexAng, indexR);
+  r = r - (incrementR/2) + incrementR/numSubsamples * indexSubsample + (incrementR/(2*numSubsamples));
+  float auxValue = sqrt(this->radioScanner_mm * this->radioScanner_mm - r * r);
+  *geomFactor = 1;
+  p1->X = r * cos(rad_PhiAngle) + sin(rad_PhiAngle) * auxValue;
+  p1->Y = r * sin(rad_PhiAngle) - cos(rad_PhiAngle) * auxValue;
+  p2->X = r * cos(rad_PhiAngle) - sin(rad_PhiAngle) * auxValue;
+  p2->Y = r * sin(rad_PhiAngle) + cos(rad_PhiAngle) * auxValue;
+  return true;
+}
+
+bool Sinogram2DinCylindrical3Dpet::getPointsFromOverSampledLor (int indexAng, int indexR, int indexSubsample, int numSubsamples, int indexRingConfig, Point3D* p1, Point3D* p2, float* geomFactor)
+{
+  float r = this->getRValue(indexR);
+  float rad_PhiAngle = this->getAngValue(indexAng) * DEG_TO_RAD;
+  float incrementR = this->getDeltaR(indexAng, indexR);
+  r = r - (incrementR/2) + incrementR/numSubsamples * indexSubsample + (incrementR/(2*numSubsamples));
+  float auxValue = sqrt(this->radioScanner_mm * this->radioScanner_mm - r * r);
+  *geomFactor = 1;
+  p1->X = r * cos(rad_PhiAngle) + sin(rad_PhiAngle) * auxValue;
+  p1->Y = r * sin(rad_PhiAngle) - cos(rad_PhiAngle) * auxValue;
+  p2->X = r * cos(rad_PhiAngle) - sin(rad_PhiAngle) * auxValue;
+  p2->Y = r * sin(rad_PhiAngle) + cos(rad_PhiAngle) * auxValue;
+  p1->Z = ptrListZ1_mm[indexRingConfig];
+  p2->Z = ptrListZ2_mm[indexRingConfig];
+  return true;
+}

@@ -324,3 +324,32 @@ void Sinogram2Dtgs::getPointsFromTgsLor (int indexAng, int indexR, float offsetD
   p2->Y = -x1 * sin(thita_rad) + y1 * cos(thita_rad);
 }
 
+bool Sinogram2Dtgs::getPointsFromOverSampledLor (int indexAng, int indexR, int indexSubsample, int numSubsamples, Point2D* p1, Point2D* p2, float* geomFactor)
+{
+  
+  float thita_rad = getAngValue(indexAng) * DEG_TO_RAD;
+  float r = getRValue(indexR);
+  float offsetDetector_mm = 0;
+  float offsetCollimator_mm = 0;
+  float incrementR = this->getDeltaR(indexAng, indexR);
+  r = r - (incrementR/2) + incrementR/numSubsamples * indexSubsample + (incrementR/(2*numSubsamples));
+  /// Para lor lor debo obtener un punto sobre el detector, y un punto en el extremo opuesto.
+  /// Punto sobre el detector:
+  double x0 = r + offsetDetector_mm;	/// Posición en X del punto sobre el detector: r + offsetDetector.
+  // En el sistema final es y0 = -this->distCrystalToCenterFov, tenerlo en cuenta porque algunas simulaciones no lo tienen así, y por eso
+  // por ahora lo estoy poniendo en +this->distCrystalToCenterFov
+  double y0 = this->distCrystalToCenterFov;	/// Coordenada Y sobre el detector.
+  /// Punto en cara opuesta. La coordenada Y es la misma pero con signo opuesto, mientras que para la X
+  /// la debo proyectar en base a la recta que forma entre (r+OffsetDetector) y (r+OffsetCaraColimador):
+  double y1 = -this->distCrystalToCenterFov;
+  double x1 = x0 + (offsetCollimator_mm-offsetDetector_mm) / this->lengthColimator_mm * this->distCrystalToCenterFov * 2;
+  
+  p1->X = x0 * cos(thita_rad) + y0 * sin(thita_rad);
+  p1->Y = -x0 * sin(thita_rad) + y0 * cos(thita_rad);
+  p2->X = x1 * cos(thita_rad) + y1 * sin(thita_rad);
+  p2->Y = -x1 * sin(thita_rad) + y1 * cos(thita_rad);
+  
+  *geomFactor = 1;
+  
+  return true;
+}

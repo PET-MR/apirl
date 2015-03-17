@@ -108,6 +108,13 @@ class DLLEXPORT Sinogram2D : public Projection
 		/** Método que devuelve cantidad de muestras espaciales de cada proyección. */
 		unsigned int getNumR(){ return numR;};
 		
+		/** Método que devuelve el incremento de la variable transversal r. Depende la Lor ya que puede
+		    ser no uniforme, por ejemplo por el efecto de arc correction.
+		    @param indexAng índice del ángulo del bin del sinograma a procesar.
+		    @param indexR índice de la distancia r del bin del sinograma a procesar.
+		*/
+		float getDeltaR(int indexAng, int indexR);
+		
 		/** Método que devuelve el radio del field of view. */
 		float getRadioFov_mm(){ return radioFov_mm;};
 		
@@ -137,7 +144,21 @@ class DLLEXPORT Sinogram2D : public Projection
 			@return devuelve true si encontró los dos puntos sobre el detector, false en caso contrario. 
 		*/
 		virtual bool getPointsFromLor (int indexAng, int indexR, Point2D* p1, Point2D* p2, float* geomFactor) = 0;
-	
+		
+		/** Método que calcula los dos puntos geométricos que forman una Lor sobremuestrada.Y adicionalmente devuelve un peso geométrico, según
+		 * las características del scanner. Para sobremuestrear la LOR, se le indica en cuantos puntos se divide cada LOR y cual de las muestras
+		 * se desea. O sea que para N submuestras, se puede solicitar índices entre 0 y N-1.
+			@param indexAng índice del ángulo del bin del sinograma a procesar.
+			@param indexR índice de la distancia r del bin del sinograma a procesar.
+			@param indexSubsample índice de la submuestra para la LOR (indexAng,indexR).
+			@param numSubsamples número de submuestras por LOR.
+			@param p1 puntero a estructura del tipo Point2D donde se guardará el primer punto de la lor (del lado del detector).
+			@param p2 puntero a estructura del tipo Point2D donde se guardará el segundo punto de la lor (del otro lado del detector).
+			@param geomFactor factor geométrico calculado a partir de las coordenadas de la lor.
+			@return devuelve true si encontró los dos puntos sobre el detector, false en caso contrario. 
+		*/
+		bool getPointsFromOverSampledLor (int indexAng, int indexR, int indexSubsample, int numSubsamples, Point2D* p1, Point2D* p2, float* geomFactor);
+		
 		/** Método que obtiene los dos puntos límites, de entrada y salida, de una lor que cruza el field of view.
 			Para esto se le debe pasar las coordenadas del bin del sinograma, y dos estructuras del tipo Point2D
 			donde se guardarán los puntos de entrada y salida del fov. Para este caso de sinograma2d genérico

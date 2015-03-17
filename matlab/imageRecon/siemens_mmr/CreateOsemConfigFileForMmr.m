@@ -7,7 +7,7 @@
 % OSEM para el sinograma Mmr.
 
 function CreateOsemConfigFileForMmr(configfilename, inputFile, initialEstimate, outputFilenamePrefix, numIterations, sensitivityImage,...
-    numSubsets, saveInterval, saveIntermediate, acfSinogram, scatterSinogram, randomSinograms, normalizationFactors)
+    numSubsets, saveInterval, saveIntermediate, acfSinogram, scatterSinogram, randomSinograms, normalizationFactors, varargin)
 
 % Primero genero el archivo de encabezado.
 fid = fopen(configfilename, 'w');
@@ -45,6 +45,15 @@ if nargin > 8
     end
     if ~strcmp(normalizationFactors, '')
         fprintf(fid,'normalization correction factors := %s\n', normalizationFactors);
+    end
+end
+
+% Additional parameters:
+if numel(varargin) > 0
+    if strcmp(varargin{1}, 'siddon number of samples on the detector')
+        fprintf(fid,'%s := %d\n', varargin{1}, varargin{2});
+    else
+        disp(sprintf('Not valid additional parameter: %s.', varargin{1}))
     end
 end
 fclose(fid);

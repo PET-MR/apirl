@@ -11,8 +11,8 @@
 %    saveInterval, saveIntermediate, acfSinogram, scatterSinogram, randomSinograms, normalizationFactors)
 %
 %
-function CreateMlemConfigFileForMmr(configfilename, inputFile, initialEstimate, outputFilenamePrefix, numIterations,...
-    saveInterval, saveIntermediate, acfSinogram, scatterSinogram, randomSinograms, normalizationFactors)
+function CreateMlemConfigFileForMmr(configfilename, inputFile, initialEstimate, outputFilenamePrefix, numIterations, sensitivityImage,...
+    saveInterval, saveIntermediate, acfSinogram, scatterSinogram, randomSinograms, normalizationFactors, varargin)
 
 % Primero genero el archivo de encabezado.
 fid = fopen(configfilename, 'w');
@@ -26,6 +26,10 @@ fprintf(fid,'input type := Sinogram3DSiemensMmr\n');
 fprintf(fid,'input file := %s\n', inputFile);
 fprintf(fid,'initial estimate := %s\n', initialEstimate);
 fprintf(fid,'output filename prefix := %s\n', outputFilenamePrefix);
+if ~isempty(sensitivityImage)
+    fprintf(fid,'sensitivity filename := %s\n', sensitivityImage);
+end
+
 fprintf(fid,'forwardprojector := Siddon\n');
 fprintf(fid,'backprojector := Siddon\n');
 fprintf(fid,'number of iterations := %d\n', numIterations);
@@ -44,6 +48,15 @@ if nargin > 10
     end
     if ~strcmp(normalizationFactors, '')
         fprintf(fid,'normalization correction factors := %s\n', normalizationFactors);
+    end
+end
+
+% Additional parameters:
+if numel(varargin) > 0
+    if strcmp(varargin{1}, 'siddon number of samples on the detector')
+        fprintf(fid,'%s := %d\n', varargin{1}, varargin{2});
+    else
+        disp(sprintf('Not valid additional parameter: %s.', varargin{1}))
     end
 end
 fclose(fid);

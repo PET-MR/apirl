@@ -348,8 +348,8 @@ bool SiddonProjector::Project (Image* inputImage, Sinogram3D* outputProjection)
       }
       for(unsigned int m = 0; m < numZ; m++)
       {
-	unsigned int k, l, n, LengthList;
-	#pragma omp parallel private(k, l, LOR, MyWeightsList, LengthList, n, P1, P2, geomFactor)
+	unsigned int k, l, n, o, LengthList;
+	#pragma omp parallel private(k, l, LOR, MyWeightsList, LengthList, n, o, P1, P2, geomFactor)
 	{
 	  MyWeightsList = (SiddonSegment**)malloc(sizeof(SiddonSegment*));
 	  #pragma omp for
@@ -357,71 +357,70 @@ bool SiddonProjector::Project (Image* inputImage, Sinogram3D* outputProjection)
 	  {
 	    for(l = 0; l < outputProjection->getSegment(i)->getSinogram2D(j)->getNumR(); l++)
 	    {
-	      /// Cada Sinograma 2D me represnta múltiples LORs, según la mínima y máxima diferencia entre anillos.
-	      /// Por lo que cada bin me va a sumar cuentas en lors con distintos ejes axiales.
-	      /// El sinograma de salida lo incializo en cero antes de recorrer los distintos anillos de cada elemento del
-	      /// sinograma, ya que varias LORS deben aportar al mismo bin del sinograma.
-	      int lorOk;
-	      if(useMultipleLorsPerBin)
+	      /// The siddon projector can use an oversampled verison with several lines per bin.
+	      for(o = 0; o < numSamplesOnDetector; o++)
 	      {
-		lorOk = outputProjection->getSegment(i)->getSinogram2D(j)->getPointsFromLor(k,l,m, &P1, &P2, &geomFactor);
-	      }
-	      else
-	      {
-		lorOk = outputProjection->getSegment(i)->getSinogram2D(j)->getPointsFromLor(k,l,0, &P1, &P2, &geomFactor);
-		P1.Z = z1_mm;
-		P2.Z = z2_mm;
-	      }
-	      if(lorOk)
-	      {
-		LOR.P0 = P1;
-		LOR.Vx = P2.X - P1.X;
-		LOR.Vy = P2.Y - P1.Y;
-		LOR.Vz = P2.Z - P1.Z;
-		// Then I look for the intersection between the 3D LOR and the lines that
-		// delimits the voxels
-		// Siddon		
-		float rayLength_mm = Siddon(LOR, inputImage, MyWeightsList, &LengthList,1);
-		//geomFactor = 1/rayLength_mm;
-		if(LengthList > 0)
+		/// Cada Sinograma 2D me represnta múltiples LORs, según la mínima y máxima diferencia entre anillos.
+		/// Por lo que cada bin me va a sumar cuentas en lors con distintos ejes axiales.
+		/// El sinograma de salida lo incializo en cero antes de recorrer los distintos anillos de cada elemento del
+		/// sinograma, ya que varias LORS deben aportar al mismo bin del sinograma.
+		int lorOk;
+		if(numSamplesOnDetector == 1)
 		{
-		  /// Hay elementos dentro del FOV
-		  for(n = 0; n < LengthList; n++)
-		  {
-		    // for every element of the systema matrix different from zero,we do
-		    // the sum(Aij*Xj) for every J
-		    if((MyWeightsList[0][n].IndexX<sizeImage.nPixelsX)&&(MyWeightsList[0][n].IndexY<sizeImage.nPixelsY)&&(MyWeightsList[0][n].IndexZ<sizeImage.nPixelsZ))
-		    {
-		      // El axial depende del ancho del ring
-		      // Por ahora deshabilito el GeomFactor:
-		      outputProjection->getSegment(i)->getSinogram2D(j)->incrementSinogramBin(k, l, MyWeightsList[0][n].Segment * geomFactor *
-			    ptrPixels[MyWeightsList[0][n].IndexZ*(sizeImage.nPixelsX*sizeImage.nPixelsY)+MyWeightsList[0][n].IndexY * sizeImage.nPixelsX + MyWeightsList[0][n].IndexX]);
-		    }	
-		  }
-		   
-		  if(LengthList != 0)
-		  {
-		    free(MyWeightsList[0]);
-		  }
+		  lorOk = outputProjection->getSegment(i)->getSinogram2D(j)->getPointsFromLor(k,l,m, &P1, &P2, &geomFactor);
 		}
 		else
 		{
-		  printf("No hay lista de intersección. LOR Segmento: %d. Sino %d. R: %d. Theta: %d.\n", i, j, k, l);
-		    
+		  lorOk = outputProjection->getSegment(i)->getSinogram2D(j)->getPointsFromOverSampledLor(k,l,o,numSamplesOnDetector,m, &P1, &P2, &geomFactor);
 		}
-// 		if(outputProjection->getSegment(i)->getSinogram2D(j)->getSinogramBin(k,l)==0)
-// 		{
-// 		  printf("Cero en el bin Segmento: %d. Sino %d. R: %d. Theta: %d.\n", i, j, k, l);
-// 		}
-// 		if(j==12)
-// 		      printf("value:%f.", outputProjection->getSegment(i)->getSinogram2D(j)->getSinogramBin(k,l));
+		// If use axial compression, use the average z coordinate:
+		if(!useMultipleLorsPerBin)
+		{
+		  P1.Z = z1_mm;
+		  P2.Z = z2_mm;
+		}
+		if(lorOk)
+		{
+		  LOR.P0 = P1;
+		  LOR.Vx = P2.X - P1.X;
+		  LOR.Vy = P2.Y - P1.Y;
+		  LOR.Vz = P2.Z - P1.Z;
+		  // Then I look for the intersection between the 3D LOR and the lines that
+		  // delimits the voxels
+		  // Siddon		
+		  float rayLength_mm = Siddon(LOR, inputImage, MyWeightsList, &LengthList,1);
+		  //geomFactor = 1/rayLength_mm;
+		  if(LengthList > 0)
+		  {
+		    /// Hay elementos dentro del FOV
+		    for(n = 0; n < LengthList; n++)
+		    {
+		      // for every element of the systema matrix different from zero,we do
+		      // the sum(Aij*Xj) for every J
+		      if((MyWeightsList[0][n].IndexX<sizeImage.nPixelsX)&&(MyWeightsList[0][n].IndexY<sizeImage.nPixelsY)&&(MyWeightsList[0][n].IndexZ<sizeImage.nPixelsZ))
+		      {
+			// El axial depende del ancho del ring
+			// Por ahora deshabilito el GeomFactor:
+			outputProjection->getSegment(i)->getSinogram2D(j)->incrementSinogramBin(k, l, MyWeightsList[0][n].Segment * geomFactor *
+			      ptrPixels[MyWeightsList[0][n].IndexZ*(sizeImage.nPixelsX*sizeImage.nPixelsY)+MyWeightsList[0][n].IndexY * sizeImage.nPixelsX + MyWeightsList[0][n].IndexX]);
+		      }	
+		    }
+		    
+		    if(LengthList != 0)
+		    {
+		      free(MyWeightsList[0]);
+		    }
+		  }
+		  else
+		  {
+		    printf("No hay lista de intersección. LOR Segmento: %d. Sino %d. R: %d. Theta: %d.\n", i, j, k, l);
+		      
+		  }
+		}
 	      }
 	    }
-		    // Now I have my estimated projection for LOR i
 	  }
 	}
-	
-// 	printf("Bin de ejemplo: %d %d %f.\n", i,j,outputProjection->getSegment(i)->getSinogram2D(j)->getSinogramBin(20,20));
       }
     }
   }
@@ -438,11 +437,11 @@ bool SiddonProjector::Backproject (Sinogram3D* inputProjection, Image* outputIma
   SizeImage sizeImage = outputImage->getSize();
   // Puntero a los píxeles:
   float* ptrPixels = outputImage->getPixelsPtr();
-  unsigned int i, j, k, l, n, m, LengthList;
+  unsigned int i, j, k, l, n, m, o, LengthList;
   unsigned long indexPixel;
   float geomFactor = 0;
   float newValue;
-  int indexRing1, indexRing2, numZ;
+  int numZ;
   float z1_mm, z2_mm;
   int lorOk;
   
@@ -467,7 +466,7 @@ bool SiddonProjector::Backproject (Sinogram3D* inputProjection, Image* outputIma
 	z2_mm = (inputProjection->getSegment(i)->getSinogram2D(j)->getAxialValue2FromList(0)  + 
 	      inputProjection->getSegment(i)->getSinogram2D(j)->getAxialValue2FromList(inputProjection->getSegment(i)->getSinogram2D(j)->getNumZ()-1))/2;
       }
-      #pragma omp parallel private(k, l, m, LOR, P1, P2, MyWeightsList, LengthList, n, newValue, indexPixel, geomFactor, lorOk) shared(inputProjection,ptrPixels)
+      #pragma omp parallel private(k, l, m, o, LOR, P1, P2, MyWeightsList, LengthList, n, newValue, indexPixel, geomFactor, lorOk) shared(inputProjection,ptrPixels)
       {
 	MyWeightsList = (SiddonSegment**)malloc(sizeof(SiddonSegment*));
 	#pragma omp for
@@ -483,50 +482,60 @@ bool SiddonProjector::Backproject (Sinogram3D* inputProjection, Image* outputIma
 
 	      for(m = 0; m < numZ; m++)
 	      {
-		indexRing1 = inputProjection->getSegment(i)->getSinogram2D(j)->getRing1FromList(m);
-		indexRing2 = inputProjection->getSegment(i)->getSinogram2D(j)->getRing2FromList(m);
-		// Devuelve true si encontró los dos cabezales de la LOR:
-		if(useMultipleLorsPerBin)
+		/// The siddon projector can use an oversampled verison with several lines per bin.
+		for(o = 0; o < numSamplesOnDetector; o++)
 		{
-		  lorOk = inputProjection->getSegment(i)->getSinogram2D(j)->getPointsFromLor(k,l,m, &P1, &P2, &geomFactor);
-		}
-		else
-		{
-		  lorOk = inputProjection->getSegment(i)->getSinogram2D(j)->getPointsFromLor(k,l,0, &P1, &P2, &geomFactor);
-		  P1.Z = z1_mm;
-		  P2.Z = z2_mm;
-		}
-		if(lorOk){
-		  LOR.P0 = P1;
-		  LOR.Vx = P2.X - P1.X;
-		  LOR.Vy = P2.Y - P1.Y;
-		  LOR.Vz = P2.Z - P1.Z;
-
-		  // Then I look for the intersection between the 3D LOR and the lines that
-		  // delimits the voxels
-		  // Siddon					
-		  float rayLength_mm = Siddon(LOR, outputImage, MyWeightsList, &LengthList,1);
-		  //geomFactor = 1/rayLength_mm;
-		  for(n = 0; n < LengthList; n++)
+		  /// Cada Sinograma 2D me represnta múltiples LORs, según la mínima y máxima diferencia entre anillos.
+		  /// Por lo que cada bin me va a sumar cuentas en lors con distintos ejes axiales.
+		  /// El sinograma de salida lo incializo en cero antes de recorrer los distintos anillos de cada elemento del
+		  /// sinograma, ya que varias LORS deben aportar al mismo bin del sinograma.
+		  int lorOk;
+		  if(numSamplesOnDetector == 1)
 		  {
-		    // for every element of the systema matrix different from zero,we do
-		    // the sum(Aij*bi/Projected) for every i
-		    if((MyWeightsList[0][n].IndexZ<sizeImage.nPixelsZ)&&(MyWeightsList[0][n].IndexY<sizeImage.nPixelsY)&&(MyWeightsList[0][n].IndexX<sizeImage.nPixelsX))
-		    {
-		      
-		      indexPixel = MyWeightsList[0][n].IndexZ*(sizeImage.nPixelsX*sizeImage.nPixelsY)+MyWeightsList[0][n].IndexY * sizeImage.nPixelsX + MyWeightsList[0][n].IndexX;
-		      // Por ahora deshabilito el GeomFactor:
-		      newValue = MyWeightsList[0][n].Segment * geomFactor * inputProjection->getSegment(i)->getSinogram2D(j)->getSinogramBin(k,l);
-// 		      newValue = MyWeightsList[0][n].Segment * inputProjection->getSegment(i)->getSinogram2D(j)->getSinogramBin(k,l);
-		      #pragma omp atomic 
-			ptrPixels[indexPixel] +=  newValue;	
-		      
-		    }
+		    lorOk = inputProjection->getSegment(i)->getSinogram2D(j)->getPointsFromLor(k,l,m, &P1, &P2, &geomFactor);
 		  }
-		  if(LengthList != 0)
+		  else
 		  {
-		    /// Solo libero memoria cuando se la pidió, si no hay una excepción.
-		    free(MyWeightsList[0]);
+		    lorOk = inputProjection->getSegment(i)->getSinogram2D(j)->getPointsFromOverSampledLor(k,l,o,numSamplesOnDetector,m, &P1, &P2, &geomFactor);
+		  }
+		  // If use axial compression, use the average z coordinate:
+		  if(!useMultipleLorsPerBin)
+		  {
+		    P1.Z = z1_mm;
+		    P2.Z = z2_mm;
+		  }
+		  if(lorOk){
+		    LOR.P0 = P1;
+		    LOR.Vx = P2.X - P1.X;
+		    LOR.Vy = P2.Y - P1.Y;
+		    LOR.Vz = P2.Z - P1.Z;
+
+		    // Then I look for the intersection between the 3D LOR and the lines that
+		    // delimits the voxels
+		    // Siddon					
+		    float rayLength_mm = Siddon(LOR, outputImage, MyWeightsList, &LengthList,1);
+		    //geomFactor = 1/rayLength_mm;
+		    for(n = 0; n < LengthList; n++)
+		    {
+		      // for every element of the systema matrix different from zero,we do
+		      // the sum(Aij*bi/Projected) for every i
+		      if((MyWeightsList[0][n].IndexZ<sizeImage.nPixelsZ)&&(MyWeightsList[0][n].IndexY<sizeImage.nPixelsY)&&(MyWeightsList[0][n].IndexX<sizeImage.nPixelsX))
+		      {
+			
+			indexPixel = MyWeightsList[0][n].IndexZ*(sizeImage.nPixelsX*sizeImage.nPixelsY)+MyWeightsList[0][n].IndexY * sizeImage.nPixelsX + MyWeightsList[0][n].IndexX;
+			// Por ahora deshabilito el GeomFactor:
+			newValue = MyWeightsList[0][n].Segment * geomFactor * inputProjection->getSegment(i)->getSinogram2D(j)->getSinogramBin(k,l);
+  // 		      newValue = MyWeightsList[0][n].Segment * inputProjection->getSegment(i)->getSinogram2D(j)->getSinogramBin(k,l);
+			#pragma omp atomic 
+			  ptrPixels[indexPixel] +=  newValue;	
+			
+		      }
+		    }
+		    if(LengthList != 0)
+		    {
+		      /// Solo libero memoria cuando se la pidió, si no hay una excepción.
+		      free(MyWeightsList[0]);
+		    }
 		  }
 		}
 	      }
@@ -550,13 +559,13 @@ bool SiddonProjector::DivideAndBackproject (Sinogram3D* InputSinogram3D, Sinogra
   SizeImage sizeImage = outputImage->getSize();
   // Puntero a los píxeles:
   float* ptrPixels = outputImage->getPixelsPtr();
-  unsigned int i, j, k, l, n, m, LengthList;
+  unsigned int i, j, k, l, n, m, o, LengthList;
   unsigned long indexPixel;
   float newValue;
   float geomFactor = 0;
   int indexRing1, indexRing2, numZ;
   float z1_mm, z2_mm;
-  #pragma omp parallel private(i, j, k, l, m, LOR, P1, P2, MyWeightsList, LengthList, n, newValue, indexPixel, geomFactor) shared(InputSinogram3D,EstimatedSinogram3D,ptrPixels)
+  #pragma omp parallel private(i, j, k, l, m, o, LOR, P1, P2, MyWeightsList, LengthList, n, newValue, indexPixel, geomFactor) shared(InputSinogram3D,EstimatedSinogram3D,ptrPixels)
   {
     MyWeightsList = (SiddonSegment**)malloc(sizeof(SiddonSegment*));
     for(i = 0; i < InputSinogram3D->getNumSegments(); i++)
@@ -591,62 +600,71 @@ bool SiddonProjector::DivideAndBackproject (Sinogram3D* InputSinogram3D, Sinogra
 	      }
 	      for(m = 0; m < numZ; m++)
 	      {
-		int lorOk;
-		if(useMultipleLorsPerBin)
+		/// The siddon projector can use an oversampled verison with several lines per bin.
+		for(o = 0; o < numSamplesOnDetector; o++)
 		{
-		  lorOk = InputSinogram3D->getSegment(i)->getSinogram2D(j)->getPointsFromLor(k,l,m, &P1, &P2, &geomFactor);
-		}
-		else
-		{
-		  lorOk = InputSinogram3D->getSegment(i)->getSinogram2D(j)->getPointsFromLor(k,l,0, &P1, &P2, &geomFactor);
-		  P1.Z = z1_mm;
-		  P2.Z = z2_mm;
-		}
-		if(lorOk)
-		{
-		  LOR.P0 = P1;
-		  LOR.Vx = P2.X - P1.X;
-		  LOR.Vy = P2.Y - P1.Y;
-		  LOR.Vz = P2.Z - P1.Z;
-		  // Then I look for the intersection between the 3D LOR and the lines that
-		  // delimits the voxels
-		  // Siddon		
-		  float rayLength_mm = Siddon(LOR, outputImage, MyWeightsList, &LengthList,1);
-		  //geomFactor = 1/rayLength_mm;
-		  for(n = 0; n < LengthList; n++)
+		  /// Cada Sinograma 2D me represnta múltiples LORs, según la mínima y máxima diferencia entre anillos.
+		  /// Por lo que cada bin me va a sumar cuentas en lors con distintos ejes axiales.
+		  /// El sinograma de salida lo incializo en cero antes de recorrer los distintos anillos de cada elemento del
+		  /// sinograma, ya que varias LORS deben aportar al mismo bin del sinograma.
+		  int lorOk;
+		  if(numSamplesOnDetector == 1)
 		  {
-		    // for every element of the systema matrix different from zero,we do
-		    // the sum(Aij*bi/Projected) for every i
-		    if((MyWeightsList[0][n].IndexZ<sizeImage.nPixelsZ)&&(MyWeightsList[0][n].IndexY<sizeImage.nPixelsY)&&(MyWeightsList[0][n].IndexX<sizeImage.nPixelsX))
-		    {
-		      indexPixel = MyWeightsList[0][n].IndexZ*(sizeImage.nPixelsX*sizeImage.nPixelsY)+MyWeightsList[0][n].IndexY * sizeImage.nPixelsX + MyWeightsList[0][n].IndexX;
-		      if(EstimatedSinogram3D->getSegment(i)->getSinogram2D(j)->getSinogramBin(k,l)!=0)
-			newValue = MyWeightsList[0][n].Segment * geomFactor  * InputSinogram3D->getSegment(i)->getSinogram2D(j)->getSinogramBin(k,l) /
-			  EstimatedSinogram3D->getSegment(i)->getSinogram2D(j)->getSinogramBin(k,l);
-		      else if(InputSinogram3D->getSegment(i)->getSinogram2D(j)->getSinogramBin(k,l)!=0)
-		      {
-			/// Estimated = 0, pero Input != 0. Mantengo el valor de Input.
-			newValue = MyWeightsList[0][n].Segment * geomFactor * InputSinogram3D->getSegment(i)->getSinogram2D(j)->getSinogramBin(k,l);	
-		      }
-		      else
-		      {
-		      /// Los bins de los sinogramas Input y Estimates son 0, o sea tengo el valor indeterminado 0/0.
-		      /// Lo más lógico pareciera ser dejarlo en 0 al cociente, para que no sume al backprojection.
-		      /// Sumarle 0 es lo mismo que nada.
-			newValue = 0;
-		      }
-		      
-		      #pragma omp atomic 
-			ptrPixels[indexPixel] +=  newValue;
-		    }
-		/*else
-		{
-			printf("Siddon fuera de mapa\n");
-		}*/
+		    lorOk = InputSinogram3D->getSegment(i)->getSinogram2D(j)->getPointsFromLor(k,l,m, &P1, &P2, &geomFactor);
 		  }
-		  if(LengthList != 0)
+		  else
 		  {
-		    free(MyWeightsList[0]);
+		    lorOk = InputSinogram3D->getSegment(i)->getSinogram2D(j)->getPointsFromOverSampledLor(k,l,o,numSamplesOnDetector,m, &P1, &P2, &geomFactor);
+		  }
+		  // If use axial compression, use the average z coordinate:
+		  if(!useMultipleLorsPerBin)
+		  {
+		    P1.Z = z1_mm;
+		    P2.Z = z2_mm;
+		  }
+		
+		  if(lorOk)
+		  {
+		    LOR.P0 = P1;
+		    LOR.Vx = P2.X - P1.X;
+		    LOR.Vy = P2.Y - P1.Y;
+		    LOR.Vz = P2.Z - P1.Z;
+		    // Then I look for the intersection between the 3D LOR and the lines that
+		    // delimits the voxels
+		    // Siddon		
+		    float rayLength_mm = Siddon(LOR, outputImage, MyWeightsList, &LengthList,1);
+		    //geomFactor = 1/rayLength_mm;
+		    for(n = 0; n < LengthList; n++)
+		    {
+		      // for every element of the systema matrix different from zero,we do
+		      // the sum(Aij*bi/Projected) for every i
+		      if((MyWeightsList[0][n].IndexZ<sizeImage.nPixelsZ)&&(MyWeightsList[0][n].IndexY<sizeImage.nPixelsY)&&(MyWeightsList[0][n].IndexX<sizeImage.nPixelsX))
+		      {
+			indexPixel = MyWeightsList[0][n].IndexZ*(sizeImage.nPixelsX*sizeImage.nPixelsY)+MyWeightsList[0][n].IndexY * sizeImage.nPixelsX + MyWeightsList[0][n].IndexX;
+			if(EstimatedSinogram3D->getSegment(i)->getSinogram2D(j)->getSinogramBin(k,l)!=0)
+			  newValue = MyWeightsList[0][n].Segment * geomFactor  * InputSinogram3D->getSegment(i)->getSinogram2D(j)->getSinogramBin(k,l) /
+			    EstimatedSinogram3D->getSegment(i)->getSinogram2D(j)->getSinogramBin(k,l);
+			else if(InputSinogram3D->getSegment(i)->getSinogram2D(j)->getSinogramBin(k,l)!=0)
+			{
+			  /// Estimated = 0, pero Input != 0. Mantengo el valor de Input.
+			  newValue = MyWeightsList[0][n].Segment * geomFactor * InputSinogram3D->getSegment(i)->getSinogram2D(j)->getSinogramBin(k,l);	
+			}
+			else
+			{
+			/// Los bins de los sinogramas Input y Estimates son 0, o sea tengo el valor indeterminado 0/0.
+			/// Lo más lógico pareciera ser dejarlo en 0 al cociente, para que no sume al backprojection.
+			/// Sumarle 0 es lo mismo que nada.
+			  newValue = 0;
+			}
+			
+			#pragma omp atomic 
+			  ptrPixels[indexPixel] +=  newValue;
+		      }
+		    }
+		    if(LengthList != 0)
+		    {
+		      free(MyWeightsList[0]);
+		    }
 		  }
 		}
 	      }

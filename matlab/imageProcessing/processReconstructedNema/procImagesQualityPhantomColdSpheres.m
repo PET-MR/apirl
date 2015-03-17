@@ -1,9 +1,9 @@
 % Función que procesa las imágenes para evaluar la performance de la
 % reconstrucción y armar gráficos comaprativos:
-function [contrastRecovery, desvioBackground, desvioNormBackground, meanLungRoi, relativeLungError] = procImagesQualityPhantom(volumen, sizePixel_mm, relacionHotBackground, sliceCentral, mostrarResultadosParciales)
+function [contrastRecovery, desvioBackground, desvioNormBackground, meanLungRoi, relativeLungError, radioEsferas_mm, centro_pixels] = procImagesQualityPhantomColdSpheres(volumen, sizePixel_mm, center_mm, sliceCentral, mostrarResultadosParciales)
 % Necesito algunas funciones generales:
-addpath('/sources/MATLAB/WorkingCopy/ImageProcessing');
-addpath('/sources/MATLAB/WorkingCopy/export_fig');
+addpath('../imageProcessing');
+addpath('../export_fig');
 if nargin == 3
     sliceCentral = round(size(volumen,3)/2);
     mostrarResultadosParciales = 0;
@@ -28,9 +28,10 @@ end
 % de píxel (vector con 3 elementos).
 
 % Coordenadas necesarias para generar las distintas ROIs:
-radioEsferas_mm = 0.7 .* [10 13 17 22 28 37] ./2 ;
-% Indice que indice si es hot sphere (1) o cold sphere (0):
-indicesHotSpheres = logical([1 1 1 1 0 0]);
+radioEsferas_mm = 0.9 .* [10 13 17 22 28 37] ./2 ;
+% Indice que indice si es hot sphere (1) o cold sphere (0). Este fantoma es
+% todo frío.
+indicesHotSpheres = logical([0 0 0 0 0 0]);
 centroZ_esferas_mm = (sliceCentral-1) .* sizePixel_mm(3) + sizePixel_mm(3)/2; % Debe ser el centro del slice.
 sizeImage_pixels = size(volumen);
 sizeImage_mm = sizePixel_mm .* sizeImage_pixels;
@@ -47,16 +48,16 @@ origin = [0 0 0];
 % equiespaciados angularmente, y a una distancia de 57,2mm del centro del
 % fantoma. Estando además la esfera de 17 sobre el eje horizontal, del lado
 % izquierdo. A partir de esto obtengo los centros en x e y de cada esfera:
-anguloEsferas_deg = 60 : 60 : 360;
-distanciaCentroEsferas_mm = 57;
-centroX_esferas_mm = distanciaCentroEsferas_mm * cosd(anguloEsferas_deg);
-centroY_esferas_mm = distanciaCentroEsferas_mm * sind(anguloEsferas_deg) - 2;
+anguloEsferas_deg = 360-60 : -60 : 0;
+distanciaCentroEsferas_mm = 58;
+centroX_esferas_mm = (distanciaCentroEsferas_mm-center_mm(2)) * cosd(anguloEsferas_deg);
+centroY_esferas_mm = (distanciaCentroEsferas_mm-center_mm(2)) * sind(anguloEsferas_deg);
 % Agrego una esfera más que es para analizar el inserto deLung:
 radioEsferas_mm = [radioEsferas_mm 30./2];
 % La misma se ubica en (0,0):
 centroX_esferas_mm = [centroX_esferas_mm 0];
 centroY_esferas_mm = [centroY_esferas_mm 0];
-
+centro_pixels = round([(centroX_esferas_mm'+sizeImage_mm(2)/2)./sizePixel_mm(2) (centroY_esferas_mm'+sizeImage_mm(1)/2)./sizePixel_mm(1)]);
 % Centros esferas ROIs, tienen que estar como mínimo a 15 mm del borde y no
 % deben llegar a estar a 15 mm de la esfera. En la media circunferencia del
 % fantoma coloco 9 (luego elimino 2 que no sirven):
@@ -86,6 +87,7 @@ centroY_ROIsFondo_mm = [centroY_ROIsFondo_mm -85 -85 -85];
 if mostrarResultadosParciales
     h1 =figure;
     imshow(volumen(:,:,sliceCentral)./max(max(volumen(:,:,sliceCentral))));
+    colormap(hot);
     hold on;
 end
 for i = 1 : numel(radioEsferas_mm)

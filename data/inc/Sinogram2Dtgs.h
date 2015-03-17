@@ -123,6 +123,21 @@ class DLLEXPORT Sinogram2Dtgs : public Sinogram2D
 	
 	bool getPointsFromLor (int indexAng, int indexR, Point2D* p1, Point2D* p2, float* geom) { getPointsFromTgsLor (indexAng, indexR, 0, 0, p1, p2);};
 	
+	/** Método que calcula los dos puntos geométricos que forman una Lor sobremuestrada.Y adicionalmente devuelve un peso geométrico, según
+	  * las características del scanner. Para sobremuestrear la LOR, se le indica en cuantos puntos se divide cada LOR y cual de las muestras
+	  * se desea. O sea que para N submuestras, se puede solicitar índices entre 0 y N-1. Serviría para una adquisición con desplazamiento
+	  * continuo.
+		@param indexAng índice del ángulo del bin del sinograma a procesar.
+		@param indexR índice de la distancia r del bin del sinograma a procesar.
+		@param indexSubsample índice de la submuestra para la LOR (indexAng,indexR).
+		@param numSubsamples número de submuestras por LOR.
+		@param p1 puntero a estructura del tipo Point2D donde se guardará el primer punto de la lor (del lado del detector).
+		@param p2 puntero a estructura del tipo Point2D donde se guardará el segundo punto de la lor (del otro lado del detector).
+		@param geomFactor factor geométrico calculado a partir de las coordenadas de la lor.
+		@return devuelve true si encontró los dos puntos sobre el detector, false en caso contrario. 
+	*/
+	bool getPointsFromOverSampledLor (int indexAng, int indexR, int indexSubsample, int numSubsamples, Point2D* p1, Point2D* p2, float* geomFactor);
+	
 	/** Método que calcula los dos puntos que forman una Lor. El primer punto se obtiene en el centro del colimador, y
 		el otro punto en la cara opuesta a la misma distancia del centro del FoV. La lor es la de un punto del bin, con un
 		offset sobre el detector y sobre la cara del colimador. Por lo que hay muchas lors por cada bin del sinograma, 

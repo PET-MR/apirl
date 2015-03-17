@@ -157,6 +157,32 @@ int getProjectorBackprojectorNames(string mlemFilename, string cmd, string* strF
   return 0;
 }
 
+/* Función que obtiene los parámetros de los proyectores de siddon.
+ */
+int getSiddonProjectorParameters(string mlemFilename, string cmd, int* numSamples)
+{
+  int errorCode;
+  char returnValue[256];	// string en el que se recibe el valor de un keyword en la lectura del archivo de parámetros.
+  char errorMessage[300];	// string de error para la función de lectura de archivo de parámetros.
+  
+  // Debo leer el parámetro que tiene: "siddon number of samples on the detector".
+  if((errorCode=parametersFile_read((char*)mlemFilename.c_str(), (char*)cmd.c_str(), "siddon number of samples on the detector", returnValue, errorMessage)) != 0)
+  {
+    // Hubo un error. Salgo del comando.
+    if(errorCode == PMF_KEY_NOT_FOUND)
+    {
+      cout<<"No se encontró el parámetro ""siddon number of samples on the detector"", se toma el valor por defecto."<<endl;
+      return -1;
+    }
+    else
+    {
+      cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
+      return -1;
+    }
+  }
+  *numSamples = atoi(returnValue);
+  return 0;
+}
 
 /* Función que obtiene los parámetros de los proyectores basados en rotación. Por ahora
  * el único parámetro a cargar es el método de interpolación.

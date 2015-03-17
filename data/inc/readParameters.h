@@ -27,6 +27,7 @@
 int getSaveIntermidiateIntervals (string mlemFilename, string cmd, int* saveIterationInterval, bool* saveIntermediateData);
 int getSensitivityFromFile (string mlemFilename, string cmd, bool* bSensitivityFromFile, string* sensitivityFilename);
 int getProjectorBackprojectorNames(string mlemFilename, string cmd, string* strForwardprojector, string* strBackprojector);
+int getSiddonProjectorParameters(string mlemFilename, string cmd, int* numSamples);
 int getRotationBasedProjectorParameters(string mlemFilename, string cmd, RotationBasedProjector::InterpolationMethods *interpMethod);
 int getCylindricalScannerParameters(string mlemFilename, string cmd, float* radiusFov_mm, float* zFov_mm, float* radiusScanner_mm);
 int getNumberOfSubsets(string mlemFilename, string cmd, float* numberOfSubsets);

@@ -170,6 +170,24 @@ void Sinogram2D::initParameters()
   }
 }
 
+float Sinogram2D::getDeltaR(int indexAng, int indexR)
+{
+  // See both neighbor LORs.
+  float increment;
+  if((indexR>0)&&(indexR<(numR-1)))
+    increment = (ptrRvalues_mm[indexR+1] - ptrRvalues_mm[indexR-1])/2;
+  else if(indexR == 0)
+  {
+    increment = (ptrRvalues_mm[1] - ptrRvalues_mm[0]);
+  }
+  else if(indexR == (numR-1))
+  {
+    increment = (ptrRvalues_mm[numR-1] - ptrRvalues_mm[numR-2]);
+  }
+  return increment;
+}
+
+
 void Sinogram2D::setRadioFov_mm(float rFov_mm)
 { 
   radioFov_mm = rFov_mm;

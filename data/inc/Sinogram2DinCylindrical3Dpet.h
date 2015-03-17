@@ -209,7 +209,22 @@ class DLLEXPORT Sinogram2DinCylindrical3Dpet : public Sinogram2D
 		  @return devuelve true si encontró los dos puntos sobre el detector, false en caso contrario. 
 	  */
 	  bool getPointsFromLor (int indexAng, int indexR, Point2D* p1, Point2D* p2, float* geomFactor);
+	  
+	  /** Método que calcula los dos puntos geométricos que forman una Lor sobremuestrada.Y adicionalmente devuelve un peso geométrico, según
+	    * las características del scanner. Para sobremuestrear la LOR, se le indica en cuantos puntos se divide cada LOR y cual de las muestras
+	    * se desea. O sea que para N submuestras, se puede solicitar índices entre 0 y N-1.
+		  @param indexAng índice del ángulo del bin del sinograma a procesar.
+		  @param indexR índice de la distancia r del bin del sinograma a procesar.
+		  @param indexSubsample índice de la submuestra para la LOR (indexAng,indexR).
+		  @param numSubsamples número de submuestras por LOR.
+		  @param p1 puntero a estructura del tipo Point2D donde se guardará el primer punto de la lor (del lado del detector).
+		  @param p2 puntero a estructura del tipo Point2D donde se guardará el segundo punto de la lor (del otro lado del detector).
+		  @param geomFactor factor geométrico calculado a partir de las coordenadas de la lor.
+		  @return devuelve true si encontró los dos puntos sobre el detector, false en caso contrario. 
+	  */
+	  bool getPointsFromOverSampledLor (int indexAng, int indexR, int indexSubsample, int numSubsamples, Point2D* p1, Point2D* p2, float* geomFactor);
 		
+	  
 	  /// Función que devuelve las coordenadas de los dos puntos de una LOR.
 	  /** Esta función devuelve las coordenadas geomericas globales de los dos puntos que representan una LOR
 	   * a partir de las coordenadas del bin del sinograma. Por más que sea un sinograma 2D devuelve un punto 3D
@@ -223,7 +238,22 @@ class DLLEXPORT Sinogram2DinCylindrical3Dpet : public Sinogram2D
 	   * \return devuelve false si no encontró los puntos en los cabezales.
 	   */
 	  virtual bool getPointsFromLor(int indexProj, int indexR, int indexRingConfig, Point3D* p1, Point3D* p2, float* geomFactor);
-		//void initParameters(){this->initParameters();}
+	
+	  /** Método que calcula los dos puntos geométricos que forman una Lor sobremuestrada.Y adicionalmente devuelve un peso geométrico, según
+	    * las características del scanner. Para sobremuestrear la LOR, se le indica en cuantos puntos se divide cada LOR y cual de las muestras
+	    * se desea. O sea que para N submuestras, se puede solicitar índices entre 0 y N-1. Por más que sea un sinograma 2D devuelve un punto 3D
+	    * ya que se tiene en cuenta que el sinograma pertence a un conjunto de coordeandas axiales.
+		  @param indexAng índice del ángulo del bin del sinograma a procesar.
+		  @param indexR índice de la distancia r del bin del sinograma a procesar.
+		  @param indexSubsample índice de la submuestra para la LOR (indexAng,indexR).
+		  @param numSubsamples número de submuestras por LOR.
+		  @param indexRingConfig índice de la combinación de anillos para obtener el ring1 y 2 de la lor. Con
+	    				este índice se recorre la lista de anillos (si es que hay más de uno).
+		  @param p1 puntero donde devuelve el primer punto 3d que forma la lor.
+		  @param p2 puntero donde se deuelve el segundo punto.
+		  @return devuelve true si encontró los dos puntos sobre el detector, false en caso contrario. 
+	  */
+	  bool getPointsFromOverSampledLor (int indexAng, int indexR, int indexSubsample, int numSubsamples, int indexRingConfig, Point3D* p1, Point3D* p2, float* geomFactor);
 };
 
 #endif
