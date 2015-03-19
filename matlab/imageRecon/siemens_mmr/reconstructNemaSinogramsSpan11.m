@@ -207,50 +207,50 @@ filenameOsemConfig_HR = [outputPath sprintf('/Osem3dSubset%d_HR.par', numSubsets
 CreateOsemConfigFileForMmr(filenameOsemConfig_HR, [outputPath 'sinogramSpan11.h33'], [filenameInitialEstimateHighRes '.h33'], outputFilenamePrefix, numIterations, [],...
     numSubsets, saveInterval, saveIntermediate, [], [], [], [outputPath '/ANF_Span11.h33']);
 
-%% RECONSTRUCTION OF HIGH RES IMAGE
-% Execute APIRL:
-status = system(['OSEM ' filenameOsemConfig_HR]) 
-%% GENERATE OSEM AND MLEM RECONSTRUCTION FILES FOR APIRL
-% With 10 lines.
-% Low Res:
-numSubsets = 21;
-numIterations = 3;
-saveInterval = 1;
-saveIntermediate = 0;
-outputFilenamePrefix = [outputPath sprintf('Nema_Osem%d_LR_10lines', numSubsets)];
-filenameOsemConfig_LR = [outputPath sprintf('/Osem3dSubset%d_LR_10lines.par', numSubsets)];
-CreateOsemConfigFileForMmr(filenameOsemConfig_LR, [outputPath 'sinogramSpan11.h33'], [filenameInitialEstimate '.h33'], outputFilenamePrefix, numIterations, [], ...
-    numSubsets, saveInterval, saveIntermediate, [], [], [], [outputPath '/ANF_Span11'], 'siddon number of samples on the detector', 10);
-
-% High Res:
-outputFilenamePrefix = [outputPath sprintf('Nema_Osem%d_HR_10lines', numSubsets)];
-filenameOsemConfig_HR = [outputPath sprintf('/Osem3dSubset%d_HR_10lines.par', numSubsets)];
-CreateOsemConfigFileForMmr(filenameOsemConfig_HR, [outputPath 'sinogramSpan11.h33'], [filenameInitialEstimateHighRes '.h33'], outputFilenamePrefix, numIterations, [],...
-    numSubsets, saveInterval, saveIntermediate, [], [], [], [outputPath '/ANF_Span11.h33'], 'siddon number of samples on the detector', 10);
-
-%% RECONSTRUCTION OF HIGH RES IMAGE
-% Execute APIRL:
-status = system(['OSEM ' filenameOsemConfig_HR]) 
-%% GENERATE OSEM AND MLEM RECONSTRUCTION FILES FOR APIRL WITH RANDOMS CORRECTION
-% Low Res:
-numSubsets = 21;
-numIterations = 3;
-saveInterval = 1;
-saveIntermediate = 0;
-outputFilenamePrefix = [outputPath sprintf('Nema_Osem%d_LR_withRandoms', numSubsets)];
-filenameOsemConfig_LR = [outputPath sprintf('/Osem3dSubset%d_LR_withRandoms.par', numSubsets)];
-CreateOsemConfigFileForMmr(filenameOsemConfig_LR, [outputPath 'sinogramSpan11.h33'], [filenameInitialEstimate '.h33'], outputFilenamePrefix, numIterations, [], ...
-    numSubsets, saveInterval, saveIntermediate, [], [], [outputPath 'randomsSpan11_ancf.h33'], [outputPath '/ANF_Span11']);
-
-% High Res:
-outputFilenamePrefix = [outputPath sprintf('Nema_Osem%d_HR_withRandoms', numSubsets)];
-filenameOsemConfig_HR = [outputPath sprintf('/Osem3dSubset%d_HR_withRandoms.par', numSubsets)];
-CreateOsemConfigFileForMmr(filenameOsemConfig_HR, [outputPath 'sinogramSpan11.h33'], [filenameInitialEstimateHighRes '.h33'], outputFilenamePrefix, numIterations, [],...
-    numSubsets, saveInterval, saveIntermediate, [], [], [outputPath 'randomsSpan11_ancf.h33'], [outputPath '/ANF_Span11.h33']);
+% %% RECONSTRUCTION OF HIGH RES IMAGE
+% % Execute APIRL:
+% status = system(['OSEM ' filenameOsemConfig_HR]) 
+% %% GENERATE OSEM AND MLEM RECONSTRUCTION FILES FOR APIRL
+% % With 10 lines.
+% % Low Res:
+% numSubsets = 21;
+% numIterations = 3;
+% saveInterval = 1;
+% saveIntermediate = 0;
+% outputFilenamePrefix = [outputPath sprintf('Nema_Osem%d_LR_10lines', numSubsets)];
+% filenameOsemConfig_LR = [outputPath sprintf('/Osem3dSubset%d_LR_10lines.par', numSubsets)];
+% CreateOsemConfigFileForMmr(filenameOsemConfig_LR, [outputPath 'sinogramSpan11.h33'], [filenameInitialEstimate '.h33'], outputFilenamePrefix, numIterations, [], ...
+%     numSubsets, saveInterval, saveIntermediate, [], [], [], [outputPath '/ANF_Span11'], 'siddon number of samples on the detector', 10);
+% 
+% % High Res:
+% outputFilenamePrefix = [outputPath sprintf('Nema_Osem%d_HR_10lines', numSubsets)];
+% filenameOsemConfig_HR = [outputPath sprintf('/Osem3dSubset%d_HR_10lines.par', numSubsets)];
+% CreateOsemConfigFileForMmr(filenameOsemConfig_HR, [outputPath 'sinogramSpan11.h33'], [filenameInitialEstimateHighRes '.h33'], outputFilenamePrefix, numIterations, [],...
+%     numSubsets, saveInterval, saveIntermediate, [], [], [], [outputPath '/ANF_Span11.h33'], 'siddon number of samples on the detector', 10);
 
 %% RECONSTRUCTION OF HIGH RES IMAGE
 % Execute APIRL:
 status = system(['OSEM ' filenameOsemConfig_HR]) 
+% %% GENERATE OSEM AND MLEM RECONSTRUCTION FILES FOR APIRL WITH RANDOMS CORRECTION
+% % Low Res:
+% numSubsets = 21;
+% numIterations = 3;
+% saveInterval = 1;
+% saveIntermediate = 0;
+% outputFilenamePrefix = [outputPath sprintf('Nema_Osem%d_LR_withRandoms', numSubsets)];
+% filenameOsemConfig_LR = [outputPath sprintf('/Osem3dSubset%d_LR_withRandoms.par', numSubsets)];
+% CreateOsemConfigFileForMmr(filenameOsemConfig_LR, [outputPath 'sinogramSpan11.h33'], [filenameInitialEstimate '.h33'], outputFilenamePrefix, numIterations, [], ...
+%     numSubsets, saveInterval, saveIntermediate, [], [], [outputPath 'randomsSpan11_ancf.h33'], [outputPath '/ANF_Span11']);
+% 
+% % High Res:
+% outputFilenamePrefix = [outputPath sprintf('Nema_Osem%d_HR_withRandoms', numSubsets)];
+% filenameOsemConfig_HR = [outputPath sprintf('/Osem3dSubset%d_HR_withRandoms.par', numSubsets)];
+% CreateOsemConfigFileForMmr(filenameOsemConfig_HR, [outputPath 'sinogramSpan11.h33'], [filenameInitialEstimateHighRes '.h33'], outputFilenamePrefix, numIterations, [],...
+%     numSubsets, saveInterval, saveIntermediate, [], [], [outputPath 'randomsSpan11_ancf.h33'], [outputPath '/ANF_Span11.h33']);
+% 
+% %% RECONSTRUCTION OF HIGH RES IMAGE
+% % Execute APIRL:
+% status = system(['OSEM ' filenameOsemConfig_HR]) 
 %% GENERATE OSEM AND MLEM RECONSTRUCTION FILES FOR APIRL WITH RANDOMS CORRECTION
 numIterations = 60;
 saveInterval = 1;
@@ -266,9 +266,9 @@ CreateMlemConfigFileForMmr(filenameMlemConfig_HR_10lines, [outputPath 'sinogramS
 %% RECONSTRUCTION OF MLEM HIGH RES IMAGE
 % Execute APIRL:
 status = system(['MLEM ' filenameMlemConfig_HR]) 
-%% RECONSTRUCTION OF MLEM HIGH RES IMAGE
-% Execute APIRL:
-status = system(['MLEM ' filenameMlemConfig_HR_10lines]) 
+% %% RECONSTRUCTION OF MLEM HIGH RES IMAGE
+% % Execute APIRL:
+% status = system(['MLEM ' filenameMlemConfig_HR_10lines]) 
 %% READ RESULTS
 % Read interfile reconstructed image:
 reconVolume = interfileRead([outputFilenamePrefix '_final.h33']);

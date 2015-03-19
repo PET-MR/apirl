@@ -8,6 +8,9 @@
 %  This funciton writes a sinogram in the interfile format for stir.
 %  Its fixed for Siemens Mmr sinograms. It changes the order of how its
 %  stored to be compatible with stir. Its centered in the ring diff.
+%  IMPORTANT: in stir the sinograms are in different order, because they
+%  use z2-z1 instead of z1-z2. So we switch negative segments with postiive
+%  segments.
 %  Example of this sinograms: 
 %
 %
@@ -84,6 +87,7 @@ for i = 2 : 2: numel(structSizeSino.sinogramsPerSegment)
     sinogramsPerSegment_stir(centerSegment-round(i/2)) = structSizeSino.sinogramsPerSegment(i+1);
     minRingDiff_stir(centerSegment-round(i/2)) = structSizeSino.minRingDiff(i+1);
     maxRingDiff_stir(centerSegment-round(i/2)) = structSizeSino.maxRingDiff(i+1);
+
 end
 
 % Open header
@@ -185,10 +189,20 @@ end
 % of stir I find the equivalent of the traditional sinogram.
 for i = 1 : numel(sinogramsPerSegment_stir)
     % Get the index of segments for the stir sinogram:
+    % This would be the way if the segments in stir were the same as in
+    % siemens and in apirl:
+%     if(minRingDiff_stir(i) > 0) && (maxRingDiff_stir(i) > 0)
+%         indexSegmentSino = 2*i - numel(sinogramsPerSegment_stir) - 1;
+%     elseif(minRingDiff_stir(i) < 0) && (maxRingDiff_stir(i) < 0)
+%         indexSegmentSino = numel(sinogramsPerSegment_stir) - 2*(i-1);
+%     else
+%         indexSegmentSino = 1;
+%     end
+    % But in stir is used z2-z1 instead of z1-z2, so we have to invert the order -1 the possitive:
     if(minRingDiff_stir(i) > 0) && (maxRingDiff_stir(i) > 0)
-        indexSegmentSino = 2*i - numel(sinogramsPerSegment_stir) - 1;
+        indexSegmentSino = 2*i - numel(sinogramsPerSegment_stir);
     elseif(minRingDiff_stir(i) < 0) && (maxRingDiff_stir(i) < 0)
-        indexSegmentSino = numel(sinogramsPerSegment_stir) - 2*(i-1);
+        indexSegmentSino = numel(sinogramsPerSegment_stir) - 2*(i-1) - 1;
     else
         indexSegmentSino = 1;
     end

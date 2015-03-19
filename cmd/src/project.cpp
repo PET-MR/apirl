@@ -229,7 +229,11 @@ int main (int argc, char *argv[])
 	if(strForwardprojector.compare("Siddon") == 0)
 	{
 	  forwardprojector = (Projector*)new SiddonProjector();
-
+	  int numSamples;
+	  if(getSiddonProjectorParameters(parameterFileName, "Projection", &numSamples))
+	    forwardprojector = (Projector*)new SiddonProjector();
+	  else
+	    forwardprojector = (Projector*)new SiddonProjector(numSamples);
 	}
 	// Chqueo que se hayan cargado los proyectores:
 	if(forwardprojector == NULL)
@@ -412,6 +416,13 @@ int main (int argc, char *argv[])
 	  outputProjection->setLengthOfBlindArea(blindArea_mm);
 	  outputProjection->setMinDiffDetectors(minDetDiff);
 	  //outputProjection->setGeometryDim(rFov_mm,axialFov_mm,rScanner_mm);
+	  forwardprojector->Project(inputImage, outputProjection);
+	  outputProjection->writeInterfile(outputFilename);
+	}
+	else if(outputType.compare("Sinogram3DSiemensMmr")==0)
+	{
+	  // Sinograma 3D
+	  Sinogram3D* outputProjection = new Sinogram3DSiemensMmr((char*)inputFilename.c_str());
 	  forwardprojector->Project(inputImage, outputProjection);
 	  outputProjection->writeInterfile(outputFilename);
 	}

@@ -2,8 +2,6 @@
 % reconstrucción y armar gráficos comaprativos:
 function [contrastRecovery, desvioBackground, desvioNormBackground, meanLungRoi, relativeLungError, radioEsferas_mm, centro_pixels] = procImagesQualityPhantomColdSpheres(volumen, sizePixel_mm, center_mm, sliceCentral, mostrarResultadosParciales)
 % Necesito algunas funciones generales:
-addpath('../imageProcessing');
-addpath('../export_fig');
 if nargin == 3
     sliceCentral = round(size(volumen,3)/2);
     mostrarResultadosParciales = 0;

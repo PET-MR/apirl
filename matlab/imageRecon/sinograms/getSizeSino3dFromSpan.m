@@ -131,7 +131,7 @@ for segment = 1 : numSegments
             % Ahora voy avanzando en los sinogramas correspondientes,
             % disminuyendo z1 y aumentnado z2 hasta que la diferencia entre
             % anillos llegue a maxRingDiff.
-            if ((z2-z1_aux)<=maxRingDiffs(segment))&&((z2-z1_aux)>=minRingDiffs(segment))
+            if ((z1_aux-z2)<=maxRingDiffs(segment))&&((z1_aux-z2)>=minRingDiffs(segment))
                 % Me asguro que esté dentro del tamaño del michelograma:
                 if(z1_aux>0)&&(z2>0)&&(z1_aux<=numRings)&&(z2<=numRings)
                     numSinosZ1inSegment = numSinosZ1inSegment + 1;

@@ -73,52 +73,52 @@ interfilewrite(initialEstimateHighRes, filenameInitialEstimateHighRes, sizePixel
 overall_nf_3d = overall_ncf_3d;
 overall_nf_3d(overall_ncf_3d ~= 0) = 1./overall_nf_3d(overall_ncf_3d ~= 0);
 %% ATTENUATION CORRECTION - PICK A OR B AND COMMENT THE NOT USED 
-% %% COMPUTE THE ACFS (OPTION A)
-% % Read the phantom and then generate the ACFs with apirl. There are two
-% % attenuation maps, the one of the hardware and the one of the patient or
-% % human.
-% imageSizeAtten_pixels = [344 344 127];
-% imageSizeAtten_mm = [2.08626 2.08626 2.0312];
-% filenameAttenMap_human = '/home/mab15/workspace/KCL/Biograph_mMr/Mediciones/NEMA_IQ_20_02_2014/umap/AttenMapCtManuallyRegistered.i33';
-% filenameAttenMap_hardware = '/home/mab15/workspace/KCL/Biograph_mMr/Mediciones/NEMA_IQ_20_02_2014/umap/PET_ACQ_194_20150220154553_umap_hardware_00.v';
-% % Human:
-% fid = fopen(filenameAttenMap_human, 'r');
-% if fid == -1
-%     ferror(fid);
-% end
-% attenMap_human = fread(fid, imageSizeAtten_pixels(1)*imageSizeAtten_pixels(2)*imageSizeAtten_pixels(3), 'single');
-% attenMap_human = reshape(attenMap_human, imageSizeAtten_pixels);
-% % Then interchange rows and cols, x and y: 
-% attenMap_human = permute(attenMap_human, [2 1 3]);
-% fclose(fid);
-% % The mumap of the phantom it has problems in the spheres, I force all the
-% % pixels inside the phantom to the same value:
-% 
-% % Hardware:
-% fid = fopen(filenameAttenMap_hardware, 'r');
-% if fid == -1
-%     ferror(fid);
-% end
-% attenMap_hardware = fread(fid, imageSizeAtten_pixels(1)*imageSizeAtten_pixels(2)*imageSizeAtten_pixels(3), 'single');
-% attenMap_hardware = reshape(attenMap_hardware, imageSizeAtten_pixels);
-% % Then interchange rows and cols, x and y: 
-% attenMap_hardware = permute(attenMap_hardware, [2 1 3]);
-% fclose(fid);
-% 
-% % Compose both images:
-% attenMap = attenMap_hardware + attenMap_human;
-% 
-% % visualization
-% figure;
-% image = getImageFromSlices(attenMap, 12, 1, 0);
-% imshow(image);
-% title('Attenuation Map Shifted');
-% 
-% % Create ACFs of a computed phatoms with the linear attenuation
-% % coefficients:
-% acfFilename = ['acfsSinogramSpan1'];
-% filenameSinogram = [outputPath 'sinogramSpan1'];
-% acfsSinogramSpan1 = createACFsFromImage(attenMap, imageSizeAtten_mm, outputPath, acfFilename, filenameSinogram, structSizeSino3dSpan1, 1);
+%% COMPUTE THE ACFS (OPTION A)
+% Read the phantom and then generate the ACFs with apirl. There are two
+% attenuation maps, the one of the hardware and the one of the patient or
+% human.
+imageSizeAtten_pixels = [344 344 127];
+imageSizeAtten_mm = [2.08626 2.08626 2.0312];
+filenameAttenMap_human = '/home/mab15/workspace/KCL/Biograph_mMr/Mediciones/NEMA_IQ_20_02_2014/umap/AttenMapCtManuallyRegistered.i33';
+filenameAttenMap_hardware = '/home/mab15/workspace/KCL/Biograph_mMr/Mediciones/NEMA_IQ_20_02_2014/umap/PET_ACQ_194_20150220154553_umap_hardware_00.v';
+% Human:
+fid = fopen(filenameAttenMap_human, 'r');
+if fid == -1
+    ferror(fid);
+end
+attenMap_human = fread(fid, imageSizeAtten_pixels(1)*imageSizeAtten_pixels(2)*imageSizeAtten_pixels(3), 'single');
+attenMap_human = reshape(attenMap_human, imageSizeAtten_pixels);
+% Then interchange rows and cols, x and y: 
+attenMap_human = permute(attenMap_human, [2 1 3]);
+fclose(fid);
+% The mumap of the phantom it has problems in the spheres, I force all the
+% pixels inside the phantom to the same value:
+
+% Hardware:
+fid = fopen(filenameAttenMap_hardware, 'r');
+if fid == -1
+    ferror(fid);
+end
+attenMap_hardware = fread(fid, imageSizeAtten_pixels(1)*imageSizeAtten_pixels(2)*imageSizeAtten_pixels(3), 'single');
+attenMap_hardware = reshape(attenMap_hardware, imageSizeAtten_pixels);
+% Then interchange rows and cols, x and y: 
+attenMap_hardware = permute(attenMap_hardware, [2 1 3]);
+fclose(fid);
+
+% Compose both images:
+attenMap = attenMap_hardware + attenMap_human;
+
+% visualization
+figure;
+image = getImageFromSlices(attenMap, 12, 1, 0);
+imshow(image);
+title('Attenuation Map Shifted');
+
+% Create ACFs of a computed phatoms with the linear attenuation
+% coefficients:
+acfFilename = ['acfsSinogramSpan1'];
+filenameSinogram = [outputPath 'sinogramSpan1'];
+acfsSinogramSpan1 = createACFsFromImage(attenMap, imageSizeAtten_mm, outputPath, acfFilename, filenameSinogram, structSizeSino3dSpan1, 1);
 %% READ THE ACFS (OPTION B)
 % Span11 Sinogram:
 acfFilename = [outputPath 'acfsSinogramSpan1'];

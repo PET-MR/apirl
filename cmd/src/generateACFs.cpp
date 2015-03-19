@@ -429,6 +429,11 @@ int main (int argc, char *argv[])
 		  {
 		    outputProjection->getSegment(i)->getSinogram2D(j)->setSinogramBin(k,l,exp(outputProjection->getSegment(i)->getSinogram2D(j)->getSinogramBin(k,l)));
 		  }
+		  else
+		  {
+		    /// Si 0, fijar el acf en 1:
+		    outputProjection->getSegment(i)->getSinogram2D(j)->setSinogramBin(k,l,1);
+		  }
 		}
 	      }
 	    }

@@ -400,7 +400,7 @@ bool Sinogram3D::readFromInterfile(string headerFilename, float radioScanner_mm)
 	// Ahora voy avanzando en los sinogramas correspondientes,
 	// disminuyendo z1 y aumentnado z2 hasta que la diferencia entre
 	// anillos llegue a maxRingDiff.
-	if (((z2-z1_aux)<=maxRingDiffPerSegment[i])&&((z2-z1_aux)>=minRingDiffPerSegment[i]))
+	if (((z1_aux-z2)<=maxRingDiffPerSegment[i])&&((z1_aux-z2)>=minRingDiffPerSegment[i]))
 	{
 	  // Me asguro que esté dentro del tamaño del michelograma:
 	  if ((z1_aux>=0)&&(z2>=0)&&(z1_aux<numRings)&&(z2<numRings))

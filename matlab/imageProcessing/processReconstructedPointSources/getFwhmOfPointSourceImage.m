@@ -31,7 +31,7 @@
 %   [fwhm, fwhm_fiteado] = getFwhmOfPointSourceImage(image,[10 10],1, 1,
 %   './result')
 
-function [fwhm, fwhm_fiteado] = getFwhmOfPointSourceImage(inputImage, sizePixel_mm, dim, graficar, fullFilename)
+function [fwhm, fwhm_fiteado] = getFwhmOfPointSourceImage(inputImage, sizePixel_mm, dim, graficar, fullFilename, label)
 
 % Si no recibo el parámetro de graficar, no se grafica.
 if nargin == 2
@@ -92,14 +92,6 @@ pico = max(max(imagenPlanar));
 [fila, columna] = find(imagenPlanar==pico);
 % Ahora guardo un vector con el corte sobre el eje que me pidieron:
 if dim == 1
-    % Si me piden el eje x son en realidad las columnas
-    vector = imagenPlanar(fila(1),:)./pico;
-    % También almacena la coordenada del pico en este eje, en este caso en
-    % las columnas:
-    indicePicoEje = columna(1);
-    % Texto para leyenda de grafico:
-    textLabel = 'X [mm]';
-elseif dim == 2
     % Si me piden el eje y son en realidad las filas.
     vector = imagenPlanar(:,columna(1))./pico;
     % En este caso el pico está en las columnas:
@@ -107,6 +99,15 @@ elseif dim == 2
     % Para el fiteo debo trasponer el vector:
     vector = vector';
     textLabel = 'Y [mm]';
+elseif dim == 2
+    
+    % Resolución a nivel de filas, o sea y.
+    vector = imagenPlanar(fila(1),:)./pico;
+    % También almacena la coordenada del pico en este eje, en este caso en
+    % las columnas:
+    indicePicoEje = columna(1);
+    % Texto para leyenda de grafico:
+    textLabel = 'X [mm]';
 elseif dim == 3
     % Si me piden el eje z serían las columnas ya que permute las
     % dimensiones 2 y 3 de la imagen.
@@ -119,24 +120,32 @@ end
 indicesMayoresMitad = find(vector>=0.5);
 fwhm = (indicesMayoresMitad(end)-indicesMayoresMitad(1))*sizePixel_mm(dim);
 % Si la hago fiteando una guassiana:
-ParamsGaussiana = lsqcurvefit(@Gaussian,[max(vector),coordPixels_mm{dim}(indicePicoEje), fwhm/2.35],coordPixels_mm{dim},vector);
-fwhm_fiteado = ParamsGaussiana(3)*2.32;
+try
+    ParamsGaussiana = lsqcurvefit(@Gaussian,[max(vector),coordPixels_mm{dim}(indicePicoEje), fwhm/2.35],coordPixels_mm{dim},vector);
+    fwhm_fiteado = ParamsGaussiana(3)*2.32;
+catch
+   disp('Fitting error.'); 
+   ParamsGaussiana = [0 0 0];
+   fwhm_fiteado = 0;
+end
 
 % Si hay que graficar, lo hago y guardo el gráfico:
 if graficar
-    
+    if isempty(label)
+        label = textLabel;
+    end
     % Grafico la original y la fiteada y la guardo:
     h1 = figure;
     plot(coordPixels_mm{dim}, vector, coordPixelsPasoFino_mm{dim}, Gaussian(ParamsGaussiana, coordPixelsPasoFino_mm{dim}), 'LineWidth',3);
-    h2=legend('Corte de Imagen', 'Gaussian Ajustada','Location','NorthEast');
+    h2=legend('Image Profile', 'Fitted Gaussian','Location','NorthEast');
     set(h2, 'FontSize',16)
     set(gcf, 'Position', AGRANDARfIGURE);
     %     title('Log-Likelihood p', 'FontSize',20,'FontWeight','Bold');
-    ylabel('Intensidad Normalizada','FontSize',18,'FontWeight','Bold');
-    xlabel('Z [mm]','FontSize',18,'FontWeight','Bold');
+    ylabel('Intesity','FontSize',18,'FontWeight','Bold');
+    xlabel(label,'FontSize',18,'FontWeight','Bold');
     h3 = text(50,0.5, sprintf('FWHM: %.2f mm', fwhm));
     set(h3, 'FontSize',20)
-    h3 = text(50,0.25, sprintf('FWHM fiteado: %.2f mm', fwhm_fiteado));
+    h3 = text(50,0.25, sprintf('Fitted FWHM: %.2f mm', fwhm_fiteado));
     set(h3, 'FontSize',20)
     saveas(gca, [fullFilename], 'tif');
     set(gcf,'PaperPositionMode','auto');    % Para que lo guarde en el tamaño modificado.
