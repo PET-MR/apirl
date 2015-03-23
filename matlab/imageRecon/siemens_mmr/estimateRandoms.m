@@ -39,7 +39,7 @@ michelogram = generateMichelogramFromSinogram3D(delayedSinogram, structSizeSino3
 delaySinogramSpan11 = reduceMichelogram(michelogram, structSizeSino3dSpan11);
 clear michelogram
 % Normalize to cps:
-delaySinogramSpan11 = delaySinogramSpan11 ./ structInterfile.ImageDurationSec;
+delaySinogramSpan11 = delaySinogramSpan11; %The randoms estimate is already in counts ./ structInterfile.ImageDurationSec;
 outputSinogramName = [outputPath 'delaySpan11'];
 interfileWriteSino(single(delaySinogramSpan11), outputSinogramName, structSizeSino3dSpan11);
 %% DELAYED SINOGRAMS
@@ -75,7 +75,25 @@ interfileWriteSino(single(randomsSinogramSpan11), outputSinogramName, structSize
 [overall_ncf_3d, scanner_time_invariant_ncf_3d, scanner_time_variant_ncf_3d, acquisition_dependant_ncf_3d, used_xtal_efficiencies, used_deadtimefactors, used_axial_factors] = ...
    create_norm_files_mmr(cbn_filename, [], [], [], [], 11);
 randomsSinogramSpan11 = randomsSinogramSpan11 .* scanner_time_variant_ncf_3d;
+
 outputSinogramName = [outputPath 'randomsSpan11_ncf'];
 interfileWriteSino(single(randomsSinogramSpan11), outputSinogramName, structSizeSino3dSpan11);
 outputSinogramName = [outputPath 'used_ncf'];
-interfileWriteSino(single(overall_ncf_3d), outputSinogramName, structSizeSino3dSpan11);
+interfileWriteSino(single(scanner_time_variant_ncf_3d), outputSinogramName, structSizeSino3dSpan11);
+%% PLOT PROFILES
+figure;
+plot([randomsSinogramSpan11(:,180,10) delaySinogramSpan11(:,180,10)]);
+
+randomsPerSlice = sum(sum(randomsSinogramSpan11));
+randomsPerSlice = permute(randomsPerSlice, [3 1 2]);
+delaysPerSlice = sum(sum(delaySinogramSpan11));
+delaysPerSlice = permute(delaysPerSlice, [3 1 2]);
+figure;
+plot([randomsPerSlice delaysPerSlice]);
+%% WITH AXIAL NORMALIZATION FACTORS
+[componentFactors, componentLabels]  = readmMrComponentBasedNormalization(cbn_filename, 0);
+figure;
+title('Estimated Randoms From Singles per Bucket for Span 11 with Axial Correction Factors');
+set(gcf, 'Position', [0 0 1600 1200]);
+plot([randomsPerSlice delaysPerSlice delaysPerSlice.*componentFactors{4}.*componentFactors{8}], 'LineWidth', 2);
+legend('Randoms', 'Delays', 'Delays Axial Factors 1-2');
