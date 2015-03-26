@@ -4,7 +4,7 @@
 %  Fecha de Creación: 19/02/2013
 %  *********************************************************************
 %	            OBTENCIÓN DE FWHM DE UNA IMAGEN
-%  function sinograms2D = getFwhmOfPointSourceImage(inputImage,sizePixel_mm,dim, graficar, fullFilename)
+%  function sinograms2D = getFwhmOfPointSourceImage(inputImage,sizePixel_mm,dim, graficar, fullFilename, label)
 %
 %  Función que obtiene el FWHM de una imagen con una fuente puntual. Recibe
 %  como parámetro la imagen y el eje en el que se quiere obtener el FWHM.
@@ -70,12 +70,13 @@ coordPixels_mm{2} = -(sizePixel_mm(2)*sizeImage(2)/2-sizePixel_mm(2)/2):sizePixe
 if (ndims(inputImage) == 3)
     coordPixels_mm{3} = sizePixel_mm(3)/2:sizePixel_mm(3):(sizePixel_mm(3)*sizeImage(3)-sizePixel_mm(3)/2);
 end
-
-coordPixelsPasoFino_mm{1} = -(sizePixel_mm(1)*sizeImage(1)/2-sizePixel_mm(1)/8):sizePixel_mm(1)/4:(sizePixel_mm(1)*sizeImage(1)/2-sizePixel_mm(1)/8);
-coordPixelsPasoFino_mm{2} = -(sizePixel_mm(2)*sizeImage(2)/2-sizePixel_mm(2)/8):sizePixel_mm(2)/4:(sizePixel_mm(2)*sizeImage(2)/2-sizePixel_mm(2)/8);
+% upsample:
+upsample_factor = 8;
+coordPixelsPasoFino_mm{1} = interp(coordPixels_mm{1},upsample_factor);
+coordPixelsPasoFino_mm{2} = interp(coordPixels_mm{2},upsample_factor);
 % Si es un volumen calculo la tercera:
 if (ndims(inputImage) == 3)
-    coordPixelsPasoFino_mm{3} = sizePixel_mm(3)/8:sizePixel_mm(3)/4:(sizePixel_mm(3)*sizeImage(3)-sizePixel_mm(3)/8);
+    coordPixelsPasoFino_mm{3} = interp(coordPixels_mm{3},upsample_factor);
 end
 
 % Si quiero el corte enx o y, busco el slice donde está el pico, si me
@@ -89,6 +90,9 @@ end
 imagenPlanar = inputImage(:,:,slicePico);
 % Obtención de resolución en FWHM fiteando una gaussiana:
 pico = max(max(imagenPlanar));
+if pico == 0
+    fwhm = 0; fwhm_fiteado = 0;
+end
 [fila, columna] = find(imagenPlanar==pico);
 % Ahora guardo un vector con el corte sobre el eje que me pidieron:
 if dim == 1
@@ -115,10 +119,29 @@ elseif dim == 3
     indicePicoEje = columna(1);
     textLabel = 'Z [mm]';
 end
-
+% Resample:
+vector_resampled = interp(vector, upsample_factor);
+[maxValue indicePicoEje_resampled] = max(vector_resampled);
 % Calculo el FWHM:
-indicesMayoresMitad = find(vector>=0.5);
-fwhm = (indicesMayoresMitad(end)-indicesMayoresMitad(1))*sizePixel_mm(dim);
+indicesMayoresMitad = find(vector_resampled>=0.5);
+if(numel(indicesMayoresMitad)>0)
+    % Interpolate to get the value exactly at the half:
+    if indicesMayoresMitad(1) ~= 1
+        coord_fwhm_min = coordPixelsPasoFino_mm{dim}(indicesMayoresMitad(1)-1) + (vector_resampled(indicesMayoresMitad(1)) - vector_resampled(indicesMayoresMitad(1)-1)) / ...
+            (coordPixelsPasoFino_mm{dim}(indicesMayoresMitad(1)) - coordPixelsPasoFino_mm{dim}(indicesMayoresMitad(1)-1) ) * (0.5-vector_resampled(indicesMayoresMitad(1)));
+    else
+        coord_fwhm_min = coordPixelsPasoFino_mm{dim}(indicesMayoresMitad(1));
+    end
+    if indicesMayoresMitad(end) ~= numel(vector_resampled)
+        coord_fwhm_max = coordPixelsPasoFino_mm{dim}(indicesMayoresMitad(end)) + (vector_resampled(indicesMayoresMitad(end)+1) - vector_resampled(indicesMayoresMitad(end))) / ...
+            (coordPixelsPasoFino_mm{dim}(indicesMayoresMitad(end)+1) - coordPixelsPasoFino_mm{dim}(indicesMayoresMitad(end)) ) * (0.5-vector_resampled(indicesMayoresMitad(end)));
+    else
+        coord_fwhm_max = coordPixelsPasoFino_mm{dim}(indicesMayoresMitad(end));
+    end
+    fwhm = coord_fwhm_max - coord_fwhm_min;
+else
+    fwhm = 0;
+end
 % Si la hago fiteando una guassiana:
 try
     ParamsGaussiana = lsqcurvefit(@Gaussian,[max(vector),coordPixels_mm{dim}(indicePicoEje), fwhm/2.35],coordPixels_mm{dim},vector);
@@ -131,7 +154,7 @@ end
 
 % Si hay que graficar, lo hago y guardo el gráfico:
 if graficar
-    if isempty(label)
+    if nargin == 5
         label = textLabel;
     end
     % Grafico la original y la fiteada y la guardo:

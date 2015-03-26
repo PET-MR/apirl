@@ -64,6 +64,48 @@ coordZpet = (-infoVolumeSpan11.ScalingFactorMmPixel3*infoVolumeSpan11.MatrixSize
 % Interpolate the ct image to the mr coordinates:
 reconVolumeSiemens = interp3(Xsiemens,Ysiemens,Zsiemens,reconVolumeSiemens,Xpet,Ypet,Zpet); 
 reconVolumeSiemens(isnan(reconVolumeSiemens)) = 0;
+%% GENERATE LINE IMAGE
+absMaxValue = max(max(max(reconVolumeStir)));
+% Based on max pixel in transverse plane:
+lineMaxXY = zeros(size(reconVolumeStir)); 
+for i = 1 : size(reconVolumeStir, 3)
+    [valorMaxY, indiceMaxFila] = max(reconVolumeStir(:,:,i),[],1);
+    [valorMaxXY, indiceMaxCol] = max(valorMaxY,[],2);
+    %indiceLinearXY = sub2ind([285 285],indiceMaxFila(indiceMaxCol),indiceMaxCol');
+    if valorMaxXY > 0.5*absMaxValue
+        lineMaxXY(indiceMaxFila(indiceMaxCol),indiceMaxCol, i) = 1;
+    end
+end
+interfilewrite(lineMaxXY, [outputPath 'lineMaxTransverse'], [infoVolumeSpan11.ScalingFactorMmPixel1 infoVolumeSpan11.ScalingFactorMmPixel2 infoVolumeSpan11.ScalingFactorMmPixel3]);
+
+% Based on max pixel in sagital plane:
+lineMaxYZ = zeros(size(reconVolumeStir)); 
+sagitalPlanes = permute(reconVolumeStir, [1 3 2]);
+for i = 1 : size(sagitalPlanes, 3)
+    [valorMaxY, indiceMaxFila] = max(sagitalPlanes(:,:,i),[],1);
+    [valorMaxXY, indiceMaxCol] = max(valorMaxY,[],2);
+    if valorMaxXY > 0.4*absMaxValue
+        lineMaxYZ(indiceMaxFila(indiceMaxCol),i , indiceMaxCol) = 1;
+    end
+end
+interfilewrite(lineMaxYZ, [outputPath 'lineMaxSagital'], [infoVolumeSpan11.ScalingFactorMmPixel1 infoVolumeSpan11.ScalingFactorMmPixel2 infoVolumeSpan11.ScalingFactorMmPixel3]);
+
+% Based on max pixel in transverse plane:
+lineMaxXZ = zeros(size(reconVolumeStir)); 
+coronalPlanes = permute(reconVolumeStir, [2 3 1]);
+for i = 1 : size(coronalPlanes, 3)
+    [valorMaxY, indiceMaxFila] = max(coronalPlanes(:,:,i),[],1);
+    [valorMaxXY, indiceMaxCol] = max(valorMaxY,[],2);
+    %indiceLinearXY = sub2ind([285 285],indiceMaxFila(indiceMaxCol),indiceMaxCol');
+    if valorMaxXY > 0.4*absMaxValue
+        lineMaxXZ(i, indiceMaxFila(indiceMaxCol),indiceMaxCol) = 1;
+    end
+end
+interfilewrite(lineMaxXZ, [outputPath 'lineMaxCoronal'], [infoVolumeSpan11.ScalingFactorMmPixel1 infoVolumeSpan11.ScalingFactorMmPixel2 infoVolumeSpan11.ScalingFactorMmPixel3]);
+%lineMaxXY(indiceMaxFila, indiceMaxCol) 
+
+% Summinng the transverse planes:
+transverseSum = sum(reconVolumeStir,3);
 %% SHOW SLICES
 % Get slices to show:
 image = getImageFromSlices(reconVolumeSpan11,12, 1, 0);
@@ -130,6 +172,8 @@ for i = 1 : slices
     [fwhm_y_stir(i), fwhm_y_fitted_stir(i)] = getFwhmOfPointSourceImage(reconVolumeStir(:,:,i), [infoVolumeSpan1.ScalingFactorMmPixel1 infoVolumeSpan1.ScalingFactorMmPixel2], 1, 0, fullFilename);
     fullFilename = sprintf('fwhm_y_siemens_slice_%d', i);
     [fwhm_y_siemens(i), fwhm_y_fitted_siemens(i)] = getFwhmOfPointSourceImage(reconVolumeSiemens(:,:,i), [infoVolumeSpan1.ScalingFactorMmPixel1 infoVolumeSpan1.ScalingFactorMmPixel2], 1, 0, fullFilename);
+    fullFilename = sprintf('fwhm_y_ideal_slice_%d', i);
+    [fwhm_y_ideal(i), fwhm_y_fitted_ideal(i)] = getFwhmOfPointSourceImage(lineMaxXY(:,:,i), [infoVolumeSpan1.ScalingFactorMmPixel1 infoVolumeSpan1.ScalingFactorMmPixel2], 1, 0, fullFilename);
     
     % X axis (dimension 2: columns):
     fullFilename = sprintf('fwhm_x_span11_slice_%d', i);
@@ -138,10 +182,48 @@ for i = 1 : slices
     [fwhm_x_span1(i), fwhm_x_fitted_span1(i)] = getFwhmOfPointSourceImage(reconVolumeSpan1(:,:,i), [infoVolumeSpan1.ScalingFactorMmPixel1 infoVolumeSpan1.ScalingFactorMmPixel2], 2, 0, fullFilename);
     fullFilename = sprintf('fwhm_x_stir_slice_%d', i);
     [fwhm_x_stir(i), fwhm_x_fitted_stir(i)] = getFwhmOfPointSourceImage(reconVolumeStir(:,:,i), [infoVolumeSpan1.ScalingFactorMmPixel1 infoVolumeSpan1.ScalingFactorMmPixel2], 2, 0, fullFilename);
-    fullFilename = sprintf('fwhm_y_siemens_slice_%d', i);
+    fullFilename = sprintf('fwhm_x_siemens_slice_%d', i);
     [fwhm_x_siemens(i), fwhm_x_fitted_siemens(i)] = getFwhmOfPointSourceImage(reconVolumeSiemens(:,:,i), [infoVolumeSpan1.ScalingFactorMmPixel1 infoVolumeSpan1.ScalingFactorMmPixel2], 2, 0, fullFilename);
+    fullFilename = sprintf('fwhm_x_ideal_slice_%d', i);
+    [fwhm_x_ideal(i), fwhm_x_fitted_ideal(i)] = getFwhmOfPointSourceImage(lineMaxXY(:,:,i), [infoVolumeSpan1.ScalingFactorMmPixel1 infoVolumeSpan1.ScalingFactorMmPixel2], 1, 0, fullFilename);
+    
     %close all
 end
+% fwhm:
+figure;
+set(gcf, 'Position', [50 50 1800 1200]);
+set(gcf, 'Name', 'Transverse Resolution Analysis');
+subplot(1,2,1);
+plot(1:slices, fwhm_x_span11, 1:slices, fwhm_x_span1, 1:slices, fwhm_x_stir, 1:slices, fwhm_x_siemens, 'LineWidth', 2);
+legend('Span 11', 'Span 1', 'Stir', 'Siemens');
+xlabel('Slice');
+ylabel('FWHM X [mm]');
+title('Resolution in X axis');
+subplot(1,2,2);
+plot(1:slices, fwhm_y_span11, 1:slices, fwhm_y_span1, 1:slices, fwhm_y_stir, 1:slices, fwhm_y_siemens, 'LineWidth', 2);
+legend('Span 11', 'Span 1', 'Stir', 'Siemens');
+xlabel('Slice');
+ylabel('FWHM Y [mm]');
+title('Resolution in Y axis');
+
+% fwhm with ideal:
+figure;
+set(gcf, 'Position', [50 50 1800 1200]);
+set(gcf, 'Name', 'Transverse Resolution Analysis');
+subplot(1,2,1);
+plot(1:slices, fwhm_x_span11, 1:slices, fwhm_x_span1, 1:slices, fwhm_x_stir, 1:slices, fwhm_x_siemens, 1:slices, fwhm_x_ideal, 'LineWidth', 2);
+legend('Span 11', 'Span 1', 'Stir', 'Siemens', 'Ideal');
+xlabel('Slice');
+ylabel('FWHM X [mm]');
+title('Resolution in X axis');
+subplot(1,2,2);
+plot(1:slices, fwhm_y_span11, 1:slices, fwhm_y_span1, 1:slices, fwhm_y_stir, 1:slices, fwhm_y_siemens, 1:slices, fwhm_y_ideal, 'LineWidth', 2);
+legend('Span 11', 'Span 1', 'Stir', 'Siemens', 'Ideal');
+xlabel('Slice');
+ylabel('FWHM Y [mm]');
+title('Resolution in Y axis');
+
+%fitted:
 figure;
 set(gcf, 'Position', [50 50 1800 1200]);
 set(gcf, 'Name', 'Transverse Resolution Analysis');
@@ -149,15 +231,16 @@ subplot(1,2,1);
 plot(1:slices, fwhm_x_fitted_span11, 1:slices, fwhm_x_fitted_span1, 1:slices, fwhm_x_fitted_stir, 1:slices, fwhm_x_fitted_siemens, 'LineWidth', 2);
 legend('Span 11', 'Span 1', 'Stir', 'Siemens');
 xlabel('Slice');
-ylabel('FWHM X [mm]');
-title('Resolution in X axis');
+ylabel('FWHM of Fitted Gaussian in X [mm] ');
+title('Resolution in X axis with Fitted Gaussian');
 subplot(1,2,2);
 plot(1:slices, fwhm_y_fitted_span11, 1:slices, fwhm_y_fitted_span1, 1:slices, fwhm_y_fitted_stir, 1:slices, fwhm_y_fitted_siemens, 'LineWidth', 2);
 legend('Span 11', 'Span 1', 'Stir', 'Siemens');
 xlabel('Slice');
-ylabel('FWHM Y [mm]');
-title('Resolution in Y axis');
+ylabel('FWHM of Fitted Gaussian in Y [mm]');
+title('Resolution in Y axis with Fitted Gaussian');
 %% FWHM SAGITAL PLANES
+graficar = 0;
 auxImageSpan11 =  permute(reconVolumeSpan11, [1 3 2]);
 auxImageSpan1 = permute(reconVolumeSpan1, [1 3 2]);
 auxImageStir = permute(reconVolumeStir, [1 3 2]);
@@ -171,31 +254,52 @@ for i = 1 : numel(sagitalPlanesForLine)
     % Y axis (dimension 1: rows)
     plane = sagitalPlanesForLine(i)
     fullFilename = sprintf('fwhm_y_span11_slice_%d', i);
-    [fwhm_y_span11(plane), fwhm_y_fitted_span11(plane)] = getFwhmOfPointSourceImage(auxImageSpan11(:,:,plane), [infoVolumeSpan1.ScalingFactorMmPixel1 infoVolumeSpan1.ScalingFactorMmPixel3], 1, 0, fullFilename,'Y [mm]');
+    [fwhm_y_span11(plane), fwhm_y_fitted_span11(plane)] = getFwhmOfPointSourceImage(auxImageSpan11(:,:,plane), [infoVolumeSpan1.ScalingFactorMmPixel1 infoVolumeSpan1.ScalingFactorMmPixel3], 1, graficar, fullFilename,'Y [mm]');
     
     fullFilename = sprintf('fwhm_y_span1_slice_%d', i);
-    [fwhm_y_span1(plane), fwhm_y_fitted_span1(plane)] = getFwhmOfPointSourceImage(auxImageSpan1(:,:,plane), [infoVolumeSpan1.ScalingFactorMmPixel1 infoVolumeSpan1.ScalingFactorMmPixel3], 1, 0, fullFilename,'Y [mm]');
+    [fwhm_y_span1(plane), fwhm_y_fitted_span1(plane)] = getFwhmOfPointSourceImage(auxImageSpan1(:,:,plane), [infoVolumeSpan1.ScalingFactorMmPixel1 infoVolumeSpan1.ScalingFactorMmPixel3], 1, graficar, fullFilename,'Y [mm]');
     
     fullFilename = sprintf('fwhm_y_stir_slice_%d', i);
-    [fwhm_y_stir(plane), fwhm_y_fitted_stir(plane)] = getFwhmOfPointSourceImage(auxImageStir(:,:,plane), [infoVolumeSpan1.ScalingFactorMmPixel1 infoVolumeSpan1.ScalingFactorMmPixel3], 1, 0, fullFilename,'Y [mm]');
+    [fwhm_y_stir(plane), fwhm_y_fitted_stir(plane)] = getFwhmOfPointSourceImage(auxImageStir(:,:,plane), [infoVolumeSpan1.ScalingFactorMmPixel1 infoVolumeSpan1.ScalingFactorMmPixel3], 1, graficar, fullFilename,'Y [mm]');
     
     fullFilename = sprintf('fwhm_y_siemens_slice_%d', i);
-    [fwhm_y_siemens(plane), fwhm_y_fitted_siemens(plane)] = getFwhmOfPointSourceImage(auxImageSiemens(:,:,plane), [infoVolumeSpan1.ScalingFactorMmPixel1 infoVolumeSpan1.ScalingFactorMmPixel3], 1, 0, fullFilename,'Y [mm]');
+    [fwhm_y_siemens(plane), fwhm_y_fitted_siemens(plane)] = getFwhmOfPointSourceImage(auxImageSiemens(:,:,plane), [infoVolumeSpan1.ScalingFactorMmPixel1 infoVolumeSpan1.ScalingFactorMmPixel3], 1, graficar, fullFilename,'Y [mm]');
     
     % X axis (dimension 2: columns):
     fullFilename = sprintf('fwhm_z_span11_slice_%d', i);
-    [fwhm_z_span11(plane), fwhm_z_fitted_span11(plane)] = getFwhmOfPointSourceImage(auxImageSpan11(:,:,plane), [infoVolumeSpan1.ScalingFactorMmPixel1 infoVolumeSpan1.ScalingFactorMmPixel3], 2, 0, fullFilename,'Z [mm]');
+    [fwhm_z_span11(plane), fwhm_z_fitted_span11(plane)] = getFwhmOfPointSourceImage(auxImageSpan11(:,:,plane), [infoVolumeSpan1.ScalingFactorMmPixel1 infoVolumeSpan1.ScalingFactorMmPixel3], 2, graficar, fullFilename,'Z [mm]');
     
     fullFilename = sprintf('fwhm_z_span1_slice_%d', i);
-    [fwhm_z_span1(plane), fwhm_z_fitted_span1(plane)] = getFwhmOfPointSourceImage(auxImageSpan1(:,:,plane), [infoVolumeSpan1.ScalingFactorMmPixel1 infoVolumeSpan1.ScalingFactorMmPixel3], 2, 0, fullFilename,'Z [mm]');
+    [fwhm_z_span1(plane), fwhm_z_fitted_span1(plane)] = getFwhmOfPointSourceImage(auxImageSpan1(:,:,plane), [infoVolumeSpan1.ScalingFactorMmPixel1 infoVolumeSpan1.ScalingFactorMmPixel3], 2, graficar, fullFilename,'Z [mm]');
     
     fullFilename = sprintf('fwhm_z_stir_slice_%d', i);
-    [fwhm_z_stir(plane), fwhm_z_fitted_stir(plane)] = getFwhmOfPointSourceImage(auxImageStir(:,:,plane), [infoVolumeSpan1.ScalingFactorMmPixel1 infoVolumeSpan1.ScalingFactorMmPixel3], 2, 0, fullFilename,'Z [mm]');
+    [fwhm_z_stir(plane), fwhm_z_fitted_stir(plane)] = getFwhmOfPointSourceImage(auxImageStir(:,:,plane), [infoVolumeSpan1.ScalingFactorMmPixel1 infoVolumeSpan1.ScalingFactorMmPixel3], 2, graficar, fullFilename,'Z [mm]');
     
     fullFilename = sprintf('fwhm_z_stir_slice_%d', i);
-    [fwhm_z_siemens(plane), fwhm_z_fitted_siemens(plane)] = getFwhmOfPointSourceImage(auxImageSiemens(:,:,plane), [infoVolumeSpan1.ScalingFactorMmPixel1 infoVolumeSpan1.ScalingFactorMmPixel3], 2, 0, fullFilename,'Z [mm]');
+    [fwhm_z_siemens(plane), fwhm_z_fitted_siemens(plane)] = getFwhmOfPointSourceImage(auxImageSiemens(:,:,plane), [infoVolumeSpan1.ScalingFactorMmPixel1 infoVolumeSpan1.ScalingFactorMmPixel3], 2, graficar, fullFilename,'Z [mm]');
     %close all
 end
+%fwhm:
+figure;
+set(gcf, 'Position', [50 50 1600 1200]);
+set(gcf, 'Name', 'Sagital Resolution Analysis');
+planes = size(reconVolumeSpan11,2);
+subplot(1,2,1);
+plot(1:planes, fwhm_y_span11, 1:planes, fwhm_y_span1, 1:planes, fwhm_y_stir, 1:planes, fwhm_y_siemens, 'LineWidth', 2);
+legend('Span 11', 'Span 1', 'Stir', 'Siemens');
+xlabel('Slice');
+ylabel('FWHM Y [mm]');
+title('Resolution in Y axis');
+ylim([0 8]);
+subplot(1,2,2);
+plot(1:planes, fwhm_z_span11, 1:planes, fwhm_z_span1, 1:planes, fwhm_z_stir, 1:planes, fwhm_z_siemens, 'LineWidth', 2);
+legend('Span 11', 'Span 1', 'Stir', 'Siemens');
+xlabel('Slice');
+ylabel('FWHM Z [mm]');
+title('Resolution in Z axis');
+ylim([0 10]);
+
+% fitted gaussian
 figure;
 set(gcf, 'Position', [50 50 1600 1200]);
 set(gcf, 'Name', 'Sagital Resolution Analysis');
@@ -204,13 +308,13 @@ subplot(1,2,1);
 plot(1:planes, fwhm_y_fitted_span11, 1:planes, fwhm_y_fitted_span1, 1:planes, fwhm_y_fitted_stir, 1:planes, fwhm_y_fitted_siemens, 'LineWidth', 2);
 legend('Span 11', 'Span 1', 'Stir', 'Siemens');
 xlabel('Slice');
-ylabel('FWHM Y [mm]');
-title('Resolution in Y axis');
+ylabel('FWHM of Fitted Gaussian in Y [mm]');
+title('Resolution in Y axis with Fitted Gaussian');
 ylim([0 8]);
 subplot(1,2,2);
 plot(1:planes, fwhm_z_fitted_span11, 1:planes, fwhm_z_fitted_span1, 1:planes, fwhm_z_fitted_stir, 1:planes, fwhm_z_fitted_siemens, 'LineWidth', 2);
 legend('Span 11', 'Span 1', 'Stir', 'Siemens');
 xlabel('Slice');
-ylabel('FWHM Z [mm]');
-title('Resolution in Z axis');
+ylabel('FWHM of Fitted Gaussian in Z [mm]');
+title('Resolution in Z axis with Fitted Gaussian');
 ylim([0 10]);

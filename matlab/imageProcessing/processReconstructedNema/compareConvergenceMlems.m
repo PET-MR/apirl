@@ -170,6 +170,33 @@ for i = 1 : numel(radioEsferas_mm)-1 % Lug not used
     title(sprintf('Sphere Radius %.2f\n', radioEsferas_mm(i)));
     legend('Span 11', 'Span 1', 'Stir', 'Location', 'SouthEast');
 end
+%% OVERRAL RESULT
+figure;
+set(gcf, 'Name', 'SNR');
+set(gcf, 'Position', [50 50 1600 1200]);
+i = 1;
+plot(contrastRecoverySpan11(:,i), desvioNormBackgroundSpan11(:,i), contrastRecoverySpan1(:,i), desvioNormBackgroundSpan1(:,i), contrastRecoveryStir(:,i), desvioNormBackgroundStir(:,i));
+xlabel('Recovery Contrast');
+ylabel('Standard Deviation');
+legend('Span 11', 'Span 1', 'Stir', 'Location', 'SouthEast');
+
+figure;
+set(gcf, 'Name', 'SNR');
+set(gcf, 'Position', [50 50 1600 1200]);
+i = 2;
+plot(contrastRecoverySpan11(:,i), desvioNormBackgroundSpan11(:,i), contrastRecoverySpan1(:,i), desvioNormBackgroundSpan1(:,i), contrastRecoveryStir(:,i), desvioNormBackgroundStir(:,i));
+xlabel('Recovery Contrast');
+ylabel('Standard Deviation');
+legend('Span 11', 'Span 1', 'Stir', 'Location', 'SouthEast');
+
+figure;
+set(gcf, 'Name', 'SNR');
+set(gcf, 'Position', [50 50 1600 1200]);
+i = 3;
+plot(contrastRecoverySpan11(:,i), desvioNormBackgroundSpan11(:,i), contrastRecoverySpan1(:,i), desvioNormBackgroundSpan1(:,i), contrastRecoveryStir(:,i), desvioNormBackgroundStir(:,i));
+xlabel('Recovery Contrast');
+ylabel('Standard Deviation');
+legend('Span 11', 'Span 1', 'Stir', 'Location', 'SouthEast');
 %% PLOT SLICES
 iterationsPerFigure = 10;
 for i = 1 : ceil(numIterations / iterationsPerFigure)
@@ -225,47 +252,4 @@ for i = 1 : ceil(numIterations / iterationsPerFigure)
     imshow(aux);
     colormap(hot);
     ylabel('Stir');
-end
-%% PLOT IMAGE HISTOGRAM
-iterationsPerFigure = 10;
-for i = 1 : floor(numIterations / iterationsPerFigure)
-    figure;
-    set(gcf, 'Position', [50 50 1600 1200]);
-    set(gcf, 'Name', 'Central Slice for Each Iteration with Border Noise Removed');
-    subplot(3,2,1);
-    aux = centralSlices(:,:,iterationsPerFigure*(i-1)+1,1);
-    aux = aux ./ max(max(aux));
-    imhist(aux);
-    title(sprintf('Iterations %d to %d', iterationsPerFigure*(i-1)+1, iterationsPerFigure*i), 'FontWeight','Bold');
-    ylabel('Span 11');
-    subplot(3,2,2);
-    aux = centralSlices(:,:,iterationsPerFigure*(i-1)+1,1);
-    meanValue = mean(mean(aux));
-    aux(aux>(35*meanValue)) = meanValue;
-    aux = aux ./ max(max(aux));
-    imhist(aux);
-    
-    subplot(3,2,3);
-    aux = centralSlices(:,:,iterationsPerFigure*(i-1)+1,2);
-    aux = aux ./ max(max(aux));
-    imhist(aux);
-    ylabel('Span 1');
-    subplot(3,2,4);
-    aux = centralSlices(:,:,iterationsPerFigure*(i-1)+1,2);
-    meanValue = mean(mean(aux));
-    aux(aux>(35*meanValue)) = meanValue;
-    aux = aux ./ max(max(aux));
-    imhist(aux);
-    
-    subplot(3,2,5);
-    aux = centralSlices(:,:,iterationsPerFigure*(i-1)+1,3);
-    aux = aux ./ max(max(aux));
-    imhist(aux);
-    ylabel('Stir');
-    subplot(3,2,6);
-    aux = centralSlices(:,:,iterationsPerFigure*(i-1)+1,3);
-    meanValue = mean(mean(aux));
-    aux(aux>(35*meanValue)) = meanValue;
-    aux = aux ./ max(max(aux));
-    imhist(aux);
 end
