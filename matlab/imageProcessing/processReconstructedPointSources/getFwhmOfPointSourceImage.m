@@ -127,14 +127,14 @@ indicesMayoresMitad = find(vector_resampled>=0.5);
 if(numel(indicesMayoresMitad)>0)
     % Interpolate to get the value exactly at the half:
     if indicesMayoresMitad(1) ~= 1
-        coord_fwhm_min = coordPixelsPasoFino_mm{dim}(indicesMayoresMitad(1)-1) + (vector_resampled(indicesMayoresMitad(1)) - vector_resampled(indicesMayoresMitad(1)-1)) / ...
-            (coordPixelsPasoFino_mm{dim}(indicesMayoresMitad(1)) - coordPixelsPasoFino_mm{dim}(indicesMayoresMitad(1)-1) ) * (0.5-vector_resampled(indicesMayoresMitad(1)));
+        coord_fwhm_min = coordPixelsPasoFino_mm{dim}(indicesMayoresMitad(1)-1) + (coordPixelsPasoFino_mm{dim}(indicesMayoresMitad(1)) - coordPixelsPasoFino_mm{dim}(indicesMayoresMitad(1)-1) ) / ...
+             (vector_resampled(indicesMayoresMitad(1)) - vector_resampled(indicesMayoresMitad(1)-1))* (0.5-vector_resampled(indicesMayoresMitad(1)-1));
     else
         coord_fwhm_min = coordPixelsPasoFino_mm{dim}(indicesMayoresMitad(1));
     end
     if indicesMayoresMitad(end) ~= numel(vector_resampled)
-        coord_fwhm_max = coordPixelsPasoFino_mm{dim}(indicesMayoresMitad(end)) + (vector_resampled(indicesMayoresMitad(end)+1) - vector_resampled(indicesMayoresMitad(end))) / ...
-            (coordPixelsPasoFino_mm{dim}(indicesMayoresMitad(end)+1) - coordPixelsPasoFino_mm{dim}(indicesMayoresMitad(end)) ) * (0.5-vector_resampled(indicesMayoresMitad(end)));
+        coord_fwhm_max = coordPixelsPasoFino_mm{dim}(indicesMayoresMitad(end)) + (coordPixelsPasoFino_mm{dim}(indicesMayoresMitad(end)+1) - coordPixelsPasoFino_mm{dim}(indicesMayoresMitad(end)) ) / ...
+            (vector_resampled(indicesMayoresMitad(end)+1) - vector_resampled(indicesMayoresMitad(end))) * (0.5-vector_resampled(indicesMayoresMitad(end)));
     else
         coord_fwhm_max = coordPixelsPasoFino_mm{dim}(indicesMayoresMitad(end));
     end
