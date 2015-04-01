@@ -64,48 +64,135 @@ coordZpet = (-infoVolumeSpan11.ScalingFactorMmPixel3*infoVolumeSpan11.MatrixSize
 % Interpolate the ct image to the mr coordinates:
 reconVolumeSiemens = interp3(Xsiemens,Ysiemens,Zsiemens,reconVolumeSiemens,Xpet,Ypet,Zpet); 
 reconVolumeSiemens(isnan(reconVolumeSiemens)) = 0;
-%% GENERATE LINE IMAGE
-absMaxValue = max(max(max(reconVolumeStir)));
-% Based on max pixel in transverse plane:
-lineMaxXY = zeros(size(reconVolumeStir)); 
-for i = 1 : size(reconVolumeStir, 3)
-    [valorMaxY, indiceMaxFila] = max(reconVolumeStir(:,:,i),[],1);
-    [valorMaxXY, indiceMaxCol] = max(valorMaxY,[],2);
-    %indiceLinearXY = sub2ind([285 285],indiceMaxFila(indiceMaxCol),indiceMaxCol');
-    if valorMaxXY > 0.5*absMaxValue
-        lineMaxXY(indiceMaxFila(indiceMaxCol),indiceMaxCol, i) = 1;
-    end
-end
-interfilewrite(lineMaxXY, [outputPath 'lineMaxTransverse'], [infoVolumeSpan11.ScalingFactorMmPixel1 infoVolumeSpan11.ScalingFactorMmPixel2 infoVolumeSpan11.ScalingFactorMmPixel3]);
-
-% Based on max pixel in sagital plane:
-lineMaxYZ = zeros(size(reconVolumeStir)); 
-sagitalPlanes = permute(reconVolumeStir, [1 3 2]);
-for i = 1 : size(sagitalPlanes, 3)
-    [valorMaxY, indiceMaxFila] = max(sagitalPlanes(:,:,i),[],1);
-    [valorMaxXY, indiceMaxCol] = max(valorMaxY,[],2);
-    if valorMaxXY > 0.4*absMaxValue
-        lineMaxYZ(indiceMaxFila(indiceMaxCol),i , indiceMaxCol) = 1;
-    end
-end
-interfilewrite(lineMaxYZ, [outputPath 'lineMaxSagital'], [infoVolumeSpan11.ScalingFactorMmPixel1 infoVolumeSpan11.ScalingFactorMmPixel2 infoVolumeSpan11.ScalingFactorMmPixel3]);
-
-% Based on max pixel in transverse plane:
-lineMaxXZ = zeros(size(reconVolumeStir)); 
-coronalPlanes = permute(reconVolumeStir, [2 3 1]);
-for i = 1 : size(coronalPlanes, 3)
-    [valorMaxY, indiceMaxFila] = max(coronalPlanes(:,:,i),[],1);
-    [valorMaxXY, indiceMaxCol] = max(valorMaxY,[],2);
-    %indiceLinearXY = sub2ind([285 285],indiceMaxFila(indiceMaxCol),indiceMaxCol');
-    if valorMaxXY > 0.4*absMaxValue
-        lineMaxXZ(i, indiceMaxFila(indiceMaxCol),indiceMaxCol) = 1;
-    end
-end
-interfilewrite(lineMaxXZ, [outputPath 'lineMaxCoronal'], [infoVolumeSpan11.ScalingFactorMmPixel1 infoVolumeSpan11.ScalingFactorMmPixel2 infoVolumeSpan11.ScalingFactorMmPixel3]);
-%lineMaxXY(indiceMaxFila, indiceMaxCol) 
-
-% Summinng the transverse planes:
-transverseSum = sum(reconVolumeStir,3);
+% %% GENERATE LINE IMAGE
+% absMaxValue = max(max(max(reconVolumeSpan11)));
+% % Based on max pixel in transverse plane:
+% lineMaxXY = zeros(size(reconVolumeSpan11)); 
+% for i = 1 : size(reconVolumeSpan11, 3)
+%     [valorMaxY, indiceMaxFila] = max(reconVolumeSpan11(:,:,i),[],1);
+%     [valorMaxXY, indiceMaxCol] = max(valorMaxY,[],2);
+%     %indiceLinearXY = sub2ind([285 285],indiceMaxFila(indiceMaxCol),indiceMaxCol');
+%     if valorMaxXY > 0.5*absMaxValue
+%         lineMaxXY(indiceMaxFila(indiceMaxCol),indiceMaxCol, i) = 1;
+%     end
+% end
+% interfilewrite(lineMaxXY, [outputPath 'lineMaxTransverse'], [infoVolumeSpan11.ScalingFactorMmPixel1 infoVolumeSpan11.ScalingFactorMmPixel2 infoVolumeSpan11.ScalingFactorMmPixel3]);
+% 
+% % Based on max pixel in sagital plane:
+% lineMaxYZ = zeros(size(reconVolumeSpan11)); 
+% sagitalPlanes = permute(reconVolumeSpan11, [1 3 2]);
+% for i = 1 : size(sagitalPlanes, 3)
+%     [valorMaxY, indiceMaxFila] = max(sagitalPlanes(:,:,i),[],1);
+%     [valorMaxXY, indiceMaxCol] = max(valorMaxY,[],2);
+%     if valorMaxXY > 0.4*absMaxValue
+%         lineMaxYZ(indiceMaxFila(indiceMaxCol),i , indiceMaxCol) = 1;
+%     end
+% end
+% interfilewrite(lineMaxYZ, [outputPath 'lineMaxSagital'], [infoVolumeSpan11.ScalingFactorMmPixel1 infoVolumeSpan11.ScalingFactorMmPixel2 infoVolumeSpan11.ScalingFactorMmPixel3]);
+% 
+% % Based on max pixel in transverse plane:
+% lineMaxXZ = zeros(size(reconVolumeSpan11)); 
+% coronalPlanes = permute(reconVolumeSpan11, [2 3 1]);
+% for i = 1 : size(coronalPlanes, 3)
+%     [valorMaxY, indiceMaxFila] = max(coronalPlanes(:,:,i),[],1);
+%     [valorMaxXY, indiceMaxCol] = max(valorMaxY,[],2);
+%     %indiceLinearXY = sub2ind([285 285],indiceMaxFila(indiceMaxCol),indiceMaxCol');
+%     if valorMaxXY > 0.4*absMaxValue
+%         lineMaxXZ(i, indiceMaxFila(indiceMaxCol),indiceMaxCol) = 1;
+%     end
+% end
+% interfilewrite(lineMaxXZ, [outputPath 'lineMaxCoronal'], [infoVolumeSpan11.ScalingFactorMmPixel1 infoVolumeSpan11.ScalingFactorMmPixel2 infoVolumeSpan11.ScalingFactorMmPixel3]);
+% %lineMaxXY(indiceMaxFila, indiceMaxCol) 
+% 
+% % Summinng the transverse planes:
+% transverseSum = sum(reconVolumeStir,3);
+% interfilewrite(transverseSum, [outputPath 'lineSumTransverse'], [infoVolumeSpan11.ScalingFactorMmPixel1 infoVolumeSpan11.ScalingFactorMmPixel2 infoVolumeSpan11.ScalingFactorMmPixel3]);
+% sagitalSum = sum(sagitalPlanes,3);
+% interfilewrite(sagitalSum, [outputPath 'lineSumSagital'], [infoVolumeSpan11.ScalingFactorMmPixel1 infoVolumeSpan11.ScalingFactorMmPixel2 infoVolumeSpan11.ScalingFactorMmPixel3]);
+% sagitalPlanes = permute(reconVolumeSpan1, [1 3 2]);
+% sagitalSum = sum(sagitalPlanes,3);
+% interfilewrite(sagitalSum, [outputPath 'lineSumSagitalSpan1'], [infoVolumeSpan11.ScalingFactorMmPixel1 infoVolumeSpan11.ScalingFactorMmPixel2 infoVolumeSpan11.ScalingFactorMmPixel3]);
+% coronalSum = sum(coronalPlanes,3);
+% interfilewrite(coronalSum, [outputPath 'lineSumCoronal'], [infoVolumeSpan11.ScalingFactorMmPixel1 infoVolumeSpan11.ScalingFactorMmPixel2 infoVolumeSpan11.ScalingFactorMmPixel3]);
+% coronalPlanes = permute(reconVolumeSpan1, [2 3 1]);
+% coronalSumSpan1 = sum(coronalPlanes,3);
+% interfilewrite(coronalSumSpan1, [outputPath 'lineSumCoronalSpan1'], [infoVolumeSpan11.ScalingFactorMmPixel1 infoVolumeSpan11.ScalingFactorMmPixel2 infoVolumeSpan11.ScalingFactorMmPixel3]);
+% % Ideal coronal sum:
+% coronalPlanes = permute(lineMaxXY, [2 3 1]);
+% coronalSumIdeal = sum(coronalPlanes,3);
+% interfilewrite(coronalSumIdeal, [outputPath 'lineSumCoronalIdeal'], [infoVolumeSpan11.ScalingFactorMmPixel1 infoVolumeSpan11.ScalingFactorMmPixel2 infoVolumeSpan11.ScalingFactorMmPixel3]);
+% % For each column convolve the ideal image
+% figure;
+% plot([coronalSum(100,:)./max(coronalSum(100,:)); coronalSumSpan1(100,:)./max(coronalSumSpan1(100,:)); coronalSumIdeal(100,:)./max(coronalSumIdeal(100,:))]', 'LineWidth', 2);
+% legend('Span 11', 'Span 1', 'PerectLine');
+% title('Coronal Sum');
+% 
+% % Fit Gaussian:
+% %% PROJECT/BACKPROJECT LINE SOURCE
+% % Execute APIRL for span 1:
+% % interfilewrite(single(lineMaxXY), [outputPath 'lineSource'], [infoVolumeSpan11.ScalingFactorMmPixel1 infoVolumeSpan11.ScalingFactorMmPixel2 infoVolumeSpan11.ScalingFactorMmPixel3]);
+% % projectionFilename = [span1Path 'projectSinogram3d.par'];
+% % status = system(['project ' projectionFilename]);
+% % backprojectionFilename = [span1Path 'backprojectSinogram3d.par'];
+% % status = system(['backproject ' backprojectionFilename]);
+% % Execute APIRL for span 11:
+% %interfilewrite(single(lineMaxXY), [outputPath 'lineSource'], [infoVolumeSpan11.ScalingFactorMmPixel1 infoVolumeSpan11.ScalingFactorMmPixel2 infoVolumeSpan11.ScalingFactorMmPixel3]);
+% projectionFilename = [span11Path 'projectSinogram3d.par'];
+% status = system(['project ' projectionFilename]);
+% backprojectionFilename = [span11Path 'backprojectSinogram3d.par'];
+% status = system(['backproject ' backprojectionFilename]);
+% backproj_linesource_span1 = interfileRead([span1Path 'BackprojectedImage.h33']); 
+% backproj_linesource_span11 = interfileRead([span11Path 'BackprojectedImage.h33']); 
+% for i = 1 : slices
+%     [fwhm_y_ideal_span11(i), fwhm_y_fitted_ideal_span11(i)] = getFwhmOfPointSourceImage(backproj_linesource_span11(:,:,i), [infoVolumeSpan1.ScalingFactorMmPixel1 infoVolumeSpan1.ScalingFactorMmPixel2], 1, 0, '');
+%     [fwhm_y_ideal_span1(i), fwhm_y_fitted_ideal_span1(i)] = getFwhmOfPointSourceImage(backproj_linesource_span1(:,:,i), [infoVolumeSpan1.ScalingFactorMmPixel1 infoVolumeSpan1.ScalingFactorMmPixel2], 1, 0, '');
+%     
+%     [fwhm_x_ideal_span11(i), fwhm_x_fitted_ideal_span11(i)] = getFwhmOfPointSourceImage(backproj_linesource_span11(:,:,i), [infoVolumeSpan1.ScalingFactorMmPixel1 infoVolumeSpan1.ScalingFactorMmPixel2], 2, 0, '');
+%     [fwhm_x_ideal_span1(i), fwhm_x_fitted_ideal_span1(i)] = getFwhmOfPointSourceImage(backproj_linesource_span1(:,:,i), [infoVolumeSpan1.ScalingFactorMmPixel1 infoVolumeSpan1.ScalingFactorMmPixel2], 2, 0, '');
+% end
+% %% PROJECT/BACKPROJECT LINE SOURCE
+% filter = fspecial('gaussian',[1 5],1)
+% % Blurr image:
+% lineMaxXY_blurred = imfilter(lineMaxXY, filter);
+% % Execute APIRL for span 1:
+% interfilewrite(single(reconVolumeSpan11), [outputPath 'lineSource'], [infoVolumeSpan11.ScalingFactorMmPixel1 infoVolumeSpan11.ScalingFactorMmPixel2 infoVolumeSpan11.ScalingFactorMmPixel3]);
+% projectionFilename = [span1Path 'projectSinogram3d.par'];
+% status = system(['project ' projectionFilename]);
+% backprojectionFilename = [span1Path 'backprojectSinogram3d.par'];
+% status = system(['backproject ' backprojectionFilename]);
+% % Execute APIRL for span 11:
+% projectionFilename = [span11Path 'projectSinogram3d.par'];
+% status = system(['project ' projectionFilename]);
+% backprojectionFilename = [span11Path 'backprojectSinogram3d.par'];
+% status = system(['backproject ' backprojectionFilename]);
+% backproj_linesource_span1 = interfileRead([span1Path 'BackprojectedImage.h33']); 
+% backproj_linesource_span11 = interfileRead([span11Path 'BackprojectedImage.h33']); 
+% for i = 1 : slices
+%     [fwhm_y_ideal_span11(i), fwhm_y_fitted_ideal_span11(i)] = getFwhmOfPointSourceImage(backproj_linesource_span11(:,:,i), [infoVolumeSpan1.ScalingFactorMmPixel1 infoVolumeSpan1.ScalingFactorMmPixel2], 1, 0, '');
+%     [fwhm_y_ideal_span1(i), fwhm_y_fitted_ideal_span1(i)] = getFwhmOfPointSourceImage(backproj_linesource_span1(:,:,i), [infoVolumeSpan1.ScalingFactorMmPixel1 infoVolumeSpan1.ScalingFactorMmPixel2], 1, 0, '');
+%     
+%     [fwhm_x_ideal_span11(i), fwhm_x_fitted_ideal_span11(i)] = getFwhmOfPointSourceImage(backproj_linesource_span11(:,:,i), [infoVolumeSpan1.ScalingFactorMmPixel1 infoVolumeSpan1.ScalingFactorMmPixel2], 2, 0, '');
+%     [fwhm_x_ideal_span1(i), fwhm_x_fitted_ideal_span1(i)] = getFwhmOfPointSourceImage(backproj_linesource_span1(:,:,i), [infoVolumeSpan1.ScalingFactorMmPixel1 infoVolumeSpan1.ScalingFactorMmPixel2], 2, 0, '');
+% end
+% 
+% % fwhm:
+% figure;
+% set(gcf, 'Position', [50 50 1800 1200]);
+% set(gcf, 'Name', 'Transverse Resolution Analysis');
+% subplot(1,2,1);
+% plot(1:slices, fwhm_x_ideal_span11, 1:slices, fwhm_x_ideal_span1, 'LineWidth', 2);
+% legend('Span 11', 'Span 1');
+% xlabel('Slice');
+% ylabel('FWHM X [mm]');
+% title('Resolution in X axis');
+% ylim([0 25]);
+% subplot(1,2,2);
+% plot(1:slices, fwhm_y_ideal_span11, 1:slices, fwhm_y_ideal_span1, 'LineWidth', 2);
+% legend('Span 11', 'Span 1');
+% xlabel('Slice');
+% ylabel('FWHM Y [mm]');
+% title('Resolution in Y axis');
+% ylim([0 25]);
 %% SHOW SLICES
 % Get slices to show:
 image = getImageFromSlices(reconVolumeSpan11,12, 1, 0);
@@ -172,9 +259,9 @@ for i = 1 : slices
     [fwhm_y_stir(i), fwhm_y_fitted_stir(i)] = getFwhmOfPointSourceImage(reconVolumeStir(:,:,i), [infoVolumeSpan1.ScalingFactorMmPixel1 infoVolumeSpan1.ScalingFactorMmPixel2], 1, 0, fullFilename);
     fullFilename = sprintf('fwhm_y_siemens_slice_%d', i);
     [fwhm_y_siemens(i), fwhm_y_fitted_siemens(i)] = getFwhmOfPointSourceImage(reconVolumeSiemens(:,:,i), [infoVolumeSpan1.ScalingFactorMmPixel1 infoVolumeSpan1.ScalingFactorMmPixel2], 1, 0, fullFilename);
-    fullFilename = sprintf('fwhm_y_ideal_slice_%d', i);
-    [fwhm_y_ideal(i), fwhm_y_fitted_ideal(i)] = getFwhmOfPointSourceImage(lineMaxXY(:,:,i), [infoVolumeSpan1.ScalingFactorMmPixel1 infoVolumeSpan1.ScalingFactorMmPixel2], 1, 0, fullFilename);
-    
+%     fullFilename = sprintf('fwhm_y_ideal_slice_%d', i);
+%     [fwhm_y_ideal(i), fwhm_y_fitted_ideal(i)] = getFwhmOfPointSourceImage(lineMaxXY(:,:,i), [infoVolumeSpan1.ScalingFactorMmPixel1 infoVolumeSpan1.ScalingFactorMmPixel2], 1, 0, fullFilename);
+%     
     % X axis (dimension 2: columns):
     fullFilename = sprintf('fwhm_x_span11_slice_%d', i);
     [fwhm_x_span11(i), fwhm_x_fitted_span11(i)] = getFwhmOfPointSourceImage(reconVolumeSpan11(:,:,i), [infoVolumeSpan1.ScalingFactorMmPixel1 infoVolumeSpan1.ScalingFactorMmPixel2], 2, 0, fullFilename);
@@ -184,11 +271,12 @@ for i = 1 : slices
     [fwhm_x_stir(i), fwhm_x_fitted_stir(i)] = getFwhmOfPointSourceImage(reconVolumeStir(:,:,i), [infoVolumeSpan1.ScalingFactorMmPixel1 infoVolumeSpan1.ScalingFactorMmPixel2], 2, 0, fullFilename);
     fullFilename = sprintf('fwhm_x_siemens_slice_%d', i);
     [fwhm_x_siemens(i), fwhm_x_fitted_siemens(i)] = getFwhmOfPointSourceImage(reconVolumeSiemens(:,:,i), [infoVolumeSpan1.ScalingFactorMmPixel1 infoVolumeSpan1.ScalingFactorMmPixel2], 2, 0, fullFilename);
-    fullFilename = sprintf('fwhm_x_ideal_slice_%d', i);
-    [fwhm_x_ideal(i), fwhm_x_fitted_ideal(i)] = getFwhmOfPointSourceImage(lineMaxXY(:,:,i), [infoVolumeSpan1.ScalingFactorMmPixel1 infoVolumeSpan1.ScalingFactorMmPixel2], 1, 0, fullFilename);
-    
+%     fullFilename = sprintf('fwhm_x_ideal_slice_%d', i);
+%     [fwhm_x_ideal(i), fwhm_x_fitted_ideal(i)] = getFwhmOfPointSourceImage(lineMaxXY(:,:,i), [infoVolumeSpan1.ScalingFactorMmPixel1 infoVolumeSpan1.ScalingFactorMmPixel2], 1, 0, fullFilename);
+%     
     %close all
 end
+
 % fwhm:
 figure;
 set(gcf, 'Position', [50 50 1800 1200]);
@@ -211,14 +299,14 @@ figure;
 set(gcf, 'Position', [50 50 1800 1200]);
 set(gcf, 'Name', 'Transverse Resolution Analysis');
 subplot(1,2,1);
-plot(1:slices, fwhm_x_span11, 1:slices, fwhm_x_span1, 1:slices, fwhm_x_stir, 1:slices, fwhm_x_siemens, 1:slices, fwhm_x_ideal, 'LineWidth', 2);
-legend('Span 11', 'Span 1', 'Stir', 'Siemens', 'Ideal');
+plot(1:slices, fwhm_x_span11, 1:slices, fwhm_x_span1, 1:slices, fwhm_x_stir, 1:slices, fwhm_x_siemens, 'LineWidth', 2);
+legend('Span 11', 'Span 1', 'Stir', 'Siemens');
 xlabel('Slice');
 ylabel('FWHM X [mm]');
 title('Resolution in X axis');
 subplot(1,2,2);
-plot(1:slices, fwhm_y_span11, 1:slices, fwhm_y_span1, 1:slices, fwhm_y_stir, 1:slices, fwhm_y_siemens, 1:slices, fwhm_y_ideal, 'LineWidth', 2);
-legend('Span 11', 'Span 1', 'Stir', 'Siemens', 'Ideal');
+plot(1:slices, fwhm_y_span11, 1:slices, fwhm_y_span1, 1:slices, fwhm_y_stir, 1:slices, fwhm_y_siemens, 'LineWidth', 2);
+legend('Span 11', 'Span 1', 'Stir', 'Siemens');
 xlabel('Slice');
 ylabel('FWHM Y [mm]');
 title('Resolution in Y axis');
@@ -318,3 +406,36 @@ xlabel('Slice');
 ylabel('FWHM of Fitted Gaussian in Z [mm]');
 title('Resolution in Z axis with Fitted Gaussian');
 ylim([0 10]);
+%% PLOT FOR PUBLICATION
+figure;
+set(gcf, 'Position', [0 0 2000 800]);
+subplot(1,3,1);
+plot(coordZpet, fwhm_x_span11, coordZpet, fwhm_x_span1, coordZpet, fwhm_x_stir, coordZpet, fwhm_x_siemens, 'LineWidth', 2);
+legend('Span 11', 'Span 1', 'Stir', 'Siemens', 'Location', 'SouthEast');
+xlabel('Z [mm]');
+ylabel('FWHM in X [mm]');
+title('Resolution in X Axis');
+ylim([3 15]);
+
+subplot(1,3,2);
+plot(coordXpet, fwhm_y_span11, coordXpet, fwhm_y_span1, coordXpet, fwhm_y_stir, coordXpet, fwhm_y_siemens, 'LineWidth', 2);
+legend('Span 11', 'Span 1', 'Stir', 'Siemens', 'Location', 'SouthEast');
+xlabel('X [mm]');
+ylabel('FWHM in Y [mm]');
+title('Resolution in Y Axis');
+ylim([3 9]);
+
+subplot(1,3,3);
+plot(coordXpet, fwhm_z_span11, coordXpet, fwhm_z_span1, coordXpet, fwhm_z_stir, coordXpet, fwhm_z_siemens, 'LineWidth', 2);
+legend('Span 11', 'Span 1', 'Stir', 'Siemens', 'Location', 'SouthEast');
+xlabel('X [mm]');
+ylabel('FWHM in Z [mm]');
+title('Resolution in Z Axis');
+ylim([3 11]);
+
+fullFilename = [outputPath 'OverallFwhm'];
+saveas(gca, [fullFilename], 'tif');
+set(gcf,'PaperPositionMode','auto');    % Para que lo guarde en el tamaño modificado.
+frame = getframe(gca);
+imwrite(frame.cdata, [fullFilename '.png']);
+saveas(gca, [fullFilename], 'epsc');

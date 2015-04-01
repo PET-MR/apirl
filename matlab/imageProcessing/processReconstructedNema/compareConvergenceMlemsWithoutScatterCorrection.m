@@ -90,37 +90,71 @@ figure;
 set(gcf, 'Name', 'Generation of  Spatially Variant Mean Value');
 set(gcf, 'Position', [50 50 1600 1200]);
 subplot(2,2,1);
-plot([reconVolumeSpan11_10(rowProfile,:,81)' reconVolumeSpan11_60(rowProfile,:,81)' maskPhantomScaled(rowProfile,:,81)' maskPhantomErodedScaled(rowProfile,:,81)']);
-legend('Reconstruction Iter 10', 'Reconstructed Image (60 iters)', 'Mask scaled to Mean Value of Recon Image');
-title('Step 1 - Reconstructed Image')
-
+plot(coordXpet, [reconVolumeSpan11_60(rowProfile,:,81)' maskPhantomScaled(rowProfile,:,81)' maskPhantomErodedScaled(rowProfile,:,81)'], 'LineWidth', 2);
+legend('Reconstructed Image', 'Mask scaled to Mean Value of Recon Image', 'Eroded Mask scaled to Mean Value of Recon Image');
+title('Step 1 - Reconstructed Image and Mask')
+ylim([0 0.1]);
+ylabel('Image Value');
+xlabel('X [mm]')
 % Filter for SNR:
 filter = fspecial('gaussian',[25 25],11);
 for i = 1 : size(reconVolumeSpan11_60,3)
-    reconVolumeSpan11_60_filtered(:,:,i) = imfilter(reconVolumeSpan11_60(:,:,i), filter);
-    maskPhantomScaled_filtered(:,:,i) =  imfilter(maskPhantomScaled(:,:,i), filter);
+    reconVolumeSpan11_60_filtered(:,:,i) = imfilter(maskPhantom(:,:,i).*reconVolumeSpan11_60(:,:,i), filter);
+    maskPhantom_filtered(:,:,i) =  imfilter(single(maskPhantom(:,:,i)), filter);
 end
-
+maskPhantomScaled_filtered = maskPhantom_filtered.* mean(reconVolumeSpan11_60(maskPhantom));
 subplot(2,2,2);
-plot([reconVolumeSpan11_60_filtered(rowProfile,:,81)' maskPhantomScaled_filtered(rowProfile,:,81)']);
-legend('Filtered Reconstructed Image', 'Filtered Mask scaled to Mean Value of Recon Image', 'Location', 'SouthEast');
+plot(coordXpet, [reconVolumeSpan11_60_filtered(rowProfile,:,81)' maskPhantomScaled_filtered(rowProfile,:,81)'], 'LineWidth', 2);
+legend('Filtered Masked Reconstructed Image', 'Filtered Mask scaled to Mean Value of Recon Image', 'Location', 'SouthEast');
 title('Step 2 - Filtering Image and Mask')
+ylabel('Image Value');
+xlabel('X [mm]')
 
 % Filtered normalized to mask Phantom: 
 reconVolumeSpan11_60_filtered_masked = zeros(size(maskPhantom));
-reconVolumeSpan11_60_filtered_masked(maskPhantomScaled_filtered ~= 0) = mean(reconVolumeSpan11_60_filtered(maskPhantom)) .* reconVolumeSpan11_60_filtered(maskPhantomScaled_filtered ~= 0) ./ maskPhantomScaled_filtered(maskPhantomScaled_filtered ~= 0);
+reconVolumeSpan11_60_filtered_masked(maskPhantom_filtered ~= 0) = reconVolumeSpan11_60_filtered(maskPhantom_filtered ~= 0) ./ maskPhantomScaled_filtered(maskPhantom_filtered ~= 0).* mean(reconVolumeSpan11_60(maskPhantom));
 subplot(2,2,3);
-plot([reconVolumeSpan11_60_filtered(rowProfile,:,81)' maskPhantomScaled_filtered(rowProfile,:,81)' reconVolumeSpan11_60_filtered_masked(rowProfile,:,81)']);
+plot(coordXpet, [reconVolumeSpan11_60_filtered(rowProfile,:,81)' maskPhantomScaled_filtered(rowProfile,:,81)' reconVolumeSpan11_60_filtered_masked(rowProfile,:,81)'], 'LineWidth', 2);
 ylim([0 mean(reconVolumeSpan11_60_filtered(maskPhantom))*2]);
-legend('Filtered Reconstructed Image', 'Filtered Mask scaled to Mean Value of Recon Image', 'Filtered Image/Mask scaled to Mean Value of Recon Image', 'Location', 'SouthEast');
+legend('1 - Filtered Masked Reconstructed Image', '2 - Filtered Mask scaled to Mean Value of Recon Image', 'Ratio between 1 and 2', 'Location', 'SouthEast');
 title('Step 3 - Dividing Filtered Image with the Filtered Mask')
+ylabel('Image Value');
+xlabel('X [mm]')
 
 % Apply original mask:
 reconVolumeSpan11_60_filtered_masked = reconVolumeSpan11_60_filtered_masked .* maskPhantomEroded;
 subplot(2,2,4);
-plot([reconVolumeSpan11_60(rowProfile,:,81)' reconVolumeSpan11_60_filtered_masked(rowProfile,:,81)']);
-legend('Reconstructed Image', 'Final Results: Spatillay Variant Mean Value', 'Location', 'NorthEast');
-title('Step 4 - Apply Original Mask')
+plot(coordXpet, [reconVolumeSpan11_60(rowProfile,:,81)' reconVolumeSpan11_60_filtered_masked(rowProfile,:,81)'], 'LineWidth', 2);
+legend('Reconstructed Image', 'Final Result: Spatillay Variant Mean Value', 'Location', 'NorthEast');
+title('Step 4 - Apply Mask')
+ylim([0 0.1]);
+ylabel('Image Value');
+xlabel('X [mm]')
+
+% Save for publication:
+fullFilename = [outputPath 'SpatiallyVariantMeanValue'];
+saveas(gca, [fullFilename], 'tif');
+set(gcf,'PaperPositionMode','auto');    % Para que lo guarde en el tamaño modificado.
+frame = getframe(gca);
+imwrite(frame.cdata, [fullFilename '.png']);
+saveas(gca, [fullFilename], 'epsc');
+
+% Without eroded mask:
+subplot(2,2,1);
+plot(coordXpet, [reconVolumeSpan11_60(rowProfile,:,81)' maskPhantomScaled(rowProfile,:,81)' ], 'LineWidth', 2);
+legend('Reconstructed Image', 'Mask scaled to Mean Value of Recon Image');
+title('Step 1 - Reconstructed Image and Mask')
+ylim([0 0.1]);
+ylabel('Image Value');
+xlabel('X [mm]')
+
+% Save for publication:
+fullFilename = [outputPath 'SpatiallyVariantMeanValue_withoutErodedMask'];
+saveas(gca, [fullFilename], 'tif');
+set(gcf,'PaperPositionMode','auto');    % Para que lo guarde en el tamaño modificado.
+frame = getframe(gca);
+imwrite(frame.cdata, [fullFilename '.png']);
+saveas(gca, [fullFilename], 'epsc');
 
 interfilewrite(reconVolumeSpan11_60_filtered_masked, [outputPath 'meanValueImage'], sizePixel_mm);  
 % [snr_5 snr_per_slice_5 meanValue_5 mean_per_slice_5 stdValue_5 std_per_slice_5] = getSnrWithSpatiallyVariantMean(reconVolumeSpan11_5, maskPhantom);
@@ -167,7 +201,7 @@ end
 figure;
 set(gcf, 'Name', 'STD DEV');
 set(gcf, 'Position', [50 50 1600 1200]);
-plot([stdSpan11; stdSpan1; stdStir]')
+plot([stdSpan11; stdSpan1; stdStir]', 'LineWidth', 2)
 xlabel('Iterations');
 ylabel('Std Dev');
 legend('Span 11', 'Span 1', 'Stir', 'Location', 'SouthEast');
@@ -175,18 +209,25 @@ legend('Span 11', 'Span 1', 'Stir', 'Location', 'SouthEast');
 figure;
 set(gcf, 'Name', 'MEAN');
 set(gcf, 'Position', [50 50 1600 1200]);
-plot([meanSpan11; meanSpan1; meanStir]')
+plot([meanSpan11; meanSpan1; meanStir]', 'LineWidth', 2)
 xlabel('Iterations');
 ylabel('Mean Value');
 legend('Span 11', 'Span 1', 'Stir', 'Location', 'SouthEast');
 
 figure;
 set(gcf, 'Name', 'SNR');
-set(gcf, 'Position', [50 50 1600 1200]);
-plot([snrSpan11; snrSpan1; snrStir]')
-xlabel('Iterations');
-ylabel('SNR (mean/std)');
-legend('Span 11', 'Span 1', 'Stir', 'Location', 'SouthEast');
+set(gcf, 'Position', [50 50 800 600]);
+plot([snrSpan11; snrSpan1; snrStir]', 'LineWidth', 2)
+xlabel('Iterations', 'FontSize', 14);
+ylabel('SNR (mean/std)', 'FontSize', 14);
+legend('Span 11', 'Span 1', 'Stir', 'Location', 'NorthEast', 'FontSize', 14);
+% Save for publication:
+fullFilename = [outputPath 'SNR'];
+saveas(gca, [fullFilename], 'tif');
+set(gcf,'PaperPositionMode','auto');    % Para que lo guarde en el tamaño modificado.
+frame = getframe(gca);
+imwrite(frame.cdata, [fullFilename '.png']);
+saveas(gca, [fullFilename], 'epsc');
 
 figure;
 set(gcf, 'Name', 'SNR Per Slice');
@@ -208,14 +249,14 @@ ylabel('SNR (mean/std)');
 legend('Span 11', 'Span 1', 'Stir', 'Location', 'SouthEast');
 title('SNR per Slice for Iteration 60');
 
-% Recovery contrast of all spheres for each type of reconstruction:
+% Contrast Recovery Coefficient of all spheres for each type of reconstruction:
 figure;
-set(gcf, 'Name', 'Recovery Contrast for each Reconstruction');
+set(gcf, 'Name', 'Contrast Recovery Coefficient for each Reconstruction');
 set(gcf, 'Position', [50 50 1000 1200]);
 subplot(3,1,1);
 plot(contrastRecoverySpan11);
 xlabel('Iterations');
-ylabel('Recovery Contrast [%]');
+ylabel('Contrast Recovery Coefficient [%]');
 for i = 1 : numel(radioEsferas_mm)
     legends{i} = sprintf('Sphere Radius %.2f\n', radioEsferas_mm(i));
 end
@@ -223,29 +264,29 @@ legend(legends, 'Location', 'SouthEast');
 subplot(3,1,2);
 plot(contrastRecoverySpan1);
 xlabel('Iterations');
-ylabel('Recovery Contrast [%]');
+ylabel('Contrast Recovery Coefficient [%]');
 legend(legends, 'Location', 'SouthEast');
 subplot(3,1,3);
 plot(contrastRecoveryStir);
 xlabel('Iterations');
-ylabel('Recovery Contrast [%]');
+ylabel('Contrast Recovery Coefficient [%]');
 legend(legends, 'Location', 'SouthEast');
 
-% Recovery contrast. Intercomparison for each sphere betweeen the
+% Contrast Recovery Coefficient. Intercomparison for each sphere betweeen the
 % reconstruction methods.
 figure;
-set(gcf, 'Name', 'Recovery Contrast for each Reconstruction');
+set(gcf, 'Name', 'Contrast Recovery Coefficient for each Reconstruction');
 set(gcf, 'Position', [50 50 1600 1200]);
 for i = 1 : numel(radioEsferas_mm)-1 % Lug not used
     subplot(3,2,i);
     plot([contrastRecoverySpan11(:,i) contrastRecoverySpan1(:,i) contrastRecoveryStir(:,i)], 'LineWidth', 2);
     xlabel('Iterations');
-    ylabel('Recovery Contrast [%]');
+    ylabel('Contrast Recovery Coefficient [%]');
     title(sprintf('Sphere Radius %.2f\n', radioEsferas_mm(i)));
     legend('Span 11', 'Span 1', 'Stir', 'Location', 'SouthEast');
 end
 
-% Recovery contrast. Intercomparison for each sphere betweeen the
+% Contrast Recovery Coefficient. Intercomparison for each sphere betweeen the
 % reconstruction methods.
 figure;
 set(gcf, 'Name', 'Normalized Std Dev');
@@ -259,62 +300,118 @@ for i = 1 : numel(radioEsferas_mm)
     legend('Span 11', 'Span 1', 'Stir', 'Location', 'SouthEast');
 end
 %% OVERRAL RESULT WITH STD DV IN SPHERES
+% Separate plots:
 for i = 1 : numel(radioEsferas_mm)
     figure;
-    set(gcf, 'Name', 'CRC VS STD(in neighbours rois');
+    set(gcf, 'Name', 'CRC VS STD (in neighbours rois)');
     set(gcf, 'Position', [50 50 1600 1200]);
-    plot(contrastRecoverySpan11(:,i), desvioNormBackgroundSpan11(:,i), contrastRecoverySpan1(:,i), desvioNormBackgroundSpan1(:,i), contrastRecoveryStir(:,i), desvioNormBackgroundStir(:,i));
-    xlabel('Recovery Contrast');
+    plot(contrastRecoverySpan11(:,i), desvioNormBackgroundSpan11(:,i), contrastRecoverySpan1(:,i), desvioNormBackgroundSpan1(:,i), contrastRecoveryStir(:,i), desvioNormBackgroundStir(:,i), 'LineWidth', 2);
+    xlabel('Contrast Recovery Coefficient');
     ylabel('Standard Deviation');
     legend('Span 11', 'Span 1', 'Stir', 'Location', 'SouthEast');
-    title(sprintf('CRC VS STD for Sphere Radius %.2f\n', radioEsferas_mm(i)));
+    title(sprintf('Sphere with Diameter of %.2f mm\n', 2*radioEsferas_mm(i)));
+    fullFilename = [outputPath sprintf('crc_vs_std_sphere_%d', i)];
+    saveas(gca, [fullFilename], 'tif');
+    set(gcf,'PaperPositionMode','auto');    % Para que lo guarde en el tamaño modificado.
+    frame = getframe(gca);
+    imwrite(frame.cdata, [fullFilename '.png']);
+    saveas(gca, [fullFilename], 'epsc');
 end
+
+% All in one figure:
+figure;
+set(gcf, 'Name', 'CRC VS STD (in neighbours rois)');
+set(gcf, 'Position', [50 50 1600 1200]);
+for i = 1 : numel(radioEsferas_mm)   
+    subplot(2,3,i);
+    plot(contrastRecoverySpan11(:,i), desvioNormBackgroundSpan11(:,i), contrastRecoverySpan1(:,i), desvioNormBackgroundSpan1(:,i), contrastRecoveryStir(:,i), desvioNormBackgroundStir(:,i), 'LineWidth', 2);
+    xlabel('Contrast Recovery Coefficient');
+    ylabel('Standard Deviation');
+    legend('Span 11', 'Span 1', 'Stir', 'Location', 'NorthWest');
+    title(sprintf('Sphere with Diameter of %.2f mm\n', 2*radioEsferas_mm(i)));
+    
+end
+fullFilename = [outputPath 'crc_vs_std_all_spheres'];
+saveas(gca, [fullFilename], 'tif');
+set(gcf,'PaperPositionMode','auto');    % Para que lo guarde en el tamaño modificado.
+frame = getframe(gca);
+imwrite(frame.cdata, [fullFilename '.png']);
+saveas(gca, [fullFilename], 'epsc');
+
+% All in one figure:
+figure;
+set(gcf, 'Name', 'CRC VS STD (in neighbours rois)');
+set(gcf, 'Position', [50 50 1200 1400]);
+for i = 1 : numel(radioEsferas_mm)   
+    subplot(3,2,i);
+    plot(contrastRecoverySpan11(:,i), desvioNormBackgroundSpan11(:,i), contrastRecoverySpan1(:,i), desvioNormBackgroundSpan1(:,i), contrastRecoveryStir(:,i), desvioNormBackgroundStir(:,i), 'LineWidth', 2);
+    xlabel('Contrast Recovery Coefficient');
+    ylabel('Standard Deviation');
+    legend('Span 11', 'Span 1', 'Stir', 'Location', 'NorthWest');
+    title(sprintf('Sphere with Diameter of %.2f mm\n', 2*radioEsferas_mm(i)));
+    
+end
+fullFilename = [outputPath 'crc_vs_std_all_spheres_bis'];
+saveas(gca, [fullFilename], 'tif');
+set(gcf,'PaperPositionMode','auto');    % Para que lo guarde en el tamaño modificado.
+frame = getframe(gca);
+imwrite(frame.cdata, [fullFilename '.png']);
+saveas(gca, [fullFilename], 'epsc');
 %% OVERRAL RESULT WITH GLOBAL STD
 normStdSpan11 = stdSpan11 ./ meanSpan11;
 normStdSpan1 = stdSpan1 ./ meanSpan1;
 normStdStir = stdStir ./ meanStir;
 for i = 1 : numel(radioEsferas_mm)
     figure;
-    set(gcf, 'Name', 'CRC VS STD (in neighbours ROIs');
+    set(gcf, 'Name', 'CRC VS Global STD ');
     set(gcf, 'Position', [50 50 1600 1200]);
-    plot(contrastRecoverySpan11(:,i), normStdSpan11, contrastRecoverySpan1(:,i), normStdSpan1, contrastRecoveryStir(:,i), normStdStir);
-    xlabel('Recovery Contrast');
+    plot(contrastRecoverySpan11(:,i), normStdSpan11, contrastRecoverySpan1(:,i), normStdSpan1, contrastRecoveryStir(:,i), normStdStir, 'LineWidth', 2);
+    xlabel('Contrast Recovery Coefficient');
     ylabel('Standard Deviation');
     legend('Span 11', 'Span 1', 'Stir', 'Location', 'SouthEast');
-    title(sprintf('CRC VS STD for Sphere Radius %.2f\n', radioEsferas_mm(i)));
+    title(sprintf('Sphere with Diameter of %.2f mm\n', 2*radioEsferas_mm(i)));
+    fullFilename = [outputPath sprintf('crc_vs_global_std_sphere_%d', i)];
+    saveas(gca, [fullFilename], 'tif');
+    set(gcf,'PaperPositionMode','auto');    % Para que lo guarde en el tamaño modificado.
+    frame = getframe(gca);
+    imwrite(frame.cdata, [fullFilename '.png']);
+    saveas(gca, [fullFilename], 'epsc');
 end
 
-% %% PLOT SLICES REMOVING ODD VALUES
-% iterationsPerFigure = 10;
-% for i = 1 : ceil(numIterations / iterationsPerFigure)
-%     figure;
-%     set(gcf, 'Position', [50 50 1600 1200]);
-%     set(gcf, 'Name', 'Central Slice for Each Iteration with Border Noise Removed');
-%     subplot(3,1,1);
-%     aux = getImageFromSlices(centralSlices(:,:,iterationsPerFigure*(i-1)+1:iterationsPerFigure*i,1),iterationsPerFigure);
-%     meanValue = mean(mean(aux));
-%     aux(aux>(35*meanValue)) = meanValue;
-%     aux = aux ./ max(max(aux));
-%     imshow(aux);
-%     colormap(hot);
-%     title(sprintf('Iterations %d to %d', iterationsPerFigure*(i-1)+1, iterationsPerFigure*i), 'FontWeight','Bold');
-%     ylabel('Span 11');
-%     
-%     subplot(3,1,2);
-%     aux = getImageFromSlices(centralSlices(:,:,iterationsPerFigure*(i-1)+1:iterationsPerFigure*i,2),iterationsPerFigure);
-%     meanValue = mean(mean(aux));
-%     aux(aux>(35*meanValue)) = meanValue;
-%     aux = aux ./ max(max(aux));
-%     imshow(aux);
-%     colormap(hot);
-%     ylabel('Span 1');
-%     
-%     subplot(3,1,3);
-%     aux = getImageFromSlices(centralSlices(:,:,iterationsPerFigure*(i-1)+1:iterationsPerFigure*i,3),iterationsPerFigure);
-%     meanValue = mean(mean(aux));
-%     aux(aux>(35*meanValue)) = meanValue;
-%     aux = aux ./ max(max(aux));
-%     imshow(aux);
-%     colormap(hot);
-%     ylabel('Stir');
-% end
+% All in one figure:
+figure;
+set(gcf, 'Name', 'CRC VS Global STD');
+set(gcf, 'Position', [50 50 1800 1400]);
+for i = 1 : numel(radioEsferas_mm)   
+    subplot(2,3,i);
+    plot(contrastRecoverySpan11(:,i), normStdSpan11, contrastRecoverySpan1(:,i), normStdSpan1, contrastRecoveryStir(:,i), normStdStir, 'LineWidth', 2);
+    xlabel('Contrast Recovery Coefficient');
+    ylabel('Standard Deviation');
+    legend('Span 11', 'Span 1', 'Stir', 'Location', 'SouthEast');
+    title(sprintf('Sphere with Diameter of %.2f mm\n', 2*radioEsferas_mm(i)));  
+end
+fullFilename = [outputPath 'crc_vs_global_std_all_spheres'];
+saveas(gca, [fullFilename], 'tif');
+set(gcf,'PaperPositionMode','auto');    % Para que lo guarde en el tamaño modificado.
+frame = getframe(gca);
+imwrite(frame.cdata, [fullFilename '.png']);
+saveas(gca, [fullFilename], 'epsc');
+
+% All in one figure:
+figure;
+set(gcf, 'Name', 'CRC VS Global STD');
+set(gcf, 'Position', [50 50 1200 1200]);
+for i = 1 : numel(radioEsferas_mm)   
+    subplot(3,2,i);
+    plot(contrastRecoverySpan11(:,i), normStdSpan11, contrastRecoverySpan1(:,i), normStdSpan1, contrastRecoveryStir(:,i), normStdStir, 'LineWidth', 2);
+    xlabel('Contrast Recovery Coefficient');
+    ylabel('Standard Deviation');
+    legend('Span 11', 'Span 1', 'Stir', 'Location', 'SouthEast');
+    title(sprintf('Sphere with Diameter of %.2f mm\n', 2*radioEsferas_mm(i)));  
+end
+fullFilename = [outputPath 'crc_vs_global_std_all_spheres_bis'];
+saveas(gca, [fullFilename], 'tif');
+set(gcf,'PaperPositionMode','auto');    % Para que lo guarde en el tamaño modificado.
+frame = getframe(gca);
+imwrite(frame.cdata, [fullFilename '.png']);
+saveas(gca, [fullFilename], 'epsc');

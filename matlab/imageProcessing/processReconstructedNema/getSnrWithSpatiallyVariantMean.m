@@ -28,7 +28,8 @@ volume_filtered_masked = volume_filtered_masked .* maskEroded;
 
 % Get snr:
 meanValue = mean(volume_filtered_masked(maskEroded));
-stdValue = sqrt(mean((volume(maskEroded) - volume_filtered_masked(maskEroded)).^2));
+numPixels = numel(volume(maskEroded));
+stdValue = sqrt(sum((volume(maskEroded) - volume_filtered_masked(maskEroded)).^2)/numPixels);
 snr = meanValue ./ stdValue;
 
 snr_per_slice = zeros(size(volume,3),1);
@@ -37,7 +38,8 @@ for i = 1 : size(volume,3)
         slice = volume(:,:,i);
         sliceFiltered = volume_filtered_masked(:,:,i);
         mean_per_slice(i) = mean(sliceFiltered(maskEroded(:,:,i)));
-        std_per_slice(i) = sqrt(mean((slice(maskEroded(:,:,i)) - mean_per_slice(i)).^2));
+        numPixelsPerSlice = numel(slice(maskEroded(:,:,i)));
+        std_per_slice(i) = sqrt(sum((slice(maskEroded(:,:,i)) - mean_per_slice(i)).^2)./ (numPixelsPerSlice-1));
         snr_per_slice(i) = mean_per_slice(i) / std_per_slice(i);
     else
         snr_per_slice(i) = 0;

@@ -620,7 +620,7 @@ bool Sinogram3D::writeInterfile(string headerFilename)
     fileStream << this->getSegment(i)->getMaxRingDiff() << ",";
   }
   fileStream << this->getSegment(this->getNumSegments()-1)->getMaxRingDiff() << "}" << eol;
-  
+  fileStream << "number of rings := " << this->getNumRings() << eol;
   fileStream << "!data offset in bytes[1] := 0" << eol;
   fileStream << "!number of time frames := 1" << eol;
   fileStream << "!extent of rotation := " << (this->maxAng_deg - this->minAng_deg) << eol;
