@@ -38,8 +38,8 @@ reconVolumeStir = interfileRead([stirPath filenameStir]);
 infoVolumeStir = interfileinfo([stirPath filenameStir]);
 
 % Siemens:
-siemensPath = '/home/mab15/workspace/KCL/Biograph_mMr/Mediciones/LineSources/Oblique_344_matrix/';
-filenameSiemens = 'PET_ACQ_91_20150313115152_PRR_1000033_20150401165853_ima_NAC_000_000.v';
+siemensPath = '/home/mab15/workspace/KCL/Biograph_mMr/Mediciones/LineSources/allpass_344/';
+filenameSiemens = 'PET_ACQ_91_20150313115152_PRR_1000001_20150408102558_ima_NAC_000_000.v';
 % Read the raw data because the interfile format is not the correct one:
 fid = fopen([siemensPath filenameSiemens], 'r');
 sizeImageSiemens = [344 344 127];
