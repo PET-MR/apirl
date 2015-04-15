@@ -54,7 +54,7 @@ class DLLEXPORT Projector
     bool useMultipleLorsPerBin;
   public:
     /** Constructor. */
-    Projector(){ useMultipleLorsPerBin = 1;};
+    Projector(){ useMultipleLorsPerBin = 0;};
     
     /** Método que setea el flag useMultipleLorsPerBin. */
     void setMultipleLorsPerBin(bool enable) {useMultipleLorsPerBin = enable;};
