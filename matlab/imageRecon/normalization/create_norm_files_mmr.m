@@ -83,9 +83,13 @@ acquisition_dependant_ncf_3d = zeros(numR, numTheta, numSinograms, 'single');
 if isempty(my_selection_of_xtal_efficiencies)
     % Use the crystal efficencies of the .n file:
     used_xtal_efficiencies = componentFactors{3};
+    % Include the gaps:
+    used_xtal_efficiencies(1:9:end,:) = 0;
 else
     % Use the crystal efficencies received in the parameter file:
     used_xtal_efficiencies = my_selection_of_xtal_efficiencies;
+    % Include the gaps:
+    used_xtal_efficiencies(1:9:end,:) = 0;
 end
 
 if isempty(my_choice_of_deadtimefactors)

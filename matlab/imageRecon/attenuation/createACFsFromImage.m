@@ -15,10 +15,6 @@
 %  to correct for attenuation as it's needed in APIRl. And finally the
 %  struct with the size of the sinogram.
 function acfs = createACFsFromImage(attenuationMap_1_cm, sizePixel_mm, outputPath, acfFilename, filenameSinogram, structSizeSinos, visualization)
-%% PATHS FOR EXTERNAL FUNCTIONS
-addpath('/workspaces/Martin/KCL/Biograph_mMr/mmr');
-apirlPath = '/workspaces/Martin/PET/apirl-code/trunk/';
-addpath(genpath([apirlPath '/matlab']));
 
 % Call function to create phantom:
 attenuationMapFilename = [outputPath 'attenMapPhantom'];

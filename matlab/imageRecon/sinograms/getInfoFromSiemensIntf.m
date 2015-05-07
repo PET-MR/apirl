@@ -33,7 +33,7 @@ if fid == -1
 end
 
 % initialize variables
-bad_chars = '!()[]/-_%:+';    % Added %,:, siemens interfile sues it.
+bad_chars = '!()[]/-_%:+*';    % Added %,:, siemens interfile sues it.
 dates = {'DateOfKeys' 'ProgramDate' 'PatientDob' 'StudyDate'};
 times = {'StudyTime' 'ImageStartTime'};
 found_header = 0;
@@ -211,44 +211,47 @@ end
 fclose(fid);
 
 % Post processing, some fields are processed to get them in a more useful
-% format:
-if (isfield(info, 'NumberOfBuckets'))
-    numBuckets = info.NumberOfBuckets;
-    singlesPerBucket = zeros(1, numBuckets);
-else
-    perror('The number of bucket was not found.');
-end
-for i = 1 : numBuckets
-    field = sprintf('BucketSinglesRate%d',i);
-    if (isfield(info, field))
-        singlesPerBucket(i) = info.(field);
+% format. This changes if its an image or a sinogram
+if strcmp(info.SmsMiHeaderNameSpace, 'sinogram subheader')
+    % Sinograms specific parameters:
+    if (isfield(info, 'NumberOfBuckets'))
+        numBuckets = info.NumberOfBuckets;
+        singlesPerBucket = zeros(1, numBuckets);
     else
-        perror(sprintf('The singles per bucket for the bucket number %d was not found.', i));
+        perror('The number of bucket was not found.');
     end
-    % After processing it I remove the field, because I will put just an
-    % array:
-    info = rmfield(info, field);
-end
-info.SinglesPerBucket = singlesPerBucket;
+    for i = 1 : numBuckets
+        field = sprintf('BucketSinglesRate%d',i);
+        if (isfield(info, field))
+            singlesPerBucket(i) = info.(field);
+        else
+            perror(sprintf('The singles per bucket for the bucket number %d was not found.', i));
+        end
+        % After processing it I remove the field, because I will put just an
+        % array:
+        info = rmfield(info, field);
+    end
+    info.SinglesPerBucket = singlesPerBucket;
 
-% Process the segment table. Take out spaces and {}:
-charsToRemove = ['{','}',' '];
-for i = 1 : numel(charsToRemove)
-    pos = find(info.SegmentTable == charsToRemove(i));
-    info.SegmentTable(pos) = [];
-end
-% Separate by , and convert to number array
-cellStrNum = strsplit(info.SegmentTable,',');
-% Replace SegmentTable field for a numeric array:
-info.SegmentTable = zeros(1,numel(cellStrNum));
-if numel(cellStrNum) ~=  info.NumberOfSegments
-    perror('The number of segments is different than the number of elements in the segment table.');
-end
-for i = 1 : numel(cellStrNum)
-    info.SegmentTable(i) = str2num(cellStrNum{i});
-end
+    % Process the segment table. Take out spaces and {}:
+    charsToRemove = ['{','}',' '];
+    for i = 1 : numel(charsToRemove)
+        pos = find(info.SegmentTable == charsToRemove(i));
+        info.SegmentTable(pos) = [];
+    end
+    % Separate by , and convert to number array
+    cellStrNum = strsplit(info.SegmentTable,',');
+    % Replace SegmentTable field for a numeric array:
+    info.SegmentTable = zeros(1,numel(cellStrNum));
+    if numel(cellStrNum) ~=  info.NumberOfSegments
+        perror('The number of segments is different than the number of elements in the segment table.');
+    end
+    for i = 1 : numel(cellStrNum)
+        info.SegmentTable(i) = str2num(cellStrNum{i});
+    end
 
-% Get sino struct:
-rFov_mm = (info.MatrixSize1 * info.ScaleFactorMmPixel1) / 2;
-zFov_mm = (info.ScaleFactorMmPixel3 * (2*info.NumberOfRings+1));
-structSizeSino = getSizeSino3dFromSpan(info.MatrixSize1, info.MatrixSize2, info.NumberOfRings, rFov_mm, zFov_mm, info.AxialCompression, info.MaximumRingDifference);
+    % Get sino struct:
+    rFov_mm = (info.MatrixSize1 * info.ScaleFactorMmPixel1) / 2;
+    zFov_mm = (info.ScaleFactorMmPixel3 * (2*info.NumberOfRings+1));
+    structSizeSino = getSizeSino3dFromSpan(info.MatrixSize1, info.MatrixSize2, info.NumberOfRings, rFov_mm, zFov_mm, info.AxialCompression, info.MaximumRingDifference);
+end

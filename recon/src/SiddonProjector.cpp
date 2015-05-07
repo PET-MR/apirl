@@ -211,11 +211,11 @@ bool SiddonProjector::Backproject (Sinogram2Dtgs* InputSinogram, Image* outputIm
       Siddon(LOR, outputImage, MyWeightsList, &LengthList,1);
       for(int l = 0; l < LengthList; l++)
       {
-	  // for every element of the systema matrix different from zero,we do
-	  // the sum(Aij*bi/Projected) for every i
-	  if((MyWeightsList[0][l].IndexY>=0) && (MyWeightsList[0][l].IndexX>=0))
-		ptrPixels[MyWeightsList[0][l].IndexY * sizeImage.nPixelsX + MyWeightsList[0][l].IndexX] +=
-		  MyWeightsList[0][l].Segment * InputSinogram->getSinogramBin(i,j) / InputSinogram->getSinogramBin(i, j);				
+	// for every element of the systema matrix different from zero,we do
+	// the sum(Aij*bi/Projected) for every i
+	if((MyWeightsList[0][l].IndexY>=0) && (MyWeightsList[0][l].IndexX>=0))
+	  ptrPixels[MyWeightsList[0][l].IndexY * sizeImage.nPixelsX + MyWeightsList[0][l].IndexX] +=
+	    MyWeightsList[0][l].Segment * InputSinogram->getSinogramBin(i,j) / InputSinogram->getSinogramBin(i, j);				
       }
       // Now I have my estimated projection for LOR i
       free(MyWeightsList[0]);
@@ -227,41 +227,41 @@ bool SiddonProjector::Backproject (Sinogram2Dtgs* InputSinogram, Image* outputIm
 /// Sobrecarga que realiza la Backprojection de InputSinogram/EstimatedSinogram
 bool SiddonProjector::DivideAndBackproject (Sinogram2Dtgs* InputSinogram, Sinogram2Dtgs* EstimatedSinogram, Image* outputImage)
 {
-	Point2D P1, P2;
-	Line2D LOR;
-	SiddonSegment** MyWeightsList = (SiddonSegment**)malloc(sizeof(SiddonSegment*));
-	// Tamaño de la imagen:
-	SizeImage sizeImage = outputImage->getSize();
-	// Puntero a los píxeles:
-	float* ptrPixels = outputImage->getPixelsPtr();
-	// I only need to calculate the ForwardProjection of the bins were ara at least one event
-	for(int i = 0; i < InputSinogram->getNumProj(); i++)
-	{
-		for(int j = 0; j < InputSinogram->getNumR(); j++)
-		{
-		  GetPointsFromTgsLor (InputSinogram->getAngValue(i), InputSinogram->getRValue(j), InputSinogram->getDistCrystalToCenterFov(), InputSinogram->getLengthColimator_mm(), &P1, &P2);
-		  LOR.P0 = P1;
-		  LOR.Vx = P2.X - P1.X;
-		  LOR.Vy = P2.Y - P1.Y;
-		  // Then I look for the intersection between the 3D LOR and the lines that
-		  // delimits the voxels
-		  // Siddon
-		  
-		  unsigned int LengthList;
-		  Siddon(LOR, outputImage, MyWeightsList, &LengthList,1);
-		  for(unsigned int l = 0; l < LengthList; l++)
-		  {
-			  // for every element of the systema matrix different from zero,we do
-			  // the sum(Aij*bi/Projected) for every i
-			  if((MyWeightsList[0][l].IndexY>=0) && (MyWeightsList[0][l].IndexX>=0))
-				ptrPixels[MyWeightsList[0][l].IndexY * sizeImage.nPixelsX + MyWeightsList[0][l].IndexX] +=
-				  MyWeightsList[0][l].Segment * InputSinogram->getSinogramBin(i,j) / EstimatedSinogram->getSinogramBin(i,j);	
-		  }
-		  // Now I have my estimated projection for LOR i
-		  free(MyWeightsList[0]);
-		}
-	}
-	return true;
+  Point2D P1, P2;
+  Line2D LOR;
+  SiddonSegment** MyWeightsList = (SiddonSegment**)malloc(sizeof(SiddonSegment*));
+  // Tamaño de la imagen:
+  SizeImage sizeImage = outputImage->getSize();
+  // Puntero a los píxeles:
+  float* ptrPixels = outputImage->getPixelsPtr();
+  // I only need to calculate the ForwardProjection of the bins were ara at least one event
+  for(int i = 0; i < InputSinogram->getNumProj(); i++)
+  {
+    for(int j = 0; j < InputSinogram->getNumR(); j++)
+    {
+      GetPointsFromTgsLor (InputSinogram->getAngValue(i), InputSinogram->getRValue(j), InputSinogram->getDistCrystalToCenterFov(), InputSinogram->getLengthColimator_mm(), &P1, &P2);
+      LOR.P0 = P1;
+      LOR.Vx = P2.X - P1.X;
+      LOR.Vy = P2.Y - P1.Y;
+      // Then I look for the intersection between the 3D LOR and the lines that
+      // delimits the voxels
+      // Siddon
+      
+      unsigned int LengthList;
+      Siddon(LOR, outputImage, MyWeightsList, &LengthList,1);
+      for(unsigned int l = 0; l < LengthList; l++)
+      {
+	// for every element of the systema matrix different from zero,we do
+	// the sum(Aij*bi/Projected) for every i
+	if((MyWeightsList[0][l].IndexY>=0) && (MyWeightsList[0][l].IndexX>=0))
+	  ptrPixels[MyWeightsList[0][l].IndexY * sizeImage.nPixelsX + MyWeightsList[0][l].IndexX] +=
+	    MyWeightsList[0][l].Segment * InputSinogram->getSinogramBin(i,j) / EstimatedSinogram->getSinogramBin(i,j);	
+      }
+      // Now I have my estimated projection for LOR i
+      free(MyWeightsList[0]);
+    }
+  }
+  return true;
 }
 
 bool SiddonProjector::Project (Image* inputImage, Sinogram2Dtgs* outputProjection)
@@ -328,7 +328,9 @@ bool SiddonProjector::Project (Image* inputImage, Sinogram3D* outputProjection)
   outputProjection->FillConstant(0.0);
   for(unsigned int i = 0; i < outputProjection->getNumSegments(); i++)
   {
-    printf("Forwardprojection con Siddon Segmento: %d\n", i);	  
+    #ifdef __DEBUG__
+      printf("Forwardprojection con Siddon Segmento: %d\n", i);	  
+    #endif
     for(unsigned int j = 0; j < outputProjection->getSegment(i)->getNumSinograms(); j++)
     {
       /// Cálculo de las coordenadas z del sinograma, dependiendo si se usan todas las combinaciones
@@ -447,8 +449,9 @@ bool SiddonProjector::Backproject (Sinogram3D* inputProjection, Image* outputIma
   
   for(i = 0; i < inputProjection->getNumSegments(); i++)
   {
-    printf("Backprojection con Siddon Segmento: %d\n", i);
-    
+    #ifdef __DEBUG__
+      printf("Backprojection con Siddon Segmento: %d\n", i);
+    #endif
     for(j = 0; j < inputProjection->getSegment(i)->getNumSinograms(); j++)
     {    
       /// Cálculo de las coordenadas z del sinograma, dependiendo si se usan todas las combinaciones
@@ -570,7 +573,9 @@ bool SiddonProjector::DivideAndBackproject (Sinogram3D* InputSinogram3D, Sinogra
     MyWeightsList = (SiddonSegment**)malloc(sizeof(SiddonSegment*));
     for(i = 0; i < InputSinogram3D->getNumSegments(); i++)
     {
-      printf("Backprojection con Siddon Segmento: %d\n", i);
+      #ifdef __DEBUG__
+	printf("Backprojection con Siddon Segmento: %d\n", i);
+      #endif
       #pragma omp for
       for(j = 0; j < InputSinogram3D->getSegment(i)->getNumSinograms(); j++)
       {

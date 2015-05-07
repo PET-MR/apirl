@@ -89,7 +89,7 @@ maskPhantomErodedScaled = maskPhantomEroded .* mean(reconVolumeSpan11_60(maskPha
 figure;
 set(gcf, 'Name', 'Generation of  Spatially Variant Mean Value');
 set(gcf, 'Position', [50 50 1600 1200]);
-subplot(2,2,1);
+subplot('position',[0.1 0.55 0.40 0.40]);
 plot(coordXpet, [reconVolumeSpan11_60(rowProfile,:,81)' maskPhantomScaled(rowProfile,:,81)' maskPhantomErodedScaled(rowProfile,:,81)'], 'LineWidth', 2);
 legend('Reconstructed Image', 'Mask scaled to Mean Value of Recon Image', 'Eroded Mask scaled to Mean Value of Recon Image');
 title('Step 1 - Reconstructed Image and Mask')
@@ -103,31 +103,38 @@ for i = 1 : size(reconVolumeSpan11_60,3)
     maskPhantom_filtered(:,:,i) =  imfilter(single(maskPhantom(:,:,i)), filter);
 end
 maskPhantomScaled_filtered = maskPhantom_filtered.* mean(reconVolumeSpan11_60(maskPhantom));
-subplot(2,2,2);
+subplot('position',[0.55 0.55 0.40 0.40]);
 plot(coordXpet, [reconVolumeSpan11_60_filtered(rowProfile,:,81)' maskPhantomScaled_filtered(rowProfile,:,81)'], 'LineWidth', 2);
 legend('Filtered Masked Reconstructed Image', 'Filtered Mask scaled to Mean Value of Recon Image', 'Location', 'SouthEast');
 title('Step 2 - Filtering Image and Mask')
+ticklabels = get(gca, 'XtickLabel');
+set(gca, 'XtickLabel', ticklabels, 'FontSize',10);
 ylabel('Image Value');
 xlabel('X [mm]')
 
 % Filtered normalized to mask Phantom: 
 reconVolumeSpan11_60_filtered_masked = zeros(size(maskPhantom));
 reconVolumeSpan11_60_filtered_masked(maskPhantom_filtered ~= 0) = reconVolumeSpan11_60_filtered(maskPhantom_filtered ~= 0) ./ maskPhantomScaled_filtered(maskPhantom_filtered ~= 0).* mean(reconVolumeSpan11_60(maskPhantom));
-subplot(2,2,3);
+subplot('position',[0.1 0.08 0.40 0.40]);
 plot(coordXpet, [reconVolumeSpan11_60_filtered(rowProfile,:,81)' maskPhantomScaled_filtered(rowProfile,:,81)' reconVolumeSpan11_60_filtered_masked(rowProfile,:,81)'], 'LineWidth', 2);
 ylim([0 mean(reconVolumeSpan11_60_filtered(maskPhantom))*2]);
-legend('1 - Filtered Masked Reconstructed Image', '2 - Filtered Mask scaled to Mean Value of Recon Image', 'Ratio between 1 and 2', 'Location', 'SouthEast');
+legend('1 - Filtered Masked Reconstructed Image', '2 - Filtered Mask scaled to Mean Value of Recon Image', 'Ratio between 1 and 2', 'Location', 'SouthEast', 'FontWeight','bold');
 title('Step 3 - Dividing Filtered Image with the Filtered Mask')
+% ticklabels = get(gca, 'XtickLabel');
+% set(gca, 'XtickLabel', ticklabels, 'FontSize',10);
 ylabel('Image Value');
 xlabel('X [mm]')
 
+
 % Apply original mask:
 reconVolumeSpan11_60_filtered_masked = reconVolumeSpan11_60_filtered_masked .* maskPhantomEroded;
-subplot(2,2,4);
+subplot('position',[0.55 0.08 0.40 0.40]);
 plot(coordXpet, [reconVolumeSpan11_60(rowProfile,:,81)' reconVolumeSpan11_60_filtered_masked(rowProfile,:,81)'], 'LineWidth', 2);
 legend('Reconstructed Image', 'Final Result: Spatillay Variant Mean Value', 'Location', 'NorthEast');
 title('Step 4 - Apply Mask')
 ylim([0 0.1]);
+ticklabels = get(gca, 'XtickLabel');
+set(gca, 'XtickLabel', ticklabels, 'FontSize',10);
 ylabel('Image Value');
 xlabel('X [mm]')
 
@@ -140,10 +147,12 @@ imwrite(frame.cdata, [fullFilename '.png']);
 saveas(gca, [fullFilename], 'epsc');
 
 % Without eroded mask:
-subplot(2,2,1);
+subplot('position',[0.1 0.55 0.40 0.40]);
 plot(coordXpet, [reconVolumeSpan11_60(rowProfile,:,81)' maskPhantomScaled(rowProfile,:,81)' ], 'LineWidth', 2);
 legend('Reconstructed Image', 'Mask scaled to Mean Value of Recon Image');
 title('Step 1 - Reconstructed Image and Mask')
+ticklabels = get(gca, 'XtickLabel');
+set(gca, 'XtickLabel', ticklabels, 'FontSize',10);
 ylim([0 0.1]);
 ylabel('Image Value');
 xlabel('X [mm]')
@@ -396,22 +405,30 @@ set(gcf,'PaperPositionMode','auto');    % Para que lo guarde en el tamaño modif
 frame = getframe(gca);
 imwrite(frame.cdata, [fullFilename '.png']);
 saveas(gca, [fullFilename], 'epsc');
-
+%%
 % All in one figure:
 figure;
 set(gcf, 'Name', 'CRC VS Global STD');
 set(gcf, 'Position', [50 50 1200 1200]);
 for i = 1 : numel(radioEsferas_mm)   
-    subplot(3,2,i);
+    columna = ceil(i/2);
+    fila = rem(i-1,2);
+    columna+fila*0.95
+    subplot(3,2,(columna-1)*2+1+fila*0.90);
     plot(contrastRecoverySpan11(:,i), normStdSpan11, contrastRecoverySpan1(:,i), normStdSpan1, contrastRecoveryStir(:,i), normStdStir, 'LineWidth', 2);
+    %xlim([0 100]);
+    %ylim([0.05 0.8]);
     xlabel('Contrast Recovery Coefficient');
     ylabel('Standard Deviation');
     legend('Span 11', 'Span 1', 'Stir', 'Location', 'SouthEast');
-    title(sprintf('Sphere with Diameter of %.2f mm\n', 2*radioEsferas_mm(i)));  
+    title(sprintf('Sphere with Diameter of %.2f mm\n', 2*radioEsferas_mm(i))); 
+    ticklabels = get(gca, 'XtickLabel');
+    set(gca, 'XtickLabel', ticklabels, 'FontSize',10);
+    
 end
 fullFilename = [outputPath 'crc_vs_global_std_all_spheres_bis'];
 saveas(gca, [fullFilename], 'tif');
 set(gcf,'PaperPositionMode','auto');    % Para que lo guarde en el tamaño modificado.
-frame = getframe(gca);
-imwrite(frame.cdata, [fullFilename '.png']);
+% frame = getframe(gca);
+% imwrite(frame.cdata, [fullFilename '.png']);
 saveas(gca, [fullFilename], 'epsc');

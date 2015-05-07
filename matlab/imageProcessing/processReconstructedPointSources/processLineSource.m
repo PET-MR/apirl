@@ -408,30 +408,36 @@ title('Resolution in Z axis with Fitted Gaussian');
 ylim([0 10]);
 %% PLOT FOR PUBLICATION
 figure;
-set(gcf, 'Position', [0 0 2000 800]);
+set(gcf, 'Position', [0 0 2000 600]);
 subplot(1,3,1);
 plot(coordZpet, fwhm_x_span11, coordZpet, fwhm_x_span1, coordZpet, fwhm_x_stir, coordZpet, fwhm_x_siemens, 'LineWidth', 2);
 legend('Span 11', 'Span 1', 'STIR', 'Siemens', 'Location', 'SouthEast');
-xlabel('Z [mm]');
-ylabel('FWHM in X [mm]');
+xlabel('Z [mm]', 'FontWeight', 'bold');
+ylabel('FWHM in X [mm]', 'FontWeight', 'bold');
 title('Resolution in X Axis');
 ylim([3 15]);
+ticklabels = get(gca, 'XtickLabel');
+set(gca, 'XtickLabel', ticklabels, 'FontSize',12);
 
-subplot(1,3,2);
+subplot(1,3,1.87);
 plot(coordXpet, fwhm_y_span11, coordXpet, fwhm_y_span1, coordXpet, fwhm_y_stir, coordXpet, fwhm_y_siemens, 'LineWidth', 2);
 legend('Span 11', 'Span 1', 'STIR', 'Siemens', 'Location', 'SouthEast');
-xlabel('X [mm]');
-ylabel('FWHM in Y [mm]');
+xlabel('X [mm]', 'FontWeight', 'bold');
+ylabel('FWHM in Y [mm]', 'FontWeight', 'bold');
 title('Resolution in Y Axis');
 ylim([3 9]);
+ticklabels = get(gca, 'XtickLabel');
+set(gca, 'XtickLabel', ticklabels, 'FontSize',12);
 
-subplot(1,3,3);
+subplot(1,3,2.75);
 plot(coordXpet, fwhm_z_span11, coordXpet, fwhm_z_span1, coordXpet, fwhm_z_stir, coordXpet, fwhm_z_siemens, 'LineWidth', 2);
 legend('Span 11', 'Span 1', 'STIR', 'Siemens', 'Location', 'SouthEast');
-xlabel('X [mm]');
-ylabel('FWHM in Z [mm]');
+xlabel('X [mm]', 'FontWeight', 'bold');
+ylabel('FWHM in Z [mm]', 'FontWeight', 'bold');
 title('Resolution in Z Axis');
 ylim([3 11]);
+ticklabels = get(gca, 'XtickLabel');
+set(gca, 'XtickLabel', ticklabels, 'FontSize',12);
 
 fullFilename = [outputPath 'OverallFwhm'];
 saveas(gca, [fullFilename], 'tif');

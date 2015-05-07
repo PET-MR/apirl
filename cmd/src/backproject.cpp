@@ -245,12 +245,6 @@ int main (int argc, char *argv[])
 	  }
 	}
 	
-	// Leo el tamaño del FOV:
-	if(getCylindricalScannerParameters(parameterFileName, "Backproject", &rFov_mm, &axialFov_mm, &rScanner_mm))
-	{
-	  cout<<"Error al leer el tamaño del Fov." <<endl;
-	  return -1;
-	}
 	
 	
 	// Cargo la imagen de salida, y de ella obtengo 
@@ -399,6 +393,13 @@ int main (int argc, char *argv[])
 	// Sinogram2DtgsInSegment tienen muchos parámetros en común:
 	if((inputType.compare("Sinogram2Dtgs")==0)||(inputType.compare("Sinogram2DtgsInSegment")==0))
 	{
+	  // Leo el tamaño del FOV:
+	  if(
+	    (parameterFileName, "Backproject", &rFov_mm, &axialFov_mm, &rScanner_mm))
+	  {
+	    cout<<"Error al leer el tamaño del Fov." <<endl;
+	    return -1;
+	  }
 	  // Sinograma 2D para TGS. Debe incluir los parámetros descriptos en la parte superior. Los leo,
 	  // y si no están salgo porque son necesarios para la reconstrucción.
 	  // "diameter_of_fov (in mm)"
@@ -541,6 +542,12 @@ int main (int argc, char *argv[])
 	}
 	else if(inputType.compare("Sinogram3D")==0)
 	{
+	  // Leo el tamaño del FOV:
+	  if(getCylindricalScannerParameters(parameterFileName, "Backproject", &rFov_mm, &axialFov_mm, &rScanner_mm))
+	  {
+	    cout<<"Error al leer el tamaño del Fov." <<endl;
+	    return -1;
+	  }
 	  // Sinograma 3D
 	  Sinogram3D* inputProjection = new Sinogram3DCylindricalPet((char*)inputFilename.c_str(),rFov_mm,axialFov_mm,rScanner_mm);
 	  backprojector->Backproject(inputProjection, outputImage);
