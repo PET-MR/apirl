@@ -1,0 +1,22 @@
+MLEM Parameters :=
+; Archivo de configuración de reconstrucción MLEM para paper en Parallel Computing.
+; 
+input type := Sinogram3D
+input file := /home/martin/ParallelComputing/Sinogramas/sino3DCerebroCorrGeoNormAtt.hs
+initial estimate := /datos/ParallelComputing/InitialEstimates/constantImage_FullFov_128_128_47.h33
+output filename prefix := CUMLEM_
+
+forwardprojector := CuSiddonProjector
+backprojector := CuSiddonProjector
+projector block size := {128,1,1}
+backprojector block size := {128,1,1}
+pixel update block size := {512,1,1}
+gpu id := 0
+
+number of iterations := 40
+save estimates at iteration intervals := 5
+save estimated projections and backprojected image := 0
+
+
+
+END :=
