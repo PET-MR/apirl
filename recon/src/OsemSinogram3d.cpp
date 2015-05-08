@@ -51,8 +51,8 @@ bool OsemSinogram3d::Reconstruct()
   /// Puntero a la sensitivity image.
   float* ptrBackprojectedPixels = backprojectedImage->getPixelsPtr();
   /// Puntero del array con los tiempos de reconstrucción por iteración.
-  float* timesIteration_mseg;
-  float timesTotalIteration_mseg;	/// Tiempo de subiteración.
+  float* timesIteration_mseg; /// Tiempo de subiteración.
+  float timesTotalIteration_seg;	
   /// Puntero del array con los tiempos de backprojection por iteración.
   float* timesBackprojection_mseg;
   /// Puntero del array con los tiempos de forwardprojection por iteración.
@@ -154,7 +154,7 @@ bool OsemSinogram3d::Reconstruct()
   for(unsigned int t = 0; t < this->numIterations; t++)
   {
     printf("Iteration Nº: %d\n", t+1);
-    timesTotalIteration_mseg = 0;
+    timesTotalIteration_seg = 0;
     // Por cada iteración debo repetir la operación para todos los subsets.
     for(unsigned int s = 0; s < this->numSubsets; s++)
     {
@@ -195,7 +195,7 @@ bool OsemSinogram3d::Reconstruct()
 	estimatedProjection->writeInterfile((char*)outputFilename.c_str());
       }
       clock_t finalClockProjection = clock();
-      printf("\tproj:%fsec", (float)(finalClockProjection-initialClockIteration)*1000/(float)CLOCKS_PER_SEC);
+      printf("\tproj:%fsec", (float)(finalClockProjection-initialClockIteration)/(float)CLOCKS_PER_SEC);
       /// Guardo el likelihood (Siempre va una iteración atrás, ya que el likelihhod se calcula a partir de la proyección
       /// estimada, que es el primer paso del algoritmo). Se lo calculo al sinograma
       /// proyectado, respecto del de entrada.
@@ -225,7 +225,7 @@ bool OsemSinogram3d::Reconstruct()
       /// Retroproyecto
       backprojector->Backproject(estimatedProjection, backprojectedImage);
       clock_t finalClockBackprojection = clock();
-      printf("\tbackproj:%fsec", (float)(finalClockBackprojection-finalClockProjection)*1000/(float)CLOCKS_PER_SEC);
+      printf("\tbackproj:%fsec", (float)(finalClockBackprojection-finalClockProjection)/(float)CLOCKS_PER_SEC);
       // Obtengo el puntero de la snesitivity image (Si no me alcanzar la ram para tenrlas todas almacenadas, acá debería calcularla):
       ptrSensitivityPixels = sensitivityImages[s]->getPixelsPtr();
       /// Actualización del Pixel
@@ -272,7 +272,7 @@ bool OsemSinogram3d::Reconstruct()
       timesBackprojection_mseg[this->numSubsets*t+s] = (float)(finalClockBackprojection-finalClockProjection)*1000/(float)CLOCKS_PER_SEC;
       timesForwardprojection_mseg[this->numSubsets*t+s] = (float)(finalClockProjection-initialClockIteration)*1000/(float)CLOCKS_PER_SEC;
       timesPixelUpdate_mseg[this->numSubsets*t+s] = (float)(finalClockIteration-finalClockBackprojection)*1000/(float)CLOCKS_PER_SEC;
-      timesTotalIteration_mseg += timesIteration_mseg[this->numSubsets*t+s];
+      timesTotalIteration_seg += (float)(finalClockIteration-initialClockIteration)/(float)CLOCKS_PER_SEC;
       // Elimino el subset.
       delete inputSubset;
       delete estimatedProjection;
@@ -292,7 +292,7 @@ bool OsemSinogram3d::Reconstruct()
       }
     }
     
-    printf("End Iteration Nº: %d. Time: %f.\n", t+1, timesTotalIteration_mseg);
+    printf("End Iteration Nº: %d. Time: %f.\n", t+1, timesTotalIteration_seg);
   }
 
   clock_t finalClock = clock();

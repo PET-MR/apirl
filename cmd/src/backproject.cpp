@@ -219,7 +219,7 @@ int main (int argc, char *argv[])
 	/// Corrección por Atenuación.
 	attenuationImage = new Image();
 	// Es opcional, si está el mapa de atenuación se habilita:
-	if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), "Backproject", "attenuation image filename", returnValue, errorMessage)) != 0)
+	if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), (char*)"Backproject", (char*)"attenuation image filename", (char*)returnValue, (char*)errorMessage)) != 0)
 	{
 		// Hubo un error. Salgo del comando.
 		// Si no encontró el keyoword, está bien porque era opcional, cualquier otro código de error
@@ -264,7 +264,7 @@ int main (int argc, char *argv[])
 	  // En el Siddon por default tengo un único rayo, pero agrego un parámetro
 	  // opcional para tener varias Lors por bin del sinograma.
 	  // Debo leer el parámetro que tiene: "number_of_points_on_detector".
-	  if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), "Backproject", "number_of_points_on_detector", returnValue, errorMessage)) != 0)
+	  if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), (char*)"Backproject", (char*)"number_of_points_on_detector", (char*)returnValue, (char*)errorMessage)) != 0)
 	  {
 		  // Hubo un error. Salgo del comando.
 		  if(errorCode == PMF_KEY_NOT_FOUND)
@@ -294,7 +294,7 @@ int main (int argc, char *argv[])
 	else if((strBackprojector.compare("ConeOfResponse") == 0)||(strBackprojector.compare("ConeOfResponseWithAttenuation") == 0))
 	{
 	  // Debo leer el parámetro que tiene: "number_of_points_on_detector".
-	  if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), "Backproject", "number_of_points_on_detector", returnValue, errorMessage)) != 0)
+	  if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), (char*)"Backproject", (char*)"number_of_points_on_detector", (char*)returnValue, (char*)errorMessage)) != 0)
 	  {
 		  // Hubo un error. Salgo del comando.
 		  if(errorCode == PMF_KEY_NOT_FOUND)
@@ -309,7 +309,7 @@ int main (int argc, char *argv[])
 			return -1;
 		  }
 	  }
-	  int numPointsOnDetector = atoi(returnValue);
+	  int numPointsOnDetector = atoi((char*)returnValue);
 	  if(strBackprojector.compare("ConeOfResponse") == 0)
 	  {
 		backprojector = (Projector*)new ConeOfResponseProjector(numPointsOnDetector);
@@ -323,7 +323,7 @@ int main (int argc, char *argv[])
 	{
 	  // Debo leer los parámetros que tiene: "number_of_points_on_detector",  
 	  // "number_of_points_on_collimator", "linear_attenuation_coeficient_cm".
-	  if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), "Backproject", "number_of_points_on_detector", returnValue, errorMessage)) != 0)
+	  if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), (char*)"Backproject", (char*)"number_of_points_on_detector", (char*)returnValue, (char*)errorMessage)) != 0)
 	  {
 		  // Hubo un error. Salgo del comando.
 		  if(errorCode == PMF_KEY_NOT_FOUND)
@@ -339,7 +339,7 @@ int main (int argc, char *argv[])
 		  }
 	  }
 	  int numPointsOnDetector = atoi(returnValue);
-	  if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), "Backproject", "number_of_points_on_collimator", returnValue, errorMessage)) != 0)
+	  if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), (char*)"Backproject", (char*)"number_of_points_on_collimator", (char*)returnValue, (char*)errorMessage)) != 0)
 	  {
 		  // Hubo un error. Salgo del comando.
 		  if(errorCode == PMF_KEY_NOT_FOUND)
@@ -356,7 +356,7 @@ int main (int argc, char *argv[])
 	  }
 	  int numPointsOnCollimator = atoi(returnValue);
 	  
-	  if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), "Backproject", "linear_attenuation_coeficient_cm", returnValue, errorMessage)) != 0)
+	  if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), (char*)"Backproject", (char*)"linear_attenuation_coeficient_cm", (char*)returnValue, (char*)errorMessage)) != 0)
 	  {
 		  // Hubo un error. Salgo del comando.
 		  if(errorCode == PMF_KEY_NOT_FOUND)
@@ -403,7 +403,7 @@ int main (int argc, char *argv[])
 	  // Sinograma 2D para TGS. Debe incluir los parámetros descriptos en la parte superior. Los leo,
 	  // y si no están salgo porque son necesarios para la reconstrucción.
 	  // "diameter_of_fov (in mm)"
-	  if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), "Backproject", "diameter_of_fov (in mm)", returnValue, errorMessage)) != 0)
+	  if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), (char*)"Backproject", (char*)"diameter_of_fov (in mm)", (char*)returnValue, (char*)errorMessage)) != 0)
 	  {
 		  // Hubo un error. Salgo del comando.
 		  if(errorCode == PMF_KEY_NOT_FOUND)
@@ -421,7 +421,7 @@ int main (int argc, char *argv[])
 	  diameterFov_mm = atoi(returnValue);
 	  
 	  // "distance_cristal_to_center_of_fov (in mm)"
-	  if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), "Backproject", "distance_cristal_to_center_of_fov (in mm)", returnValue, errorMessage)) != 0)
+	  if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), (char*)"Backproject", (char*)"distance_cristal_to_center_of_fov (in mm)", (char*)returnValue, (char*)errorMessage)) != 0)
 	  {
 		  // Hubo un error. Salgo del comando.
 		  if(errorCode == PMF_KEY_NOT_FOUND)
@@ -439,7 +439,7 @@ int main (int argc, char *argv[])
 	  distCrystalToCenterFov = atoi(returnValue);
 	  
 	  // "length_of_colimator (in mm)"
-	  if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), "Backproject", "length_of_colimator (in mm)", returnValue, errorMessage)) != 0)
+	  if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), (char*)"Backproject", (char*)"length_of_colimator (in mm)", (char*)returnValue, (char*)errorMessage)) != 0)
 	  {
 		  // Hubo un error. Salgo del comando.
 		  if(errorCode == PMF_KEY_NOT_FOUND)
@@ -454,10 +454,10 @@ int main (int argc, char *argv[])
 			return -1;
 		  }
 	  }
-	  lengthColimator_mm = atoi(returnValue);
+	  lengthColimator_mm = atoi((char*)returnValue);
 	  
 	  // "diameter_of_colimator (in mm)"
-	  if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), "Backproject", "diameter_of_colimator (in mm)", returnValue, errorMessage)) != 0)
+	  if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), (char*)"Backproject", (char*)"diameter_of_colimator (in mm)", (char*)returnValue, (char*)errorMessage)) != 0)
 	  {
 		  // Hubo un error. Salgo del comando.
 		  if(errorCode == PMF_KEY_NOT_FOUND)
@@ -472,10 +472,10 @@ int main (int argc, char *argv[])
 			return -1;
 		  }
 	  }
-	  widthCollimator_mm = atoi(returnValue);
+	  widthCollimator_mm = atoi((char*)returnValue);
 	  
 	  // "diameter_of_colimator (in mm)"
-	  if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), "Backproject", "diameter_of_hole_colimator (in mm)", returnValue, errorMessage)) != 0)
+	  if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), (char*)"Backproject", (char*)"diameter_of_hole_colimator (in mm)", (char*)returnValue, (char*)errorMessage)) != 0)
 	  {
 		  // Hubo un error. Salgo del comando.
 		  if(errorCode == PMF_KEY_NOT_FOUND)
@@ -511,7 +511,7 @@ int main (int argc, char *argv[])
 	{
 	  // Para este tipo de sinograma tengo un parámetro más "width_of_segment (in mm)":
 	  // "diameter_of_colimator (in mm)"
-	  if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), "Backproject", "width_of_segment (in mm)", returnValue, errorMessage)) != 0)
+	  if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), (char*)"Backproject", (char*)"width_of_segment (in mm)", (char*)returnValue, (char*)errorMessage)) != 0)
 	  {
 		  // Hubo un error. Salgo del comando.
 		  if(errorCode == PMF_KEY_NOT_FOUND)

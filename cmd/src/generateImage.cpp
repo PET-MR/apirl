@@ -184,7 +184,7 @@ int main (int argc, char *argv[])
 	outputFileName.assign(returnValue);
     // Cargo los parámetros de la imagen en la estructura del tipo SizeImage.
 	// Píxeles en X.
-	if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), "generateImage", "X output image size (in pixels)", returnValue, errorMessage)) != 0)
+	if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), (char*)"generateImage", (char*)"X output image size (in pixels)", (char*)returnValue, (char*)errorMessage)) != 0)
 	{
 		// Hubo un error. Salgo del comando.
 		cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
@@ -192,7 +192,7 @@ int main (int argc, char *argv[])
 	}
 	sizeImage.nPixelsX = atoi(returnValue);
 	// Píxeles en Y.
-	if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), "generateImage", "Y output image size (in pixels)", returnValue, errorMessage)) != 0)
+	if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), (char*)"generateImage", (char*)"Y output image size (in pixels)", (char*)returnValue,(char*) errorMessage)) != 0)
 	{
 		// Hubo un error. Salgo del comando.
 		cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
@@ -200,7 +200,7 @@ int main (int argc, char *argv[])
 	}
 	sizeImage.nPixelsY = atoi(returnValue);
 	// Píxeles en Z.
-	if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), "generateImage", "Z output image size (in pixels)", returnValue, errorMessage)) != 0)
+	if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), (char*)"generateImage", (char*)"Z output image size (in pixels)", (char*)returnValue, (char*)errorMessage)) != 0)
 	{
 		// Hubo un error. Salgo del comando.
 		cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
@@ -208,7 +208,7 @@ int main (int argc, char *argv[])
 	}
 	sizeImage.nPixelsZ = atoi(returnValue);
 	// Tamaño de Píxeles en X.
-	if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), "generateImage", "X voxel size (in mm)", returnValue, errorMessage)) != 0)
+	if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), (char*)"generateImage", (char*)"X voxel size (in mm)", (char*)returnValue, (char*)errorMessage)) != 0)
 	{
 		// Hubo un error. Salgo del comando.
 		cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
@@ -216,7 +216,7 @@ int main (int argc, char *argv[])
 	}
 	sizeImage.sizePixelX_mm = atof(returnValue);
 	// Tamaño de Píxeles en Y.
-	if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), "generateImage", "Y voxel size (in mm)", returnValue, errorMessage)) != 0)
+	if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), (char*)"generateImage", (char*)"Y voxel size (in mm)", (char*)returnValue, (char*)errorMessage)) != 0)
 	{
 		// Hubo un error. Salgo del comando.
 		cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
@@ -224,7 +224,7 @@ int main (int argc, char *argv[])
 	}
 	sizeImage.sizePixelY_mm = atof(returnValue);
 	// Tamaño de Píxeles en Z.
-	if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), "generateImage", "Z voxel size (in mm)", returnValue, errorMessage)) != 0)
+	if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), (char*)"generateImage", (char*)"Z voxel size (in mm)", (char*)returnValue,(char*) errorMessage)) != 0)
 	{
 		// Hubo un error. Salgo del comando.
 		cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
@@ -237,7 +237,7 @@ int main (int argc, char *argv[])
 	ptrPixels = image->getPixelsPtr();
 
 	// Leo el tipo de forma de la imagen.
-	if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), "generateImage", "shape type", returnValue, errorMessage)) != 0)
+	if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), (char*)"generateImage", (char*)"shape type", (char*)returnValue, (char*)errorMessage)) != 0)
 	{
 		// Hubo un error. Salgo del comando.
 		cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
@@ -248,28 +248,28 @@ int main (int argc, char *argv[])
 		// Es un cilindro
 		float radius_mm, lengthZ_mm, value;
 		Point3D origin_mm;
-		if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), "generateImage", "radius (in mm)", returnValue, errorMessage)) != 0)
+		if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), (char*)"generateImage", (char*)"radius (in mm)", (char*)returnValue, (char*)errorMessage)) != 0)
 		{
 			// Hubo un error. Salgo del comando.
 			cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
 			return -1;
 		}
 		radius_mm = atof(returnValue);
-		if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), "generateImage", "length-z (in mm)", returnValue, errorMessage)) != 0)
+		if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), (char*)"generateImage", (char*)"length-z (in mm)", (char*)returnValue, (char*)errorMessage)) != 0)
 		{
 			// Hubo un error. Salgo del comando.
 			cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
 			return -1;
 		}
 		lengthZ_mm = atof(returnValue);
-		if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), "generateImage", "value", returnValue, errorMessage)) != 0)
+		if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), (char*)"generateImage", (char*)"value", (char*)returnValue, (char*)errorMessage)) != 0)
 		{
 			// Hubo un error. Salgo del comando.
 			cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
 			return -1;
 		}
 		value = atof(returnValue);
-		if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), "generateImage", "origin (in mm)", returnValue, errorMessage)) != 0)
+		if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), (char*)"generateImage", (char*)"origin (in mm)", (char*)returnValue, (char*)errorMessage)) != 0)
 		{
 			// Hubo un error. Salgo del comando.
 			cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
@@ -434,7 +434,7 @@ int main (int argc, char *argv[])
 	}
 	// Si llegué acá es porque generé la iamgen.
 	// La guardo en el formato pedido, por ahora solo raw e interfile:
-	if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), "generateImage", "output file format type", returnValue, errorMessage)) != 0)
+	if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), (char*)"generateImage", (char*)"output file format type", (char*)returnValue, (char*)errorMessage)) != 0)
 	{
 		// Hubo un error. Salgo del comando.
 		cout<<"Error "<<errorCode<<"en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;

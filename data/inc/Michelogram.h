@@ -78,9 +78,9 @@ class DLLEXPORT Michelogram : virtual Projection
 		Michelogram(SizeMichelogram MySizeMichelogram);
 		
 		/** Método que calcula el likelihood de esta proyección respecto de una de referencia. */
-		float getLikelihoodValue(Projection* referenceProjection){};
+		float getLikelihoodValue(Projection* referenceProjection){return 0;};
 		
-		bool readFromInterfile(string headerFilename){};
+		bool readFromInterfile(string headerFilename){return false;};
 		
 		bool Fill(Event3D* Events, unsigned int NEvents);
 

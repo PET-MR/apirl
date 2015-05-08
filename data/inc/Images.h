@@ -172,7 +172,7 @@ public:
 		\return float valor del píxel pedido.
 	*/
 	float setPixelValue(int x, int y, int z, float value) { pixels[z * size.nPixelsY * size.nPixelsX +
-	  y * size.nPixelsX + x] = value;};
+	  y * size.nPixelsX + x] = value; return value;};
 	  
 	/// Método que asgina un slice de una imagen 3D con una imagen 2D recibida como parámetro.
 	/** Se debe indicar que slice se desea asignar con una Imagen de dos dimensiones. Si
@@ -209,8 +209,7 @@ public:
 
 	*/
 	float incrementPixelValue(int x, int y, int z, float value) { pixels[z * size.nPixelsY * size.nPixelsX +
-
-	  y * size.nPixelsX + x] += value;};
+	  y * size.nPixelsX + x] += value; return pixels[z * size.nPixelsY * size.nPixelsX + y * size.nPixelsX + x];};
 	  
 	/// Método que obtiene el tamaño de una imagen.
 	/** \return estructura del tipo SizeImage con todos los parámetros que hacen al tamaño de la imagen.

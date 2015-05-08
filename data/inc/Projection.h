@@ -57,7 +57,7 @@ class DLLEXPORT Projection
 	*/
 	string getError() {return this->strError;};
 		
-	virtual float getLikelihoodValue(Projection* referenceProjection){};
+	virtual float getLikelihoodValue(Projection* referenceProjection){return 0;};
 	
 	virtual bool readFromInterfile(string headerFilename) = 0;
 	

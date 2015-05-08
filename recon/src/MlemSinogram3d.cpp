@@ -191,10 +191,11 @@ bool MlemSinogram3d::Reconstruct()
   for(unsigned int t = 0; t < this->numIterations; t++)
   {
     clock_t initialClockIteration = clock();
-    printf("Iteración Nº: %d\n", t);
+    printf("Iteration Nº: %d", t+1);
     /// Proyección de la imagen:
     forwardprojector->Project(reconstructionImage, estimatedProjection);
     clock_t finalClockProjection = clock();
+    printf("\tproj:%fsec", (float)(finalClockProjection-initialClockIteration)/(float)CLOCKS_PER_SEC);
     /// Si hay normalización, la aplico luego de la proyección:
     if(enableNormalization)
       estimatedProjection->multiplyBinToBin(normalizationCorrectionFactorsProjection);
@@ -222,6 +223,7 @@ bool MlemSinogram3d::Reconstruct()
     backprojector->Backproject(estimatedProjection, backprojectedImage);
     
     clock_t finalClockBackprojection = clock();
+    printf("\tbackproj:%fsec", (float)(finalClockBackprojection-finalClockProjection)/(float)CLOCKS_PER_SEC);
     /// Actualización del Pixel
     for(int k = 0; k < nPixels; k++)
     {
@@ -255,12 +257,13 @@ bool MlemSinogram3d::Reconstruct()
       }
     }
     clock_t finalClockIteration = clock();
+    printf("\ttot:%fsec\n", (float)(finalClockIteration-initialClockIteration)/(float)CLOCKS_PER_SEC);
     /// Cargo los tiempos:
     timesIteration_mseg[t] = (float)(finalClockIteration-initialClockIteration)*1000/(float)CLOCKS_PER_SEC;
     timesBackprojection_mseg[t] = (float)(finalClockBackprojection-finalClockProjection)*1000/(float)CLOCKS_PER_SEC;
     timesForwardprojection_mseg[t] = (float)(finalClockProjection-initialClockIteration)*1000/(float)CLOCKS_PER_SEC;
     timesPixelUpdate_mseg[t] = (float)(finalClockIteration-finalClockBackprojection)*1000/(float)CLOCKS_PER_SEC;
-
+    
   }
 
   clock_t finalClock = clock();

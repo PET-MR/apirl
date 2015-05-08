@@ -36,8 +36,6 @@ CuMlemSinogram3d::CuMlemSinogram3d(Sinogram3D* cInputProjection, Image* cInitial
 {
   this->backprojector = cBackprojector;
   this->forwardprojector = cForwardprojector;
-  // Pro defecto proceso sin compresión de span.
-  this->enableProcessWithoutSpan = true;
 }
 
 CuMlemSinogram3d::CuMlemSinogram3d(string configFilename):MlemSinogram3d(configFilename)
@@ -75,10 +73,10 @@ bool CuMlemSinogram3d::initCuda (int device, Logger* logger)
   sprintf(c_string, "%d", deviceProp.computeMode);
   logger->writeValue(" Compute Mode", c_string);
   
-  sprintf(c_string, "%d", deviceProp.totalGlobalMem);
+  sprintf(c_string, "%lud", deviceProp.totalGlobalMem);
   logger->writeValue(" Total Global Memory", c_string);
   
-  sprintf(c_string, "%d", deviceProp.sharedMemPerBlock);
+  sprintf(c_string, "%lud", deviceProp.sharedMemPerBlock);
   logger->writeValue(" Shared Memory per Block", c_string);
 
   sprintf(c_string, "%d", deviceProp.regsPerBlock);
@@ -138,13 +136,8 @@ void CuMlemSinogram3d::setProjectorKernelConfig(unsigned int numThreadsPerBlockX
   blockSizeProjector = dim3(numThreadsPerBlockX, numThreadsPerBlockY, numThreadsPerBlockZ);
   // Con la dimensión x de la grilla completo el sino 2d:
   numBlocksX = ceil((float)(inputProjection->getNumProj() * inputProjection->getNumR()) / blockSizeProjector.x);
-  // La dimensión y procesa cada sinograma. La cantidad de sinogramas a procesar, depende si se usa la compresión
-  // de span del sinograma de entrada o si se procesan todas las LORs posibles por más que los datos adquridos estén
-  // comprimidos axialmente.
-  if(!enableProcessWithoutSpan)
-    numBlocksY = inputProjection->getNumSinograms();	/// Si proceso con span la cantidad de sinos es igual que los de entrada.
-  else
-    numBlocksY = inputProjection->getNumRings()*inputProjection->getNumRings();	/// Si proceso sin span los sinogramas son todos los posibles para la cantidad de anillos dada.
+  // La dimensión y, procesa cada sinograma. 
+  numBlocksY = inputProjection->getNumSinograms();
     
   gridSizeProjector = dim3(numBlocksX, numBlocksY, numBlocksZ);
   
@@ -159,14 +152,8 @@ void CuMlemSinogram3d::setBackprojectorKernelConfig(unsigned int numThreadsPerBl
   blockSizeBackprojector = dim3(numThreadsPerBlockX, numThreadsPerBlockY, numThreadsPerBlockZ);
   // Con la dimensión x de la grilla completo el sino 2d:
   numBlocksX = ceil((float)(inputProjection->getNumProj() * inputProjection->getNumR()) / blockSizeBackprojector.x);
-  // La dimensión y procesa cada sinograma. La cantidad de sinogramas a procesar, depende si se usa la compresión
-  // de span del sinograma de entrada o si se procesan todas las LORs posibles por más que los datos adquridos estén
-  // comprimidos axialmente.
-  if(!enableProcessWithoutSpan)
-    numBlocksY = inputProjection->getNumSinograms();	/// Si proceso con span la cantidad de sinos es igual que los de entrada.
-  else
-    numBlocksY = inputProjection->getNumRings()*inputProjection->getNumRings();	/// Si proceso sin span los sinogramas son todos los posibles para la cantidad de anillos dada.
-  
+  // La dimensión y procesa cada sinograma. 
+  numBlocksY = inputProjection->getNumSinograms();	
   gridSizeBackprojector = dim3(numBlocksX, numBlocksY, numBlocksZ);
   
   // Con esta configuración seteo el retroproyector:
@@ -208,16 +195,10 @@ bool CuMlemSinogram3d::InitGpuMemory(TipoProyector tipoProy)
   int numPixels = reconstructionImage->getPixelCount();
   // Número total de bins del sinograma:
   int numBins, numSinograms;
-  if(!enableProcessWithoutSpan)
-    numBins = inputProjection->getBinCount();
-  else
-    numBins = inputProjection->getNumRings()*inputProjection->getNumRings()*inputProjection->getNumR()*inputProjection->getNumProj();
+  numBins = inputProjection->getBinCount();
   
   // Lo mismo para el numero de sinogramas:
-  if(!enableProcessWithoutSpan)
-    numSinograms = inputProjection->getNumSinograms();
-  else
-    numSinograms = inputProjection->getNumRings()*inputProjection->getNumRings();  
+  numSinograms = inputProjection->getNumSinograms();
     
   float aux;
   // Pido memoria para la gpu, debo almacenar los sinogramas y las imágenes.
@@ -241,10 +222,7 @@ bool CuMlemSinogram3d::InitGpuMemory(TipoProyector tipoProy)
   checkCudaErrors(cudaMemset(d_sensitivityImage, 0,sizeof(float)*numPixels));
   checkCudaErrors(cudaMemset(d_backprojectedImage, 0,sizeof(float)*numPixels));
   // Copio el sinograma de entrada, llamo a una función porque tengo que ir recorriendo todos los sinogramas:
-  if(!enableProcessWithoutSpan)
-    CopySinogram3dHostToGpu(d_inputProjection, inputProjection);	// Es una copia de los mismos sinogramas. O sea en cpu y gpu ocupan el mismo espacio.
-  else
-    CopySinogram3dHostToGpuWithoutSpan(d_inputProjection, inputProjection);	// Esta copia, replica los sinogramas 3d con varias combinaciones axiales en sinogramas distintos, repartiendo las cuentas en cantidades iguales.
+  CopySinogram3dHostToGpu(d_inputProjection, inputProjection);	// Es una copia de los mismos sinogramas. O sea en cpu y gpu ocupan el mismo espacio.
   // Pongo en cero el sinograma de proyección:
   checkCudaErrors(cudaMemset(d_estimatedProjection, 0,sizeof(float)*numBins));
   
@@ -273,54 +251,25 @@ bool CuMlemSinogram3d::InitGpuMemory(TipoProyector tipoProy)
   int* auxRings2 = (int*)malloc(sizeof(int)*numSinograms);
   float* auxRings1_mm = (float*)malloc(sizeof(float)*numSinograms);
   float* auxRings2_mm = (float*)malloc(sizeof(float)*numSinograms);
-  // Cargo la combinación de anillos, que es muy distinta si usa compresión de span o si no se usa.
-  if(!enableProcessWithoutSpan)
+  float numZ;
+  // Cargo la combinación de anillos, en la que busco la posición axial intermedia
+  // The average position is the (axial pos for the first combin + the second for the last comb)/2. For z1 and z2. 
+  for(int i = 0; i < inputProjection->getNumSegments(); i++)
   {
-    for(int i = 0; i < inputProjection->getNumSegments(); i++)
+    for(int j = 0; j < inputProjection->getSegment(i)->getNumSinograms(); j++)
     {
-      for(int j = 0; j < inputProjection->getSegment(i)->getNumSinograms(); j++)
-      {
-	// Como voy a agarrar solo la combinación del medio, si es impar es directamente el indice del medio, mientras que si es para
-	// tengo que hacer el promedio:
-	int indexMedio = floor(inputProjection->getSegment(i)->getSinogram2D(j)->getNumZ()/2);
-	if((inputProjection->getSegment(i)->getSinogram2D(j)->getNumZ() % 2) != 0)
-	{
-	  auxRings1[iSino] = inputProjection->getSegment(i)->getSinogram2D(j)->getRing1FromList(indexMedio);
-	  auxRings2[iSino] = inputProjection->getSegment(i)->getSinogram2D(j)->getRing2FromList(indexMedio);
-	  auxRings1_mm[iSino] = inputProjection->getSegment(i)->getSinogram2D(j)->getAxialValue1FromList(indexMedio);
-	  auxRings2_mm[iSino] = inputProjection->getSegment(i)->getSinogram2D(j)->getAxialValue2FromList(indexMedio);
-	}
-	else
-	{
-	  // Es el promedio : cuando es par el index medio me da el índice menor pero con base 1, por eso le debo restar 1 para tener indices que inician en cero.
-	  auxRings1_mm[iSino] = (inputProjection->getSegment(i)->getSinogram2D(j)->getAxialValue1FromList(indexMedio-1) + inputProjection->getSegment(i)->getSinogram2D(j)->getAxialValue1FromList(indexMedio))/2;
-	  auxRings2_mm[iSino] = (inputProjection->getSegment(i)->getSinogram2D(j)->getAxialValue2FromList(indexMedio-1) + inputProjection->getSegment(i)->getSinogram2D(j)->getAxialValue2FromList(indexMedio))/2;
-	  auxRings1[iSino] = (inputProjection->getSegment(i)->getSinogram2D(j)->getRing1FromList(indexMedio-1)+inputProjection->getSegment(i)->getSinogram2D(j)->getRing1FromList(indexMedio))/2;
-	  auxRings2[iSino] = (inputProjection->getSegment(i)->getSinogram2D(j)->getRing2FromList(indexMedio-1)+inputProjection->getSegment(i)->getSinogram2D(j)->getRing2FromList(indexMedio))/2;
-	}
-    
-	iSino++;
-      }
+      numZ = inputProjection->getSegment(i)->getSinogram2D(j)->getNumZ();
+      // The ring is in fact the slice, goes from 1 to 2*numRings-1 (in c 0 to 2*numRings-2). For the real ring it would be (max+min)/2 bu since we want the slice we need to multiply by 2.
+      auxRings1[iSino] = (inputProjection->getSegment(i)->getSinogram2D(j)->getRing1FromList(0)+inputProjection->getSegment(i)->getSinogram2D(j)->getRing1FromList(numZ-1));
+      auxRings2[iSino] = (inputProjection->getSegment(i)->getSinogram2D(j)->getRing2FromList(0)+inputProjection->getSegment(i)->getSinogram2D(j)->getRing2FromList(numZ-1));
+      // Es el promedio : cuando es par el index medio me da el índice menor pero con base 1, por eso le debo restar 1 para tener indices que inician en cero.
+      auxRings1_mm[iSino] = (inputProjection->getSegment(i)->getSinogram2D(j)->getAxialValue1FromList(0) + inputProjection->getSegment(i)->getSinogram2D(j)->getAxialValue1FromList(numZ-1))/2;
+      auxRings2_mm[iSino] = (inputProjection->getSegment(i)->getSinogram2D(j)->getAxialValue2FromList(0) + inputProjection->getSegment(i)->getSinogram2D(j)->getAxialValue2FromList(numZ-1))/2;
+      iSino++;
     }
   }
-  else
-  {
-    // Si no asigno cada combinación de anillo directamente al vector, sin promediar nada, ya que se procesan todas las LORs posibles:
-    for(int i = 0; i < inputProjection->getNumSegments(); i++)
-    {
-      for(int j = 0; j < inputProjection->getSegment(i)->getNumSinograms(); j++)
-      {
-	for(int k = 0; k < inputProjection->getSegment(i)->getSinogram2D(j)->getNumZ(); k++)
-	{
-	  auxRings1[iSino] = inputProjection->getSegment(i)->getSinogram2D(j)->getRing1FromList(k);
-	  auxRings2[iSino] = inputProjection->getSegment(i)->getSinogram2D(j)->getRing2FromList(k);
-	  auxRings1_mm[iSino] = inputProjection->getSegment(i)->getSinogram2D(j)->getAxialValue1FromList(k);
-	  auxRings2_mm[iSino] = inputProjection->getSegment(i)->getSinogram2D(j)->getAxialValue2FromList(k);
-	  iSino++;
-	}
-      }
-    }
-  }
+
+
   // Copio los índices de anillos a memoris de GPU:
   checkCudaErrors(cudaMemcpy(d_ring1, auxRings1, sizeof(int)*numSinograms, cudaMemcpyHostToDevice));
   checkCudaErrors(cudaMemcpy(d_ring2, auxRings2, sizeof(int)*numSinograms, cudaMemcpyHostToDevice));
@@ -354,6 +303,7 @@ bool CuMlemSinogram3d::InitGpuMemory(TipoProyector tipoProy)
   free(auxRings2);
   free(auxRings1_mm);
   free(auxRings2_mm);
+  return true;
 }
 
 int CuMlemSinogram3d::CopySinogram3dHostToGpu(float* d_destino, Sinogram3D* h_source)
@@ -480,6 +430,7 @@ void CuMlemSinogram3d::CopyReconstructedImageHostToGpu()
 bool CuMlemSinogram3d::Reconstruct(TipoProyector tipoProy)
 {
   Reconstruct(tipoProy, 0);
+  return true;
 }
 
 /// Método público que realiza la reconstrucción en base a los parámetros pasados al objeto Mlem instanciado
@@ -625,10 +576,7 @@ bool CuMlemSinogram3d::Reconstruct(TipoProyector tipoProy, int indexGpu)
     /// Si quiero guardar la proyección intermedia, lo hago acá, porque luego en la backprojection se modifica para hacer el cociente entre entrada y estimada:
     if(saveIntermediateProjectionAndBackprojectedImage)
     {
-      if(!enableProcessWithoutSpan)
-	CopySinogram3dGpuToHost(estimatedProjection, d_estimatedProjection);
-      else
-	CopySinogram3dGpuWithoutSpanToHost(estimatedProjection, d_estimatedProjection);	// Esta copia, replica los sinogramas 3d con varias combinaciones axiales en sinogramas distintos, repartiendo las cuentas en cantidades iguales.
+      CopySinogram3dGpuToHost(estimatedProjection, d_estimatedProjection);
       sprintf(c_string, "%s_projection_iter_%d", outputFilenamePrefix.c_str(), t); /// La extensión se le agrega en write interfile.
       outputFilename.assign(c_string);
       estimatedProjection->writeInterfile((char*)outputFilename.c_str());
@@ -644,10 +592,7 @@ bool CuMlemSinogram3d::Reconstruct(TipoProyector tipoProy, int indexGpu)
     if(saveIntermediateProjectionAndBackprojectedImage)
     {
       // Copio el sinograma de entrada, llamo a una función porque tengo que ir recorriendo todos los sinogramas:
-      if(!enableProcessWithoutSpan)
-	CopySinogram3dGpuToHost(estimatedProjection, d_estimatedProjection);	// Es una copia de los mismos sinogramas. O sea en cpu y gpu ocupan el mismo espacio.
-      else
-	CopySinogram3dGpuWithoutSpanToHost(estimatedProjection, d_estimatedProjection);	// Esta copia, replica los sinogramas 3d con varias combinaciones axiales en sinogramas distintos, repartiendo las cuentas en cantidades iguales.
+      CopySinogram3dGpuToHost(estimatedProjection, d_estimatedProjection);	// Es una copia de los mismos sinogramas. O sea en cpu y gpu ocupan el mismo espacio.
       sprintf(c_string, "%s_projectionDiv_iter_%d", outputFilenamePrefix.c_str(), t); /// La extensión se le agrega en write interfile.
       outputFilename.assign(c_string);
       estimatedProjection->writeInterfile((char*)outputFilename.c_str());
@@ -755,15 +700,21 @@ bool CuMlemSinogram3d::updatePixelValue()
   // Llamo al kernel que actualiza el pixel.
   cuUpdatePixelValue<<<gridSizeImageUpdate, blockSizeImageUpdate>>>(d_reconstructionImage, d_backprojectedImage, d_sensitivityImage, reconstructionImage->getSize(), updateThreshold);
   cudaThreadSynchronize();
-  
+  return true;
 }
 
 bool CuMlemSinogram3d::computeSensitivity(TipoProyector tipoProy)
 {
   /// Creo un Sinograma ·D igual que el de entrada.
-  Sinogram3D* constantSinogram3D = inputProjection->Copy();
-  /// Lo lleno con un valor constante
-  constantSinogram3D->FillConstant(1);
+  Sinogram3D* constantSinogram3D;
+  /// With normalization use the norm sinogram if not a constant sinogram:
+  if (enableNormalization)
+    constantSinogram3D = normalizationCorrectionFactorsProjection->Copy();
+  else
+  {
+    constantSinogram3D = inputProjection->Copy();
+    constantSinogram3D->FillConstant(1);
+  }
   /// Copio a gpu:
   CopySinogram3dHostToGpu(d_estimatedProjection, constantSinogram3D);
   /// Por último hago la backprojection

@@ -74,6 +74,8 @@ class DLLEXPORT Sinogram2Dtgs : public Sinogram2D
 	*/
 	Sinogram2D* Copy(){ Sinogram2Dtgs* sino2dcopy = new Sinogram2Dtgs(this); return (Sinogram2D*)sino2dcopy;	};
 	
+	
+	using Sinogram2D::getFovLimits; // To avoid the warning on possible unintended override.
 	/** Método que obtiene los dos puntos límites, de entrada y salida, de una lor que cruza el field of view.
 		El mismo dependerá del tipo de fov del sinograma. Por default es circular, pero
 		puede ser cuadrado o de otra geometría en clases derivadas.
@@ -119,9 +121,9 @@ class DLLEXPORT Sinogram2Dtgs : public Sinogram2D
 		@param	p1 puntero a estructura del tipo Point2D donde se guardará el primer punto de la lor (del lado del detector).
 		@param	p2 puntero a estructura del tipo Point2D donde se guardará el segundo punto de la lor (del otro lado del detector).
 	*/
-	bool getPointsFromLor (int indexAng, int indexR, Point2D* p1, Point2D* p2){getPointsFromTgsLor (indexAng, indexR, 0, 0, p1, p2);};
+	bool getPointsFromLor (int indexAng, int indexR, Point2D* p1, Point2D* p2){getPointsFromTgsLor (indexAng, indexR, 0, 0, p1, p2);return true;};
 	
-	bool getPointsFromLor (int indexAng, int indexR, Point2D* p1, Point2D* p2, float* geom) { getPointsFromTgsLor (indexAng, indexR, 0, 0, p1, p2);};
+	bool getPointsFromLor (int indexAng, int indexR, Point2D* p1, Point2D* p2, float* geom) { getPointsFromTgsLor (indexAng, indexR, 0, 0, p1, p2); return true;};
 	
 	/** Método que calcula los dos puntos geométricos que forman una Lor sobremuestrada.Y adicionalmente devuelve un peso geométrico, según
 	  * las características del scanner. Para sobremuestrear la LOR, se le indica en cuantos puntos se divide cada LOR y cual de las muestras

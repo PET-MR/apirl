@@ -276,7 +276,7 @@ int main (int argc, char *argv[])
   
   /// Corrección por Atenuación.
   // Es opcional, si está el mapa de atenuación se habilita:
-  if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), "OSEM", "attenuation image filename", returnValue, errorMessage)) != 0)
+  if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), (char*)"OSEM", (char*)"attenuation image filename", (char*)returnValue, (char*)errorMessage)) != 0)
   {
     // Hubo un error. Salgo del comando.
     // Si no encontró el keyoword, está bien porque era opcional, cualquier otro código de error

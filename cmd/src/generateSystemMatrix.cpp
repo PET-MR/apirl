@@ -188,7 +188,7 @@ int main (int argc, char *argv[])
 	else if(strProjector.compare("ConeOfResponse") == 0)
 	{
 	  // Debo leer el parámetro que tiene: "number_of_points_on_detector".
-	  if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), "generateSystemMatrix", "number_of_points_on_detector", returnValue, errorMessage)) != 0)
+	  if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), (char*)"generateSystemMatrix", (char*)"number_of_points_on_detector", (char*)returnValue, (char*)errorMessage)) != 0)
 	  {
 		  // Hubo un error. Salgo del comando.
 		  if(errorCode == PMF_KEY_NOT_FOUND)
@@ -222,7 +222,7 @@ int main (int argc, char *argv[])
 	  // Sinograma 2D para TGS. Debe incluir los parámetros descriptos en la parte superior. Los leo,
 	  // y si no están salgo porque son necesarios para la reconstrucción.
 	  // "diameter_of_fov (in mm)"
-	  if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), "generateSystemMatrix", "diameter_of_fov (in mm)", returnValue, errorMessage)) != 0)
+	  if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), (char*)"generateSystemMatrix", (char*)"diameter_of_fov (in mm)", (char*)returnValue, (char*)errorMessage)) != 0)
 	  {
 		  // Hubo un error. Salgo del comando.
 		  if(errorCode == PMF_KEY_NOT_FOUND)
@@ -240,7 +240,7 @@ int main (int argc, char *argv[])
 	  float diameterFov_mm = atoi(returnValue);
 	  
 	  // "distance_cristal_to_center_of_fov (in mm)"
-	  if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), "generateSystemMatrix", "distance_cristal_to_center_of_fov (in mm)", returnValue, errorMessage)) != 0)
+	  if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), (char*)"generateSystemMatrix", (char*)"distance_cristal_to_center_of_fov (in mm)", (char*)returnValue, (char*)errorMessage)) != 0)
 	  {
 		  // Hubo un error. Salgo del comando.
 		  if(errorCode == PMF_KEY_NOT_FOUND)
@@ -258,7 +258,7 @@ int main (int argc, char *argv[])
 	  float distCrystalToCenterFov = atoi(returnValue);
 	  
 	  // "length_of_colimator (in mm)"
-	  if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), "generateSystemMatrix", "length_of_colimator (in mm)", returnValue, errorMessage)) != 0)
+	  if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), (char*)"generateSystemMatrix", (char*)"length_of_colimator (in mm)", (char*)returnValue, (char*)errorMessage)) != 0)
 	  {
 		  // Hubo un error. Salgo del comando.
 		  if(errorCode == PMF_KEY_NOT_FOUND)
@@ -276,7 +276,7 @@ int main (int argc, char *argv[])
 	  float lengthColimator_mm = atoi(returnValue);
 	  
 	  // "diameter_of_colimator (in mm)"
-	  if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), "generateSystemMatrix", "diameter_of_colimator (in mm)", returnValue, errorMessage)) != 0)
+	  if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), (char*)"generateSystemMatrix", (char*)"diameter_of_colimator (in mm)", (char*)returnValue, (char*)errorMessage)) != 0)
 	  {
 		  // Hubo un error. Salgo del comando.
 		  if(errorCode == PMF_KEY_NOT_FOUND)

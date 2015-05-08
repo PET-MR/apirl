@@ -27,6 +27,7 @@ bool CuSiddonProjector::InitGpuMemory(Sinogram3DCylindricalPet* inputSinogram)
 //   checkCudaErrors(cudaMemcpyToSymbol(cuda_rows_splitter, &rowSplitter, sizeof(unsigned int)));
   float aux = inputSinogram->getRadioScanner_mm();
   checkCudaErrors(cudaMemcpyToSymbol(d_RadioScanner_mm, &aux, sizeof(inputSinogram->getRadioScanner_mm())));
+  return true;
 }
 
 /** Sección para Sinogram3D. */

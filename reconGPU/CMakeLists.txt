@@ -6,6 +6,8 @@
 PROJECT(reconGPU)
 SET(BUILD_SHARED_LIBS  OFF)
 SET(CUDA_SEPARABLE_COMPILATION ON)
+SET(CUDA_BUILD_CUBIN ON)
+SET(CUDA_VERBOSE_BUILD ON)
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 
 ###################### CUDA CONFIGURATION #############################
@@ -18,8 +20,6 @@ find_package(CUDA REQUIRED FIND_CUDA_DIR)
 #INCLUDE(${FindCUDA_Dir}/FindCUTIL.cmake)
 #message(STATUS "CUDA_CUT_INCLUDE_DIR: ${CUDA_CUT_INCLUDE_DIR}")
 ADD_DEFINITIONS(-D_CRT_SECURE_NO_WARNINGS)
-SET(CUDA_BUILD_CUBIN ON)
-SET(CUDA_VERBOSE_BUILD ON)
 #######################################################################
 
 ###################### SOURCES CONFIGURATION ########################## 

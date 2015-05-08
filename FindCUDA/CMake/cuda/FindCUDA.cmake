@@ -209,6 +209,12 @@
 #        RELEASE --use_fast_math
 #        RELWITHDEBINFO --use_fast_math;-g
 #        MINSIZEREL --use_fast_math
+#     Para debuggear con cuda-gdb debo agregar el flag -G para poder debuggear c�digo de device.
+#     Entonces para versiones de cuda mayores a 3.0, los flags ser�n:
+#
+#        DEBUG -g -G
+#        RELEASE --use_fast_math
+#        RELWITHDEBINFO --use_fast_math;-g -G
 #
 #     For certain configurations (namely VS generating object files with
 #     CUDA_ATTACH_VS_BUILD_RULE_TO_CUDA_FILE set to ON), no generated file will
@@ -268,20 +274,6 @@
 #  CUDA_CUBLAS_LIBRARIES -- Device or emulation library for the Cuda BLAS
 #                           implementation (alterative to:
 #                           CUDA_ADD_CUBLAS_TO_TARGET macro).
-#  CUDA_cupti_LIBRARY    -- CUDA Profiling Tools Interface library.
-#                           Only available for CUDA version 4.0+.
-#  CUDA_curand_LIBRARY   -- CUDA Random Number Generation library.
-#                           Only available for CUDA version 3.2+.
-#  CUDA_cusparse_LIBRARY -- CUDA Sparse Matrix library.
-#                           Only available for CUDA version 3.2+.
-#  CUDA_npp_LIBRARY      -- NVIDIA Performance Primitives library.
-#                           Only available for CUDA version 4.0+.
-#  CUDA_nvcuvenc_LIBRARY -- CUDA Video Encoder library.
-#                           Only available for CUDA version 3.2+.
-#                           Windows only.
-#  CUDA_nvcuvid_LIBRARY  -- CUDA Video Decoder library.
-#                           Only available for CUDA version 3.2+.
-#                           Windows only.
 #
 #
 #  James Bigler, NVIDIA Corp (nvidia.com - jbigler)
@@ -434,8 +426,10 @@ option(CUDA_ATTACH_VS_BUILD_RULE_TO_CUDA_FILE "Attach the build rule to the CUDA
 # Prints out extra information about the cuda file during compilation
 option(CUDA_BUILD_CUBIN "Generate and parse .cubin files in Device mode." OFF)
 
-# Set whether we are using emulation or device mode.
-option(CUDA_BUILD_EMULATION "Build in Emulation mode" OFF)
+# Set whether we are using emulation or device mode. Solo si estoy en versi�n menor a 3.0.
+if(CUDA_VERSION VERSION_LESS "3.0")
+  option(CUDA_BUILD_EMULATION "Build in Emulation mode" OFF)
+endif()
 
 # Where to put the generated output.
 set(CUDA_GENERATED_OUTPUT_DIR "" CACHE PATH "Directory to put all the output files.  If blank it will default to the CMAKE_CURRENT_BINARY_DIR")
@@ -498,6 +492,7 @@ endforeach()
 # if they have then clear the cache variables, so that will be detected again.
 if(NOT "${CUDA_TOOLKIT_ROOT_DIR}" STREQUAL "${CUDA_TOOLKIT_ROOT_DIR_INTERNAL}")
   unset(CUDA_NVCC_EXECUTABLE CACHE)
+  unset(CUDA_VERSION CACHE)
   unset(CUDA_TOOLKIT_INCLUDE CACHE)
   unset(CUDA_CUDART_LIBRARY CACHE)
   # Make sure you run this before you unset CUDA_VERSION.
@@ -696,6 +691,11 @@ endif()
 # 1.1 toolkit on linux doesn't appear to have a separate library on
 # some platforms.
 find_library_local_first(CUDA_CUDA_LIBRARY cuda "\"cuda\" library (older versions only).")
+
+# Add cuda library to the link line only if it is found.
+if (CUDA_CUDA_LIBRARY)
+  set(CUDA_LIBRARIES ${CUDA_LIBRARIES} ${CUDA_CUDA_LIBRARY})
+endif(CUDA_CUDA_LIBRARY)
 
 mark_as_advanced(
   CUDA_CUDA_LIBRARY
@@ -1008,11 +1008,17 @@ macro(CUDA_WRAP_SRCS cuda_target format generated_files)
   set(nvcc_flags "")
 
   # Emulation if the card isn't present.
-  if (CUDA_BUILD_EMULATION)
-    # Emulation.
-    set(nvcc_flags ${nvcc_flags} --device-emulation -D_DEVICEEMU -g)
+  # Modificado por Mart�n B. 130111: Para versiones de 3.0 en adelante el emulation mode ya no existe.
+  if(CUDA_VERSION VERSION_LESS "3.0")
+    if (CUDA_BUILD_EMULATION)
+      # Emulation.
+      set(nvcc_flags ${nvcc_flags} --device-emulation -D_DEVICEEMU -g)
+    else(CUDA_BUILD_EMULATION)
+      # Device mode.  No flags necessary.
+    endif(CUDA_BUILD_EMULATION)
   else()
-    # Device mode.  No flags necessary.
+    # Elimino la variable CUDA_VERSION
+    unset(CUDA_BUILD_EMULATION CACHE)
   endif()
 
   if(CUDA_HOST_COMPILATION_CPP)
@@ -1072,7 +1078,7 @@ endif()
 
 if(CUDA_COMPUTE_CAPABILITY STREQUAL 3.5)
 	set(nvcc_flags ${nvcc_flags} "-arch=sm_35")
-	set(nvcc_flags ${nvcc_flags} "-gencode=arch=compute_30,code=sm_35")
+	set(nvcc_flags ${nvcc_flags} "-gencode=arch=compute_35,code=sm_35")
 endif()
 # Agregado Martin Belzunce (14/04/11): Flags según el compute capability por default 1.0 (el mínimo):
   if(CUDA_USE_FAST_MATH)
@@ -1159,6 +1165,17 @@ endif()
     set(_cuda_host_flags "set(CMAKE_HOST_FLAGS ${CUDA_HOST_SHARED_FLAGS})")
   endif()
 
+    # Agregado por Mart�n B.:
+  # Para versiones anteriores a 3.0 no existe debuggeo en c�digo de device, de 3.0 en adelante si
+  # por lo que debo agregar "-G" para debuggear dicho tipo de c�digo.
+  if(CUDA_VERSION VERSION_LESS "3.0")
+    set(CUDA_GDB_FLAGS "")
+  else()
+    set(CUDA_GDB_FLAGS "-G")
+  endif()
+  list(APPEND CUDA_NVCC_FLAGS_DEBUG ${CUDA_GDB_FLAGS})
+  list(APPEND CUDA_NVCC_FLAGS_RELWITHDEBINFO ${CUDA_GDB_FLAGS})
+  
   set(_cuda_nvcc_flags_config "# Build specific configuration flags")
   # Loop over all the configuration types to generate appropriate flags for run_nvcc.cmake
   foreach(config ${CUDA_configuration_types})
@@ -1186,12 +1203,19 @@ endif()
 
       set(_cuda_host_flags "${_cuda_host_flags}\nset(CMAKE_HOST_FLAGS_${config_upper} ${_cuda_C_FLAGS})")
     endif()
-
+    list(APPEND CUDA_NVCC_FLAGS_${config_upper} "-Xptxas=-v")
     # Note that if we ever want CUDA_NVCC_FLAGS_<CONFIG> to be string (instead of a list
     # like it is currently), we can remove the quotes around the
     # ${CUDA_NVCC_FLAGS_${config_upper}} variable like the CMAKE_HOST_FLAGS_<CONFIG> variable.
     set(_cuda_nvcc_flags_config "${_cuda_nvcc_flags_config}\nset(CUDA_NVCC_FLAGS_${config_upper} ${CUDA_NVCC_FLAGS_${config_upper}} ;; ${CUDA_WRAP_OPTION_NVCC_FLAGS_${config_upper}})")
   endforeach()
+  
+  
+  if(compile_to_ptx)
+    # Don't use any of the host compilation flags for PTX targets.
+    set(CUDA_HOST_FLAGS)
+    set(CUDA_NVCC_FLAGS_CONFIG)
+  endif()
 
   # Get the list of definitions from the directory property
   get_directory_property(CUDA_NVCC_DEFINITIONS COMPILE_DEFINITIONS)
@@ -1203,6 +1227,13 @@ endif()
 
   if(_cuda_build_shared_libs)
     list(APPEND nvcc_flags "-D${cuda_target}_EXPORTS")
+  endif()
+
+  # Determine output directory
+  if(CUDA_GENERATED_OUTPUT_DIR)
+    set(cuda_compile_output_dir "${CUDA_GENERATED_OUTPUT_DIR}")
+  else()
+    set(cuda_compile_output_dir "${CMAKE_CURRENT_BINARY_DIR}")
   endif()
 
   # Reset the output variable
@@ -1564,7 +1595,7 @@ endif()
 
 if(CUDA_COMPUTE_CAPABILITY STREQUAL 3.5)
 	set(nvcc_flags ${nvcc_flags} "-arch=sm_35")
-	set(nvcc_flags ${nvcc_flags} "-gencode=arch=compute_30,code=sm_35")
+	set(nvcc_flags ${nvcc_flags} "-gencode=arch=compute_35,code=sm_35")
 endif()
 # Agregado Martin Belzunce (14/04/11): Flags según el compute capability por default 1.0 (el mínimo):
   if(CUDA_USE_FAST_MATH)

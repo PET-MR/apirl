@@ -53,7 +53,7 @@ int getProjectorBlockSize (string mlemFilename, string cmd, dim3* projectorBlock
   int errorCode;
   char returnValue[256];	// string en el que se recibe el valor de un keyword en la lectura del archivo de parámetros.
   char errorMessage[300];	// string de error para la función de lectura de archivo de parámetros.
-  if((errorCode=parametersFile_read((char*)mlemFilename.c_str(), (char*)cmd.c_str(), "projector block size", returnValue, errorMessage)) != 0)
+  if((errorCode=parametersFile_read((char*)mlemFilename.c_str(), (char*)cmd.c_str(), (char*)"projector block size", (char*)returnValue, (char*)errorMessage)) != 0)
   {
     // Hubo un error. Salgo del comando.
     // Si no encontró el keyoword, está bien porque era opcional, cualquier otro código de error
@@ -85,7 +85,7 @@ int getPixelUpdateBlockSize (string mlemFilename, string cmd, dim3* updateBlockS
   int errorCode;
   char returnValue[256];	// string en el que se recibe el valor de un keyword en la lectura del archivo de parámetros.
   char errorMessage[300];	// string de error para la función de lectura de archivo de parámetros.
-  if((errorCode=parametersFile_read((char*)mlemFilename.c_str(), (char*)cmd.c_str(), "pixel update block size", returnValue, errorMessage)) != 0)
+  if((errorCode=parametersFile_read((char*)mlemFilename.c_str(), (char*)cmd.c_str(), (char*)"pixel update block size", (char*)returnValue, (char*)errorMessage)) != 0)
   {
     // Hubo un error. Salgo del comando.
     // Si no encontró el keyoword, está bien porque era opcional, cualquier otro código de error
@@ -117,7 +117,7 @@ int getBackprojectorBlockSize (string mlemFilename, string cmd, dim3* backprojec
   int errorCode;
   char returnValue[256];	// string en el que se recibe el valor de un keyword en la lectura del archivo de parámetros.
   char errorMessage[300];	// string de error para la función de lectura de archivo de parámetros.
-  if((errorCode=parametersFile_read((char*)mlemFilename.c_str(), (char*)cmd.c_str(), "backprojector block size", returnValue, errorMessage)) != 0)
+  if((errorCode=parametersFile_read((char*)mlemFilename.c_str(), (char*)cmd.c_str(), (char*)"backprojector block size", (char*)returnValue, (char*)errorMessage)) != 0)
   {
     // Hubo un error. Salgo del comando.
     // Si no encontró el keyoword, está bien porque era opcional, cualquier otro código de error
@@ -151,7 +151,7 @@ int getGpuId(string mlemFilename, string cmd, int* gpuId)
   char returnValue[256];	// string en el que se recibe el valor de un keyword en la lectura del archivo de parámetros.
   char errorMessage[300];	// string de error para la función de lectura de archivo de parámetros.
 // "save estimates at iteration intervals"
-  if((errorCode=parametersFile_read((char*)mlemFilename.c_str(), (char*)cmd.c_str(), "gpu id", returnValue, errorMessage)) != 0)
+  if((errorCode=parametersFile_read((char*)mlemFilename.c_str(), (char*)cmd.c_str(), (char*)"gpu id", (char*)returnValue, (char*)errorMessage)) != 0)
   {
     // Hubo un error. Salgo del comando.
     // Si no encontró el keyoword, está bien porque era opcional, cualquier otro código de error

@@ -51,6 +51,7 @@
 #include <Sinograms2DinCylindrical3Dpet.h>
 #include <Sinograms2Din3DArPet.h>
 #include <Sinogram3DArPet.h>
+#include <Sinogram3DSiemensMmr.h>
 #include <Sinogram3DCylindricalPet.h>
 #include <ParametersFile.h>
 #include <readParameters.h>
@@ -148,7 +149,7 @@ int main (int argc, char *argv[])
   string strForwardprojector;
   string strBackprojector;
   string attenMapFilename;
-  string acfFilename, estimatedRandomsFilename, estimatedScatterFilename;
+  string acfFilename, estimatedRandomsFilename, estimatedScatterFilename, normFilename;
   CuProjector* forwardprojector;
   CuProjector* backprojector;
   int saveIterationInterval;
@@ -232,7 +233,7 @@ int main (int argc, char *argv[])
   
   /// Corrección por Atenuación.
   // Es opcional, si está el mapa de atenuación se habilita:
-  if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), "MLEM", "attenuation image filename", returnValue, errorMessage)) != 0)
+  if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), (char*)"MLEM", (char*)"attenuation image filename", (char*)returnValue, (char*)errorMessage)) != 0)
   {
 	  // Hubo un error. Salgo del comando.
 	  // Si no encontró el keyoword, está bien porque era opcional, cualquier otro código de error
@@ -334,6 +335,9 @@ int main (int argc, char *argv[])
   // Pido los singoramas de corrección si es que están disponibles:
   if(getCorrectionSinogramNames(parameterFileName, "MLEM", &acfFilename, &estimatedRandomsFilename, &estimatedScatterFilename))
     return -1;
+  // Idem para normalización:
+  if(getNormalizationSinogramName(parameterFileName,  "MLEM",&normFilename))
+    return -1;
   // Lectura de proyecciones y reconstrucción, depende del tipo de dato de entrada:
   if(inputType.compare("Sinogram2D")==0)
   {
@@ -414,6 +418,16 @@ int main (int argc, char *argv[])
       mlem->setSensitivityFilename(sensitivityFilename);
     }
   }
+  else if(inputType.compare("Sinogram3DSiemensMmr")==0)
+  {
+    // Sinograma 3D
+    Sinogram3D* inputProjection = new Sinogram3DSiemensMmr((char*)inputFilename.c_str());
+    mlem = new CuMlemSinogram3d(inputProjection, initialEstimate, "", outputPrefix, numIterations, saveIterationInterval, saveIntermediateData, bSensitivityFromFile, forwardprojector, backprojector);
+    if(bSensitivityFromFile)
+    {
+      mlem->setSensitivityFilename(sensitivityFilename);
+    }
+  }
   else if(inputType.compare("Michelogram")==0)
   {
     // Para este tipo de datos, en el archivo de mlem me tienen que haber cargados los datos del scanner cilíndrico.
@@ -432,7 +446,7 @@ int main (int argc, char *argv[])
   }
   else
   {
-    cout<<"Tipo de dato de entrada no válido. Formatos válidos: ""Sinogram2d"", ""Sinogram3D"", ""Michelogram"""<<endl;
+    cout<<"Tipo de dato de entrada no válido. Formatos válidos: ""Sinogram2d"", ""Sinogram3D"", ""Sinogram3DSiemensMmr"", ""Michelogram"""<<endl;
     return -1;
   }
   // La habilitación de la data intermedia la debo hacer acá porque no está implementada en el constructor:
@@ -448,6 +462,11 @@ int main (int argc, char *argv[])
     mlem->setScatterCorrectionProjection(estimatedScatterFilename);
   // Aplico las correciones:
   mlem->correctInputSinogram();
+  // Y normalización:
+  if (normFilename != "")
+  {
+    mlem->setNormalizationFactorsProjection(normFilename);
+  }
   // Reconstruyo:
   TipoProyector tipoProy;
   tipoProy = SIDDON_CYLINDRICAL_SCANNER;

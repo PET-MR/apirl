@@ -32,6 +32,10 @@ attMapBaseFilename = '/home/mab15/workspace/KCL/Biograph_mMr/Mediciones/NEMA_IQ_
 outputPath = '/fast/NemaReconstruction/';
 pixelSize_mm = [2.08625 2.08625 2.03125];
 pixelSize_mm(1:2) = pixelSize_mm(1:2).*2;
+%% OSEM
 numSubsets = 21;
 numIterations = 3;
 volume = OsemMmrSpan1(sinogramFilename, normFilename, attMapBaseFilename, outputPath, pixelSize_mm, numSubsets, numIterations);
+%% MLEM
+numIterations = 60;
+volume = MlemMmrSpan1(sinogramFilename, normFilename, attMapBaseFilename, outputPath, pixelSize_mm, numIterations);

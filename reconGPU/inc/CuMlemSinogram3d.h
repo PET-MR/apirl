@@ -90,15 +90,17 @@ class DLLEXPORT CuMlemSinogram3d : public MlemSinogram3d
     /* Puntero a al dirección de memoria en GPU donde se tendrá la imagen de sensibilidad.*/
     float* d_sensitivityImage;
 
-    /// Array con el índice de ring1 (z1) para cada sinograma 2d del sino3D.
+    /// Array con el índice de ring1 (z1) para cada sinograma 2d del sino3D. En realidad es slice.
     /** El largo del vector es igual a la suma total de sinogramas 2d que tiene el sino3d.Es sólo el índice de anillo!
      * Para obtener la coordenada en el world hay que entrar con este indice al vector de coordenadas de los anillos.
+     * El valor es el de slice, por cada anillo físico hay 2*numRings-1 de esa forma se cubren las posiciones intermedias cuando hay span.
      */
     int* d_ring1;
     
     /// Array con el índice de ring1 (z2) para cada sinograma 2d del sino3D.
     /** El largo del vector es igual a la suma total de sinogramas 2d que tiene el sino3d.Es sólo el índice de anillo!
      * Para obtener la coordenada en el world hay que entrar con este indice al vector de coordenadas de los anillos.
+     * El valor es el de slice, por cada anillo físico hay 2*numRings-1 de esa forma se cubren las posiciones intermedias cuando hay span.
      */
     int* d_ring2;
     
@@ -118,16 +120,6 @@ class DLLEXPORT CuMlemSinogram3d : public MlemSinogram3d
     /** El likelihood estimado es el de d_estimatedProjection en referencia a d_inputProjection.
      */
     float* d_likelihood;
-    
-    /// Flag que habilita el procesamiento de las LORs sin compresión con el Span.
-    /** Los sinogramas3D habitualmente tienen un span para comprimir la información y que ocupe menos volumen. Esto implica que un sinograma oblicuo
-     * representa a varias LORS con distintas combinaciones de anillos. En el modo básico de funcionamiento, en la reconstrucción se toma una LOR por
-     * sinograma oblicuo tomando su coordenada promedio entre las distintas LORs. Con este flag se puede deshabilitar este modo de trabajo, para que
-     * se proyecte cada LOR, independientemente del span del sinograma3D. Para ello se convierte al sinograma3d en cpu con cierto span, en un sinograma3d en gpu sin span
-     * que tendrá Nrings*Nrings sinogramas (podría deshabilitar por maxringdiff), repartiendo en partes iguales las cuentas del sinograma con cierto span en las combinaciones de anillos
-     * correspondientes al sino3d original.
-     */
-    bool enableProcessWithoutSpan;
     
     /// Dim3 con configuración de threads per block en cada dimensión para el kernel de proyección.
     dim3 blockSizeProjector;
@@ -253,16 +245,12 @@ class DLLEXPORT CuMlemSinogram3d : public MlemSinogram3d
      */
     void setUpdatePixelKernelConfig(dim3* blockSize);
     
-    /// Habilita el procesamiento sin compresión de span.
-    /** Habilita o deshabilta el procesamiento sin compresión de span.
-     */
-    void processWithoutSpan(bool enable){ enableProcessWithoutSpan = enable;};
-    
+    using Mlem::Reconstruct; // To avoid the warning on possible unintended override.
     /// Método que realiza la reconstrucción de las proyecciones. 
-    bool Reconstruct(TipoProyector tipoProy);
+    virtual bool Reconstruct(TipoProyector tipoProy);
     
     /// Método que realiza la reconstrucción y permite al usuario establecer el índice de GPU a utilizar
-    bool Reconstruct(TipoProyector tipoProy, int indexGpu);
+    virtual bool Reconstruct(TipoProyector tipoProy, int indexGpu);
 };
 
 #endif

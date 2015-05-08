@@ -58,10 +58,14 @@ else()
 endif()	
 MESSAGE(STATUS "DIRECTORIO DE INSTALACION: ${APIRL_INSTALL_PATH}")
 
+
+# Seteo en ON CUDA_VERBOSE_BUILD para visualizar todos los resultados del nvcc.
+SET(CUDA_VERBOSE_BUILD ON)
+SET(CUDA_BUILD_CUBIN ON)
 # Directorio donde se encuentra el FindCUDA:
 SET(FindCUDA_Dir ${CMAKE_SOURCE_DIR}/FindCUDA)
 # Seteo las compute capabilities con las que quiero compilar (Por default es la más baja: 1.0):
-SET(CUDA_COMPUTE_CAPABILITY 3.0)
+SET(CUDA_COMPUTE_CAPABILITY 3.5)
 # Algunas opciones adicionales para cuda.
 #SET(CUDA_USE_FAST_MATH ON)
 # Tipo de Cache que se habilita:
@@ -71,8 +75,7 @@ SET(CUDA_COMPUTE_CAPABILITY 3.0)
 
 set(nvcc_flags "${nvcc_flags} -rdc=true")
 
-# Seteo en ON CUDA_VERBOSE_BUILD para visualizar todos los resultados del nvcc.
-SET(CUDA_VERBOSE_BUILD ON)
+
 # Variables de entorno necesarias en linux, si no están definidas las fuerzo a un valor por default:
 if(CMAKE_HOST_UNIX)
   if(NOT ENV{CUDA_SDK_INSTALL_PATH})
@@ -85,8 +88,8 @@ add_subdirectory(recon)
 add_subdirectory(data)
 add_subdirectory(utils)
 add_subdirectory(cmd)
-#add_subdirectory(cmdGPU)
-#add_subdirectory(reconGPU)
+add_subdirectory(cmdGPU)
+add_subdirectory(reconGPU)
 
 # Configuraciones Adicionales de CUDA. En windows compilo en 32 bits al menos que obtenga un
 # Visual Studio de 64 bits. En Linux si directamente compilo según el sistema operativo.

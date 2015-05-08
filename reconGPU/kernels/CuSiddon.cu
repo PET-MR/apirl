@@ -36,12 +36,8 @@ __device__ void CUDA_Siddon (float4* LOR, float4* P0, float* Input, float* Resul
 
 {
 
-  // Coordenadas (x,y,z) de los dos puntos de intersección de la lor con el fov:
-  float xCirc_1_mm, xCirc_2_mm, yCirc_1_mm, yCirc_2_mm, zCirc_1_mm, zCirc_2_mm;
-
   // Variables relacionadas con el parámetro alpha de la recta de la lor.
   float alpha_xy_1, alpha_xy_2;	// Valores de alpha para la intersección de la recta con el círculo del fov.
-  float alpha_x_1, alpha_y_1, alpha_z_1, alpha_x_2, alpha_y_2, alpha_z_2; // Valores de alpha para el punto de salida y entrada al fov.
   float alpha_x_min, alpha_y_min, alpha_z_min, alpha_x_max, alpha_y_max, alpha_z_max;	// Valores de alpha de ambos puntos por coordenada, pero ahora separados por menor y mayor.
   float alpha_min, alpha_max;	// Valores de alpha mínimo y máximo finales, o sea de entrada y salida al fov de la lor.
 

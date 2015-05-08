@@ -174,6 +174,7 @@ class DLLEXPORT Sinogram2DinCylindrical3Dpet : public Sinogram2D
 	  // La vuelvo a definir porque en sinograms2d.. lo necesito y si es protected no puedo.
 	  float* getSinogramPtr(){return this->ptrSinogram;};
 	  
+	  using Sinogram2D::getFovLimits; // To avoid the warning on possible unintended override.
 	  /** Método que obtiene los dos puntos límites, de entrada y salida, de una lor que cruza el field of view.
 		  El mismo dependerá del tipo de fov del sinograma. Por default es circular, pero
 		  puede ser cuadrado o de otra geometría en clases derivadas.

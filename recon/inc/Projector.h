@@ -63,25 +63,25 @@ class DLLEXPORT Projector
     bool getMultipleLorsPerBin() {return useMultipleLorsPerBin;};
     
     /** Método abstracto de Project para Sinogram2d. */
-    virtual bool Project(Image*,Sinogram2D*){};
+    virtual bool Project(Image*,Sinogram2D*){return false;};
     /** Método abstracto de Backroject para Sinogram2d. */
-    virtual bool Backproject(Sinogram2D*, Image*){};
+    virtual bool Backproject(Sinogram2D*, Image*){return false;};
     /** Método abstracto de DivideAndBackproject para Sinogram2d. */
-    virtual bool DivideAndBackproject (Sinogram2D* InputSinogram, Sinogram2D* EstimatedSinogram, Image* outputImage){};
+    virtual bool DivideAndBackproject (Sinogram2D* InputSinogram, Sinogram2D* EstimatedSinogram, Image* outputImage){return false;};
 	
     /** Método abstracto de Project para Sinogram2dTgs. */
-    virtual bool Project(Image*,Sinogram2Dtgs*){};
+    virtual bool Project(Image*,Sinogram2Dtgs*){return false;};
     /** Método abstracto de Backroject para Sinogram2dTgs. */
-    virtual bool Backproject(Sinogram2Dtgs*, Image*){};
+    virtual bool Backproject(Sinogram2Dtgs*, Image*){return false;};
     /** Método abstracto de DivideAndBackproject para Sinogram2dTgs. */
-    virtual bool DivideAndBackproject (Sinogram2Dtgs* InputSinogram, Sinogram2Dtgs* EstimatedSinogram, Image* outputImage){};
+    virtual bool DivideAndBackproject (Sinogram2Dtgs* InputSinogram, Sinogram2Dtgs* EstimatedSinogram, Image* outputImage){return false;};
     
     /** Método abstracto de Project para Sinogram3D. */
-    virtual bool Project(Image*,Sinogram3D*){};
+    virtual bool Project(Image*,Sinogram3D*){return false;};
     /** Método abstracto de Backroject para Sinogram3D. */
-    virtual bool Backproject(Sinogram3D*, Image*){};
+    virtual bool Backproject(Sinogram3D*, Image*){return false;};
     /** Método abstracto de DivideAndBackproject para Sinogram3D. */
-    virtual bool DivideAndBackproject (Sinogram3D* InputSinogram, Sinogram3D* EstimatedSinogram, Image* outputImage) {};
+    virtual bool DivideAndBackproject (Sinogram3D* InputSinogram, Sinogram3D* EstimatedSinogram, Image* outputImage) {return false;};
 };
 
 #endif // PROJECTOR_H

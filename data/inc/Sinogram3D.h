@@ -209,6 +209,7 @@ class DLLEXPORT Sinogram3D : public Sinogram2D
 	/** Método que devuelve un puntero a los valores de las coordenadas de cada anillo.*/
 	float* getAxialPtr(){ return ptrAxialvalues_mm;};
 	
+	using Projection::getLikelihoodValue; // To avoid the warning on possible unintended override.
 	/** Método que calcula el likelihood de esta proyección respecto de una de referencia. */
 	float getLikelihoodValue(Sinogram3D* referenceProjection);
 	
@@ -221,7 +222,7 @@ class DLLEXPORT Sinogram3D : public Sinogram2D
 	bool FillConstant(float Value);
 	// Method that reads the Michelogram data from a file. The dimensions of the
 	// expected Michelogram are the ones loaded in the constructor of the class
-	bool readFromFile(string fileHeaderPath){};
+	bool readFromFile(string fileHeaderPath){return false;};
 	bool readFromInterfile(string fileHeaderPath);
 	/** Overload to be used in cylindrical scanners in order to set the scanner diameter for each sinogram. */
 	bool readFromInterfile(string fileHeaderPath, float radioScanner_mm);
