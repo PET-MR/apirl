@@ -210,6 +210,12 @@ end
 % close file
 fclose(fid);
 
+if ~isfield(info, 'SmsMiHeaderNameSpace')
+    structSizeSino = [];
+    return;
+end
+    
+    
 % Post processing, some fields are processed to get them in a more useful
 % format. This changes if its an image or a sinogram
 if strcmp(info.SmsMiHeaderNameSpace, 'sinogram subheader')

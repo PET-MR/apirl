@@ -150,3 +150,4 @@ for segment = 1 : numSegments
 end
 structSizeSino3D = getSizeSino3dStruct(numR, numTheta, numZ, rFov, zFov, sinogramsPerSegment, minRingDiffs, maxRingDiffs, maxAbsRingDiff);
 structSizeSino3D.numSinosMashed = numSinosMashed;
+structSizeSino3D.span = span;
