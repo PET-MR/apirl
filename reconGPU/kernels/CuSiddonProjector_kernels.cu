@@ -93,7 +93,7 @@ __global__ void cuSiddonBackprojection(float* d_inputSinogram, float* d_outputIm
   int indiceMichelogram = iBin2d + blockIdx.y * (numProj * numR);
   
   CUDA_GetPointsFromLOR(d_thetaValues_deg[iProj], d_RValues_mm[iR], d_ring1_mm[blockIdx.y], d_ring2_mm[blockIdx.y], d_RadioScanner_mm, &P1, &P2);
-  if((threadIdx.x == 0)&&(blockIdx.x == 0))
+  if((blockIdx.y == 0))
     printf("BlockIdx.y:%d indMichelogram:%d P1:%f,%f,%f P2:%f,%f,%f.\n", blockIdx.y, indiceMichelogram, P1.x, P1.y, P1.z, P2.x,P2.y,P2.z);
   //CUDA_GetPointsFromLOR(d_thetaValues_deg[iProj], d_RValues_mm[iR], d_ring1[blockIdx.y], d_ring2[blockIdx.y], d_RadioScanner_mm, &P1, &P2);
   LOR.x = P2.x - P1.x;

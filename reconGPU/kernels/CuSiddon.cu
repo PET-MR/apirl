@@ -13,7 +13,7 @@
 #define _CUSIDDONFUNC_H_
 
 #include <CuSiddon.h>
-
+#include <float.h>
 
 // Variables de Memoria constante utilizadas en Siddon. Se debe encargar de cargar los datos de forma rpevia a la reconstrucción.
 __device__ __constant__ float dummy; // Esto lo tuve que agregar porque el cudaMemcpyToSymbol me tiraba error con la primera variable declarada acá, sea cual sea.
@@ -37,7 +37,7 @@ __device__ void CUDA_Siddon (float4* LOR, float4* P0, float* Input, float* Resul
 {
 
   // Variables relacionadas con el parámetro alpha de la recta de la lor.
-  float alpha_xy_1, alpha_xy_2;	// Valores de alpha para la intersección de la recta con el círculo del fov.
+  float alpha_x_1, alpha_x_2, alpha_y_1, alpha_y_2;	// Valores de alpha para la intersección de la recta con el círculo del fov.
   float alpha_x_min, alpha_y_min, alpha_z_min, alpha_x_max, alpha_y_max, alpha_z_max;	// Valores de alpha de ambos puntos por coordenada, pero ahora separados por menor y mayor.
   float alpha_min, alpha_max;	// Valores de alpha mínimo y máximo finales, o sea de entrada y salida al fov de la lor.
 
@@ -67,27 +67,96 @@ __device__ void CUDA_Siddon (float4* LOR, float4* P0, float* Input, float* Resul
   float rayLength_mm, rayLengthInFov_mm;
 
   
+// For Fov cilindrico:
+//   // Cálculo de intersección de la lor con un fov cilíndrico.
+//   // Las lors siempre interesectan las caras curvas del cilindro y no las tapas. Ya
+//   // que el fov de los scanner está limitado por eso.
+//   // Lo calculo como la intersección entre la recta y una circunferencia de radio cudaRFOV. La ecuación a resolver es:
+//   // (X0+alpha*Vx).^2+(Y0+alpha*Vy).^2=cudaRFOV.^2
+//   // alpha = (-2*(Vx+Vy)+sqrt(4*Vx^2*(1-c)+4*Vy^2*(1-c) + 8(Vx+Vy)))/(2*(Vx^2+Vy^2))
+//   //float c = P0->x*P0->x + P0->y*P0->y - cudaRFOV*cudaRFOV;
+//   float segundoTermino = sqrt(4.0f*(LOR->x*LOR->x*(d_RadioFov_mm*d_RadioFov_mm-P0->y*P0->y)
+//     +LOR->y*LOR->y*(d_RadioFov_mm*d_RadioFov_mm-P0->x*P0->x)) + 8.0f*LOR->x*P0->x*LOR->y*P0->y);
+// 
+//   // Obtengo los valores de alpha donde se intersecciona la recta con la circunferencia.
+//   // Como la debería cruzar en dos puntos hay dos soluciones.
+//   alpha_xy_1 = (-2*(LOR->x*P0->x+LOR->y*P0->y) + segundoTermino)/(2*(LOR->x*LOR->x+LOR->y*LOR->y));
+//   alpha_xy_2 = (-2*(LOR->x*P0->x+LOR->y*P0->y) - segundoTermino)/(2*(LOR->x*LOR->x+LOR->y*LOR->y));
+// 
+//   // Valores de alpha de entrada y de salida. El de entrada es el menor, porque la lor
+// // se recorre desde P0 a P1.
+//   alpha_min = min(alpha_xy_1, alpha_xy_2);
+//   alpha_max = max(alpha_xy_1, alpha_xy_2);
 
-  // Cálculo de intersección de la lor con un fov cilíndrico.
-  // Las lors siempre interesectan las caras curvas del cilindro y no las tapas. Ya
-  // que el fov de los scanner está limitado por eso.
-  // Lo calculo como la intersección entre la recta y una circunferencia de radio cudaRFOV. La ecuación a resolver es:
-  // (X0+alpha*Vx).^2+(Y0+alpha*Vy).^2=cudaRFOV.^2
-  // alpha = (-2*(Vx+Vy)+sqrt(4*Vx^2*(1-c)+4*Vy^2*(1-c) + 8(Vx+Vy)))/(2*(Vx^2+Vy^2))
-  //float c = P0->x*P0->x + P0->y*P0->y - cudaRFOV*cudaRFOV;
-  float segundoTermino = sqrt(4.0f*(LOR->x*LOR->x*(d_RadioFov_mm*d_RadioFov_mm-P0->y*P0->y)
-    +LOR->y*LOR->y*(d_RadioFov_mm*d_RadioFov_mm-P0->x*P0->x)) + 8.0f*LOR->x*P0->x*LOR->y*P0->y);
-
-  // Obtengo los valores de alpha donde se intersecciona la recta con la circunferencia.
-  // Como la debería cruzar en dos puntos hay dos soluciones.
-  alpha_xy_1 = (-2*(LOR->x*P0->x+LOR->y*P0->y) + segundoTermino)/(2*(LOR->x*LOR->x+LOR->y*LOR->y));
-  alpha_xy_2 = (-2*(LOR->x*P0->x+LOR->y*P0->y) - segundoTermino)/(2*(LOR->x*LOR->x+LOR->y*LOR->y));
-
-  // Valores de alpha de entrada y de salida. El de entrada es el menor, porque la lor
-// se recorre desde P0 a P1.
-  alpha_min = min(alpha_xy_1, alpha_xy_2);
-  alpha_max = max(alpha_xy_1, alpha_xy_2);
-
+    // Para FOV cuadrado:
+  // Obtengo la intersección de la lor con las rectas x=-rFov_mm x=rFov_mm y=-rFov_mm y =rFov_mm
+  // Para dichos valores verifico que la otra coordenada este dentro de los valores, y obtengo
+  // los puntos de entrada y salida de la lor. No me fijo z, porque no debería ingresar por las
+  // tapas del cilindro, al menos que haya algún error entre el sinograma y la imagen de entrada.
+  float minValueX_mm = -d_RadioFov_mm;
+  float minValueY_mm = -d_RadioFov_mm;
+  float maxValueX_mm = d_RadioFov_mm;
+  float maxValueY_mm = d_RadioFov_mm;
+  
+  
+  // Calculates alpha values for the inferior planes (entry planes) of the FOV
+  if(LOR->x == 0) // Parallel to x axis
+  {
+    alpha_y_1 = (minValueY_mm - P0->y) / LOR->y; 
+    alpha_y_2 = (maxValueY_mm - P0->y) / LOR->y;
+    if(alpha_y_1 < alpha_y_2)
+    {
+      alpha_min = alpha_y_1;
+      alpha_max = alpha_y_2;
+    }
+    else
+    {
+      alpha_min = alpha_y_2;
+      alpha_max = alpha_y_1;
+    }
+  }
+  else if(LOR->y == 0) // Parallel to y axis.
+  {
+    alpha_x_1 = (minValueX_mm - P0->x) / LOR->x;
+    alpha_x_2 = (maxValueX_mm - P0->x) / LOR->x;
+    if(alpha_x_1 < alpha_x_2)
+    {
+      alpha_min = alpha_x_1;
+      alpha_max = alpha_x_2;
+    }
+    else
+    {
+      alpha_min = alpha_x_2;
+      alpha_max = alpha_x_1;
+    }
+  }
+  else
+  {
+    alpha_x_1 = (minValueX_mm - P0->x) / LOR->x;
+    alpha_y_1 = (minValueY_mm - P0->y) / LOR->y;  
+    // Calculates alpha values for superior planes ( going out planes) of the fov
+    alpha_x_2 = (maxValueX_mm - P0->x) / LOR->x;	// ValuesX has one more element than pixels in X, thats we can use InputVolume->SizeX as index for the las element
+    alpha_y_2 = (maxValueY_mm - P0->y) / LOR->y;
+    //alpha min
+    alpha_x_min = min(alpha_x_1, alpha_x_2);
+    alpha_y_min = min(alpha_y_1, alpha_y_2);
+    //alpha_y_min = max((float)0, alpha_y_min);
+    alpha_min = max(alpha_x_min, alpha_y_min); //
+    //alpha max
+    alpha_x_max = max(alpha_x_1, alpha_x_2);
+    alpha_y_max = max(alpha_y_1, alpha_y_2);
+    alpha_max = min(alpha_x_max, alpha_y_max);
+  }
+    
+  
+  // if the radius of the scanner is less than the diagonal (alpha less than 0), the entry point should be P0
+  if ((alpha_min<0)||(alpha_min>1)) // I added (alpha_min>1), because for aprallel lors to an axis, both alphas can be positiver or negative.
+    alpha_min = 0;
+  // if the radius of the scanner is less than the diagonal (alpha less than 0), the entry point should be P0
+  if ((alpha_max>1)||(alpha_max<0)) 
+    alpha_max = 1;
+  // Fin para Fov Cuadrado.
+  
   // Coordenadas dentro de la imagen de los dos puntos de entrada:
   x_1_mm = P0->x + LOR->x * alpha_min;
   y_1_mm = P0->y + LOR->y * alpha_min;
@@ -96,28 +165,34 @@ __device__ void CUDA_Siddon (float4* LOR, float4* P0, float* Input, float* Resul
   x_2_mm = P0->x + LOR->x * alpha_max;
   y_2_mm = P0->y + LOR->y * alpha_max;
   z_2_mm = P0->z + LOR->z * alpha_max;
+  rayLengthInFov_mm = sqrt((x_2_mm-x_1_mm) * (x_2_mm-x_1_mm) + (y_2_mm-y_1_mm) * (y_2_mm-y_1_mm) + (z_2_mm-z_1_mm) * (z_2_mm-z_1_mm));
 
+  // Distancia total de la LOR. Es la distancia entre los puntos P0 y P1, habitualmente, esos son
+  // los puntos de la lor sobre el detector.
+  rayLength_mm = sqrt(((P0->x + LOR->x) - P0->x) * ((P0->x + LOR->x) - P0->x) 
+	  + ((P0->y + LOR->y) - P0->y) * ((P0->y + LOR->y) - P0->y)
+	  + ((P0->z + LOR->z) - P0->z) * ((P0->z + LOR->z) - P0->z));
+  
   float offsetZ_mm = 0;//(SCANNER_ZFOV - cudaZFOV)/2;
-  if((z_1_mm < offsetZ_mm)||(z_1_mm > (SCANNER_ZFOV-offsetZ_mm)) || (z_2_mm < offsetZ_mm)||(z_2_mm > (SCANNER_ZFOV-offsetZ_mm)))
+  if((z_1_mm < offsetZ_mm)||(z_1_mm > (d_AxialFov_mm-offsetZ_mm)) || (z_2_mm < offsetZ_mm)||(z_2_mm > (d_AxialFov_mm-offsetZ_mm)))
 
   {
 	// La lor entra por las tapas del clindro del fov:
 	printf("Warning: Lor que entra por las tapas del cilindro del FoV.\n");
   }
 
+
   // Con el alhpa_min y el alpha_max tengo los puntos de entrada y salida al fov. De los cuales obtengo
   // los índices de los píxeles de entrada y salida del fov.
   // En este caso me interesa el píxel de entrada, para luego considerarlo entero,
   // por más que la entrada al fov sea en un punto intermedio:
-  float d_RadioFov_aux_mm = d_RadioFov_mm - 0.001; // Manganeta para que por error de redondeo no me quede el índice máx en d_imageSize.nPixelsX o Yo Z
-  i_min = abs((x_1_mm + d_RadioFov_aux_mm)/d_imageSize.sizePixelX_mm); // In X increase of System Coordinate = Increase Pixels.
-  j_min = abs((y_1_mm + d_RadioFov_aux_mm)/d_imageSize.sizePixelY_mm); 
-  k_min = abs((z_1_mm - offsetZ_mm)/d_imageSize.sizePixelZ_mm); 
-
-  i_max = abs((x_2_mm + d_RadioFov_aux_mm)/d_imageSize.sizePixelX_mm); // In X increase of System Coordinate = Increase Pixels.
-  j_max = abs((y_2_mm + d_RadioFov_aux_mm)/d_imageSize.sizePixelY_mm); // 
-  k_max = abs((z_2_mm - offsetZ_mm)/d_imageSize.sizePixelZ_mm);
-
+  i_min = floorf((x_1_mm + d_RadioFov_mm)/d_imageSize.sizePixelX_mm); // In X increase of System Coordinate = Increase Pixels.
+  j_min = floorf((y_1_mm + d_RadioFov_mm)/d_imageSize.sizePixelY_mm); 
+  k_min = floorf((z_1_mm - offsetZ_mm)/d_imageSize.sizePixelZ_mm); 
+  i_max = floorf((x_2_mm + d_RadioFov_mm)/d_imageSize.sizePixelX_mm); // In X increase of System Coordinate = Increase Pixels.
+  j_max = floorf((y_2_mm + d_RadioFov_mm)/d_imageSize.sizePixelY_mm); // 
+  k_max = floorf((z_2_mm - offsetZ_mm)/d_imageSize.sizePixelZ_mm);
+  
   // Esta verificación y corrección la saco, porque a veces por error de redondeo puede quedar en el píxel -1 o en sizePixel
   #ifdef __DEBUG__
     // Verifico que los índices de i y j dieron dentro de la imagen, sino es que que estoy fuera del fov.
@@ -155,65 +230,36 @@ __device__ void CUDA_Siddon (float4* LOR, float4* P0, float* Input, float* Resul
 
   
 
-  // Los alpha min y alpha max los tengo calcular para la entrada
-  // y salida al primer y último píxel en vez del punto de intersección del fov circular.
-  // Entonces a partir del i_min, i_max, j_min, j_max, y las direcciones de las lors, determino
-  // cuales serían los valores alpha para los límites de ese píxel si la lor siguiera (que pueden ser dos,
-  // límite en el borde x (fila) o borde y (col) del píxel. De los 4 segmentos del píxel, me quedan dos, porque
-  // se en que sentido avanza la lor por eso miro la pendiente para el calculo.).
-  // Luego con los dos valores de alpha_min y alpha_max, me quedo con el mayor y el menor respectivamente porque son
-  // los puntos más cercanos al punto de intersección con el fov circular. De esta forma obtengo el punto de la cara
-  // del píxel que se intersecta primero, y ese va a ser la entrada al fov considerando al píxel entero.
-  // Antes recalculaba el alpha para i_min o (i_min+1), pero en realidad se que que cuando la pendiente es positiva
-  // el próximo costado del píxel es alpha_ +- alpha_x_u
+    // A partir del (i_min,j_min) voy recorriendo la lor, para determinar el índice del próximo píxel, o sea
+  // saber si avanzo en i o en j, debo ver si el cambio se da en x o en y. Para esto en cada avance se calcula
+  // el valor de alpha si avanzar un píxel en i (o x) y el valor de alpha en j (o y). De estos dos valores: alpha_x
+  // y alpha_y, el que sea menor indicará en que sentido tengo que avanzar con el píxel.
   if (LOR->x>0)
-  {
-    alpha_x_min = ( -d_RadioFov_mm + i_min * d_imageSize.sizePixelX_mm - P0->x ) / LOR->x;	//The formula is (i_min+i_incr) because que want the limit to the next change of pixel
-    alpha_x_max = ( -d_RadioFov_mm + (i_max+1) * d_imageSize.sizePixelX_mm - P0->x ) / LOR->x;	//The formula is (i_min+i_incr) because que want the limit to the next change of pixel
-  }
+    alpha_x = ( -d_RadioFov_mm + (i_min + i_incr) * d_imageSize.sizePixelX_mm - P0->x ) / LOR->x;	//The formula is (i_min+i_incr) because que want the limit to the next change of pixel
   else if (LOR->x<0)
-  {
-    alpha_x_min = ( -d_RadioFov_mm + (i_min+1) * d_imageSize.sizePixelX_mm - P0->x ) / LOR->x;	// Limit to the left
-    alpha_x_max = ( -d_RadioFov_mm + i_max * d_imageSize.sizePixelX_mm - P0->x ) / LOR->x;	// Limit to the left
-  }
-  if(LOR->y > 0)
-  {
-    alpha_y_min = ( -d_RadioFov_mm + j_min * d_imageSize.sizePixelY_mm - P0->y ) / LOR->y;
-    alpha_y_max = ( -d_RadioFov_mm + (j_max+1) * d_imageSize.sizePixelY_mm - P0->y ) / LOR->y;
-  }
-  else if (LOR->y < 0)
-  {
-    alpha_y_min = ( -d_RadioFov_mm + (j_min+1) * d_imageSize.sizePixelY_mm - P0->y ) / LOR->y;
-    alpha_y_max = ( -d_RadioFov_mm + j_max * d_imageSize.sizePixelY_mm - P0->y ) / LOR->y;
-  }
-
-  // Es poco probable que toque la tapa del cilindro pero como en realidad es el borde del píxel,
-  // lo vuelvo a calcular
-  if(LOR->z > 0)
-  {
-    alpha_z_min = ( offsetZ_mm + k_min * d_imageSize.sizePixelZ_mm - P0->z ) / LOR->z;
-    alpha_z_max = ( offsetZ_mm + (k_max+1) * d_imageSize.sizePixelZ_mm - P0->z ) / LOR->z;
-  }
-  else if (LOR->z < 0)
-  {
-    alpha_z_min = ( offsetZ_mm + (k_min+1) * d_imageSize.sizePixelZ_mm - P0->z ) / LOR->z;
-    alpha_z_max = ( offsetZ_mm + k_max * d_imageSize.sizePixelZ_mm - P0->z ) / LOR->z;
-  }
-  alpha_min = max(alpha_x_min, max(alpha_y_min, alpha_z_min));
-  alpha_max = min(alpha_x_max, min(alpha_y_max, alpha_z_max));
-
-  // Largo de la los dentro del fov. También podría ir calculándolo sumando todos los segmentos.
-  // Si tengo en cuenta que para hacer este calculo tengo que hacer como 10 multiplicaciones
-  // y una raiz cuadrada, y de la otra forma serán cierta cantidad de sumas dependiendo el tamaño 
-  // de la imagen, pero en promedio pueden ser 100. No habría mucha diferencia entre hacerlo de una forma u otra.
-  // Puntos exactos de entrada y salida basados en los límtes del píxel:
-  x_1_mm = P0->x + alpha_min * LOR->x;
-  y_1_mm = P0->y + alpha_min * LOR->y;
-  z_1_mm = P0->z + alpha_min * LOR->z;
+    alpha_x = ( -d_RadioFov_mm + i_min * d_imageSize.sizePixelX_mm - P0->x ) / LOR->x;	// Limit to the left
+  else
+    alpha_x = __int_as_float(0x7f800000);
+  if (alpha_x <0)		// If its outside the FOV que get to the maximum value so it doesn't bother
+    alpha_x = FLT_MAX;
   
-  x_2_mm = P0->x + alpha_max * LOR->x;
-  y_2_mm = P0->y + alpha_max * LOR->y;
-  z_2_mm = P0->z + alpha_max * LOR->z;
+  if(LOR->y > 0)
+    alpha_y = ( -d_RadioFov_mm + (j_min + j_incr) * d_imageSize.sizePixelY_mm - P0->y ) / LOR->y;
+  else if (LOR->y < 0)
+    alpha_y = ( -d_RadioFov_mm + j_min * d_imageSize.sizePixelY_mm - P0->y) / LOR->y;
+  else
+    alpha_y = FLT_MAX;
+  if (alpha_y <0)
+    alpha_y = FLT_MAX;
+  
+  if(LOR->z > 0)
+    alpha_z = ( offsetZ_mm + (k_min + k_incr) * d_imageSize.sizePixelZ_mm - P0->z) / LOR->z;
+  else if (LOR->z < 0)
+    alpha_z = ( offsetZ_mm + k_min * d_imageSize.sizePixelZ_mm - P0->z ) / LOR->z;
+  else
+    alpha_z = FLT_MAX;
+  if (alpha_z <0)
+    alpha_z = FLT_MAX;
 
   rayLengthInFov_mm = sqrt((x_2_mm-x_1_mm) * (x_2_mm-x_1_mm) + (y_2_mm-y_1_mm) * (y_2_mm-y_1_mm) + (z_2_mm-z_1_mm) * (z_2_mm-z_1_mm));
 
@@ -275,13 +321,13 @@ __device__ void CUDA_Siddon (float4* LOR, float4* P0, float* Input, float* Resul
       switch(Mode)
       {  
 	case SENSIBILITY_IMAGE:
-	  atomicAdd(Result+indicePixel, weight.w / d_imageSize.sizePixelX_mm);
+	  atomicAdd(Result+indicePixel, weight.w * d_imageSize.sizePixelX_mm);
 	  break;
 	case PROJECTION:
-	  Result[indiceMichelogram] += weight.w / d_imageSize.sizePixelX_mm * Input[indicePixel];
+	  Result[indiceMichelogram] += weight.w * Input[indicePixel];
 	  break;
 	case BACKPROJECTION:
-	  atomicAdd(Result+indicePixel, weight.w / d_imageSize.sizePixelX_mm * Input[indiceMichelogram]);
+	  atomicAdd(Result+indicePixel, weight.w * Input[indiceMichelogram]);
 	  break;
       }
 

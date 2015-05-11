@@ -169,6 +169,7 @@ clear atteNormFactors;
 % Initialize crystal efficiencies:
 numDetectorsPerRing = 504;
 numRings = 64;
+numDetectors = numDetectorsPerRing*numRings;
 crystalEfficiencies = ones(numDetectorsPerRing, numRings); % Initialize the crystal efficiencies with ones.
 
 disp('########## STARTING ITERATIVE ALGORITHM ##########');
