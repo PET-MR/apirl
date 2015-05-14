@@ -3,6 +3,12 @@
 
 #include <limits>
 
+#ifdef WIN32 
+	#define	PATH_BAR '\\'
+#else
+	#define	PATH_BAR '/'
+#endif
+
 // DLL export/import declaration: visibility of objects
 #ifndef LINK_STATIC
 	#ifdef WIN32               // Win32 build

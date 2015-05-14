@@ -83,6 +83,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <string.h>
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
@@ -162,7 +163,8 @@ int MdcGetIntfKey(FILE *fp)
   memcpy(keystr_case,keystr,MDC_INTF_MAXKEYCHARS+1);
 
   /* remove spaces from key value */
-  pkeyval = strstr(keystr,":=") + 2;
+  pkeyval = strstr(keystr,":=");
+  pkeyval += 2;
   MdcKillSpaces(pkeyval);
 
   /* [2] preserve case insensitive key string */

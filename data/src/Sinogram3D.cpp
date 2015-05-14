@@ -121,11 +121,11 @@ bool Sinogram3D::readFromInterfile(string headerFilename, float radioScanner_mm)
   }
   // Si el filename tiene el path completo lo dejo como está si solo tiene el nombre del archivo le adjunto
   // el path del header:
-  char* ultimaBarra = strrchr(filename_i33, '/');
+  char* ultimaBarra = strrchr(filename_i33, PATH_BAR);
   if(ultimaBarra == NULL)
   {
     // Agregp el path del headerFilename
-    ultimaBarra = strrchr((char*)headerFilename.c_str(), '/');
+    ultimaBarra = strrchr((char*)headerFilename.c_str(), PATH_BAR);
     // Uso buffer como intermedio. Primero copio el header:
     strncpy(buffer, headerFilename.c_str(), (ultimaBarra-headerFilename.c_str()+1));
     // strncpy no agrega el cero de fin de string:
