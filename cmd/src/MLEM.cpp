@@ -320,10 +320,10 @@ int main (int argc, char *argv[])
   {
     // Ojo que por ahora no chequea si es al configuración del proyector o el backprojector.
     // Agarra el primer parámetro que encuentra.
-    RotationBasedProjector::InterpolationMethods interpMethod;
-    if (getRotationBasedProjectorParameters(parameterFileName, "MLEM", &interpMethod))
+    string strInterpMethod;
+    if (getRotationBasedProjectorParameters(parameterFileName, "MLEM", &strInterpMethod))
       return -1;
-    forwardprojector = (Projector*)new RotationBasedProjector(interpMethod);
+    forwardprojector = (Projector*)new RotationBasedProjector(strInterpMethod);
   }
   else if(strForwardprojector.compare("ArPetProjector") == 0)
   {
@@ -344,10 +344,10 @@ int main (int argc, char *argv[])
   {
     // Ojo que por ahora no chequea si es al configuración del proyector o el backprojector.
     // Agarra el primer parámetro que encuentra.
-    RotationBasedProjector::InterpolationMethods interpMethod;
-    if (getRotationBasedProjectorParameters(parameterFileName, "MLEM", &interpMethod))
+    string strInterpMethod;
+    if (getRotationBasedProjectorParameters(parameterFileName, "MLEM", &strInterpMethod))
       return -1;
-    backprojector = (Projector*)new RotationBasedProjector(interpMethod);
+    backprojector = (Projector*)new RotationBasedProjector(strInterpMethod);
   }
   else if(strBackprojector.compare("ArPetProjector") == 0)
   {

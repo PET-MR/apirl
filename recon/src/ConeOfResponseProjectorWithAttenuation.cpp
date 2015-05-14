@@ -65,7 +65,7 @@ bool ConeOfResponseProjectorWithAttenuation::Project(Image* inputImage, Sinogram
 		  // delimits the voxels
 		  // Siddon
 		  
-		  unsigned int LengthList;
+		  int LengthList;
 		  rayLengthInFov_mm = Siddon(LOR, inputImage, MyWeightsList, &LengthList,1);
 		  geometricValue = 0;
 		  // Para la implementación de la atenuación utilizo la implementación propuesta en: 
@@ -196,7 +196,7 @@ bool ConeOfResponseProjectorWithAttenuation::Backproject (Sinogram2Dtgs* inputSi
 		  // delimits the voxels
 		  // Siddon
 		  
-		  unsigned int LengthList;		  
+		  int LengthList;		  
 		  geometricValue = 0;
 		  // Para la implementación de la atenuación utilizo la implementación propuesta en: 
 		  // Gullberg et al, An attenuated projector-backprojector for iterative SPECT reconstruction, Phys Med Biol, 1985, Vol 30, No 8

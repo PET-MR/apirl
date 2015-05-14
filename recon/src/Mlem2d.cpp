@@ -24,6 +24,7 @@ bool Mlem2d::setNormalizationFactorsProjection(Sinogram2D* normSinogram)
 {
   normalizationCorrectionFactorsProjection = normSinogram->Copy();
   enableNormalization = true;
+  return enableNormalization;
 }
 
 bool Mlem2d::setNormalizationFactorsProjection(string normFilename)
@@ -31,6 +32,7 @@ bool Mlem2d::setNormalizationFactorsProjection(string normFilename)
   // Problema porque sinogram2d no tiene get lor para hacer backprojection
   //normalizationCorrectionFactorsProjection = new Sinogram2DinCylindrical3Dpet((char*)normFilename.c_str(), inputProjection->getRadioFov_mm());
   enableNormalization = true;
+  return enableNormalization;
 }
 
 /// Método público que realiza la reconstrucción en base a los parámetros pasados al objeto Mlem instanciado

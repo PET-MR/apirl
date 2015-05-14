@@ -23,6 +23,7 @@
 #include <Projector.h>
 #include <Sinogram2D.h>
 #include <Sinogram3D.h>
+#include <time.h>
 #include <string>
 #include <iostream>
 #include <sstream>

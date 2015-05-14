@@ -32,6 +32,7 @@ bool Mlem2dMultiple::setAcfProjection(string acfFilename)
   // Los leo como cylindrical, total para la corrección lo único que importa es realizar la resta bin a bin:
   attenuationCorrectionFactorsProjection = new Sinograms2DinCylindrical3Dpet((char*)acfFilename.c_str(), inputProjection->getRadioFov_mm(), inputProjection->getAxialFoV_mm(), inputProjection->getRadioFov_mm());
   enableAttenuationCorrection = true;  
+  return enableAttenuationCorrection;
 }
     
 /// Método que carga un sinograma desde un archivo interfile con la estimación de scatter para aplicar como corrección.
@@ -41,6 +42,7 @@ bool Mlem2dMultiple::setScatterCorrectionProjection(string scatterFilename)
   scatterCorrectionProjection = new Sinograms2DinCylindrical3Dpet((char*)scatterFilename.c_str(), inputProjection->getRadioFov_mm(), inputProjection->getAxialFoV_mm(), inputProjection->getRadioFov_mm());
 
   enableScatterCorrection = true;
+  return enableScatterCorrection;
 }
     
 /// Método que carga un sinograma desde un archivo interfile con la estimación de randomc para aplicar como corrección.
@@ -49,6 +51,7 @@ bool Mlem2dMultiple::setRandomCorrectionProjection(string randomsFilename)
   // Los leo como cylindrical, total para la corrección lo único que importa es realizar la resta bin a bin:
   randomsCorrectionProjection = new Sinograms2DinCylindrical3Dpet((char*)randomsFilename.c_str(), inputProjection->getRadioFov_mm(), inputProjection->getAxialFoV_mm(), inputProjection->getRadioFov_mm());
   enableRandomsCorrection = true;
+  return enableRandomsCorrection;
 }
 
 bool Mlem2dMultiple::setNormalizationFactorsProjection(string normFilename)
@@ -56,6 +59,7 @@ bool Mlem2dMultiple::setNormalizationFactorsProjection(string normFilename)
   // Seteo un valor arbitro de radio del scanner para que sea más grande que el fov.
   normalizationCorrectionFactorsProjection= new Sinograms2DinCylindrical3Dpet((char*)normFilename.c_str(), inputProjection->getRadioFov_mm(), inputProjection->getAxialFoV_mm(), inputProjection->getRadioFov_mm()*1.4);
   enableNormalization = true;
+  return enableNormalization;
 }
 
 /// Método que aplica las correcciones habilitadas según se hayan cargado los sinogramas de atenuación, randoms y/o scatter.
@@ -67,34 +71,35 @@ bool Mlem2dMultiple::correctInputSinogram()
     {
       for(int l = 0; l <  inputProjection->getSinogram2D(j)->getNumR(); l++)
       {
-	if(enableScatterCorrection)
-	{
-	  inputProjection->getSinogram2D(j)->setSinogramBin(k,l, inputProjection->getSinogram2D(j)->getSinogramBin(k,l)-
-	    scatterCorrectionProjection->getSinogram2D(j)->getSinogramBin(k,l));
-	}
-	if(enableRandomsCorrection)
-	{
-	  inputProjection->getSinogram2D(j)->setSinogramBin(k,l, inputProjection->getSinogram2D(j)->getSinogramBin(k,l)-
-	    randomsCorrectionProjection->getSinogram2D(j)->getSinogramBin(k,l));
-	}
-	// Verifico que no quedo ningún bin negativo:
-	if(inputProjection->getSinogram2D(j)->getSinogramBin(k,l) < 0)
-	{
-	  inputProjection->getSinogram2D(j)->setSinogramBin(k,l,0);
-	}
+		if(enableScatterCorrection)
+		{
+			inputProjection->getSinogram2D(j)->setSinogramBin(k,l, inputProjection->getSinogram2D(j)->getSinogramBin(k,l)-
+			scatterCorrectionProjection->getSinogram2D(j)->getSinogramBin(k,l));
+		}
+		if(enableRandomsCorrection)
+		{
+			inputProjection->getSinogram2D(j)->setSinogramBin(k,l, inputProjection->getSinogram2D(j)->getSinogramBin(k,l)-
+			randomsCorrectionProjection->getSinogram2D(j)->getSinogramBin(k,l));
+		}
+		// Verifico que no quedo ningún bin negativo:
+		if(inputProjection->getSinogram2D(j)->getSinogramBin(k,l) < 0)
+		{
+			inputProjection->getSinogram2D(j)->setSinogramBin(k,l,0);
+		}
 	
-	// Por último, aplico la corrección por atenuación:
-	if(enableAttenuationCorrection)
-	{
-	  inputProjection->getSinogram2D(j)->setSinogramBin(k,l,inputProjection->getSinogram2D(j)->getSinogramBin(k,l)*
-	    attenuationCorrectionFactorsProjection->getSinogram2D(j)->getSinogramBin(k,l));
-	}
+		// Por último, aplico la corrección por atenuación:
+		if(enableAttenuationCorrection)
+		{
+			inputProjection->getSinogram2D(j)->setSinogramBin(k,l,inputProjection->getSinogram2D(j)->getSinogramBin(k,l)*
+			attenuationCorrectionFactorsProjection->getSinogram2D(j)->getSinogramBin(k,l));
+		}
       }
     }
   }
   char c_string[100];
   sprintf(c_string, "%s_correctedSinogram", this->outputFilenamePrefix.c_str()); 
   inputProjection->writeInterfile(c_string);
+  return true;
 }
 
 
@@ -137,7 +142,7 @@ bool Mlem2dMultiple::Reconstruct()
   // Una vez que recontruí todo, guardo en interfile la imagen con todos los slices:
   sprintf(c_string, "%s_volFinal", this->outputFilenamePrefix.c_str());
   reconstructionImage->writeInterfile(c_string);
-  
+  return true;
 }
 
 bool Mlem2dMultiple::NormalizeVolume()
@@ -161,9 +166,5 @@ bool Mlem2dMultiple::NormalizeVolume()
       }
     }
   }
+  return true;
 }
-
-
-
-
-

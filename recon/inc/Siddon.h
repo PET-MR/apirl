@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <cmath>
 #include <Geometry.h>
 #include <iostream>
 #include <limits>
@@ -43,11 +44,11 @@ struct SiddonSegment
 // This function calculates Siddon Wieghts for a lor. It gets as parameters, the LOR in
 // a Line3D object which P0 is the P1 of the LOR, the values of the planes in X, Y, Z, and a pointer
 // where all the wieghts will be loaded.
-DLLEXPORT float Siddon(Line3D LOR, Image* InputVolume, SiddonSegment** WeightsList, unsigned int* LengthList, float factor);
+DLLEXPORT float Siddon(Line3D LOR, Image* InputVolume, SiddonSegment** WeightsList, int* LengthList, float factor);
 
-DLLEXPORT float Siddon (Line2D LOR, Image* InputImage, SiddonSegment** WeightsList, unsigned int* LengthList, float factor);
+DLLEXPORT float Siddon (Line2D LOR, Image* InputImage, SiddonSegment** WeightsList, int* LengthList, float factor);
 
-DLLEXPORT void Siddon (Point2D point1, Point2D point2, Image* image, SiddonSegment** WeightsList, unsigned int* LengthList, float factor);
+DLLEXPORT void Siddon (Point2D point1, Point2D point2, Image* image, SiddonSegment** WeightsList, int* LengthList, float factor);
 
 DLLEXPORT float getRayLengthInFov(Line2D LOR, Image* image);
 

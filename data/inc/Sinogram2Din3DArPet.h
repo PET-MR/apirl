@@ -58,22 +58,23 @@ class DLLEXPORT Sinogram2Din3DArPet : public Sinogram2DinCylindrical3Dpet
 {
 	protected:
 	  /** Cantidad de cabezales. */
-	  static const int numCabezales = 6;
+	  static const int numCabezales;
 	  
-	  /** Largo del detector en y. */
-	  static const float lengthDetectorY_mm = 304.6;
+	  /** Largo del detector en y.
+	  Static value of 304.6.  */
+	  static const float lengthDetectorY_mm;
 	  
-	  /** Largo del detector en x.*/
-	  static const float lengthDetectorX_mm = 406.8;
+	  /** Largo del detector en x. Static value of  406.8.*/
+	  static const float lengthDetectorX_mm;
 	  
-	  /** Espesor del detector, */
-	  static const float depthDetector_mm = 25.4;
+	  /** Espesor del detector, Static value of 25.4.*/
+	  static const float depthDetector_mm;
 	  
-	  /** Atenuación lineal del detector (en este caso NaI) */
-	  static const float linearAttenuationCoef_1_cm = 0.34;
+	  /** Atenuación lineal del detector (en este caso NaI). Static value of  0.34.*/
+	  static const float linearAttenuationCoef_1_cm;
 	  
-	  /** Distancia del centro del FOV a la superficie de cada detector. */
-	  static const float distCenterToDetector_mm = 360;	  
+	  /** Distancia del centro del FOV a la superficie de cada detector. Static value of 360. */
+	  static const float distCenterToDetector_mm;	  
 	  
 	  /** Largo de zona ciega en el borde de los detectores. */
 	  float lengthFromBorderBlindArea_mm;

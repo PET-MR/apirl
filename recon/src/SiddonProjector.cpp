@@ -33,7 +33,7 @@ bool SiddonProjector::Backproject (Sinogram2D* InputSinogram, Image* outputImage
   SizeImage sizeImage = outputImage->getSize();
   // Puntero a los píxeles:
   float* ptrPixels = outputImage->getPixelsPtr();
-  unsigned int LengthList, i, j, l, indexPixel;
+  int LengthList, i, j, l, indexPixel;
   float newValue = 0, geomFactor;
   // I only need to calculate the ForwardProjection of the bins were ara at least one event
   //#pragma omp parallel private(i, j, l, LOR, P1, P2, MyWeightsList, geomFactor, LengthList, newValue, indexPixel) shared(InputSinogram,ptrPixels)
@@ -89,7 +89,7 @@ bool SiddonProjector::DivideAndBackproject (Sinogram2D* InputSinogram, Sinogram2
   SizeImage sizeImage = outputImage->getSize();
   // Puntero a los píxeles:
   float* ptrPixels = outputImage->getPixelsPtr();
-  unsigned int LengthList, i, j, l, indexPixel;
+  int LengthList, i, j, l, indexPixel;
   float newValue = 0, geomFactor;
   // I only need to calculate the ForwardProjection of the bins were ara at least one event
   #pragma omp parallel private(i, j, l, LOR, P1, P2, MyWeightsList, geomFactor, LengthList, newValue, indexPixel) shared(InputSinogram,EstimatedSinogram,ptrPixels)
@@ -146,7 +146,7 @@ bool SiddonProjector::Project (Image* inputImage, Sinogram2D* outputProjection)
   SizeImage sizeImage = inputImage->getSize();
   // Puntero a los píxeles:
   float* ptrPixels = inputImage->getPixelsPtr();
-  unsigned int LengthList, i, j, l;
+  int LengthList, i, j, l;
   float geomFactor;
   // I only need to calculate the ForwardProjection of the bins were ara at least one event
   #pragma omp parallel private(i, j, l, LOR, P1, P2, MyWeightsList, geomFactor, LengthList) shared(outputProjection,ptrPixels)
@@ -207,7 +207,7 @@ bool SiddonProjector::Backproject (Sinogram2Dtgs* InputSinogram, Image* outputIm
       // delimits the voxels
       // Siddon
       
-      unsigned int LengthList;
+      int LengthList;
       Siddon(LOR, outputImage, MyWeightsList, &LengthList,1);
       for(int l = 0; l < LengthList; l++)
       {
@@ -247,7 +247,7 @@ bool SiddonProjector::DivideAndBackproject (Sinogram2Dtgs* InputSinogram, Sinogr
       // delimits the voxels
       // Siddon
       
-      unsigned int LengthList;
+      int LengthList;
       Siddon(LOR, outputImage, MyWeightsList, &LengthList,1);
       for(unsigned int l = 0; l < LengthList; l++)
       {
@@ -291,7 +291,7 @@ bool SiddonProjector::Project (Image* inputImage, Sinogram2Dtgs* outputProjectio
       // delimits the voxels
       // Siddon
       
-      unsigned int LengthList;
+      int LengthList;
       Siddon(LOR, inputImage, MyWeightsList, &LengthList,1);
       outputProjection->setSinogramBin(i,j,0);
       for(unsigned int l = 0; l < LengthList; l++)
@@ -326,12 +326,12 @@ bool SiddonProjector::Project (Image* inputImage, Sinogram3D* outputProjection)
   // Inicializo el sino 3D con el que voy a trabajar en cero.
   // Lo incializo acá porque despues distintas cobinaciones de z aportan al mismo bin.
   outputProjection->FillConstant(0.0);
-  for(unsigned int i = 0; i < outputProjection->getNumSegments(); i++)
+  for(int i = 0; i < outputProjection->getNumSegments(); i++)
   {
     #ifdef __DEBUG__
       printf("Forwardprojection con Siddon Segmento: %d\n", i);	  
     #endif
-    for(unsigned int j = 0; j < outputProjection->getSegment(i)->getNumSinograms(); j++)
+    for(int j = 0; j < outputProjection->getSegment(i)->getNumSinograms(); j++)
     {
       /// Cálculo de las coordenadas z del sinograma, dependiendo si se usan todas las combinaciones
       /// o solo la posición promedio:
@@ -348,9 +348,9 @@ bool SiddonProjector::Project (Image* inputImage, Sinogram3D* outputProjection)
 	z2_mm = (outputProjection->getSegment(i)->getSinogram2D(j)->getAxialValue2FromList(0)  + 
 	  outputProjection->getSegment(i)->getSinogram2D(j)->getAxialValue2FromList(outputProjection->getSegment(i)->getSinogram2D(j)->getNumZ()-1))/2;
       }
-      for(unsigned int m = 0; m < numZ; m++)
+      for(int m = 0; m < numZ; m++)
       {
-	unsigned int k, l, n, o, LengthList;
+	int k, l, n, o, LengthList;
 	#pragma omp parallel private(k, l, LOR, MyWeightsList, LengthList, n, o, P1, P2, geomFactor)
 	{
 	  MyWeightsList = (SiddonSegment**)malloc(sizeof(SiddonSegment*));
@@ -439,7 +439,7 @@ bool SiddonProjector::Backproject (Sinogram3D* inputProjection, Image* outputIma
   SizeImage sizeImage = outputImage->getSize();
   // Puntero a los píxeles:
   float* ptrPixels = outputImage->getPixelsPtr();
-  unsigned int i, j, k, l, n, m, o, LengthList;
+  int i, j, k, l, n, m, o, LengthList;
   unsigned long indexPixel;
   float geomFactor = 0;
   float newValue;
@@ -562,7 +562,7 @@ bool SiddonProjector::DivideAndBackproject (Sinogram3D* InputSinogram3D, Sinogra
   SizeImage sizeImage = outputImage->getSize();
   // Puntero a los píxeles:
   float* ptrPixels = outputImage->getPixelsPtr();
-  unsigned int i, j, k, l, n, m, o, LengthList;
+  int i, j, k, l, n, m, o, LengthList;
   unsigned long indexPixel;
   float newValue;
   float geomFactor = 0;

@@ -19,6 +19,7 @@ bool MlemSinogram3d::setAcfProjection(string acfFilename)
   // Los leo como cylindrical, total para la corrección lo único que importa es realizar la resta bin a bin:
   attenuationCorrectionFactorsProjection = new Sinogram3DCylindricalPet((char*)acfFilename.c_str(), inputProjection->getRadioFov_mm(), inputProjection->getAxialFoV_mm(), inputProjection->getRadioFov_mm());
   enableAttenuationCorrection = true;  
+  return enableAttenuationCorrection;
 }
     
 /// Método que carga un sinograma desde un archivo interfile con la estimación de scatter para aplicar como corrección.
@@ -28,6 +29,7 @@ bool MlemSinogram3d::setScatterCorrectionProjection(string scatterFilename)
   scatterCorrectionProjection = new Sinogram3DCylindricalPet((char*)scatterFilename.c_str(), inputProjection->getRadioFov_mm(), inputProjection->getAxialFoV_mm(), inputProjection->getRadioFov_mm());
 
   enableScatterCorrection = true;
+  return enableScatterCorrection;
 }
     
 /// Método que carga un sinograma desde un archivo interfile con la estimación de randomc para aplicar como corrección.
@@ -37,6 +39,7 @@ bool MlemSinogram3d::setRandomCorrectionProjection(string randomsFilename)
   randomsCorrectionProjection = new Sinogram3DCylindricalPet((char*)randomsFilename.c_str(), inputProjection->getRadioFov_mm(), inputProjection->getAxialFoV_mm(), inputProjection->getRadioFov_mm());
 
   enableRandomsCorrection = true;
+  return enableRandomsCorrection;
 }
 
 bool MlemSinogram3d::setNormalizationFactorsProjection(string normFilename)
@@ -46,6 +49,7 @@ bool MlemSinogram3d::setNormalizationFactorsProjection(string normFilename)
   normalizationCorrectionFactorsProjection = inputProjection->Copy();
   normalizationCorrectionFactorsProjection->readFromInterfile((char*)normFilename.c_str());
   enableNormalization = true;
+  return enableNormalization;
 }
 
 /// Método que aplica las correcciones habilitadas según se hayan cargado los sinogramas de atenuación, randoms y/o scatter.
@@ -88,6 +92,7 @@ bool MlemSinogram3d::correctInputSinogram()
   /*char c_string[100];
   sprintf(c_string, "%s_correctedSinogram", this->outputFilenamePrefix.c_str()); 
   inputProjection->writeInterfile(c_string);*/
+  return true;
 }
     
 /// Método público que realiza la reconstrucción en base a los parámetros pasados al objeto Mlem instanciado

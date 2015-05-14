@@ -187,7 +187,7 @@ int getSiddonProjectorParameters(string mlemFilename, string cmd, int* numSample
 /* Función que obtiene los parámetros de los proyectores basados en rotación. Por ahora
  * el único parámetro a cargar es el método de interpolación.
  */
-int getRotationBasedProjectorParameters(string mlemFilename, string cmd, RotationBasedProjector::InterpolationMethods *interpMethod)
+int getRotationBasedProjectorParameters(string mlemFilename, string cmd, string *interpMethod)
 {
   int errorCode;
   char returnValue[256];	// string en el que se recibe el valor de un keyword en la lectura del archivo de parámetros.
@@ -210,17 +210,9 @@ int getRotationBasedProjectorParameters(string mlemFilename, string cmd, Rotatio
     }
   }
 
-  if(!strcmp(returnValue, "nearest"))
+  if((!strcmp(returnValue, "nearest"))||(!strcmp(returnValue, "bilinear"))||(!strcmp(returnValue, "bicubic")))
   {
-    *interpMethod = RotationBasedProjector::NEAREST;
-  }
-  else if(!strcmp(returnValue, "bilinear"))
-  {
-    *interpMethod = RotationBasedProjector::BILINEAR;
-  }
-  else if(!strcmp(returnValue, "bicubic"))
-  {
-    *interpMethod = RotationBasedProjector::BICUBIC;
+	  (*interpMethod).assign(returnValue);
   }
   else
   {

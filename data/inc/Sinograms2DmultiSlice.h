@@ -16,6 +16,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <Utilities.h>
 #include <Projection.h>
 #include <Sinogram2D.h>
@@ -23,7 +24,8 @@
 #include <fstream>
 #include "../medcon/medcon.h"
 
-using namespace::std;
+//using namespace::std;
+
 // DLL export/import declaration: visibility of objects
 #ifndef LINK_STATIC
 	#ifdef WIN32               // Win32 build
@@ -54,7 +56,7 @@ using namespace::std;
 /**
   Los sinogramas son todos directos y la cantidad depende del número de anillos o de como se adquiera en cristales continuos.
 */
-class Sinograms2DmultiSlice : public Sinogram2D
+class DLLEXPORT Sinograms2DmultiSlice : public Sinogram2D
 {
   private:
   	virtual bool getPointsFromLor (int indexAng, int indexR, Point2D* p1, Point2D* p2){return false;};

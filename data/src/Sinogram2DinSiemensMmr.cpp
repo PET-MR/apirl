@@ -13,6 +13,11 @@
 
 #include <Sinogram2DinSiemensMmr.h>
 
+/// Size of each crystal element.
+const float Sinogram2DinSiemensMmr::crystalElementSize_mm = 4.0891;
+/// Size of each sinogram's bin.
+const float Sinogram2DinSiemensMmr::binSize_mm = 4.0891/2;
+
 Sinogram2DinSiemensMmr::Sinogram2DinSiemensMmr(char* fileHeaderPath): Sinogram2DinCylindrical3Dpet(fileHeaderPath, 297, 328)
 {
   radioScanner_mm = 328;

@@ -55,8 +55,8 @@ class DLLEXPORT Sinogram2Dtgs : public Sinogram2D
 	float distCrystalToCenterFov;
 	/// Diámetro de detector. 
 	/** Diámetro del detector. Es el total, sin importar cuanto está descubierto por el agujero del colimador. 
-		Para eso está la variables widthHoleCollimator_mm. */
-	const static float widthDetector_mm = 50.8;
+		Para eso está la variables widthHoleCollimator_mm. Fixed in  = 50.8.*/
+	float widthDetector_mm;
 	
   public:
 	/** Constructor que solo inicializa minAng y maxAng. */

@@ -76,4 +76,5 @@ bool SegmentInSiemensMmr::setSinogram2D(Sinogram2DinSiemensMmr* sinogram2D, int 
   // Primero libero la memoria del sinograma y luego creo uno nuevo:
   delete sinograms2D[indexInSegment];
   sinograms2D[indexInSegment] = new Sinogram2DinSiemensMmr(sinogram2D);
+  return true;
 }

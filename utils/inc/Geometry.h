@@ -2,7 +2,9 @@
 #define	_GEOMETRY_H
 
 #include <Images.h>
+#include <math.h>
 //#include <Michelogram.h>
+#include <Images.h>
 
 #define PI	3.14159265358979323846f; //3.14159265358979323846264338327950288419716939937510;
 #define PI_OVER_2	1.57079632679489661923f
@@ -33,25 +35,34 @@
 	#define DLLLOCAL
 #endif
 
-struct Point3D
+#ifdef __cplusplus
+	extern "C" 
+#endif
+DLLEXPORT struct Point3D
 {
 	double X;
 	double Y;
 	double Z;
 };
 
-struct Point2D
+#ifdef __cplusplus
+	extern "C" 
+#endif
+DLLEXPORT struct Point2D
 {
 	double X;
 	double Y;
 };
 
+#ifdef __cplusplus
+	extern "C" 
+#endif
 // Struct that defines a line in a 3D space
 // The line parameters are the direction vector (Vx,Vy,Vz)
 // and a point that belongs to the line. So the line
 // is defined by P = P0 + a*(Vx,Vy,Vz). Also can be written>
 // a = (X-X0)/Vx=(Y-Y0)/Vy=(Z-Z0)/Vz
-struct Line3D
+DLLEXPORT struct Line3D
 {
 	double Vx;
 	double Vy;
@@ -59,23 +70,29 @@ struct Line3D
 	Point3D P0;
 };
 
+#ifdef __cplusplus
+	extern "C" 
+#endif
 // Struct that defines a line in a 2D space
 // The line parameters are the direction vector (Vx,Vy)
 // and a point that belongs to the line. So the line
 // is defined by P = P0 + a*(Vx,Vy). Also can be written>
 // a = (X-X0)/Vx=(Y-Y0)/Vy
-struct Line2D
+DLLEXPORT struct Line2D
 {
 	double Vx;
 	double Vy;
 	Point2D P0;
 };
 
+#ifdef __cplusplus
+	extern "C" 
+#endif
 // Struct that defines a plane in a 3D space
 // The line parameters are the 2 direction vector (Vx,Vy,Vz)
 // and (Ux,Uy,Uz) and a point that belongs to the plane. So the plane
 // is defined by P = P0 + a*(Vx,Vy,Vz) + b*(Ux,Uy,Uz).
-struct PlaneWithVectors
+DLLEXPORT struct PlaneWithVectors
 {
 	double Ux;
 	double Uy;
@@ -87,8 +104,11 @@ struct PlaneWithVectors
 	Point3D P0;
 };
 
+#ifdef __cplusplus
+	extern "C" 
+#endif
 // Plane defined by the short way: A*x+B*y+C*z+D =0
-struct Plane
+DLLEXPORT struct Plane
 {
 	double A;
 	double B;
@@ -96,32 +116,28 @@ struct Plane
 	double D;
 };
 
-#ifdef __cplusplus
-	extern "C" 
-#endif
+
 DLLEXPORT void IntersectionLinePlane(Line3D myLine, Plane myPlane, Point3D* IntersectionPoint);
 
-#ifdef __cplusplus
-	extern "C" 
-#endif
+
 DLLEXPORT void CalculatePixelsPlanes(Plane* PlanesX, Plane* PlanesY,Plane* PlanesZ, unsigned int SizeX,
 					 unsigned int SizeY, unsigned int SizeZ, double RFOV, double ZFOV);
-#ifdef __cplusplus
-	extern "C" 
-#endif
+
 DLLEXPORT void GetPointsFromLOR(double PhiAngle, double r, double Z1, double Z2, double Rscanner,
 					  Point3D* P1, Point3D* P2);
+/*
 DLLEXPORT void GetPointsFromLOR(double PhiAngle, double r, double Rscanner,
 				  Point2D* P1, Point2D* P2);
+
 DLLEXPORT void GetPointsFromLOR2 (double PhiAngle, double r, double Z1, double Z2, double Rscanner, Point3D* P1, Point3D* P2);
+*/
 
 DLLEXPORT void GetPointsFromTgsLor (float PhiAngle, float r,  float distCentroFrenteCol, float largoCol, Point2D* P1, Point2D* P2);
+
+
 DLLEXPORT void GetPointsFromTgsLor (float PhiAngle, float r,  float distCentroFrenteCol, float largoCol, float offsetDetector,
 						  float offsetCaraColimador, Point2D* P1, Point2D* P2);
 
-#ifdef __cplusplus
-	extern "C" 
-#endif
 DLLEXPORT float distBetweenPoints(Point2D point1, Point2D point2);
 
 // This function generates a 3d projection of a volume, and stores it in

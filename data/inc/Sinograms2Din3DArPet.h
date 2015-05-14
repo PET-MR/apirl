@@ -55,7 +55,7 @@ using namespace::std;
 /**
   Los sinogramas son todos directos y la cantidad depende del número de anillos o de como se adquiera en cristales continuos.
 */
-class Sinograms2Din3DArPet : public Sinograms2DmultiSlice
+class DLLEXPORT Sinograms2Din3DArPet : public Sinograms2DmultiSlice
 {
   private:
 	Sinogram2Din3DArPet** sinograms2D;	// Array con los sinogramas 2D.

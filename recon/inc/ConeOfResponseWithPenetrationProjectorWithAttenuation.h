@@ -65,7 +65,7 @@ class DLLEXPORT ConeOfResponseWithPenetrationProjectorWithAttenuation : virtual 
 		en 0.95 (o sea cuando solo cruzan el 5%). Este umbral se calcula realizando exp(-mu*l), siendo
 		mu el coeficiente de atenuación lineal y l el largo de la trayectoría a través del material
 		del colimador. */
-	const static float attenuationThreshold = 0.95;
+	const static float attenuationThreshold;
 	
 	/// Umbral del largo de una línea que cruza el colimador a partir del cual no se la prcoesa.
 	/* Este largo es el máximo largo de una línea que atravieza el material del colimador, para que 

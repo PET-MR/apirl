@@ -17,6 +17,19 @@ RotationBasedProjector::RotationBasedProjector(InterpolationMethods intMethod)
   interpolationMethod = intMethod;
 }
 
+RotationBasedProjector::RotationBasedProjector(string intMethod)
+{
+	if(!strcmp(intMethod.c_str(),"nearest"))
+		interpolationMethod = RotationBasedProjector::NEAREST;
+	else if(!strcmp(intMethod.c_str(),"bilinear"))
+		interpolationMethod = RotationBasedProjector::BILINEAR;
+	else if(!strcmp(intMethod.c_str(),"bicubic"))
+		interpolationMethod = RotationBasedProjector::BICUBIC;
+	else
+		// By default nearest:
+		interpolationMethod = RotationBasedProjector::NEAREST;
+}
+
 bool RotationBasedProjector::RotateImage(Image* inputImage, Image* rotatedImage, float rotAngle_deg, InterpolationMethods interpMethod)
 {
   float rotAngle_rad = rotAngle_deg * DEG_TO_RAD;
@@ -74,7 +87,7 @@ bool RotationBasedProjector::RotateImage(Image* inputImage, Image* rotatedImage,
 		  j_entrada = floor(j_entrada);
 		  if((i_entrada>=0)&&(i_entrada<sizeInputImage.nPixelsX)&&(j_entrada>=0)&&(j_entrada<sizeInputImage.nPixelsY))
 		  {
-			value = inputImage->getPixelValue(round(i_entrada), round(j_entrada), 0);
+			value = inputImage->getPixelValue(i_entrada, j_entrada, 0);
 			rotatedImage->setPixelValue(i, j, 0, value);
 		  }
 		}
@@ -187,6 +200,7 @@ bool RotationBasedProjector::RotateImage(Image* inputImage, Image* rotatedImage,
 	  }
 	}
   }
+  return true;
 }
 
 

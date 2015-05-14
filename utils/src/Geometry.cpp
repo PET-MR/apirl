@@ -1,7 +1,5 @@
 #include <Geometry.h>
-#include <math.h>
-#include <Michelogram.h>
-#include <Images.h>
+
 
 float distBetweenPoints(Point2D point1, Point2D point2)
 {
@@ -77,7 +75,7 @@ void GetPointsFromLOR (double PhiAngle, double r, double Z1, double Z2, double R
 	P2->Y = r * sin(rad_PhiAngle) + cos(rad_PhiAngle) * auxValue;
 	P2->Z = Z2;
 }
-
+/*
 void GetPointsFromLOR2 (double PhiAngle, double r, double Z1, double Z2, double Rscanner, Point3D* P1, Point3D* P2)
 {
 	double auxValue = sqrt(Rscanner * Rscanner - r * r);
@@ -100,7 +98,7 @@ void GetPointsFromLOR(double PhiAngle, double r, double Rscanner, Point2D* P1, P
 	P2->X = r * cos(rad_PhiAngle) - sin(rad_PhiAngle) * auxValue;
 	P2->Y = r * sin(rad_PhiAngle) + cos(rad_PhiAngle) * auxValue;
 }
-
+*/
 /// Coordenads para el TGS. Me devuelve el punto medio del colimador.
 /// distCentroFrenteDetector: distancia del centro del fov al distCentroFrenteDetector (sería 400).
 /// largoCol: largo del colimador.

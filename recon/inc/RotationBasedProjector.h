@@ -22,6 +22,7 @@
 #include <Projector.h> 
 #include <Images.h>
 #include <math.h>
+#include <cmath>
 
 using namespace std;
 
@@ -79,6 +80,9 @@ class DLLEXPORT RotationBasedProjector : virtual Projector
 	/** Constructor. */
 	RotationBasedProjector(InterpolationMethods intMethod);
 	
+	/** Constructor. */
+	RotationBasedProjector(string intMethod);
+
 	void setInterpolationMethod();
 	
 	/** Backprojection con RotationBasedProjector para Sinogram2D. */

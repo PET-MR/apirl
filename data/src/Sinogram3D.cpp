@@ -98,6 +98,7 @@ bool Sinogram3D::readFromInterfile(string headerFilename)
   // Set a dummy value for the radio of the scanner and then call the funcion that actully reads the file:
   float radioScanner_mm = radioFov_mm;
   readFromInterfile(headerFilename, radioScanner_mm);
+  return true;
 }
 
 
@@ -347,7 +348,7 @@ bool Sinogram3D::readFromInterfile(string headerFilename, float radioScanner_mm)
   else
   {
     // No estaba la leyenda por lo que calculo para un segmento distinto de 1:
-    numRings = round((numSinogramsPerSegment[0]+1)/2);
+    numRings = floor((numSinogramsPerSegment[0]+1)/2);
   }
   
   // Con la cantidad de anillos genero las coordenadas de los anillos:
@@ -654,11 +655,12 @@ bool Sinogram3D::writeInterfile(string headerFilename)
 	}
   }
   fileStream.close();
+  return true;
 }
 
 bool correctSinogram (string acfSinogram, string delayedSinogram, string scatterSinogram)
 {
-  
+  return false;
 }
 
 void Sinogram3D::divideBinToBin(Sinogram3D* sinogramDivisor)

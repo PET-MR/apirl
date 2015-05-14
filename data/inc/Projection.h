@@ -17,7 +17,14 @@
 #ifndef _PROJECTION_H
 #define _PROJECTION_H
 
+#ifdef WIN32 
+	#define _USE_MATH_DEFINES
+#endif
+
 #include <string>
+#include <math.h>
+#include <time.h>
+#include <cmath>
 
 using namespace std;
 	

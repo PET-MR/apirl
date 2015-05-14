@@ -13,6 +13,8 @@
 #include <Siddon.h>
 #include <ConeOfResponseWithPenetrationProjector.h>
 
+const float ConeOfResponseWithPenetrationProjector::attenuationThreshold = 0.95;
+
 ConeOfResponseWithPenetrationProjector::ConeOfResponseWithPenetrationProjector(int nSamplesOnDetector, int nSamplesOnCollimatorSurf, float linAttCoef_cm)
 {
   this->numSamplesOnDetector = nSamplesOnDetector;
@@ -33,6 +35,7 @@ float ConeOfResponseWithPenetrationProjector::getAttenuationWeight(float lengthS
 {
   // Neceito la relación I/I0, que va a ser el factor de atenuación, y es igual exp(-mu*l)
   float attWeight = exp(-this->linearAttenuationCoeficcient_cm * lengthSegment_mm / 10);
+  return attWeight;
 }
 
 bool ConeOfResponseWithPenetrationProjector::Backproject (Sinogram2Dtgs* InputSinogram, Image* outputImage)
@@ -88,7 +91,7 @@ bool ConeOfResponseWithPenetrationProjector::Backproject (Sinogram2Dtgs* InputSi
 			  // y luego aplico el facto de atenuación.
 			  if(lengthInCollimator < lengthInCollimatorThreshold_mm)
 			  {
-				unsigned int LengthList;
+				int LengthList;
 				attenuationWeight = getAttenuationWeight(lengthInCollimator);
 				Siddon(LOR, outputImage, MyWeightsList, &LengthList,1);
 				for(int l = 0; l < LengthList; l++)
@@ -168,7 +171,7 @@ bool ConeOfResponseWithPenetrationProjector::DivideAndBackproject (Sinogram2Dtgs
 			// y luego aplico el facto de atenuación.
 			if(lengthInCollimator < lengthInCollimatorThreshold_mm)
 			{
-			  unsigned int LengthList;
+			  int LengthList;
 			  attenuationWeight = getAttenuationWeight(lengthInCollimator);
 			  Siddon(LOR, outputImage, MyWeightsList, &LengthList,1);
 			  for(unsigned int l = 0; l < LengthList; l++)
@@ -242,7 +245,7 @@ bool ConeOfResponseWithPenetrationProjector::Project (Image* inputImage, Sinogra
 			// y luego aplico el facto de atenuación.
 			if(lengthInCollimator < lengthInCollimatorThreshold_mm)
 			{
-			  unsigned int LengthList;
+			  int LengthList;
 			  attenuationWeight = getAttenuationWeight(lengthInCollimator);
 			  Siddon(LOR, inputImage, MyWeightsList, &LengthList,1);
 			  for(unsigned int l = 0; l < LengthList; l++)

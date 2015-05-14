@@ -28,7 +28,7 @@ void TriSiddon (float Phi, float R, float Z1, float Z2, Image* image, SiddonSegm
 	SiddonSegment** AuxList3;	// Lista de segmentos Siddon para LOR lateral - deltaR/3
 	SiddonSegment** AuxList4;	// Lista de segmentos Siddon para LOR lateral + deltaR/3
 	SiddonSegment** AuxList5;	// Lista de segmentos Siddon para LOR lateral - deltaR/3
-	unsigned int LengthList1, LengthList2, LengthList3, LengthList4, LengthList5;
+	int LengthList1, LengthList2, LengthList3, LengthList4, LengthList5;
 	
 	//Inicializo los 3 punteros a array
 	AuxList1 = (SiddonSegment**) malloc(sizeof(SiddonSegment*));

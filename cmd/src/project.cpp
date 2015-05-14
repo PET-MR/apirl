@@ -49,6 +49,7 @@
 #include <Sinogram3DCylindricalPet.h>
 #include <Sinogram2Din3DArPet.h>
 #include <Sinograms2Din3DArPet.h>
+#include <Sinograms2DinCylindrical3Dpet.h>
 #include <Sinogram3DSiemensMmr.h>
 
 

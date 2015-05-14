@@ -158,7 +158,7 @@ class DLLEXPORT Sinogram3DArPet : public Sinogram3D
 	/// Copy all the bins from a source sinograms.
 	/** It copies all the bins values from srcSinogram3D into this value.
 	 */
-	int CopyAllBinsFrom(Sinogram3D* srcSinogram3D){};
+	int CopyAllBinsFrom(Sinogram3D* srcSinogram3D){return 0;};
 };
 
 

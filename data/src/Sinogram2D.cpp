@@ -497,6 +497,7 @@ bool Sinogram2D::writeInterfile(string headerFilename)
   fileStream.open(dataFilename.c_str(), ios_base::binary);
   fileStream.write((char*)this->ptrSinogram, this->numProj*this->numR*sizeof(float));
   fileStream.close();
+  return true;
 }
 
 // Method that reads the Sinogram data from a file. The dimensions of the
@@ -568,5 +569,6 @@ bool Sinogram2D::getFovLimits(int indexAng, int indexR, Point2D* limitPoint1, Po
   // Para el caso de un sinograma2d genérico, las coordenadas de las lors, son las mismas del límite del
   // fov porque no tengo información del scanner:
   this->getPointsFromLor(indexAng, indexR, limitPoint1, limitPoint2);
+  return true;
 }
 

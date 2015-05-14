@@ -17,6 +17,7 @@
 #define _SINOGRAM2DINSIEMENSMMR_H
 
 #include <math.h>
+#include <cmath>
 #include <stdio.h>
 #include <stdlib.h>
 #include <Sinogram2D.h>
@@ -57,14 +58,14 @@ class DLLEXPORT Sinogram2DinSiemensMmr : public Sinogram2DinCylindrical3Dpet
 	  /// Number of cryatl elements including gaps.
 	  /** This is amount of crystal elements in the sinogram. The real crystals are 448 gut there are 56 gaps
 	  * counted in the sinograms as crystal elements (1 gap per block). */
-	  static const float numCrystalElements = 504;
+	  static const int numCrystalElements = 504;
 	  
 	  /// Size of each crystal element.
-	  static const float crystalElementSize_mm = 4.0891;
+	  static const float crystalElementSize_mm;
 	  
 	  /// Size of each sinogram's bin.
 	  /// It's the size of crystal elemnt divided two (half angles are stored in a different bin). crystalElementSize_mm/2
-	  static const float binSize_mm = 4.0891/2;
+	  static const float binSize_mm;
 
 	public:
 	  /// Constructor para cargar los datos de sinogramas a partir del encabezado interfile de un Sinogram2D.

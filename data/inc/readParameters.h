@@ -4,34 +4,44 @@
 #include <stdio.h>
 #include <iostream>
 #include <string.h>
-#include <Michelogram.h>
-#include <Mlem.h>
-#include <Mlem2d.h>
-#include <Mlem2dMultiple.h>
-#include <Mlem2dTgs.h>
-#include <MlemSinogram3d.h>
-#include <Sinograms2DinCylindrical3Dpet.h>
 #include <ParametersFile.h>
-#include <Projector.h>
-#include <SiddonProjector.h>
-#include <RotationBasedProjector.h>
-#include <ConeOfResponseProjector.h>
-#include <ConeOfResponseWithPenetrationProjector.h>
-#include <Images.h>
 #include <Geometry.h>
 #include <string>
 
 #define FIXED_KEYS 5
 
+// DLL export/import declaration: visibility of objects
+#ifndef LINK_STATIC
+	#ifdef WIN32               // Win32 build
+		#ifdef DLL_BUILD    // this applies to DLL building
+			#define DLLEXPORT __declspec(dllexport)
+		#else                   // this applies to DLL clients/users
+			#define DLLEXPORT __declspec(dllimport)
+		#endif
+		#define DLLLOCAL        // not explicitly export-marked objects are local by default on Win32
+	#else
+		#ifdef HAVE_GCCVISIBILITYPATCH   // GCC 4.x and patched GCC 3.4 under Linux
+			#define DLLEXPORT __attribute__ ((visibility("default")))
+			#define DLLLOCAL __attribute__ ((visibility("hidden")))
+		#else
+			#define DLLEXPORT
+			#define DLLLOCAL
+		#endif
+	#endif
+#else                         // static linking
+	#define DLLEXPORT
+	#define DLLLOCAL
+#endif
+
 /* Encabezados de Funciones relacioandas con la carga de parámetros del Mlem */
-int getSaveIntermidiateIntervals (string mlemFilename, string cmd, int* saveIterationInterval, bool* saveIntermediateData);
-int getSensitivityFromFile (string mlemFilename, string cmd, bool* bSensitivityFromFile, string* sensitivityFilename);
-int getProjectorBackprojectorNames(string mlemFilename, string cmd, string* strForwardprojector, string* strBackprojector);
-int getSiddonProjectorParameters(string mlemFilename, string cmd, int* numSamples);
-int getRotationBasedProjectorParameters(string mlemFilename, string cmd, RotationBasedProjector::InterpolationMethods *interpMethod);
-int getCylindricalScannerParameters(string mlemFilename, string cmd, float* radiusFov_mm, float* zFov_mm, float* radiusScanner_mm);
-int getNumberOfSubsets(string mlemFilename, string cmd, float* numberOfSubsets);
-int getArPetParameters(string mlemFilename, string cmd, float* radiusFov_mm, float* zFov_mm, float* blindArea_mm, int* minDiffDetectors);
-int getCorrectionSinogramNames(string mlemFilename, string cmd, string* acfFilename, string* estimatedRandomsFilename, string* estimatedScatterFilename);
-int getNormalizationSinogramName(string mlemFilename, string cmd, string* normFilename);
+DLLEXPORT int getSaveIntermidiateIntervals (string mlemFilename, string cmd, int* saveIterationInterval, bool* saveIntermediateData);
+DLLEXPORT int getSensitivityFromFile (string mlemFilename, string cmd, bool* bSensitivityFromFile, string* sensitivityFilename);
+DLLEXPORT int getProjectorBackprojectorNames(string mlemFilename, string cmd, string* strForwardprojector, string* strBackprojector);
+DLLEXPORT int getSiddonProjectorParameters(string mlemFilename, string cmd, int* numSamples);
+DLLEXPORT int getRotationBasedProjectorParameters(string mlemFilename, string cmd, string *interpMethod);
+DLLEXPORT int getCylindricalScannerParameters(string mlemFilename, string cmd, float* radiusFov_mm, float* zFov_mm, float* radiusScanner_mm);
+DLLEXPORT int getNumberOfSubsets(string mlemFilename, string cmd, float* numberOfSubsets);
+DLLEXPORT int getArPetParameters(string mlemFilename, string cmd, float* radiusFov_mm, float* zFov_mm, float* blindArea_mm, int* minDiffDetectors);
+DLLEXPORT int getCorrectionSinogramNames(string mlemFilename, string cmd, string* acfFilename, string* estimatedRandomsFilename, string* estimatedScatterFilename);
+DLLEXPORT int getNormalizationSinogramName(string mlemFilename, string cmd, string* normFilename);
 #endif

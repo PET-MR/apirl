@@ -55,7 +55,7 @@ bool ConeOfResponseProjector::Backproject (Sinogram2Dtgs* InputSinogram, Image* 
 			  // Siddon
 			  InputSinogram->getFovLimits(LOR, &P1, &P2);
 			  
-			  unsigned int LengthList;
+			  int LengthList;
 			  Siddon(LOR, outputImage, MyWeightsList, &LengthList,1);
 			  for(int l = 0; l < LengthList; l++)
 			  {
@@ -109,7 +109,7 @@ bool ConeOfResponseProjector::DivideAndBackproject (Sinogram2Dtgs* InputSinogram
 			// delimits the voxels
 			// Siddon
 			
-			unsigned int LengthList;
+			int LengthList;
 			Siddon(LOR, outputImage, MyWeightsList, &LengthList,1);
 			for(unsigned int l = 0; l < LengthList; l++)
 			{
@@ -163,7 +163,7 @@ bool ConeOfResponseProjector::Project (Image* inputImage, Sinogram2Dtgs* outputP
 			// delimits the voxels
 			// Siddon
 			
-			unsigned int LengthList;
+			int LengthList;
 			Siddon(LOR, inputImage, MyWeightsList, &LengthList,1);
 			for(unsigned int l = 0; l < LengthList; l++)
 			{

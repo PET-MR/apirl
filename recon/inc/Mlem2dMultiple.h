@@ -54,9 +54,6 @@ using namespace::std;
 	
     \todo 
 */
-#ifdef __cplusplus
-//extern "C"
-#endif
 class DLLEXPORT Mlem2dMultiple : public Mlem
 {	
 	  

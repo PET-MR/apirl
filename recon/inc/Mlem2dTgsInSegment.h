@@ -97,20 +97,20 @@ class DLLEXPORT Mlem2dTgsInSegment : public Mlem
 		/**  Este método habilita la corrección de atenuación y carga la imagen de mapa de atenuación de una imagen interfile.
 		      
 		*/
-		bool setAcfProjection(string acfFilename){};
+		bool setAcfProjection(string acfFilename){return false;};
 		
 		/// Método que carga un sinograma desde un archivo interfile con la estimación de scatter para aplicar como corrección.
 		/**  Este método habilita la corrección por randoms y carga un sinograma para ello.
 		*/
-		bool setScatterCorrectionProjection(string acfFilename){};
+		bool setScatterCorrectionProjection(string acfFilename){return false;};
 		
 		/// Método que carga un sinograma desde un archivo interfile con la estimación de randomc para aplicar como corrección.
 		/**  Este método habilita la corrección por randoms y carga un sinograma para ello.
 		*/
-		bool setRandomCorrectionProjection(string acfFilename){};
+		bool setRandomCorrectionProjection(string acfFilename){return false;};
 		
 		/// Método que aplica las correcciones habilitadas según se hayan cargado los sinogramas de atenuación, randoms y/o scatter.
-		bool correctInputSinogram(){};
+		bool correctInputSinogram(){return false;};
 		
 		/// Método que realiza la reconstrucción de las proyecciones. 
 		bool Reconstruct();

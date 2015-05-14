@@ -46,6 +46,7 @@
 #include <Sinogram3DArPet.h>
 #include <Sinogram3DCylindricalPet.h>
 #include <Sinograms2Din3DArPet.h>
+#include <Sinograms2DinCylindrical3Dpet.h>
 #include <Sinogram3DSiemensMmr.h>
 
 #define FOV_axial 162

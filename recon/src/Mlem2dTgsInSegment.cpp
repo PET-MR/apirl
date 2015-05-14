@@ -29,6 +29,7 @@ bool Mlem2dTgsInSegment::setAttenuationImage(string attenImageFilename)
 	  ((Sinogram2Dtgs*)attenuationCorrectionFactorsProjection)->setSinogramBin(i,j, exp(-((Sinogram2Dtgs*)attenuationCorrectionFactorsProjection)->getSinogramBin(i,j)));
 	}
   }*/
+  return true;
 }
   
 /// Método público que realiza la reconstrucción en base a los parámetros pasados al objeto Mlem instanciado

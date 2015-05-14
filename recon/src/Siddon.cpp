@@ -10,7 +10,7 @@
 // of the array can change when reallocating memory. In order to not loose the reference in the calling
 // function we use a double pointer. The last parameter factor, sets a factor for setting an scalar factor
 // for the weights ( for a normal LOR, factor should be 1)
-float Siddon (Line3D LOR, Image* image, SiddonSegment** weightsList, unsigned int* lengthList, float factor)
+float Siddon (Line3D LOR, Image* image, SiddonSegment** weightsList, int* lengthList, float factor)
 {
   // Coordenadas (x,y,z) de los dos puntos de intersección de la lor con el fov:
   float xCirc_1_mm, xCirc_2_mm, yCirc_1_mm, yCirc_2_mm, zCirc_1_mm, zCirc_2_mm;
@@ -216,7 +216,7 @@ float Siddon (Line3D LOR, Image* image, SiddonSegment** weightsList, unsigned in
 //   }
   
   // Cantidad de píxeles intersectados:
-  numIntersectedPixels = fabs(i_max - i_min) + fabs(j_max - j_min) + fabs(k_max - k_min) + 2; // +0 in each dimension(for getting the amount of itnersections) -1 toget pixels> 3x1-1 = +2
+  numIntersectedPixels = labs(i_max - i_min) + labs(j_max - j_min) + labs(k_max - k_min) + 2; // +0 in each dimension(for getting the amount of itnersections) -1 toget pixels> 3x1-1 = +2
 
   weightsList[0] = (SiddonSegment*) malloc((size_t)(sizeof(SiddonSegment)* numIntersectedPixels));
   
@@ -346,7 +346,7 @@ float Siddon (Line3D LOR, Image* image, SiddonSegment** weightsList, unsigned in
 // todos los cálculos los hago como si los índices de píxeles crecieran en el mismo sentido que en las coordenadas geométricas,
 // pero a la hora de guardarlas coordenadas del índice en Y hago la conversión correspondiente del sistema de coordenadas:
 // j_final = NpixelsY - 1 - j;
-float Siddon (Line2D LOR, Image* image, SiddonSegment** weightsList, unsigned int* lengthList, float factor)
+float Siddon (Line2D LOR, Image* image, SiddonSegment** weightsList, int* lengthList, float factor)
 {
   // Coordenadas (x,y) de los dos puntos de intersección de la lor con el fov:
   float xCirc_1_mm, xCirc_2_mm, yCirc_1_mm, yCirc_2_mm;
@@ -471,7 +471,7 @@ float Siddon (Line2D LOR, Image* image, SiddonSegment** weightsList, unsigned in
 	return 0;
   }
   // Cantidad de píxeles intersectados:
-  numIntersectedPixels = fabs(i_max - i_min) + fabs(j_max - j_min) + 1; // +0 in each dimension(for getting the amount of itnersections) -1 toget pixels> 3x1-1 = +2
+  numIntersectedPixels = labs(i_max - i_min) + labs(j_max - j_min) + 1; // +0 in each dimension(for getting the amount of itnersections) -1 toget pixels> 3x1-1 = +2
   
   // Memoria para el vector de segmentos de siddon:
   weightsList[0] = (SiddonSegment*) malloc((size_t)(sizeof(SiddonSegment)* numIntersectedPixels));
@@ -598,7 +598,7 @@ float Siddon (Line2D LOR, Image* image, SiddonSegment** weightsList, unsigned in
 
 
 // Esta versión de siddon, arranca en P1 hacia P2, siendo P1 y P2 los puntos de entrada y salida al fov.
-void Siddon (Point2D point1, Point2D point2, Image* image, SiddonSegment** WeightsList, unsigned int* LengthList, float factor)
+void Siddon (Point2D point1, Point2D point2, Image* image, SiddonSegment** WeightsList, int* LengthList, float factor)
 {
   // Tamaño de la imagen.
   SizeImage sizeImage = image->getSize();

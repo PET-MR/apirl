@@ -861,6 +861,7 @@ macro(CUDA_GET_SOURCES_AND_OPTIONS _sources _cmake_options _options)
   set( ${_options} )
   set( _found_options FALSE )
   foreach(arg ${ARGN})
+  message(STATUS ${arg}})
     if(arg STREQUAL "OPTIONS")
       set( _found_options TRUE )
     elseif(

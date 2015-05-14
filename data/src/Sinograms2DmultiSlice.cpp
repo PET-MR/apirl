@@ -14,7 +14,7 @@
 #include <Sinograms2DmultiSlice.h>
 
 
-using namespace::std;
+//using namespace::std;
 //using namespace::iostream;
 
 Sinograms2DmultiSlice::Sinograms2DmultiSlice(int nProj, int nR, float rFov_mm, float zFov_mm, int nSinograms) : Sinogram2D(numProj, numR, radioFov_mm)
@@ -269,6 +269,7 @@ bool Sinograms2DmultiSlice::writeInterfile(string headerFilename)
       fileStream.write((char*)this->getSinogram2D(i)->getSinogramPtr(), this->getSinogram2D(i)->getNumProj()*this->getSinogram2D(i)->getNumR()*sizeof(float)); 
   }
   fileStream.close();
+  return true;
 }
 
 bool Sinograms2DmultiSlice::FillConstant(float Value)
@@ -279,8 +280,9 @@ bool Sinograms2DmultiSlice::FillConstant(float Value)
     {
       for(int k = 0; k < this->getSinogram2D(i)->getNumR(); k++)
       {
-	this->getSinogram2D(i)->setSinogramBin(j,k, Value);
+		this->getSinogram2D(i)->setSinogramBin(j,k, Value);
       }
     }
   }
+  return true;
 }

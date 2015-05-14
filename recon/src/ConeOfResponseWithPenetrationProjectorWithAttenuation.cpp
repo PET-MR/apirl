@@ -13,6 +13,8 @@
 #include <Siddon.h>
 #include <ConeOfResponseWithPenetrationProjectorWithAttenuation.h>
 
+const float ConeOfResponseWithPenetrationProjectorWithAttenuation::attenuationThreshold = 0.95;
+
 ConeOfResponseWithPenetrationProjectorWithAttenuation::ConeOfResponseWithPenetrationProjectorWithAttenuation(int nSamplesOnDetector, int nSamplesOnCollimatorSurf, float linAttCoef_cm, Image* attImage)
 {
   this->numSamplesOnDetector = nSamplesOnDetector;
@@ -34,6 +36,7 @@ float ConeOfResponseWithPenetrationProjectorWithAttenuation::getAttenuationWeigh
 {
   // Neceito la relación I/I0, que va a ser el factor de atenuación, y es igual exp(-mu*l)
   float attWeight = exp(-this->linearAttenuationCoeficcient_cm * lengthSegment_mm / 10);
+  return attWeight;
 }
 
 // Falta atenuación.
@@ -114,7 +117,7 @@ bool ConeOfResponseWithPenetrationProjectorWithAttenuation::Backproject (Sinogra
 		  // y luego aplico el facto de atenuación.
 		  if(lengthInCollimator < lengthInCollimatorThreshold_mm)
 		  {
-			unsigned int LengthList;
+			int LengthList;
 			geometricValue = 0;
 			attenuationWeight = getAttenuationWeight(lengthInCollimator);
 			rayLengthInFov_mm = Siddon(LOR, outputImage, MyWeightsList, &LengthList,1);
@@ -213,7 +216,7 @@ bool ConeOfResponseWithPenetrationProjectorWithAttenuation::Project(Image* input
 		  // y luego aplico el facto de atenuación.
 		  if(lengthInCollimator < lengthInCollimatorThreshold_mm)
 		  {
-			unsigned int LengthList;
+			int LengthList;
 			attenuationWeightInCollimator = getAttenuationWeight(lengthInCollimator);
 			//printf("%f\n!", attenuationWeightInCollimator);
 			geometricValue = 0;

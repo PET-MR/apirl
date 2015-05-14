@@ -71,6 +71,7 @@ bool SegmentIn3DArPet::setSinogram2D(Sinogram2Din3DArPet* sinogram2D, int indexI
   // Primero libero la memoria del sinograma y luego creo uno nuevo:
   delete sinograms2D[indexInSegment];
   sinograms2D[indexInSegment] = new Sinogram2Din3DArPet(sinogram2D);
+  return true;
 }
 
 
@@ -98,4 +99,5 @@ bool SegmentIn3DArPet::setSinogram2D(Sinogram2Din3DArPet* sinogram2D, int indexI
   float* ptr1 = sinograms2D[indexInSegment]->getSinogramPtr();
   float* ptr2 = sinogram2D->getSinogramPtr();
   memcpy(ptr1, ptr2, sinogram2D->getNumProj()*sinogram2D->getNumR()*sizeof(float));
+  return true;
  }

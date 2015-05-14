@@ -34,7 +34,7 @@ bool ArPetProjector::Backproject (Sinogram2D* InputSinogram, Image* outputImage)
   SizeImage sizeImage = outputImage->getSize();
   // Puntero a los píxeles:
   float* ptrPixels = outputImage->getPixelsPtr();
-  unsigned int LengthList, i, j, l, indexPixel;
+  int LengthList, i, j, l, indexPixel;
   float newValue = 0, geomFactor;
   // I only need to calculate the ForwardProjection of the bins were ara at least one event
   #pragma omp parallel private(i, j, l, LOR, P1, P2, MyWeightsList, geomFactor, LengthList, newValue, indexPixel) shared(InputSinogram,ptrPixels)
@@ -97,7 +97,7 @@ bool ArPetProjector::DivideAndBackproject (Sinogram2D* InputSinogram, Sinogram2D
   SizeImage sizeImage = outputImage->getSize();
   // Puntero a los píxeles:
   float* ptrPixels = outputImage->getPixelsPtr();
-  unsigned int LengthList, i, j, l, indexPixel;
+  int LengthList, i, j, l, indexPixel;
   float newValue = 0, geomFactor;
   // I only need to calculate the ForwardProjection of the bins were ara at least one event
   #pragma omp parallel private(i, j, l, LOR, P1, P2, MyWeightsList, geomFactor, LengthList, newValue, indexPixel) shared(InputSinogram,EstimatedSinogram,ptrPixels)
@@ -162,7 +162,7 @@ bool ArPetProjector::Project (Image* inputImage, Sinogram2D* outputProjection)
   SizeImage sizeImage = inputImage->getSize();
   // Puntero a los píxeles:
   float* ptrPixels = inputImage->getPixelsPtr();
-  unsigned int LengthList, i, j, l;
+  int LengthList, i, j, l;
   float geomFactor;
   // I only need to calculate the ForwardProjection of the bins were ara at least one event
   #pragma omp parallel private(i, j, l, LOR, P1, P2, MyWeightsList, geomFactor, LengthList) shared(outputProjection,ptrPixels)
@@ -235,7 +235,7 @@ bool ArPetProjector::Project (Image* inputImage, Sinogram3D* outputProjection)
       {
 	int indexRing1 = outputProjection->getSegment(i)->getSinogram2D(j)->getRing1FromList(m);
 	int indexRing2 = outputProjection->getSegment(i)->getSinogram2D(j)->getRing2FromList(m);
-	unsigned int k, l, n, LengthList;
+	int k, l, n, LengthList;
 	#pragma omp parallel private(k, l, LOR, MyWeightsList, LengthList, n, P1, P2, geomFactor)
 	{
 	  MyWeightsList = (SiddonSegment**)malloc(sizeof(SiddonSegment*));
@@ -320,7 +320,7 @@ bool ArPetProjector::Backproject (Sinogram3D* inputProjection, Image* outputImag
   SizeImage sizeImage = outputImage->getSize();
   // Puntero a los píxeles:
   float* ptrPixels = outputImage->getPixelsPtr();
-  unsigned int i, j, k, l, n, m, LengthList;
+  int i, j, k, l, n, m, LengthList;
   unsigned long indexPixel;
   float geomFactor = 0;
   float newValue;
@@ -420,7 +420,7 @@ bool ArPetProjector::DivideAndBackproject (Sinogram3D* InputSinogram3D, Sinogram
   SizeImage sizeImage = outputImage->getSize();
   // Puntero a los píxeles:
   float* ptrPixels = outputImage->getPixelsPtr();
-  unsigned int i, j, k, l, n, m, LengthList;
+  int i, j, k, l, n, m, LengthList;
   unsigned long indexPixel;
   float newValue;
   float geomFactor = 0;

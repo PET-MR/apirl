@@ -75,4 +75,5 @@ bool SegmentInCylindrical3Dpet::setSinogram2D(Sinogram2DinCylindrical3Dpet* sino
   // Primero libero la memoria del sinograma y luego creo uno nuevo:
   delete sinograms2D[indexInSegment];
   sinograms2D[indexInSegment] = new Sinogram2DinCylindrical3Dpet(sinogram2D);
+  return true;
 }

@@ -16,19 +16,22 @@
 #include <Sinogram2Din3DArPet.h>
 #include <Geometry.h>
 
-const int Sinogram2Din3DArPet::numCabezales;
+const int Sinogram2Din3DArPet::numCabezales = 6;
 
 /** Largo del detector en y. */
-const float Sinogram2Din3DArPet::lengthDetectorY_mm;
+const float Sinogram2Din3DArPet::lengthDetectorY_mm = 304.6;
 
 /** Largo del detector en x.*/
-const float Sinogram2Din3DArPet::lengthDetectorX_mm;
+const float Sinogram2Din3DArPet::lengthDetectorX_mm = 406.8;
 
 /** Espesor del detector, */
-const float Sinogram2Din3DArPet::depthDetector_mm;
+const float Sinogram2Din3DArPet::depthDetector_mm = 25.4;
+
+/** Linear attenuation coef for collimator. */
+const float Sinogram2Din3DArPet::linearAttenuationCoef_1_cm = 0.34;
 
 /** Distancia del centro del FOV a la superficie de cada detector. */
-const float Sinogram2Din3DArPet::distCenterToDetector_mm;	 
+const float Sinogram2Din3DArPet::distCenterToDetector_mm = 360;	 
 	
 
 Sinogram2Din3DArPet::Sinogram2Din3DArPet(char* fileHeaderPath, float rFov_mm)

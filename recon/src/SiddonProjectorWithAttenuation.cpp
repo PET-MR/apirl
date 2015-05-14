@@ -68,7 +68,7 @@ bool SiddonProjectorWithAttenuation::Project(Image* inputImage, Sinogram2Dtgs* o
 		// delimits the voxels
 		// Siddon
 		
-		unsigned int LengthList;
+		int LengthList;
 		Siddon(LOR, inputImage, MyWeightsList, &LengthList,1);
 		
 		// Para la implementación de la atenuación utilizo la implementación propuesta en: 
@@ -190,7 +190,7 @@ bool SiddonProjectorWithAttenuation::Backproject(Sinogram2Dtgs* InputSinogram, I
 		// delimits the voxels
 		// Siddon
 		
-		unsigned int LengthList;
+		int LengthList;
 		// Para la implementación de la atenuación utilizo la implementación propuesta en: 
 		// Gullberg et al, An attenuated projector-backprojector for iterative SPECT reconstruction, Phys Med Biol, 1985, Vol 30, No 8
 		// No tiene ningñun truco en especial, es muy similar a lo que hacía yo originalmente, pero considera un promedio del coeficiente
@@ -295,6 +295,7 @@ bool SiddonProjectorWithAttenuation::Backproject(Sinogram2Dtgs* InputSinogram, I
 /** Sección para Sinogram3D. */
 bool SiddonProjectorWithAttenuation::Project (Image* inputImage, Sinogram3D* outputProjection)
 {
+	return false;
 }
 // 	Point3D P1, P2;
 // 	Line3D LOR;
@@ -376,6 +377,7 @@ bool SiddonProjectorWithAttenuation::Project (Image* inputImage, Sinogram3D* out
 
 bool SiddonProjectorWithAttenuation::Backproject (Sinogram3D* inputProjection, Image* outputImage)
 {
+	return false;
 }
 // 	Point3D P1, P2;
 // 	Line3D LOR;
@@ -488,7 +490,7 @@ bool SiddonProjectorWithAttenuation::SaveSystemMatrix(Image* inputImage, Sinogra
 		// delimits the voxels
 		// Siddon
 		
-		unsigned int LengthList;
+		int LengthList;
 		Siddon(LOR, inputImage, MyWeightsList, &LengthList,1);
 		outputProjection->setSinogramBin(i,j,0);
 		// Para la implementación de la atenuación utilizo la implementación propuesta en: 

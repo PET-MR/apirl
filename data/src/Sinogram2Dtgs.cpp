@@ -23,6 +23,7 @@ Sinogram2Dtgs::Sinogram2Dtgs()
   /* Para un sinograma genérico los ángulos de proyecciones van de 0 a 180º. */
   minAng_deg = 0;
   maxAng_deg = 360;
+  widthDetector_mm = 50.8;
 }
 
 Sinogram2Dtgs::Sinogram2Dtgs(unsigned int nProj, unsigned int nR, float rFov_mm, float dCrystalToCenterFov, 
@@ -36,6 +37,7 @@ Sinogram2Dtgs::Sinogram2Dtgs(unsigned int nProj, unsigned int nR, float rFov_mm,
   lengthColimator_mm = lColimator_mm;
   widthCollimator_mm = wCollimator_mm;
   widthHoleCollimator_mm = wHoleCollimator_mm;
+  widthDetector_mm = 50.8;
   // Allocates Memory for th Sinogram
   ptrSinogram = (float*) malloc(numProj*numR*sizeof(float));
   // Allocates Memory for the value's vectors
@@ -258,6 +260,7 @@ float Sinogram2Dtgs::getSegmentLengthInCollimator(float offsetDetector_mm, float
 	  lengthInMaterial_mm = 0;
 	}
   }
+  return lengthInMaterial_mm;
 }
 
 Point2D Sinogram2Dtgs::getPointOnDetector(int indexAng, int indexR)
