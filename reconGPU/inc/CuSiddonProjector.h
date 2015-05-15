@@ -109,7 +109,7 @@ class DLLEXPORT CuSiddonProjector : virtual CuProjector
 // 	bool DivideAndBackproject (Sinogram2Dtgs* InputSinogram, Sinogram2Dtgs* EstimatedSinogram, Image* outputImage);
 // 	/** Projection con Siddon para Sinogram2Dtgs. */
 // 	bool Project(Image* image, Sinogram2Dtgs* projection);
-	
+    
 	/** Backprojection con Siddon para Sinogram3D. */
 	bool Backproject (float * d_inputSinogram, float* d_outputImage, float *d_ring1, float *d_ring2, Sinogram3DCylindricalPet* inputSinogram, Image* outputImage, bool copyResult); 
 	/** DivideAndBackprojection con Siddon para Sinogram3D. */

@@ -2,11 +2,13 @@
 #define	_READPARAMETERS_H
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <iostream>
 #include <string.h>
 #include <ParametersFile.h>
 #include <Geometry.h>
 #include <string>
+#include <math.h>
 
 #define FIXED_KEYS 5
 

@@ -137,13 +137,13 @@ end
 %% GENERATE AND SAVE ATTENUATION AND NORMALIZATION FACTORS AND CORECCTION FACTORS FOR SPAN11 SINOGRAMS FOR APIRL
 disp('Generating the ANF sinogram...');
 % Save:
-outputSinogramName = [outputPath '/NF_Span1'];
+outputSinogramName = [outputPath 'NF_Span1'];
 interfileWriteSino(single(overall_nf_3d), outputSinogramName, structSizeSino3dSpan1);
 
 % Compose with acfs:
 atteNormFactorsSpan1 = overall_nf_3d;
 atteNormFactorsSpan1(acfsSinogramSpan1 ~= 0) = overall_nf_3d(acfsSinogramSpan1 ~= 0) ./acfsSinogramSpan1(acfsSinogramSpan1 ~= 0);
-anfFilename = [outputPath '/ANF_Span1'];
+anfFilename = [outputPath 'ANF_Span1'];
 interfileWriteSino(single(atteNormFactorsSpan1), anfFilename, structSizeSino3dSpan1);
 clear atteNormFactorsSpan1;
 %clear normFactorsSpan11;

@@ -16,10 +16,6 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   add_definitions(-D__DEBUG__)
 endif()
 
-# Defino una variable que me indice si las librería para cuda son dinámicas o estáticas. Esto lo hago
-# así porque he tenido algún problema para hacerlas dinámicas.
-SET(CUDA_LIBRARIES_BUILD	STATIC)
-#SET(CUDA_LIBRARIES_BUILD	SHARED)
 
 ###################### OPENMP CONFIGURATION #############################
 INCLUDE(FindOpenMP)
@@ -35,13 +31,23 @@ ELSE(OPENMP_FOUND)
 ENDIF(OPENMP_FOUND)
 #######################################################################
 
-if (AMD64)
-message(STATUS "WIND322222222222222222222222")
-endif()
 ################## CAMBIO EL STACK SIZE POR EL OPENMP #########
 #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} --main-stacksize=8500000")
 SET (CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} --main-stacksize=8500000")
 #########################################################
+
+################## CHECK IF CUDA AVAILABLE ############################
+# Directorio donde se encuentra el FindCUDA:
+SET(FindCUDA_Dir ${CMAKE_SOURCE_DIR}/FindCUDA)
+set(CMAKE_MODULE_PATH "${FindCUDA_Dir}/CMake/cuda" ${CMAKE_MODULE_PATH})
+find_package(CUDA)
+if (CUDA_FOUND)
+	SET(ENABLE_GPU ON)
+	add_definitions(-D__USE_CUDA__)
+else (CUDA_FOUND)
+	SET(ENABLE_GPU OFF)	
+endif (CUDA_FOUND)
+#######################################################################
 
 # Genero una variable con los directorios de invlude para cada subproyecto. Las creo en este, para que
 # puedan ser accesibles desde cada uno de ellos.
@@ -62,22 +68,6 @@ endif()
 MESSAGE(STATUS "DIRECTORIO DE INSTALACION: ${APIRL_INSTALL_PATH}")
 
 
-# Seteo en ON CUDA_VERBOSE_BUILD para visualizar todos los resultados del nvcc.
-SET(CUDA_VERBOSE_BUILD ON)
-SET(CUDA_BUILD_CUBIN ON)
-# Directorio donde se encuentra el FindCUDA:
-SET(FindCUDA_Dir ${CMAKE_SOURCE_DIR}/FindCUDA)
-# Seteo las compute capabilities con las que quiero compilar (Por default es la más baja: 1.0):
-SET(CUDA_COMPUTE_CAPABILITY 3.5)
-# Algunas opciones adicionales para cuda.
-#SET(CUDA_USE_FAST_MATH ON)
-# Tipo de Cache que se habilita:
-#SET(CUDA_USE_CACHE_L1_L2 ON)
-#SET(CUDA_USE_CACHE_ONLY_L2 ON)
-#SET(CUDA_MAX_REG_COUNT 20)
-
-set(nvcc_flags "${nvcc_flags} -rdc=true")
-
 
 # Variables de entorno necesarias en linux, si no están definidas las fuerzo a un valor por default:
 if(CMAKE_HOST_UNIX)
@@ -91,8 +81,27 @@ add_subdirectory(recon)
 add_subdirectory(data)
 add_subdirectory(utils)
 add_subdirectory(cmd)
-#add_subdirectory(cmdGPU)
-#add_subdirectory(reconGPU)
+if(ENABLE_GPU)
+	# Seteo en ON CUDA_VERBOSE_BUILD para visualizar todos los resultados del nvcc.
+	SET(CUDA_VERBOSE_BUILD ON)
+	SET(CUDA_BUILD_CUBIN ON)
+	# Defino una variable que me indice si las librería para cuda son dinámicas o estáticas. Esto lo hago
+	# así porque he tenido algún problema para hacerlas dinámicas.
+	SET(CUDA_LIBRARIES_BUILD	STATIC)
+	#SET(CUDA_LIBRARIES_BUILD	SHARED)
+	# Seteo las compute capabilities con las que quiero compilar (Por default es la más baja: 1.0):
+	SET(CUDA_COMPUTE_CAPABILITY 3.5)
+	# Algunas opciones adicionales para cuda.
+	#SET(CUDA_USE_FAST_MATH ON)
+	# Tipo de Cache que se habilita:
+	#SET(CUDA_USE_CACHE_L1_L2 ON)
+	#SET(CUDA_USE_CACHE_ONLY_L2 ON)
+	#SET(CUDA_MAX_REG_COUNT 20)
+	set(nvcc_flags "${nvcc_flags} -rdc=true")
+
+	add_subdirectory(cmdGPU)
+	add_subdirectory(reconGPU)
+endif(ENABLE_GPU)
 
 # Configuraciones Adicionales de CUDA. En windows compilo en 32 bits al menos que obtenga un
 # Visual Studio de 64 bits. En Linux si directamente compilo según el sistema operativo.

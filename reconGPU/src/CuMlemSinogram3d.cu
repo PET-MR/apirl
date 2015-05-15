@@ -15,6 +15,8 @@
 #include "../kernels/CuMlem_kernels.cu"
 //#include "../kernels/CuSiddonProjector_kernels.cu"
 
+#ifndef __RECONGPU_GLOBALS__
+#define __RECONGPU_GLOBALS__
 // Memoria constante con los valores de los angulos de la proyeccion,
 __device__ __constant__ float d_thetaValues_deg[MAX_PHI_VALUES];
 
@@ -31,6 +33,7 @@ __device__ __constant__ float d_AxialFov_mm;
 __device__ __constant__ float d_RadioFov_mm;
 
 __device__ __constant__ SizeImage d_imageSize;
+#endif
 
 CuMlemSinogram3d::CuMlemSinogram3d(Sinogram3D* cInputProjection, Image* cInitialEstimate, string cPathSalida, string cOutputPrefix, int cNumIterations, int cSaveIterationInterval, bool cSaveIntermediate, bool cSensitivityImageFromFile, CuProjector* cForwardprojector, CuProjector* cBackprojector) : MlemSinogram3d(cInputProjection, cInitialEstimate, cPathSalida, cOutputPrefix, cNumIterations, cSaveIterationInterval, cSaveIntermediate, cSensitivityImageFromFile, NULL, NULL)
 {

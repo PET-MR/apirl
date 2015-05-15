@@ -15,6 +15,7 @@
 */
 
 #include <Projection.h>
+#include <Projector.h>
 #include <Sinogram2Dtgs.h>
 #include <Sinogram3D.h>
 #include <Images.h>
