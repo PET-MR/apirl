@@ -117,12 +117,7 @@ bool CuProjectorInterface::initCuda (int device)
   }
   else
   {
-    /// Pude seleccionar el GPU adecudamente.
-    /// Ahora lo configuro para que se bloquee en la llamada a los kernels
-    if(cudaSetDeviceFlags(cudaDeviceBlockingSync)!=cudaSuccess)
-	  return false;
-    else
-	  return true;
+    return true;
   }
 }
 
@@ -290,12 +285,18 @@ int CuProjectorInterface::CopySinogram3dGpuToHost(Sinogram3D* h_destino, float* 
 
 bool CuProjectorInterface::Backproject (Sinogram3D* inputSinogram, Image* outputImage)
 {
-  clock_t initTime, finalTime;
+  float timeProc_mseg;
+  cudaEvent_t start, stop;
   // Número total de píxeles.
   int numPixels = outputImage->getPixelCount();
   // Número total de bins del sinograma:
   int numBins, numSinograms;
   numBins = inputSinogram->getBinCount();
+  // Instancio el registrador de eventos:
+  cudaEventCreate(&start);
+  cudaEventCreate(&stop);
+  // Start timer:
+  cudaEventRecord(start, 0);
   // Set kernel configuration:
   setProjectorKernelConfig(this->blockSizeProjector, inputSinogram);
   printf("######## BACKPROJECTION #########");
@@ -309,7 +310,6 @@ bool CuProjectorInterface::Backproject (Sinogram3D* inputSinogram, Image* output
   /// Init memory
   InitGpuMemory(inputSinogram, outputImage, typeOfProjector);
   
-  initTime = clock();
   /// Pongo en cero la imagen de corrección, y hago la backprojection.
   checkCudaErrors(cudaMemset(d_image, 0,sizeof(float)*numPixels));
   switch(typeOfProjector)
@@ -318,26 +318,37 @@ bool CuProjectorInterface::Backproject (Sinogram3D* inputSinogram, Image* output
       projector->Backproject(d_projection, d_image, d_ring1_mm, d_ring2_mm, (Sinogram3DCylindricalPet*)inputSinogram, outputImage, false);
       break;
   }
-  finalTime = clock();
-  printf(" Execution Time: %f sec\n", (float)(finalTime-initTime)/(float)CLOCKS_PER_SEC);
+  cudaEventRecord(stop, 0);
+  cudaEventSynchronize(stop);
+  // Calculo el tiempo de procesamiento:
+  cudaEventElapsedTime(&timeProc_mseg, start, stop);
+
+  printf(" Execution Time: %f msec\n", timeProc_mseg);
   
   FreeCudaMemory();
 }
 
 bool CuProjectorInterface::Project(Image* image, Sinogram3D* projection)
 {
-  clock_t initTime, finalTime;
+  float timeProc_mseg;
+  cudaEvent_t start, stop;
   // Número total de píxeles.
   int numPixels = image->getPixelCount();
   // Número total de bins del sinograma:
   int numBins, numSinograms;
   numBins = projection->getBinCount();
+  // Instancio el registrador de eventos:
+  cudaEventCreate(&start);
+  cudaEventCreate(&stop);
+  // Start timer:
+  cudaEventRecord(start, 0);
   // Set kernel configuration:
   setProjectorKernelConfig(this->blockSizeProjector, projection);
   printf("######## PROJECTION #########");
   // INICALIZACIÓN DE GPU 
   if(!initCuda (gpuId))
   {
+    printf("Error initializing GPU.");
     return false;
   }
   printf(" Kernel Configuration: Block %d[x] x %d[y] x %d[z]. Grid %d[x] x %d[y] x %d[z]\n", this->blockSizeProjector.x, this->blockSizeProjector.y, this->blockSizeProjector.z,
@@ -345,7 +356,6 @@ bool CuProjectorInterface::Project(Image* image, Sinogram3D* projection)
   /// Init memory
   InitGpuMemory(projection, image, typeOfProjector);
   
-  initTime = clock();
   /// Pongo en cero la proyección estimada, y hago la backprojection.
   checkCudaErrors(cudaMemset(d_projection, 0,sizeof(float)*numBins));
   /// Proyección de la imagen:
@@ -358,8 +368,12 @@ bool CuProjectorInterface::Project(Image* image, Sinogram3D* projection)
   /* Copy result to cpu:
    */
   CopySinogram3dGpuToHost(projection, d_projection);
-  finalTime = clock();
-  printf(" Execution Time: %f sec\n", (float)(finalTime-initTime)/(float)CLOCKS_PER_SEC);
+  cudaEventRecord(stop, 0);
+  cudaEventSynchronize(stop);
+  // Calculo el tiempo de procesamiento:
+  cudaEventElapsedTime(&timeProc_mseg, start, stop);
+
+  printf(" Execution Time: %f msec\n", timeProc_mseg);
   
   FreeCudaMemory();
 }

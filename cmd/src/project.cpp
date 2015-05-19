@@ -28,6 +28,7 @@
 #include <stdlib.h>
 #include <iostream>
 #include <string.h>
+#include <omp.h>
 #include <Michelogram.h>
 #include <Mlem.h>
 #include <Mlem2dTgs.h>
@@ -271,8 +272,10 @@ int main (int argc, char *argv[])
 	{
 	  cout<<"No se vargó ningún projector válido."<<endl;
 	}
-	cout<<"Iniciando projection:" << endl;
 	
+	
+	cout<<"Starting projection:" << endl;
+	double startTime = omp_get_wtime();	
 	// Ahora hago la proyección según el tipo de dato de entrada:
 	if(outputType.compare("Sinogram2D")==0)
 	{
@@ -454,7 +457,7 @@ int main (int argc, char *argv[])
 	  cout<<"Tipo de dato de entrada no válido. Formatos válidos: ""Sinogram2d"", ""Sinogram3D"", ""Sinogram3DArPet"""<<endl;
 	  return -1;
 	}
-	
-	cout<<"Operación de projection finalizada." << endl;
+	double stopTime = omp_get_wtime();
+	cout<<"Projection finished. Processing time: " << (stopTime-startTime) << "sec." << endl;
  
 }
