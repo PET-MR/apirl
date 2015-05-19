@@ -7,6 +7,22 @@ PROJECT(cmd)
 
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 
+if(ENABLE_GPU)
+	###################### CUDA CONFIGURATION #############################
+	# Ejecuto el FindCUDA.
+	#SET(FIND_CUDA_DIR ${APIRL_SOLUTION_SOURCE_DIR}/FindCUDA)
+	#INCLUDE(${FIND_CUDA_DIR}/CMake/cuda/FindCUDA.cmake)
+	set(CMAKE_MODULE_PATH "${FindCUDA_Dir}/CMake/cuda" ${CMAKE_MODULE_PATH})
+	find_package(CUDA REQUIRED FIND_CUDA_DIR)
+	# Llamo al script FindCUTIL que me genera las variables CUDA_CUT_INCLUDE_DIR y CUDA_CUT_LIBRARIES.
+	#INCLUDE(${FindCUDA_Dir}/FindCUTIL.cmake)
+	#message(STATUS "CUDA_CUT_INCLUDE_DIR: ${CUDA_CUT_INCLUDE_DIR}")
+	ADD_DEFINITIONS(-D_CRT_SECURE_NO_WARNINGS)
+	SET(CUDA_BUILD_CUBIN ON)
+	SET(CUDA_VERBOSE_BUILD ON)
+	#######################################################################
+endif(ENABLE_GPU)
+
 ###################### SOURCES CONFIGURATION ########################## 
 # Códigos fuente, directorios de Include.
 SET(cmd_Sources)
@@ -49,7 +65,11 @@ ADD_Executable(generateSystemMatrix ${GenerateSystemMatrix_Sources})
 # Backproject:
 ADD_Executable(backproject ${Backproject_Sources})
 # Project:
-ADD_Executable(project ${Project_Sources})
+if(ENABLE_GPU)
+	CUDA_ADD_EXECUTABLE(project ${Project_Sources})
+else(ENABLE_GPU)
+	ADD_Executable(project ${Project_Sources})
+endif(ENABLE_GPU)
 # GenerateACFs:
 ADD_Executable(generateACFs ${GenerateACFs_Source})
 # GenerateSystemMatrix:

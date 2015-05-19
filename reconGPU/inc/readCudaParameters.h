@@ -1,7 +1,15 @@
-#ifndef _CUDA_SIDDON_CUH
-#define	_CUDA_SIDDON_CUH
+#ifndef _READCUDAPARAMETERS_H
+#define	_READCUDAPARAMETERS_H
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <iostream>
+#include <string.h>
+#include <ParametersFile.h>
+#include <Images.h>
 #include <Geometry.h>
+#include <string>
+#include <vector_types.h>
 
 // DLL export/import declaration: visibility of objects
 #ifndef LINK_STATIC
@@ -26,31 +34,10 @@
   #define DLLLOCAL
 #endif
 
-#define SCANNER_ZFOV	156.96
-
-struct SiddonSegment
-{
-	unsigned int IndexX;
-	unsigned int IndexY;
-	unsigned int IndexZ;
-	float Segment;
-};
-
-typedef enum {
-  SENSIBILITY_IMAGE,
-  PROJECTION,
-  BACKPROJECTION
-} SiddonOperation;
-
-#define SENSIBILITY_IMAGE	1
-#define PROJECTION		2
-#define BACKPROJECTION		3
-// This function calculates Siddon Wieghts for a lor. It gets as parameters, the LOR in
-// a Line3D object which P0 is the P1 of the LOR, the values of the planes in X, Y, Z, and a pointer
-// where all the wieghts will be loaded.
-#ifdef __cplusplus
-	extern "C" 
-#endif
-//__device__ void CUDA_Siddon (float4* LOR, float4* P0, float* Input, float* Result, int MODE, int indiceMichelogram);
-
+/* Encabezados de Funciones relacioandas con la carga de parámetros del Mlem */
+DLLEXPORT int getProjectorBlockSize (string mlemFilename, string cmd, dim3* projectorBlockSize);
+DLLEXPORT int getBackprojectorBlockSize (string mlemFilename, string cmd, dim3* backprojectorBlockSize);
+DLLEXPORT int getPixelUpdateBlockSize(string mlemFilename, string cmd, dim3* pixelUpdateBlockSize);
+DLLEXPORT int getGpuId(string mlemFilename, string cmd, int* gpuId);
+DLLEXPORT bool ProcessBlockSizeString(char* strBlockSize, dim3* blockSize);
 #endif

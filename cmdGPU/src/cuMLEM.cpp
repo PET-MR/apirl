@@ -235,18 +235,18 @@ int main (int argc, char *argv[])
   // Es opcional, si está el mapa de atenuación se habilita:
   if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), (char*)"MLEM", (char*)"attenuation image filename", (char*)returnValue, (char*)errorMessage)) != 0)
   {
-	  // Hubo un error. Salgo del comando.
-	  // Si no encontró el keyoword, está bien porque era opcional, cualquier otro código de error
-	  // signfica que hubo un error.
-	  if(errorCode == PMF_KEY_NOT_FOUND)
-	  {
-	    // No está la keyword, como era opcional se carga con su valor por default.
-	  }
-	  else
-	  {
-	    cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
-	    return -1;
-	  }
+    // Hubo un error. Salgo del comando.
+    // Si no encontró el keyoword, está bien porque era opcional, cualquier otro código de error
+    // signfica que hubo un error.
+    if(errorCode == PMF_KEY_NOT_FOUND)
+    {
+      // No está la keyword, como era opcional se carga con su valor por default.
+    }
+    else
+    {
+      cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
+      return -1;
+    }
   }
   else
   {
@@ -254,7 +254,6 @@ int main (int argc, char *argv[])
   }
   
   // Parámetros de Cuda:
-  
   if(getProjectorBlockSize(parameterFileName, "MLEM", &projectorBlockSize))
   {
     return -1;

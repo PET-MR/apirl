@@ -1,15 +1,15 @@
 /**
-	\file readParameters.cpp
-	\brief Archivo con funciones para leer los parámetros de los ejecutables.
+  \file readCudaParameters.cpp
+  \brief Archivo con funciones para leer los parámetros de los ejecutables.
 
-	Este archivo tiene funciones para leer los parámetros que necesitan los ejecutables, como los proyectores,
-	backprojectores, etc.
-	
-	\bug
-	\warning
-	\author Martín Belzunce (martin.a.belzunce@gmail.com)
-	\date 2010.08.30
-	\version 1.1.0
+  Este archivo tiene funciones para leer los parámetros que necesitan los ejecutables, como los proyectores,
+  backprojectores, etc.
+
+  \bug
+  \warning
+  \author Martín Belzunce (martin.a.belzunce@gmail.com)
+  \date 2010.08.30
+  \version 1.1.0
 */
 
 

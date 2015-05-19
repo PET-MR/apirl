@@ -51,7 +51,11 @@
 #include <Sinograms2Din3DArPet.h>
 #include <Sinograms2DinCylindrical3Dpet.h>
 #include <Sinogram3DSiemensMmr.h>
-
+#ifdef __USE_CUDA__
+  #include <CuProjector.h>
+  #include <CuProjectorInterface.h>
+  #include <readCudaParameters.h>
+#endif
 
 #define FIXED_KEYS 5
 using namespace std;
@@ -168,7 +172,10 @@ int main (int argc, char *argv[])
 	Projector* forwardprojector;
 	Image* attenuationImage;
 	bool enableAttenuationCorrection = false;
-	
+	#ifdef __USE_CUDA__
+	  CuProjector* cuProjector;
+	  CuProjectorInterface* cuProjectorInterface;
+	#endif
 	// Variables para sinogram2Dtgs y Sinogram2DtgsInSegment:
 	float widthSegment_mm, diameterFov_mm, distCrystalToCenterFov, lengthColimator_mm, widthCollimator_mm, widthHoleCollimator_mm;
 	// Asigno la memoria para los punteros dobles, para el array de strings.
@@ -236,6 +243,29 @@ int main (int argc, char *argv[])
 	  else
 	    forwardprojector = (Projector*)new SiddonProjector(numSamples);
 	}
+	#ifdef __USE_CUDA__
+	  int gpuId;	// Id de la gpu a utilizar.
+	  dim3 projectorBlockSize;	// Parámetros de cuda.
+	  if(strForwardprojector.compare("CuSiddonProjector") == 0)
+	  {
+	    cuProjector = (CuProjector*)new CuSiddonProjector();
+	    cuProjectorInterface = new CuProjectorInterface(cuProjector);
+	    // Get size of kernels:
+	    if(getProjectorBlockSize(parameterFileName, "Projection", &projectorBlockSize))
+	    {
+	      return -1;
+	    }
+	    if(getGpuId(parameterFileName, "Projection", &gpuId))
+	    {
+	      return -1;
+	    }
+	    // Set the configuration:
+	    cuProjectorInterface->setGpuId(gpuId);
+	    cuProjectorInterface->setProjectorBlockSizeConfig(projectorBlockSize);
+	    forwardprojector = (Projector*)cuProjectorInterface;
+	  }
+	  
+	#endif
 	// Chqueo que se hayan cargado los proyectores:
 	if(forwardprojector == NULL)
 	{
@@ -397,14 +427,6 @@ int main (int argc, char *argv[])
 	  forwardprojector->Project(inputImage, outputProjection);
 	  outputProjection->writeInterfile(outputFilename);
 	}
-	else if(outputType.compare("Sinogram3DSiemensMmr")==0)
-	{
-	  // Sinograma 3D mmr, fixed values of rfoc and rscanner
-	  Sinogram3D* outputProjection = new Sinogram3DSiemensMmr((char*)sampleProjection.c_str());
-   	  //outputProjection->setGeometryDim(rFov_mm,axialFov_mm,rScanner_mm);
-	  forwardprojector->Project(inputImage, outputProjection);
-	  outputProjection->writeInterfile(outputFilename);
-	}
 	else if(outputType.compare("Sinogram3DArPet")==0)
 	{
 	  // Zona muerta:
@@ -423,7 +445,7 @@ int main (int argc, char *argv[])
 	else if(outputType.compare("Sinogram3DSiemensMmr")==0)
 	{
 	  // Sinograma 3D
-	  Sinogram3D* outputProjection = new Sinogram3DSiemensMmr((char*)inputFilename.c_str());
+	  Sinogram3D* outputProjection = new Sinogram3DSiemensMmr((char*)sampleProjection.c_str());
 	  forwardprojector->Project(inputImage, outputProjection);
 	  outputProjection->writeInterfile(outputFilename);
 	}

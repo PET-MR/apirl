@@ -8,7 +8,7 @@
 % Examples:
 %   [sinogram, structSizeSinogram] = ProjectMmrSpan1(image, pixelSize_mm, outputPath)
 
-function [sinogram, structSizeSinogram] = ProjectMmrSpan1(image, pixelSize_mm, outputPath)
+function [sinogram, structSizeSinogram] = ProjectMmrSpan1(image, pixelSize_mm, outputPath, useGpu)
 
 mkdir(outputPath);
 % Check what OS I am running on:
@@ -21,6 +21,12 @@ elseif(strcmp(computer(), 'PCWIN') || strcmp(computer(), 'PCWIN64'))
 else
     disp('OS not compatible');
     return;
+end
+
+if nargin == 3
+    useGpu = 0;
+elseif nargin < 3
+    error('Invalid number of parameters: [sinogram, structSizeSinogram] = ProjectMmrSpan1(image, pixelSize_mm, outputPath, useGpu)');
 end
 
 % Create output sample sinogram:
@@ -40,7 +46,7 @@ interfilewrite(single(image), filenameImage, pixelSize_mm);
 % Generate projecte sinogram:
 filenameProjectionConfig = [outputPath 'projectPhantom.par'];
 projectionFilename = [outputPath 'projectedImage'];
-CreateProjectConfigFileForMmr(filenameProjectionConfig, [filenameImage '.h33'], [sinogramSampleFilename '.h33'], projectionFilename);
+CreateProjectConfigFileForMmr(filenameProjectionConfig, [filenameImage '.h33'], [sinogramSampleFilename '.h33'], projectionFilename, useGpu);
 status = system(['project ' filenameProjectionConfig])
 
 % Read the projected sinogram:

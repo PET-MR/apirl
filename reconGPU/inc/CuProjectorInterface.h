@@ -104,6 +104,9 @@ class DLLEXPORT CuProjectorInterface : virtual Projector
      */
     bool InitGpuMemory(Sinogram3D* sinogram, Image* image, TipoProyector tipoProy);
     
+    /// Libera memoria en gpu
+    void FreeCudaMemory(void);
+    
     /// Método que copia un sinograma 3d que reside en un objeto del tipo Sinogram3D hacia memoria de gpu.
     int CopySinogram3dHostToGpu(float* d_destino, Sinogram3D* h_source);
     
@@ -137,7 +140,12 @@ class DLLEXPORT CuProjectorInterface : virtual Projector
 	/** Recibe como parámetro una estructura dim3 con las dimensiones del bloque, y luego genera el
 	* tamaño de grilla según el tamaño de los datos a procesar.
 	*/
-	void setProjectorKernelConfig(dim3* blockSize, Sinogram3D* sinogram);
+	void setProjectorKernelConfig(dim3 blockSize, Sinogram3D* sinogram);
+	
+	/// Método que configura el blocksize para el kernel de proyección.
+	/** Método que configura el blocksize para el kernel de proyección. Por defecto en el constructor se utiliza (128,1,1).
+	*/
+	void setProjectorBlockSizeConfig(dim3 blockSize);
     
 	/// Selecciona la Gpu a utilizar.
 	bool setGpuId(int id){gpuId = id;};

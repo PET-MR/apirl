@@ -387,6 +387,7 @@ bool SiddonProjector::Project (Image* inputImage, Sinogram3D* outputProjection)
 		  LOR.Vx = P2.X - P1.X;
 		  LOR.Vy = P2.Y - P1.Y;
 		  LOR.Vz = P2.Z - P1.Z;
+		  printf("IndMichelogram:%d. ", k*outputProjection->getSegment(i)->getSinogram2D(j)->getNumR()+l);
 		  // Then I look for the intersection between the 3D LOR and the lines that
 		  // delimits the voxels
 		  // Siddon		

@@ -4,6 +4,7 @@
 %  Fecha de Creación: 15/04/2015
 %  *********************************************************************
 % Function that creates a config file to project an image with apirl.
+% Optional parameter useGpu to use cuda projectors.
 
 % Projection Parameters :=
 % ; Archivo de configuración de reconstrucción MLEM para paper en Parallel Computing.
@@ -15,7 +16,11 @@
 % output filename := Project_PointSources_
 % END :=
 
-function CreateProjectConfigFileForMmr(configfilename, inputFile, outputSample, outputFilename)
+function CreateProjectConfigFileForMmr(configfilename, inputFile, outputSample, outputFilename, useGpu)
+
+if nargin == 4
+    useGpu = 0;
+end
 
 % Primero genero el archivo de encabezado.
 fid = fopen(configfilename, 'w');
@@ -26,7 +31,13 @@ end
 % dependerán de la imagen:
 fprintf(fid,'Projection Parameters :=\n');
 fprintf(fid,'output type := Sinogram3DSiemensMmr\n');
-fprintf(fid,'projector := Siddon\n');
+if useGpu == 0
+    fprintf(fid,'projector := Siddon\n');
+else
+    fprintf(fid,'projector := CuSiddonProjector\n');
+    fprintf(fid,'projector block size := {128,1,1}\n');
+    fprintf(fid,'gpu id := 0\n');
+end
 fprintf(fid,'input file := %s\n', inputFile);
 fprintf(fid,'output projection := %s\n', outputSample);
 fprintf(fid,'output filename := %s\n', outputFilename);

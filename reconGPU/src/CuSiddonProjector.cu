@@ -18,7 +18,6 @@ CuSiddonProjector::CuSiddonProjector()
   this->numSamplesOnDetector = 1;  
 }
 
-
 bool CuSiddonProjector::InitGpuMemory(Sinogram3DCylindricalPet* inputSinogram)
 {
 //   checkCudaErrors(cudaMemcpyToSymbol(cuda_threads_per_block, &(blockSizeProjector.x), sizeof(unsigned int)));

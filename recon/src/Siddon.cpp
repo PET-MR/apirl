@@ -152,6 +152,7 @@ float Siddon (Line3D LOR, Image* image, SiddonSegment** weightsList, int* length
   x_2_mm = LOR.P0.X + LOR.Vx * alpha_max;
   y_2_mm = LOR.P0.Y + LOR.Vy * alpha_max;
   z_2_mm = LOR.P0.Z + LOR.Vz * alpha_max;
+  
   /// Esto después hay que cambiarlo! Tiene que ir en la clase Michelogram!!!!!!!!!!!!!
   /// Necesito tener el dato del zfov del michelograma, que no lo tengo accesible ahora. Lo pongo a mano, pero
   /// cambiarlo de maner aurgente lo antes posible.!!!
@@ -162,11 +163,11 @@ float Siddon (Line3D LOR, Image* image, SiddonSegment** weightsList, int* length
 
   if((z_1_mm < offsetZ_mm)||(z_1_mm > (SCANNER_ZFOV-offsetZ_mm)) || (z_2_mm < offsetZ_mm)||(z_2_mm > (SCANNER_ZFOV-offsetZ_mm)))
   {
-	// La lor entra por las tapas del clindro del fov:
-	printf("Warning: Lor que entra por las tapas del cilindro del FoV. alpha_min:%f alpha_max:%f x1:%f y1:%f z1: %f x2:%f y2:%f z2:%f offsetZ:%f rFov:%f.", 
-	       alpha_min, alpha_max,x_1_mm,y_1_mm, z_1_mm, x_2_mm, y_2_mm, z_2_mm, offsetZ_mm, rFov_mm);
-	printf("Puntos LOR: %f %f %f Pendiente:%f %f %f.\n", 
-	       LOR.P0.X, LOR.P0.Y,LOR.P0.Z,LOR.Vx, LOR.Vy, LOR.Vz);
+    // La lor entra por las tapas del clindro del fov:
+    printf("Warning: Lor que entra por las tapas del cilindro del FoV. alpha_min:%f alpha_max:%f x1:%f y1:%f z1: %f x2:%f y2:%f z2:%f offsetZ:%f rFov:%f.", 
+      alpha_min, alpha_max,x_1_mm,y_1_mm, z_1_mm, x_2_mm, y_2_mm, z_2_mm, offsetZ_mm, rFov_mm);
+    printf("Puntos LOR: %f %f %f Pendiente:%f %f %f.\n", 
+      LOR.P0.X, LOR.P0.Y,LOR.P0.Z,LOR.Vx, LOR.Vy, LOR.Vz);
   }
   
   // Con el alhpa_min y el alpha_max tengo los puntos de entrada y salida al fov. De los cuales obtengo
@@ -179,7 +180,7 @@ float Siddon (Line3D LOR, Image* image, SiddonSegment** weightsList, int* length
   i_max = floor((x_2_mm + rFov_mm)/sizeImage.sizePixelX_mm); // In X increase of System Coordinate = Increase Pixels.
   j_max = floor((y_2_mm + rFov_mm)/sizeImage.sizePixelY_mm); // 
   k_max = floor((z_2_mm - offsetZ_mm)/sizeImage.sizePixelZ_mm);
-  
+
   // En algunos casos puede quedarme el punto justo en el límite y que el píxel sea el contiguo a la imagen. En ese caso lo reduzco en 1:
 //   if(i_min<0)
 //     i_min = 0;
@@ -240,19 +241,13 @@ float Siddon (Line3D LOR, Image* image, SiddonSegment** weightsList, int* length
   // y una raiz cuadrada, y de la otra forma serán cierta cantidad de sumas dependiendo el tamaño 
   // de la imagen, pero en promedio pueden ser 100. No habría mucha diferencia entre hacerlo de una forma u otra.
   // Puntos exactos de entrada y salida basados en los límtes del píxel:
-  x_1_mm = LOR.P0.X + alpha_min * LOR.Vx;
-  y_1_mm = LOR.P0.Y + alpha_min * LOR.Vy;
-  z_1_mm = LOR.P0.Z + alpha_min * LOR.Vz;
-  x_2_mm = LOR.P0.X + alpha_max * LOR.Vx;
-  y_2_mm = LOR.P0.Y + alpha_max * LOR.Vy;
-  z_2_mm = LOR.P0.Z + alpha_max * LOR.Vz;
   rayLengthInFov_mm = sqrt((x_2_mm-x_1_mm) * (x_2_mm-x_1_mm) + (y_2_mm-y_1_mm) * (y_2_mm-y_1_mm) + (z_2_mm-z_1_mm) * (z_2_mm-z_1_mm));
 
   // Distancia total de la LOR. Es la distancia entre los puntos P0 y P1, habitualmente, esos son
   // los puntos de la lor sobre el detector.
   rayLength_mm = sqrt(((LOR.P0.X + LOR.Vx) - LOR.P0.X) * ((LOR.P0.X + LOR.Vx) - LOR.P0.X) 
-	  + ((LOR.P0.Y + LOR.Vy) - LOR.P0.Y) * ((LOR.P0.Y + LOR.Vy) - LOR.P0.Y)
-	  + ((LOR.P0.Z + LOR.Vz) - LOR.P0.Z) * ((LOR.P0.Z + LOR.Vz) - LOR.P0.Z));
+    + ((LOR.P0.Y + LOR.Vy) - LOR.P0.Y) * ((LOR.P0.Y + LOR.Vy) - LOR.P0.Y)
+    + ((LOR.P0.Z + LOR.Vz) - LOR.P0.Z) * ((LOR.P0.Z + LOR.Vz) - LOR.P0.Z));
 
   // Incremento en los valores de alpha, según se avanza un píxel en x o en y.
   alpha_x_u = fabs(sizeImage.sizePixelX_mm / (LOR.Vx)); //alpha_x_u = DistanciaPixelX / TotalDelRayo - Remember that Vx must be loaded in order to be the diference in X between the two points of the lor

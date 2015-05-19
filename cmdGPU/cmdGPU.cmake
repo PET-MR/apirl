@@ -9,7 +9,7 @@ INCLUDE_DIRECTORIES(${cmdGPU_Headers_Dir} ${reconGPU_Headers_Dir} ${recon_Header
 #  Tengo que generar un grupo de archivos por cada comando.
 
 #FILE(GLOB cmd_Sources RELATIVE ${cmdGPU_Sources_Dir} ${cmdGPU_Sources_Dir}/*.cpp)
-SET(cuMLEM_Sources "src/cuMLEM.cpp" "src/readCudaParameters.cpp")
+SET(cuMLEM_Sources "src/cuMLEM.cpp")
 #SET(cuOSEM_Sources "src/cuOSEM.cpp")
 
 

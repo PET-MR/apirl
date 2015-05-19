@@ -42,7 +42,7 @@ __device__ void CUDA_Siddon (float4* LOR, float4* P0, float* Input, float* Resul
   float alpha_min, alpha_max;	// Valores de alpha mínimo y máximo finales, o sea de entrada y salida al fov de la lor.
 
   // Valores de alpha para recorrer la lor:
-  float alpha_x = 10000000, alpha_y = 10000000, alpha_z = 10000000;	// Valores de alpha si avanzo en x o en y, siempre debo ir siguiendo al más cercano.
+  float alpha_x = 10000000.0f, alpha_y = 10000000.0f, alpha_z = 10000000.0f;	// Valores de alpha si avanzo en x o en y, siempre debo ir siguiendo al más cercano.
   float alpha_x_u, alpha_y_u, alpha_z_u;	// Valor de incremento de alpha según avance un píxel en x o en y.
   float alpha_c;	// Valor de alhpa actual, cuando se recorre la lor.
 
@@ -57,7 +57,7 @@ __device__ void CUDA_Siddon (float4* LOR, float4* P0, float* Input, float* Resul
   
 
   // Cantidad de píxeles intersectados:
-  float numIntersectedPixels;
+  int numIntersectedPixels;
 
   // Punto de entrada y salida al fov trasladado al borde del píxel, ya que en esta versión el píxel
   // de entrada se considera entero, y no desde el punto exacto de itnersección con el círculo:
@@ -165,6 +165,7 @@ __device__ void CUDA_Siddon (float4* LOR, float4* P0, float* Input, float* Resul
   x_2_mm = P0->x + LOR->x * alpha_max;
   y_2_mm = P0->y + LOR->y * alpha_max;
   z_2_mm = P0->z + LOR->z * alpha_max;
+  
   rayLengthInFov_mm = sqrt((x_2_mm-x_1_mm) * (x_2_mm-x_1_mm) + (y_2_mm-y_1_mm) * (y_2_mm-y_1_mm) + (z_2_mm-z_1_mm) * (z_2_mm-z_1_mm));
 
   // Distancia total de la LOR. Es la distancia entre los puntos P0 y P1, habitualmente, esos son
@@ -174,13 +175,13 @@ __device__ void CUDA_Siddon (float4* LOR, float4* P0, float* Input, float* Resul
 	  + ((P0->z + LOR->z) - P0->z) * ((P0->z + LOR->z) - P0->z));
   
   float offsetZ_mm = 0;//(SCANNER_ZFOV - cudaZFOV)/2;
-  if((z_1_mm < offsetZ_mm)||(z_1_mm > (d_AxialFov_mm-offsetZ_mm)) || (z_2_mm < offsetZ_mm)||(z_2_mm > (d_AxialFov_mm-offsetZ_mm)))
-
-  {
-	// La lor entra por las tapas del clindro del fov:
-	printf("Warning: Lor que entra por las tapas del cilindro del FoV.\n");
-  }
-
+  #ifdef __DEBUG__
+    if((z_1_mm < offsetZ_mm)||(z_1_mm > (d_AxialFov_mm-offsetZ_mm)) || (z_2_mm < offsetZ_mm)||(z_2_mm > (d_AxialFov_mm-offsetZ_mm)))
+    {
+      // La lor entra por las tapas del clindro del fov:
+      printf("Warning: Lor que entra por las tapas del cilindro del FoV.\n");
+    }
+  #endif
 
   // Con el alhpa_min y el alpha_max tengo los puntos de entrada y salida al fov. De los cuales obtengo
   // los índices de los píxeles de entrada y salida del fov.
@@ -192,7 +193,10 @@ __device__ void CUDA_Siddon (float4* LOR, float4* P0, float* Input, float* Resul
   i_max = floorf((x_2_mm + d_RadioFov_mm)/d_imageSize.sizePixelX_mm); // In X increase of System Coordinate = Increase Pixels.
   j_max = floorf((y_2_mm + d_RadioFov_mm)/d_imageSize.sizePixelY_mm); // 
   k_max = floorf((z_2_mm - offsetZ_mm)/d_imageSize.sizePixelZ_mm);
-  
+  int nPixelsXY = (d_imageSize.nPixelsX * d_imageSize.nPixelsY);
+  int indicePixel;
+
+
   // Esta verificación y corrección la saco, porque a veces por error de redondeo puede quedar en el píxel -1 o en sizePixel
   #ifdef __DEBUG__
     // Verifico que los índices de i y j dieron dentro de la imagen, sino es que que estoy fuera del fov.
@@ -205,9 +209,10 @@ __device__ void CUDA_Siddon (float4* LOR, float4* P0, float* Input, float* Resul
     }
   #endif
 
-  // Cantidad de píxeles intersectados:
-  numIntersectedPixels = fabsf(i_max - i_min) + fabsf(j_max - j_min) + fabsf(k_max - k_min) + 2; // +0 in each dimension(for getting the amount of itnersections) -1 toget pixels> 3x1-1 = +2
 
+  // Cantidad de píxeles intersectados:
+  numIntersectedPixels = abs(i_max - i_min) + abs(j_max - j_min) + abs(k_max - k_min) + 2; // +0 in each dimension(for getting the amount of itnersections) -1 toget pixels> 3x1-1 = +2
+  
   // Pixels increments
   i_incr = 0, j_incr = 0, k_incr = 0;	//The increments are zero (perpendicular liine) if Vx = 0 for i, and so on
   if(LOR->x > 0)
@@ -222,13 +227,11 @@ __device__ void CUDA_Siddon (float4* LOR, float4* P0, float* Input, float* Resul
     k_incr = 1;	// Remeber than in Y and Z the increase in the SystemCoordinate means a decreas in the pixel index
   else if(LOR->z < 0)
     k_incr = -1;
-
+  
   // Incremento en los valores de alpha, según se avanza un píxel en x o en y.
   alpha_x_u = fabsf(d_imageSize.sizePixelX_mm / (LOR->x)); //alpha_x_u = DistanciaPixelX / TotalDelRayo - Remember that Vx must be loaded in order to be the diference in X between the two points of the lor
   alpha_y_u = fabsf(d_imageSize.sizePixelY_mm / (LOR->y));
   alpha_z_u = fabsf(d_imageSize.sizePixelZ_mm / (LOR->z));
-
-  
 
     // A partir del (i_min,j_min) voy recorriendo la lor, para determinar el índice del próximo píxel, o sea
   // saber si avanzo en i o en j, debo ver si el cambio se da en x o en y. Para esto en cada avance se calcula
@@ -239,7 +242,7 @@ __device__ void CUDA_Siddon (float4* LOR, float4* P0, float* Input, float* Resul
   else if (LOR->x<0)
     alpha_x = ( -d_RadioFov_mm + i_min * d_imageSize.sizePixelX_mm - P0->x ) / LOR->x;	// Limit to the left
   else
-    alpha_x = __int_as_float(0x7f800000);
+    alpha_x = FLT_MAX;
   if (alpha_x <0)		// If its outside the FOV que get to the maximum value so it doesn't bother
     alpha_x = FLT_MAX;
   
@@ -260,15 +263,13 @@ __device__ void CUDA_Siddon (float4* LOR, float4* P0, float* Input, float* Resul
     alpha_z = FLT_MAX;
   if (alpha_z <0)
     alpha_z = FLT_MAX;
-
-  rayLengthInFov_mm = sqrt((x_2_mm-x_1_mm) * (x_2_mm-x_1_mm) + (y_2_mm-y_1_mm) * (y_2_mm-y_1_mm) + (z_2_mm-z_1_mm) * (z_2_mm-z_1_mm));
-
+  
   // En alpha_c voy guardando el valor de alpha con el que voy recorriendo los píxeles.
   alpha_c = alpha_min;
-  // En alpha_x guardo los próximos límites en todas las coordenadas. En alpha_c está el punto actual, que es el mínimo.
-  alpha_x = alpha_x_min + alpha_x_u;
-  alpha_y = alpha_y_min + alpha_y_u;
-  alpha_z = alpha_z_min + alpha_z_u;
+//   // En alpha_x guardo los próximos límites en todas las coordenadas. En alpha_c está el punto actual, que es el mínimo.
+//   alpha_x = alpha_x_min + alpha_x_u;
+//   alpha_y = alpha_y_min + alpha_y_u;
+//   alpha_z = alpha_z_min + alpha_z_u;
 
   // Inicialización de i,j a sus valores de entrada.
   i = i_min;
@@ -277,19 +278,18 @@ __device__ void CUDA_Siddon (float4* LOR, float4* P0, float* Input, float* Resul
 
   // Peso para cada píxel:
   float4 weight = make_float4(0,0,0,0);	// Weight for every pixel
-  float nPixelsXY = (d_imageSize.nPixelsX * d_imageSize.nPixelsY);
-  rayLength_mm = sqrt(((P0->x + LOR->x) - P0->x) * ((P0->x + LOR->x) - P0->x) 
-    + ((P0->y + LOR->y) - P0->y) * ((P0->y + LOR->y) - P0->y)
-    + ((P0->z + LOR->z) - P0->z) * ((P0->z + LOR->z) - P0->z));
-
-  int indicePixel;
+  /*indicePixel = (int)(i_min + j_min * d_imageSize.nPixelsX + k_min * nPixelsXY);
+Result[indiceMichelogram] += Input[indicePixel]*i_incr*alpha_x_u*alpha_x;
+indicePixel = (int)(i_max + j_max * d_imageSize.nPixelsX + k_max * nPixelsXY);
+Result[indiceMichelogram] += Input[indicePixel]*j_incr*k_incr*alpha_z_u*alpha_y;*/
+  
   // Recorro la lor y guardo los segmentos en la lista de salida.
   for(int m = 0; m < numIntersectedPixels; m++)
   {
     weight.x = i;
     // El índice en Y de las coordenadas de píxeles crece de forma inversa que las coordenadas geométricas,
     // por eso en vez de guardar el j, guardo nPixelsY -j - 1;
-    weight.y = d_imageSize.nPixelsY - 1 - j;
+    weight.y = j;
     weight.z = k;
     if((alpha_x <= alpha_y) && (alpha_x <= alpha_z))
     {
@@ -330,11 +330,9 @@ __device__ void CUDA_Siddon (float4* LOR, float4* P0, float* Input, float* Resul
 	  atomicAdd(Result+indicePixel, weight.w * Input[indiceMichelogram]);
 	  break;
       }
-
     }
 
   }
-
 }
 
 

@@ -3,7 +3,9 @@
 #  Martin Belzunce, UTN-FRBA, Proyecto AR-PET (CNEA)
 #  Copyright (c) 2010
 INCLUDE_DIRECTORIES(${cmd_Headers_Dir} ${recon_Headers_Dir} ${data_Headers_Dir} ${utils_Headers_Dir})
-
+if(ENABLE_GPU)
+	INCLUDE_DIRECTORIES(${reconGPU_Headers_Dir} ${FIND_CUDA_DIR})
+endif(ENABLE_GPU)
 #  Tengo que generar un grupo de archivos por cada comando.
 
 #FILE(GLOB cmd_Sources RELATIVE ${cmd_SOURCE_DIR} ${cmd_SOURCE_DIR}/*.cpp)

@@ -43,7 +43,7 @@
   extern __device__ __constant__ float d_RValues_mm[MAX_R_VALUES];
 
   // Memoria constante con los valores de la coordenada axial o z.
-  extern __device__ __constant__ float d_AxialValues_mm[MAX_Z_VALUES];
+  //extern __device__ __constant__ float d_AxialValues_mm[MAX_Z_VALUES];
 
   // Memoria constante con el radio del scanner (solo para scanner cilíndricos).
   extern __device__ __constant__ float d_RadioScanner_mm;
@@ -61,6 +61,13 @@ CuProjectorInterface::CuProjectorInterface(CuProjector* cuProjector)
   this->projector = cuProjector;
   gpuId = 0;
   typeOfProjector = SIDDON_CYLINDRICAL_SCANNER;	// The only one available at the moment.
+  setProjectorBlockSizeConfig(dim3(128,1,1));
+}
+
+
+void CuProjectorInterface::setProjectorBlockSizeConfig(dim3 blockSize)
+{
+  blockSizeProjector = blockSize;
 }
 
 
@@ -81,24 +88,24 @@ bool CuProjectorInterface::initCuda (int device)
   cudaDriverGetVersion(&driverVersion);
   cudaRuntimeGetVersion(&runtimeVersion);
   
-  printf("______GPU PROPERTIES_____");
-  printf(" Nombre: %s", deviceProp.name);
+  printf("______GPU PROPERTIES_____\n");
+  printf(" Nombre: %s\n", deviceProp.name);
   
-  printf(" Cuda Driver Version %d", driverVersion);
-  printf(" Cuda Runtime Version %d", runtimeVersion);
-  printf(" Compute Mode %d",  deviceProp.computeMode);
-  printf(" Total Global Memory %lud", deviceProp.totalGlobalMem);
-  printf(" Shared Memory per Block %lud", deviceProp.sharedMemPerBlock);
-  printf(" Register pero Block %d", deviceProp.regsPerBlock);
-  printf(" Warp Size %d", deviceProp.warpSize);
-  printf(" Max Threads Per Block %d", deviceProp.maxThreadsPerBlock);
-  printf(" Max Threads Dimension %dx%dx%d", deviceProp.maxThreadsDim[0], deviceProp.maxThreadsDim[1], deviceProp.maxThreadsDim[2]);
-  printf(" Max Grid Size %dx%dx%d", deviceProp.maxGridSize[0], deviceProp.maxGridSize[1], deviceProp.maxGridSize[2]);
-  printf(" Max Threads Per Block %d", deviceProp.maxThreadsPerBlock);
-  printf(" Clock Rate %d", deviceProp.clockRate);
-  printf(" MultiProcessors count %d", deviceProp.multiProcessorCount);
-  printf(" Concurrent Kernels %d", deviceProp.concurrentKernels);
-  printf(" kernel Execution Timeout Enabled %d", deviceProp.kernelExecTimeoutEnabled);
+  printf(" Cuda Driver Version %d\n", driverVersion);
+  printf(" Cuda Runtime Version %d\n", runtimeVersion);
+  printf(" Compute Mode %d\n",  deviceProp.computeMode);
+  printf(" Total Global Memory %lud\n", deviceProp.totalGlobalMem);
+  printf(" Shared Memory per Block %lud\n", deviceProp.sharedMemPerBlock);
+  printf(" Register pero Block %d\n", deviceProp.regsPerBlock);
+  printf(" Warp Size %d\n", deviceProp.warpSize);
+  printf(" Max Threads Per Block %d\n", deviceProp.maxThreadsPerBlock);
+  printf(" Max Threads Dimension %dx%dx%d\n", deviceProp.maxThreadsDim[0], deviceProp.maxThreadsDim[1], deviceProp.maxThreadsDim[2]);
+  printf(" Max Grid Size %dx%dx%d\n", deviceProp.maxGridSize[0], deviceProp.maxGridSize[1], deviceProp.maxGridSize[2]);
+  printf(" Max Threads Per Block %d\n", deviceProp.maxThreadsPerBlock);
+  printf(" Clock Rate %d\n", deviceProp.clockRate);
+  printf(" MultiProcessors count %d\n", deviceProp.multiProcessorCount);
+  printf(" Concurrent Kernels %d\n", deviceProp.concurrentKernels);
+  printf(" kernel Execution Timeout Enabled %d\n", deviceProp.kernelExecTimeoutEnabled);
   ///////////////////////////////////////////////////////////
   // Initialisation of the GPU device
   ///////////////////////////////////////////////////////////
@@ -136,10 +143,10 @@ void CuProjectorInterface::setProjectorKernelConfig(unsigned int numThreadsPerBl
 }
 
 
-void CuProjectorInterface::setProjectorKernelConfig(dim3* blockSize, Sinogram3D* sinogram)
+void CuProjectorInterface::setProjectorKernelConfig(dim3 blockSize, Sinogram3D* sinogram)
 {
   // Llamo al método que recibe los componentes por separado, ya que ahí se actualiza el tamaño de grilla también:
-  setProjectorKernelConfig(blockSize->x, blockSize->y, blockSize->z, sinogram);
+  setProjectorKernelConfig(blockSize.x, blockSize.y, blockSize.z, sinogram);
 }
     
     
@@ -168,25 +175,18 @@ bool CuProjectorInterface::InitGpuMemory(Sinogram3D* sinogram, Image* image, Tip
   checkCudaErrors(cudaMemcpy(d_image, image->getPixelsPtr(),sizeof(float)*numPixels,cudaMemcpyHostToDevice));
   // Copio el sinograma de entrada, llamo a una función porque tengo que ir recorriendo todos los sinogramas:
   CopySinogram3dHostToGpu(d_projection, sinogram);	// Es una copia de los mismos sinogramas. O sea en cpu y gpu ocupan el mismo espacio.
-  // Pongo en cero el sinograma de proyección:
-  checkCudaErrors(cudaMemset(d_projection, 0,sizeof(float)*numBins));
   
   // Además de copiar los valores de todos los bins, debo inicializar todas las constantes de reconstrucción.
   // Por un lado tengo los valores de coordenadas posibles de r, theta y z. Los mismos se copian a memoria constante de GPU (ver vectores globales al inicio de este archivo.
   float *auxPtr = sinogram->getSegment(0)->getSinogram2D(0)->getAngPtr();
   checkCudaErrors(cudaMemcpyToSymbol(d_thetaValues_deg, auxPtr, sizeof(float)*sinogram->getNumProj()));
   checkCudaErrors(cudaMemcpyToSymbol(d_RValues_mm, sinogram->getSegment(0)->getSinogram2D(0)->getRPtr(), sizeof(float)*sinogram->getNumR()));
-  checkCudaErrors(cudaMemcpyToSymbol(d_AxialValues_mm, sinogram->getAxialPtr(), sizeof(float)*sinogram->getNumRings()));
-//   checkCudaErrors(cudaMemcpyToSymbol(cuda_threads_per_block, &(blockSizeProjector.x), sizeof(unsigned int)));
-//   checkCudaErrors(cudaMemcpyToSymbol(cuda_threads_per_block_update_pixel, &(blockSizeImageUpdate.x), sizeof(unsigned int)));
-//   checkCudaErrors(cudaMemcpyToSymbol(cuda_nr_splitter, &NR_Splitter, sizeof(unsigned int)));
-//   checkCudaErrors(cudaMemcpyToSymbol(cuda_rows_splitter, &rowSplitter, sizeof(unsigned int)));
   SizeImage size =  image->getSize();
-  checkCudaErrors(cudaMemcpyToSymbol(d_imageSize, &size, sizeof(image->getSize())));
+  checkCudaErrors(cudaMemcpyToSymbol(d_imageSize, &size, sizeof(SizeImage)));
   aux = image->getFovRadio(); // Esto podría ser del sinograma también.
-  checkCudaErrors(cudaMemcpyToSymbol(d_RadioFov_mm, &aux, sizeof(sinogram->getRadioFov_mm())));
+  checkCudaErrors(cudaMemcpyToSymbol(d_RadioFov_mm, &aux, sizeof(float)));
   aux = image->getFovHeight(); // Esto podría ser del sinograma.
-  checkCudaErrors(cudaMemcpyToSymbol(d_AxialFov_mm, &aux, sizeof(sinogram->getAxialFoV_mm())));
+  checkCudaErrors(cudaMemcpyToSymbol(d_AxialFov_mm, &aux, sizeof(float)));
 
   // Para el sinograma 3d tengo que cada sino 2d puede representar varios sinogramas asociados a distintas combinaciones de anillos.
   // En la versión con CPU proceso todas las LORs, ahora solo voy a considerar la del medio, que sería la ventaja de reducir el volumen de LORs.
@@ -238,7 +238,7 @@ bool CuProjectorInterface::InitGpuMemory(Sinogram3D* sinogram, Image* image, Tip
   {
     case SIDDON_CYLINDRICAL_SCANNER:
       aux = ((Sinogram3DCylindricalPet*)sinogram)->getRadioScanner_mm();
-      checkCudaErrors(cudaMemcpyToSymbol(d_RadioScanner_mm, &aux, sizeof(aux)));
+      checkCudaErrors(cudaMemcpyToSymbol(d_RadioScanner_mm, &aux, sizeof(float)));
       //checkCudaErrors(cudaMemcpy(&d_RadioScanner_mm, &aux, sizeof(aux), cudaMemcpyHostToDevice));
       break;
   }
@@ -296,6 +296,8 @@ bool CuProjectorInterface::Backproject (Sinogram3D* inputSinogram, Image* output
   // Número total de bins del sinograma:
   int numBins, numSinograms;
   numBins = inputSinogram->getBinCount();
+  // Set kernel configuration:
+  setProjectorKernelConfig(this->blockSizeProjector, inputSinogram);
   printf("######## BACKPROJECTION #########");
   // INICALIZACIÓN DE GPU 
   if(!initCuda (gpuId))
@@ -318,6 +320,8 @@ bool CuProjectorInterface::Backproject (Sinogram3D* inputSinogram, Image* output
   }
   finalTime = clock();
   printf(" Execution Time: %f sec\n", (float)(finalTime-initTime)/(float)CLOCKS_PER_SEC);
+  
+  FreeCudaMemory();
 }
 
 bool CuProjectorInterface::Project(Image* image, Sinogram3D* projection)
@@ -328,6 +332,8 @@ bool CuProjectorInterface::Project(Image* image, Sinogram3D* projection)
   // Número total de bins del sinograma:
   int numBins, numSinograms;
   numBins = projection->getBinCount();
+  // Set kernel configuration:
+  setProjectorKernelConfig(this->blockSizeProjector, projection);
   printf("######## PROJECTION #########");
   // INICALIZACIÓN DE GPU 
   if(!initCuda (gpuId))
@@ -349,8 +355,21 @@ bool CuProjectorInterface::Project(Image* image, Sinogram3D* projection)
       projector->Project(d_image, d_projection, d_ring1_mm, d_ring2_mm, image, (Sinogram3DCylindricalPet*)projection, false);
       break;
   }
+  /* Copy result to cpu:
+   */
+  CopySinogram3dGpuToHost(projection, d_projection);
   finalTime = clock();
   printf(" Execution Time: %f sec\n", (float)(finalTime-initTime)/(float)CLOCKS_PER_SEC);
+  
+  FreeCudaMemory();
 }
 
-
+void CuProjectorInterface::FreeCudaMemory()
+{
+  checkCudaErrors(cudaFree(d_projection));
+  checkCudaErrors(cudaFree(d_image));
+  checkCudaErrors(cudaFree(d_ring1));
+  checkCudaErrors(cudaFree(d_ring2));
+  checkCudaErrors(cudaFree(d_ring1_mm));
+  checkCudaErrors(cudaFree(d_ring2_mm));
+}
