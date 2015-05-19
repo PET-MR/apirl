@@ -21,7 +21,7 @@
 #include <CuSiddon.h>
 #include <CuSiddonProjector.h>
 #include "../kernels/CuSiddon.cu"
-
+#include "../kernels/CuSiddonWithTextures.cu"
 
 __global__ void cuSiddonProjection (float* volume, float* michelogram, float *d_ring1, float *d_ring2, int numR, int numProj, int numRings, int numSinos)
 {
@@ -39,7 +39,7 @@ __global__ void cuSiddonProjection (float* volume, float* michelogram, float *d_
   LOR.x = P2.x - P1.x;
   LOR.y = P2.y - P1.y;
   LOR.z = P2.z - P1.z;
-  CUDA_Siddon (&LOR, &P1, volume, michelogram, PROJECTION, indiceMichelogram);
+  cuSiddonWithTextures (&LOR, &P1, volume, michelogram, indiceMichelogram);
 }
 
 __global__ void cuSiddonDivideAndBackproject(float* d_inputSinogram, float* d_estimatedSinogram, float* d_outputImage, 

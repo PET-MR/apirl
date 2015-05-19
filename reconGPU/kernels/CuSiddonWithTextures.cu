@@ -1,6 +1,6 @@
 /**
-	\file CuSiddon.cu
-	\brief Implementación de funciónes de device del ray tracing con siddon.
+	\file cuSiddonWithTextures.cu
+	\brief Implementación de siddon con memoria de textura para la imagen. Solo hace la proyección porque la memoria de textura no se puede escribir. 
 	
 	\todo 
 	\bug
@@ -9,8 +9,8 @@
 	\date 2014.07.11
 	\version 1.1.0
 */
-#ifndef _CUSIDDONFUNC_H_
-#define _CUSIDDONFUNC_H_
+#ifndef _CUSIDDONWITHTEXT_H_
+#define _CUSIDDONWITHTEXT_H_
 
 #include <CuSiddon.h>
 #include <float.h>
@@ -24,7 +24,7 @@ extern __device__ __constant__ float d_RadioFov_mm;
 
 extern __device__ __constant__ SizeImage d_imageSize;
 
-extern texture<float, 3, cudaReadModeElementType> texImage;
+texture<float, 3, cudaReadModeElementType> texImage;
 // This function calculates Siddon Wieghts for a lor. It gets as parameters, the LOR direction vector in
 // a float4*, the first point of the lor in a float4, a float* where a posible input must be loaded, 
 // a float* where the result will be stored, and a int that says in which mode are we working. 
@@ -33,7 +33,7 @@ extern texture<float, 3, cudaReadModeElementType> texImage;
 //							 BACKPROJECTION -> The input is a Michelogram and the output is a Image
 // The size of the volume must be loaded first in the global and constant variable named d_imageSize
 // and the size of the michelogram in cuda_michelogram_size
-__device__ void CUDA_Siddon (float4* LOR, float4* P0, float* Input, float* Result, int Mode, int indiceMichelogram)
+__device__ void cuSiddonWithTextures (float4* LOR, float4* P0, float* image, float* sinogram, int indiceMichelogram)
 
 {
 
@@ -278,10 +278,10 @@ __device__ void CUDA_Siddon (float4* LOR, float4* P0, float* Input, float* Resul
   k = k_min;
 
   // Recorro la lor y guardo los segmentos en la lista de salida.
-  float siddonWeight = 0;
+  float siddonWeight = 0, result = 0, aux = 0;
   for(int m = 0; m < numIntersectedPixels; m++)
   {
-    indicePixel = i + j * d_imageSize.nPixelsX + k * nPixelsXY;
+    aux = tex3D(texImage,i,j,k);
     if((alpha_x <= alpha_y) && (alpha_x <= alpha_z))
     {
       // Cruce por el plano x: avanzo en i.
@@ -306,24 +306,9 @@ __device__ void CUDA_Siddon (float4* LOR, float4* P0, float* Input, float* Resul
       alpha_c = alpha_z;
       alpha_z += alpha_z_u;
     }
-    //if((weight.x<d_imageSize.nPixelsX)&&(weight.y<d_imageSize.nPixelsY)&&(weight.z<d_imageSize.nPixelsZ)&&(weight.x>=0)&&(weight.y>=0)&&(weight.z>=0)&&(weight.w>=0))
-    //{ 
-      switch(Mode)
-      {  
-	case SENSIBILITY_IMAGE:
-	  atomicAdd(Result+indicePixel, siddonWeight * d_imageSize.sizePixelX_mm);
-	  break;
-	case PROJECTION:
-	  //Result[indiceMichelogram] += siddonWeight * Input[indicePixel];
-	  Result[indiceMichelogram] += siddonWeight * tex3D(texImage,i,j,k);
-	  break;
-	case BACKPROJECTION:
-	  atomicAdd(Result+indicePixel, siddonWeight * Input[indiceMichelogram]);
-	  break;
-      }
-    //}
-
+    result += siddonWeight * tex3D(texImage,i+0.5,j+0.5,k+0.5);
   }
+  sinogram[indiceMichelogram] = result;
 }
 
 

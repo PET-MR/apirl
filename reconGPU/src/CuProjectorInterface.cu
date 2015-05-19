@@ -55,6 +55,7 @@
   extern __device__ __constant__ SizeImage d_imageSize;
 //#endif
 
+  extern texture<float, 3, cudaReadModeElementType> texImage;  // 3D texture
 
 CuProjectorInterface::CuProjectorInterface(CuProjector* cuProjector)
 {
@@ -151,12 +152,32 @@ bool CuProjectorInterface::InitGpuMemory(Sinogram3D* sinogram, Image* image, Tip
   int numPixels = image->getPixelCount();
   // Número total de bins del sinograma:
   int numBins, numSinograms;
-  numBins = sinogram->getBinCount();
-  
+  numBins = sinogram->getBinCount(); 
   // Lo mismo para el numero de sinogramas:
-  numSinograms = sinogram->getNumSinograms();
-    
+  numSinograms = sinogram->getNumSinograms();   
   float aux;
+  
+  // The image is in a texture memory:
+  cudaChannelFormatDesc floatTex;
+  floatTex = cudaCreateChannelDesc<float>();
+  const cudaExtent extentImageSize = make_cudaExtent(image->getSize().nPixelsX, image->getSize().nPixelsY, image->getSize().nPixelsZ);
+  checkCudaErrors(cudaMalloc3DArray(&d_imageArray, &floatTex, extentImageSize));
+  // copy data to 3D array
+  cudaMemcpy3DParms copyParams = {0};
+  copyParams.srcPtr   = make_cudaPitchedPtr((void *)image->getPixelsPtr(), extentImageSize.width*sizeof(float), extentImageSize.width, extentImageSize.height);
+  copyParams.dstArray = d_imageArray;
+  copyParams.extent   = extentImageSize;
+  copyParams.kind     = cudaMemcpyHostToDevice;
+  checkCudaErrors(cudaMemcpy3D(&copyParams));
+  // set texture parameters
+  texImage.normalized = false;                      // access with normalized texture coordinates
+  texImage.filterMode = cudaFilterModeLinear;      // linear interpolation
+  texImage.addressMode[0] = cudaAddressModeClamp;   // wrap texture coordinates
+  texImage.addressMode[1] = cudaAddressModeClamp;
+  texImage.addressMode[2] = cudaAddressModeClamp;
+  // bind array to 3D texture
+  checkCudaErrors(cudaBindTextureToArray(texImage, d_imageArray, floatTex));
+    
   // Pido memoria para la gpu, debo almacenar el sinograma y la imagen.
   checkCudaErrors(cudaMalloc((void**) &d_image, sizeof(float)*numPixels));
   checkCudaErrors(cudaMalloc((void**) &d_projection, sizeof(float)*numBins));
@@ -386,4 +407,5 @@ void CuProjectorInterface::FreeCudaMemory()
   checkCudaErrors(cudaFree(d_ring2));
   checkCudaErrors(cudaFree(d_ring1_mm));
   checkCudaErrors(cudaFree(d_ring2_mm));
+  checkCudaErrors(cudaFreeArray(d_imageArray));
 }

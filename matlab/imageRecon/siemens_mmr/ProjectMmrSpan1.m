@@ -45,7 +45,7 @@ interfilewrite(single(image), filenameImage, pixelSize_mm);
 
 % Generate projecte sinogram:
 filenameProjectionConfig = [outputPath 'projectPhantom.par'];
-projectionFilename = [outputPath 'projectedImage'];
+projectionFilename = [outputPath 'projectedSinogram'];
 CreateProjectConfigFileForMmr(filenameProjectionConfig, [filenameImage '.h33'], [sinogramSampleFilename '.h33'], projectionFilename, useGpu);
 status = system(['project ' filenameProjectionConfig])
 

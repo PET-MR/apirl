@@ -63,8 +63,12 @@ class DLLEXPORT CuProjectorInterface : virtual Projector
     float* d_projection;
     
     /// Imagen de entrada apra proyección o salida para retroproyección.
-    /* Puntero a al dirección de memoria en GPU donde se tendrá la imagen de entrada/salida.*/
+    /** Puntero a al dirección de memoria en GPU donde se tendrá la imagen de entrada/salida.*/
     float* d_image;
+    
+    /// CudaArray para manejar la imagen en una textura.
+    /** CudaArray para manejar la imagen en una textura 3d. */
+    cudaArray *d_imageArray;
     
     /// Array con el índice de ring1 (z1) para cada sinograma 2d del sino3D. En realidad es slice.
     /** El largo del vector es igual a la suma total de sinogramas 2d que tiene el sino3d.Es sólo el índice de anillo!
