@@ -37,7 +37,7 @@ extern texture<float, 3, cudaReadModeElementType> texImage;
 //							 BACKPROJECTION -> The input is a Michelogram and the output is a Image
 // The size of the volume must be loaded first in the global and constant variable named d_imageSize
 // and the size of the michelogram in cuda_michelogram_size
-__device__ void CUDA_Siddon (float4* LOR, float4* P0, float* Input, float* Result, int Mode, int indiceMichelogram)
+__device__ void CuSiddon (float4* LOR, float4* P0, float* Input, float* Result, int Mode, int indiceMichelogram)
 
 {
 

@@ -22,6 +22,7 @@
 #include <CuSiddonProjector.h>
 #include "../kernels/CuSiddon.cu"
 #include "../kernels/CuSiddonWithTextures.cu"
+#include "../kernels/CuSiddonWithSurfaces.cu"
 
 __global__ void cuSiddonProjection (float* volume, float* michelogram, float *d_ring1, float *d_ring2, int numR, int numProj, int numRings, int numSinos)
 {
@@ -74,7 +75,7 @@ __global__ void cuSiddonDivideAndBackproject(float* d_inputSinogram, float* d_es
   LOR.x = P2.x - P1.x;
   LOR.y = P2.y - P1.y;
   LOR.z = P2.z - P1.z;
-  CUDA_Siddon (&LOR, &P1, d_estimatedSinogram, d_outputImage, BACKPROJECTION, indiceMichelogram);
+  CuSiddon(&LOR, &P1, d_estimatedSinogram, d_outputImage, BACKPROJECTION, indiceMichelogram);
 }
 
 __global__ void cuSiddonBackprojection(float* d_inputSinogram, float* d_outputImage, 
@@ -96,7 +97,7 @@ __global__ void cuSiddonBackprojection(float* d_inputSinogram, float* d_outputIm
   LOR.x = P2.x - P1.x;
   LOR.y = P2.y - P1.y;
   LOR.z = P2.z - P1.z;
-  CUDA_Siddon (&LOR, &P1, d_inputSinogram, d_outputImage, BACKPROJECTION, iBin);
+  cuSiddonWithSurfaces(&LOR, &P1, d_outputImage, d_inputSinogram, iBin);
 }
 
 /// El ángulo de GetPointsFromLOR debe estar en radianes.

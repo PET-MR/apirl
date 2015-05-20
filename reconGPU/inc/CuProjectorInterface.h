@@ -52,6 +52,8 @@
 typedef enum
 {
   SIDDON_CYLINDRICAL_SCANNER,
+  SIDDON_PROJ_TEXT_CYLINDRICAL_SCANNER,
+  SIDDON_BACKPROJ_SURF_CYLINDRICAL_SCANNER,
   SIDDON_HEXAGONAL_SCANNER
 } TipoProyector;
 
@@ -102,11 +104,12 @@ class DLLEXPORT CuProjectorInterface : virtual Projector
     /// Dim3 con configuración de la grilla en cada dimensión para el kernel de proyección.
     dim3 gridSizeProjector;
     
-    /// Inicio la memoria en gpu
+    /// Inicio la memoria en gpu.
     /** Se pide memoria para cada uno de los vectores y se copian los datos de entrada. Se le indica apra que proyector
-     * es porque cambia de proyector en proyector.
+     * es porque cambia de proyector en proyector. 
      */
     bool InitGpuMemory(Sinogram3D* sinogram, Image* image, TipoProyector tipoProy);
+
     
     /// Libera memoria en gpu
     void FreeCudaMemory(void);
