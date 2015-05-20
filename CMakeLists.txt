@@ -97,7 +97,7 @@ if(ENABLE_GPU)
 	#SET(CUDA_USE_CACHE_L1_L2 ON)
 	#SET(CUDA_USE_CACHE_ONLY_L2 ON)
 	#SET(CUDA_MAX_REG_COUNT 20)
-	set(nvcc_flags "${nvcc_flags} -rdc=true")
+	set(nvcc_flags "${nvcc_flags} -rdc=true -lineinfo")
 
 	add_subdirectory(cmdGPU)
 	add_subdirectory(reconGPU)

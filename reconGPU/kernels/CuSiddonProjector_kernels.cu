@@ -25,21 +25,22 @@
 
 __global__ void cuSiddonProjection (float* volume, float* michelogram, float *d_ring1, float *d_ring2, int numR, int numProj, int numRings, int numSinos)
 {
-  int iBin2d =  threadIdx.x + (blockIdx.x * blockDim.x);
-  if(iBin2d>= (numR*numProj))
+  int iBin =  threadIdx.x + (blockIdx.x * blockDim.x);
+  // First compare inside the sinogram:
+  if(iBin>= d_numBinsSino2d)
     return;
-  int iR = iBin2d % numR;
-  int iProj = (int)((float)iBin2d / (float)numR);
+  int iR = iBin % numR;
+  int iProj = (int)((float)iBin / (float)numR);
   //int iSino = blockIdx.y;	// Indice de sinograma, no genero un registro adicional al pedo
   float4 P1;// = make_float4(0,0,0);
   float4 P2;
   float4 LOR;
-  int indiceMichelogram = iBin2d + blockIdx.y * (numProj * numR);
+  iBin = iBin + blockIdx.y * d_numBinsSino2d;
   CUDA_GetPointsFromLOR(d_thetaValues_deg[iProj], d_RValues_mm[iR], d_ring1[blockIdx.y], d_ring2[blockIdx.y], d_RadioScanner_mm, &P1, &P2);
   LOR.x = P2.x - P1.x;
   LOR.y = P2.y - P1.y;
   LOR.z = P2.z - P1.z;
-  cuSiddonWithTextures (&LOR, &P1, volume, michelogram, indiceMichelogram);
+  cuSiddonWithTextures (&LOR, &P1, volume, michelogram, iBin);
 }
 
 __global__ void cuSiddonDivideAndBackproject(float* d_inputSinogram, float* d_estimatedSinogram, float* d_outputImage, 

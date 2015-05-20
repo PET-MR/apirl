@@ -15,7 +15,11 @@
 % output filename := Project_PointSources_
 % END :=
 
-function CreateBackprojectConfigFileForMmr(configfilename, inputFile, outputSample, outputFilename)
+function CreateBackprojectConfigFileForMmr(configfilename, inputFile, outputSample, outputFilename, useGpu)
+
+if nargin == 4
+    useGpu = 0;
+end
 
 % Primero genero el archivo de encabezado.
 fid = fopen(configfilename, 'w');
@@ -26,7 +30,13 @@ end
 % dependerán de la imagen:
 fprintf(fid,'Backproject Parameters :=\n');
 fprintf(fid,'input type := Sinogram3DSiemensMmr\n');
-fprintf(fid,'backprojector := Siddon\n');
+if useGpu == 0
+    fprintf(fid,'backprojector := Siddon\n');
+else
+    fprintf(fid,'backprojector := CuSiddonProjector\n');
+    fprintf(fid,'backprojector block size := {128,1,1}\n');
+    fprintf(fid,'gpu id := 0\n');
+end
 fprintf(fid,'input file := %s\n', inputFile);
 fprintf(fid,'output image := %s\n', outputSample);
 fprintf(fid,'output filename := %s\n', outputFilename);

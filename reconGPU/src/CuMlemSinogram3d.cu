@@ -33,6 +33,10 @@ __device__ __constant__ float d_AxialFov_mm;
 __device__ __constant__ float d_RadioFov_mm;
 
 __device__ __constant__ SizeImage d_imageSize;
+
+__device__ __constant__ int d_numPixelsPerSlice;
+
+__device__ __constant__ int d_numBinsSino2d;
 #endif
 
 CuMlemSinogram3d::CuMlemSinogram3d(Sinogram3D* cInputProjection, Image* cInitialEstimate, string cPathSalida, string cOutputPrefix, int cNumIterations, int cSaveIterationInterval, bool cSaveIntermediate, bool cSensitivityImageFromFile, CuProjector* cForwardprojector, CuProjector* cBackprojector) : MlemSinogram3d(cInputProjection, cInitialEstimate, cPathSalida, cOutputPrefix, cNumIterations, cSaveIterationInterval, cSaveIntermediate, cSensitivityImageFromFile, NULL, NULL)

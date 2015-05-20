@@ -53,6 +53,10 @@
   extern __device__ __constant__ float d_RadioFov_mm;
 
   extern __device__ __constant__ SizeImage d_imageSize;
+  
+  extern __device__ __constant__ int d_numPixelsPerSlice;
+  
+  extern __device__ __constant__ int d_numBinsSino2d;
 //#endif
 
   extern texture<float, 3, cudaReadModeElementType> texImage;  // 3D texture
@@ -156,7 +160,7 @@ bool CuProjectorInterface::InitGpuMemory(Sinogram3D* sinogram, Image* image, Tip
   // Lo mismo para el numero de sinogramas:
   numSinograms = sinogram->getNumSinograms();   
   float aux;
-  
+  int auxInt;
   // The image is in a texture memory:
   cudaChannelFormatDesc floatTex;
   floatTex = cudaCreateChannelDesc<float>();
@@ -199,6 +203,10 @@ bool CuProjectorInterface::InitGpuMemory(Sinogram3D* sinogram, Image* image, Tip
   checkCudaErrors(cudaMemcpyToSymbol(d_RValues_mm, sinogram->getSegment(0)->getSinogram2D(0)->getRPtr(), sizeof(float)*sinogram->getNumR()));
   SizeImage size =  image->getSize();
   checkCudaErrors(cudaMemcpyToSymbol(d_imageSize, &size, sizeof(SizeImage)));
+  auxInt = size.nPixelsX * size.nPixelsY;
+  checkCudaErrors(cudaMemcpyToSymbol(d_numPixelsPerSlice, &auxInt, sizeof(int)));
+  auxInt = sinogram->getSegment(0)->getSinogram2D(0)->getNumProj()*sinogram->getSegment(0)->getSinogram2D(0)->getNumR();
+  checkCudaErrors(cudaMemcpyToSymbol(d_numBinsSino2d, &auxInt, sizeof(int)));
   aux = image->getFovRadio(); // Esto podría ser del sinograma también.
   checkCudaErrors(cudaMemcpyToSymbol(d_RadioFov_mm, &aux, sizeof(float)));
   aux = image->getFovHeight(); // Esto podría ser del sinograma.

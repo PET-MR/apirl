@@ -24,6 +24,10 @@ extern __device__ __constant__ float d_RadioFov_mm;
 
 extern __device__ __constant__ SizeImage d_imageSize;
 
+extern __device__ __constant__ int numPixelsPerSlice;
+
+extern __device__ __constant__ int d_numBinsSino2d;
+
 extern texture<float, 3, cudaReadModeElementType> texImage;
 // This function calculates Siddon Wieghts for a lor. It gets as parameters, the LOR direction vector in
 // a float4*, the first point of the lor in a float4, a float* where a posible input must be loaded, 

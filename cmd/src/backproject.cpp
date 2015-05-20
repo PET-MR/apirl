@@ -28,6 +28,7 @@
 #include <stdio.h>
 #include <iostream>
 #include <string.h>
+#include <omp.h>
 #include <Michelogram.h>
 #include <Mlem.h>
 #include <Mlem2dTgs.h>
@@ -48,6 +49,11 @@
 #include <Sinogram3DArPet.h>
 #include <Sinogram3DCylindricalPet.h>
 #include <Sinogram3DSiemensMmr.h>
+#ifdef __USE_CUDA__
+  #include <CuProjector.h>
+  #include <CuProjectorInterface.h>
+  #include <readCudaParameters.h>
+#endif
 
 #define FOV_axial 162
 #define FOV_radial 582
@@ -166,7 +172,13 @@ int main (int argc, char *argv[])
 	Image* outputImage;
 	Image* attenuationImage;
 	bool enableAttenuationCorrection = false;
-
+	#ifdef __USE_CUDA__
+	  CuProjector* cuProjector;
+	  CuProjectorInterface* cuProjectorInterface;
+	  int gpuId;	// Id de la gpu a utilizar.
+	  dim3 projectorBlockSize;	// Parámetros de cuda.
+	#endif
+	  
 	// Variables para sinogram2Dtgs y Sinogram2DtgsInSegment:
 	float widthSegment_mm, diameterFov_mm, distCrystalToCenterFov, lengthColimator_mm, widthCollimator_mm, widthHoleCollimator_mm;
 	// Asigno la memoria para los punteros dobles, para el array de strings.
@@ -381,14 +393,34 @@ int main (int argc, char *argv[])
 		backprojector = (Projector*)new ConeOfResponseWithPenetrationProjectorWithAttenuation(numPointsOnDetector, numPointsOnCollimator, attenuationCoef_cm, attenuationImage);
 	  }
 	}
+	#ifdef __USE_CUDA__
+	  else if(strBackprojector.compare("CuSiddonProjector") == 0)
+	  {
+	    cuProjector = (CuProjector*)new CuSiddonProjector();
+	    cuProjectorInterface = new CuProjectorInterface(cuProjector);
+	    // Get size of kernels:
+	    if(getProjectorBlockSize(parameterFileName, "Backproject", &projectorBlockSize))
+	    {
+	      return -1;
+	    }
+	    if(getGpuId(parameterFileName, "Backproject", &gpuId))
+	    {
+	      return -1;
+	    }
+	    // Set the configuration:
+	    cuProjectorInterface->setGpuId(gpuId);
+	    cuProjectorInterface->setProjectorBlockSizeConfig(projectorBlockSize);
+	    backprojector = (Projector*)cuProjectorInterface;
+	  }  
+	#endif
 	else
 	{
 	  cout<<"Backprojector inválido."<<endl;
 	  return -1;
 	}
 	
-	cout<<"Iniciando backprojection:" << endl;
-	
+	cout<<"Starting backprojection:" << endl;
+	double startTime = omp_get_wtime();	
 	// Lectura de proyecciones y reconstrucción, depende del tipo de dato de entrada. Sinogram2Dtgs y
 	// Sinogram2DtgsInSegment tienen muchos parámetros en común:
 	if((inputType.compare("Sinogram2Dtgs")==0)||(inputType.compare("Sinogram2DtgsInSegment")==0))
@@ -579,7 +611,8 @@ int main (int argc, char *argv[])
 	  return -1;
 	}
 	outputImage->writeInterfile((char*)outputFilename.c_str());
-	cout<<"Operación de backprojection finalizada." << endl;
+	double stopTime = omp_get_wtime();
+	cout<<"Backprojection finished. Processing time: " << (stopTime-startTime) << "sec." << endl;
 //	mlem->reconstructionImage->writeInterfile(sprintf("%s_end", outputPrefix.c_str()));
  
 }
