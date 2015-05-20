@@ -122,6 +122,8 @@ bool CuProjectorInterface::initCuda (int device)
   }
   else
   {
+    // For this implementation, where not shared memory is used. Is better to use all the memory to cache L1:
+    cudaFuncSetCacheConfig(cuSiddonProjection, cudaFuncCachePreferL1);
     return true;
   }
 }
@@ -347,6 +349,9 @@ bool CuProjectorInterface::Backproject (Sinogram3D* inputSinogram, Image* output
       projector->Backproject(d_projection, d_image, d_ring1_mm, d_ring2_mm, (Sinogram3DCylindricalPet*)inputSinogram, outputImage, false);
       break;
   }
+  /* Copy result to cpu:
+   */
+  checkCudaErrors(cudaMemcpy(outputImage->getPixelsPtr(), d_image,sizeof(float)*numPixels,cudaMemcpyDeviceToHost));
   cudaEventRecord(stop, 0);
   cudaEventSynchronize(stop);
   // Calculo el tiempo de procesamiento:

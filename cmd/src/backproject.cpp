@@ -399,7 +399,7 @@ int main (int argc, char *argv[])
 	    cuProjector = (CuProjector*)new CuSiddonProjector();
 	    cuProjectorInterface = new CuProjectorInterface(cuProjector);
 	    // Get size of kernels:
-	    if(getProjectorBlockSize(parameterFileName, "Backproject", &projectorBlockSize))
+	    if(getBackprojectorBlockSize(parameterFileName, "Backproject", &projectorBlockSize))
 	    {
 	      return -1;
 	    }

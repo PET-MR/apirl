@@ -84,21 +84,19 @@ __global__ void cuSiddonBackprojection(float* d_inputSinogram, float* d_outputIm
   float4 P2;
   float4 LOR;
   /// Calculo dentro del sinograma 2D, se obtiene con threadIdx.x y blockIdx.x.
-  int iBin2d =  threadIdx.x + (blockIdx.x * blockDim.x);
-  if(iBin2d >= (numR*numProj))
+  int iBin =  threadIdx.x + (blockIdx.x * blockDim.x);
+  // First compare inside the sinogram:
+  if(iBin>= d_numBinsSino2d)
     return;
-  int iR = iBin2d % numR;
-  int iProj = (int)((float)iBin2d / (float)numR);
-  int indiceMichelogram = iBin2d + blockIdx.y * (numProj * numR);
-  
+  int iR = iBin % numR;
+  int iProj = (int)((float)iBin / (float)numR);
+  iBin = iBin + blockIdx.y * d_numBinsSino2d;
   CUDA_GetPointsFromLOR(d_thetaValues_deg[iProj], d_RValues_mm[iR], d_ring1_mm[blockIdx.y], d_ring2_mm[blockIdx.y], d_RadioScanner_mm, &P1, &P2);
-  if((blockIdx.y == 0))
-    printf("BlockIdx.y:%d indMichelogram:%d P1:%f,%f,%f P2:%f,%f,%f.\n", blockIdx.y, indiceMichelogram, P1.x, P1.y, P1.z, P2.x,P2.y,P2.z);
   //CUDA_GetPointsFromLOR(d_thetaValues_deg[iProj], d_RValues_mm[iR], d_ring1[blockIdx.y], d_ring2[blockIdx.y], d_RadioScanner_mm, &P1, &P2);
   LOR.x = P2.x - P1.x;
   LOR.y = P2.y - P1.y;
   LOR.z = P2.z - P1.z;
-  CUDA_Siddon (&LOR, &P1, d_inputSinogram, d_outputImage, BACKPROJECTION, indiceMichelogram);
+  CUDA_Siddon (&LOR, &P1, d_inputSinogram, d_outputImage, BACKPROJECTION, iBin);
 }
 
 /// El ángulo de GetPointsFromLOR debe estar en radianes.

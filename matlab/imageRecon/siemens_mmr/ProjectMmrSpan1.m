@@ -8,7 +8,7 @@
 % Examples:
 %   [sinogram, structSizeSinogram] = ProjectMmrSpan1(image, pixelSize_mm, outputPath)
 
-function [sinogram, structSizeSinogram] = ProjectMmrSpan1(image, pixelSize_mm, outputPath, useGpu)
+function [sinogram, structSizeSino3d] = ProjectMmrSpan1(image, pixelSize_mm, outputPath, useGpu)
 
 mkdir(outputPath);
 % Check what OS I am running on:

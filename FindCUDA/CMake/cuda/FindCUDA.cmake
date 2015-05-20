@@ -474,7 +474,8 @@ mark_as_advanced(
 # for completeness.  We need run this loop in order to accomodate the addition
 # of extra configuration types.  Duplicate entries will be removed by
 # REMOVE_DUPLICATES.
-set(CUDA_configuration_types ${CMAKE_CONFIGURATION_TYPES} ${CMAKE_BUILD_TYPE} Debug MinSizeRel Release RelWithDebInfo)
+#set(CUDA_configuration_types ${CMAKE_CONFIGURATION_TYPES} ${CMAKE_BUILD_TYPE} Debug MinSizeRel Release RelWithDebInfo)
+set(CUDA_configuration_types ${CMAKE_CONFIGURATION_TYPES} Debug MinSizeRel Release RelWithDebInfo)
 list(REMOVE_DUPLICATES CUDA_configuration_types)
 foreach(config ${CUDA_configuration_types})
     string(TOUPPER ${config} config_upper)
@@ -1085,12 +1086,6 @@ endif()
   if(CUDA_USE_FAST_MATH)
     set(nvcc_flags ${nvcc_flags} "-use_fast_math")
   endif()
-# Uso de Caches
-  if(CUDA_USE_CACHE_L1_L2)
-    set(nvcc_flags ${nvcc_flags} "-Xptxas -dlcm=ca")
-  elseif(CUDA_USE_CACHE_ONLY_L2)
-    set(nvcc_flags ${nvcc_flags} "-Xptxas -dlcm=cg")
-  endif()
   if(CUDA_MAX_REG_COUNT)
     set(nvcc_flags ${nvcc_flags} "-maxrregcount=${CUDA_MAX_REG_COUNT}")
   endif()
@@ -1204,7 +1199,18 @@ endif()
 
       set(_cuda_host_flags "${_cuda_host_flags}\nset(CMAKE_HOST_FLAGS_${config_upper} ${_cuda_C_FLAGS})")
     endif()
-    list(APPEND CUDA_NVCC_FLAGS_${config_upper} "-Xptxas=-v -lineinfo")
+    
+    # Uso de Caches
+    if(CUDA_USE_CACHE_L1_L2)
+      list(APPEND CUDA_NVCC_FLAGS_${config_upper} "-Xptxas=-v,-dlcm=ca -lineinfo")
+      #set(nvcc_flags ${nvcc_flags} "-Xptxas --dlcm=ca")
+    elseif(CUDA_USE_CACHE_ONLY_L2)
+      list(APPEND CUDA_NVCC_FLAGS_${config_upper} "-Xptxas=-v,-dlcm=cg -lineinfo")
+      #set(nvcc_flags ${nvcc_flags} "-Xptxas --dlcm=cg")
+    else()
+      list(APPEND CUDA_NVCC_FLAGS_${config_upper} "-Xptxas=-v -lineinfo")
+    endif()
+    #message(STATUS "flags ${config_upper} ${CUDA_NVCC_FLAGS_${config_upper}}")
     # Note that if we ever want CUDA_NVCC_FLAGS_<CONFIG> to be string (instead of a list
     # like it is currently), we can remove the quotes around the
     # ${CUDA_NVCC_FLAGS_${config_upper}} variable like the CMAKE_HOST_FLAGS_<CONFIG> variable.
@@ -1603,11 +1609,11 @@ endif()
     set(nvcc_flags ${nvcc_flags} "-use_fast_math")
   endif()
 # Uso de Caches
-  if(CUDA_USE_CACHE_L1_L2)
-    set(nvcc_flags ${nvcc_flags} "-Xptxas -dlcm=cg")
-  elseif(CUDA_USE_CACHE_ONLY_L2)
-    set(nvcc_flags ${nvcc_flags} "-Xptxas -dlcm=cg")
-  endif()
+#  if(CUDA_USE_CACHE_L1_L2)
+#    set(nvcc_flags ${nvcc_flags} "-Xptxas -dlcm=cg")
+#  elseif(CUDA_USE_CACHE_ONLY_L2)
+#    set(nvcc_flags ${nvcc_flags} "-Xptxas -dlcm=cg")
+#  endif()
   if(CUDA_MAX_REG_COUNT)
     set(nvcc_flags ${nvcc_flags} "-maxrregcount=${CUDA_MAX_REG_COUNT}")
   endif()
