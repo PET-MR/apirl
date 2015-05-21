@@ -34,7 +34,7 @@ if useGpu == 0
     fprintf(fid,'backprojector := Siddon\n');
 else
     fprintf(fid,'backprojector := CuSiddonProjector\n');
-    fprintf(fid,'backprojector block size := {128,1,1}\n');
+    fprintf(fid,'backprojector block size := {576,1,1}\n');
     fprintf(fid,'gpu id := 0\n');
 end
 fprintf(fid,'input file := %s\n', inputFile);

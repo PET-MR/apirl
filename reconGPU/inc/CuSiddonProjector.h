@@ -81,6 +81,14 @@ __global__ void cuSiddonBackprojection(float* d_inputSinogram, float* d_outputIm
 // Funciones de device en la bilbioteca.
 __device__ void CUDA_GetPointsFromLOR (float PhiAngle, float r, float Z1, float Z2, float cudaRscanner, float4* P1, float4* P2);
 
+typedef enum
+{
+  SIDDON_CYLINDRICAL_SCANNER,
+  SIDDON_PROJ_TEXT_CYLINDRICAL_SCANNER,
+  SIDDON_BACKPROJ_SURF_CYLINDRICAL_SCANNER,
+  SIDDON_HEXAGONAL_SCANNER
+} TipoProyector;
+
 // Clase a exportar en la biblioteca.
 class DLLEXPORT CuSiddonProjector : virtual CuProjector
 {

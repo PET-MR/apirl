@@ -468,7 +468,7 @@ int main (int argc, char *argv[])
   }
   // Reconstruyo:
   TipoProyector tipoProy;
-  tipoProy = SIDDON_CYLINDRICAL_SCANNER;
+  tipoProy = SIDDON_PROJ_TEXT_CYLINDRICAL_SCANNER;
   // Asigno las configuraciones de ejecución:
   mlem->setBackprojectorKernelConfig(&backprojectorBlockSize);
   mlem->setProjectorKernelConfig(&projectorBlockSize);

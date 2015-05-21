@@ -37,6 +37,11 @@ __device__ __constant__ SizeImage d_imageSize;
 __device__ __constant__ int d_numPixelsPerSlice;
 
 __device__ __constant__ int d_numBinsSino2d;
+
+extern texture<float, 3, cudaReadModeElementType> texImage;  // 3D texture
+
+extern surface<void, 3> surfImage;
+  
 #endif
 
 CuMlemSinogram3d::CuMlemSinogram3d(Sinogram3D* cInputProjection, Image* cInitialEstimate, string cPathSalida, string cOutputPrefix, int cNumIterations, int cSaveIterationInterval, bool cSaveIntermediate, bool cSensitivityImageFromFile, CuProjector* cForwardprojector, CuProjector* cBackprojector) : MlemSinogram3d(cInputProjection, cInitialEstimate, cPathSalida, cOutputPrefix, cNumIterations, cSaveIterationInterval, cSaveIntermediate, cSensitivityImageFromFile, NULL, NULL)
@@ -127,12 +132,9 @@ bool CuMlemSinogram3d::initCuda (int device, Logger* logger)
   }
   else
   {
-    /// Pude seleccionar el GPU adecudamente.
-    /// Ahora lo configuro para que se bloquee en la llamada a los kernels
-    if(cudaSetDeviceFlags(cudaDeviceBlockingSync)!=cudaSuccess)
-	  return false;
-    else
-	  return true;
+    // For this implementation, where not shared memory is used. Is better to use all the memory to cache L1:
+    cudaFuncSetCacheConfig(cuSiddonProjection, cudaFuncCachePreferL1);
+    return true;
   }
 }
 
@@ -300,10 +302,35 @@ bool CuMlemSinogram3d::InitGpuMemory(TipoProyector tipoProy)
   {
     case SIDDON_CYLINDRICAL_SCANNER:
       aux = ((Sinogram3DCylindricalPet*)inputProjection)->getRadioScanner_mm();
-      checkCudaErrors(cudaMemcpyToSymbol(d_RadioScanner_mm, &aux, sizeof(aux)));
+      checkCudaErrors(cudaMemcpyToSymbol(d_RadioScanner_mm, &aux, sizeof(float)));
+      //checkCudaErrors(cudaMemcpy(&d_RadioScanner_mm, &aux, sizeof(aux), cudaMemcpyHostToDevice));
+      break;
+    case SIDDON_BACKPROJ_SURF_CYLINDRICAL_SCANNER:
+      aux = ((Sinogram3DCylindricalPet*)inputProjection)->getRadioScanner_mm();
+      checkCudaErrors(cudaMemcpyToSymbol(d_RadioScanner_mm, &aux, sizeof(float)));
+      //checkCudaErrors(cudaMemcpy(&d_RadioScanner_mm, &aux, sizeof(aux), cudaMemcpyHostToDevice));
+      break;
+    case SIDDON_PROJ_TEXT_CYLINDRICAL_SCANNER:
+      aux = ((Sinogram3DCylindricalPet*)inputProjection)->getRadioScanner_mm();
+      checkCudaErrors(cudaMemcpyToSymbol(d_RadioScanner_mm, &aux, sizeof(float)));
       //checkCudaErrors(cudaMemcpy(&d_RadioScanner_mm, &aux, sizeof(aux), cudaMemcpyHostToDevice));
       break;
   }
+  
+  // Initialize texture (might be used with the some projectors):
+  cudaChannelFormatDesc floatTex = cudaCreateChannelDesc<float>();
+  const cudaExtent extentImageSize = make_cudaExtent(reconstructionImage->getSize().nPixelsX, reconstructionImage->getSize().nPixelsY, reconstructionImage->getSize().nPixelsZ);
+  cudaMemcpy3DParms copyParams = {0};
+  // set texture parameters
+  texImage.normalized = false;                      // access with normalized texture coordinates
+  texImage.filterMode = cudaFilterModeLinear;      // linear interpolation
+  texImage.addressMode[0] = cudaAddressModeClamp;   // wrap texture coordinates
+  texImage.addressMode[1] = cudaAddressModeClamp;
+  texImage.addressMode[2] = cudaAddressModeClamp;
+  // The image is in a texture memory:  cudaChannelFormatDesc floatTex;
+  checkCudaErrors(cudaMalloc3DArray(&d_imageArray, &floatTex, extentImageSize));
+  // bind array to 3D texture
+  checkCudaErrors(cudaBindTextureToArray(texImage, d_imageArray, floatTex));
   
   // Libero memoria de vectores auxiliares:
   free(auxRings1);
@@ -728,12 +755,66 @@ bool CuMlemSinogram3d::computeSensitivity(TipoProyector tipoProy)
   switch(tipoProy)
   {
     case SIDDON_CYLINDRICAL_SCANNER:
+      printf("aux");
       backprojector->Backproject(d_estimatedProjection, d_sensitivityImage, d_ring1_mm, d_ring2_mm, (Sinogram3DCylindricalPet*)inputProjection, reconstructionImage, false);
+      // Copio la memoria de gpu a cpu, así se puede actualizar el umbral:
+      checkCudaErrors(cudaMemcpy(sensitivityImage->getPixelsPtr(), d_sensitivityImage,sizeof(float)*sensitivityImage->getPixelCount(),cudaMemcpyDeviceToHost));
+      break;
+    case SIDDON_BACKPROJ_SURF_CYLINDRICAL_SCANNER:
+      CopyDevImageToTexture(d_sensitivityImage, sensitivityImage->getSize());
+      backprojector->Backproject(d_estimatedProjection, d_sensitivityImage, d_ring1_mm, d_ring2_mm, (Sinogram3DCylindricalPet*)inputProjection, reconstructionImage, false);
+      CopyTextureToDevtImage(d_sensitivityImage, sensitivityImage->getSize());
+      CopyTextureToHostImage(sensitivityImage);
       break;
   }
-  // Copio la memoria de gpu a cpu, así se puede actualizar el umbral:
-  checkCudaErrors(cudaMemcpy(sensitivityImage->getPixelsPtr(), d_sensitivityImage,sizeof(float)*sensitivityImage->getPixelCount(),cudaMemcpyDeviceToHost));
   // Umbral para la actualización de píxel:
   updateUpdateThreshold();
   return true;
 }
+
+bool CuMlemSinogram3d::CopyHostImageToTexture(Image* image)
+{ 
+  const cudaExtent extentImageSize = make_cudaExtent(image->getSize().nPixelsX, image->getSize().nPixelsY, image->getSize().nPixelsZ);
+  cudaMemcpy3DParms copyParams = {0};
+  // copy data to 3D array
+  copyParams.srcPtr   = make_cudaPitchedPtr((void *)image->getPixelsPtr(), extentImageSize.width*sizeof(float), extentImageSize.width, extentImageSize.height);
+  copyParams.dstArray = d_imageArray;
+  copyParams.extent   = extentImageSize;
+  copyParams.kind     = cudaMemcpyHostToDevice;
+  checkCudaErrors(cudaMemcpy3D(&copyParams));
+}
+
+bool CuMlemSinogram3d::CopyTextureToHostImage(Image* image)
+{ 
+  cudaMemcpy3DParms copyParams = {0};
+  const cudaExtent extentImageSize = make_cudaExtent(image->getSize().nPixelsX, image->getSize().nPixelsY, image->getSize().nPixelsZ);
+  copyParams.srcArray   = d_imageArray;
+  copyParams.dstPtr = make_cudaPitchedPtr((void *)image->getPixelsPtr(), extentImageSize.width*sizeof(float), extentImageSize.width, extentImageSize.height);
+  copyParams.extent   = extentImageSize;
+  copyParams.kind     = cudaMemcpyDeviceToHost;
+  checkCudaErrors(cudaMemcpy3D(&copyParams));
+} 
+
+bool CuMlemSinogram3d::CopyDevImageToTexture(float* d_image, SizeImage imageSize)
+{ 
+  const cudaExtent extentImageSize = make_cudaExtent(imageSize.nPixelsX, imageSize.nPixelsY, imageSize.nPixelsZ);
+  cudaMemcpy3DParms copyParams = {0};
+  // copy data to 3D array
+  copyParams.srcPtr   = make_cudaPitchedPtr((void *)d_image, extentImageSize.width*sizeof(float), extentImageSize.width, extentImageSize.height);
+  copyParams.dstArray = d_imageArray;
+  copyParams.extent   = extentImageSize;
+  copyParams.kind     = cudaMemcpyDeviceToDevice;
+  checkCudaErrors(cudaMemcpy3D(&copyParams));
+  
+}
+
+bool CuMlemSinogram3d::CopyTextureToDevtImage(float* d_image, SizeImage imageSize)
+{ 
+  cudaMemcpy3DParms copyParams = {0};
+  const cudaExtent extentImageSize = make_cudaExtent(imageSize.nPixelsX, imageSize.nPixelsY, imageSize.nPixelsZ);
+  copyParams.srcArray   = d_imageArray;
+  copyParams.dstPtr = make_cudaPitchedPtr((void *)d_image, extentImageSize.width*sizeof(float), extentImageSize.width, extentImageSize.height);
+  copyParams.extent   = extentImageSize;
+  copyParams.kind     = cudaMemcpyDeviceToDevice;
+  checkCudaErrors(cudaMemcpy3D(&copyParams));
+} 

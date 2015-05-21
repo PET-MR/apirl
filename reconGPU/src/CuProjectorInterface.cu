@@ -260,7 +260,6 @@ bool CuProjectorInterface::InitGpuMemory(Sinogram3D* sinogram, Image* image, Tip
       //checkCudaErrors(cudaMemcpy(&d_RadioScanner_mm, &aux, sizeof(aux), cudaMemcpyHostToDevice));
       break;
   }
-  
   // Memorias especiales:
   cudaChannelFormatDesc floatTex = cudaCreateChannelDesc<float>();
   const cudaExtent extentImageSize = make_cudaExtent(image->getSize().nPixelsX, image->getSize().nPixelsY, image->getSize().nPixelsZ);
@@ -285,6 +284,7 @@ bool CuProjectorInterface::InitGpuMemory(Sinogram3D* sinogram, Image* image, Tip
       texImage.addressMode[2] = cudaAddressModeClamp;
       // bind array to 3D texture
       checkCudaErrors(cudaBindTextureToArray(texImage, d_imageArray, floatTex));
+      break;
     case SIDDON_BACKPROJ_SURF_CYLINDRICAL_SCANNER:
       checkCudaErrors(cudaMalloc3DArray(&d_imageArray, &floatTex, extentImageSize, cudaArraySurfaceLoadStore));
       // copy data to 3D array
@@ -376,20 +376,31 @@ bool CuProjectorInterface::Backproject (Sinogram3D* inputSinogram, Image* output
   printf(" Kernel Configuration: Block %d[x] x %d[y] x %d[z]. Grid %d[x] x %d[y] x %d[z]\n", this->blockSizeProjector.x, this->blockSizeProjector.y, this->blockSizeProjector.z,
     this->gridSizeProjector.x, this->gridSizeProjector.y, this->gridSizeProjector.z);
   /// Init memory
-  typeOfProjector = SIDDON_BACKPROJ_SURF_CYLINDRICAL_SCANNER;
+  typeOfProjector = SIDDON_CYLINDRICAL_SCANNER;
   InitGpuMemory(inputSinogram, outputImage, typeOfProjector);
   
   /// Pongo en cero la imagen de corrección, y hago la backprojection.
   checkCudaErrors(cudaMemset(d_image, 0,sizeof(float)*numPixels));
-  //switch(typeOfProjector)
-  //{
-  //  case SIDDON_CYLINDRICAL_SCANNER:
+  switch(typeOfProjector)
+  {
+    case SIDDON_CYLINDRICAL_SCANNER:
       projector->Backproject(d_projection, d_image, d_ring1_mm, d_ring2_mm, (Sinogram3DCylindricalPet*)inputSinogram, outputImage, false);
-  //    break;
-  //}
-  /* Copy result to cpu:
-   */
-  checkCudaErrors(cudaMemcpy(outputImage->getPixelsPtr(), d_image,sizeof(float)*numPixels,cudaMemcpyDeviceToHost));
+      // Copy result to cpu:
+      checkCudaErrors(cudaMemcpy(outputImage->getPixelsPtr(), d_image,sizeof(float)*numPixels,cudaMemcpyDeviceToHost));
+      break;
+    case SIDDON_BACKPROJ_SURF_CYLINDRICAL_SCANNER:
+      projector->Backproject(d_projection, d_image, d_ring1_mm, d_ring2_mm, (Sinogram3DCylindricalPet*)inputSinogram, outputImage, false);
+      /* Copy image from array. */
+      cudaMemcpy3DParms copyParams = {0};
+      const cudaExtent extentImageSize = make_cudaExtent(outputImage->getSize().nPixelsX, outputImage->getSize().nPixelsY, outputImage->getSize().nPixelsZ);
+      copyParams.srcArray   = d_imageArray;
+      copyParams.dstPtr = make_cudaPitchedPtr((void *)outputImage->getPixelsPtr(), extentImageSize.width*sizeof(float), extentImageSize.width, extentImageSize.height);
+      copyParams.extent   = extentImageSize;
+      copyParams.kind     = cudaMemcpyDeviceToHost;
+      checkCudaErrors(cudaMemcpy3D(&copyParams));
+      break; 
+  }
+
   cudaEventRecord(stop, 0);
   cudaEventSynchronize(stop);
   // Calculo el tiempo de procesamiento:

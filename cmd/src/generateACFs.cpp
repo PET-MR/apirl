@@ -26,6 +26,7 @@
 #include <stdlib.h>
 #include <iostream>
 #include <string.h>
+#include <omp.h>
 #include <Michelogram.h>
 #include <Mlem.h>
 #include <Mlem2dTgs.h>
@@ -48,6 +49,11 @@
 #include <Sinograms2Din3DArPet.h>
 #include <Sinograms2DinCylindrical3Dpet.h>
 #include <Sinogram3DSiemensMmr.h>
+#ifdef __USE_CUDA__
+  #include <CuProjector.h>
+  #include <CuProjectorInterface.h>
+  #include <readCudaParameters.h>
+#endif
 
 #define FOV_axial 162
 #define FOV_radial 582
@@ -160,13 +166,20 @@ int main (int argc, char *argv[])
 	string outputType;
 	string sampleProjection;
 	string outputFilename;	// string para el Nombre del archivo de imagen de salida.
-	string strForwardprojector;
 	string attenMapFilename;
 	string normProjFilename;
+	string strForwardprojector;
 	Projector* forwardprojector;
 	Image* attenuationImage;
 	bool enableAttenuationCorrection = false;
 	
+	#ifdef __USE_CUDA__
+	  CuProjector* cuProjector;
+	  CuProjectorInterface* cuProjectorInterface;
+	  int gpuId;	// Id de la gpu a utilizar.
+	  dim3 projectorBlockSize;	// Parámetros de cuda.
+	#endif
+
 	// Variables para sinogram2Dtgs y Sinogram2DtgsInSegment:
 	float widthSegment_mm, diameterFov_mm, distCrystalToCenterFov, lengthColimator_mm, widthCollimator_mm, widthHoleCollimator_mm;
 	// Asigno la memoria para los punteros dobles, para el array de strings.
@@ -190,9 +203,9 @@ int main (int argc, char *argv[])
 	//strcpy(parameterFileName, argv[1]);
 	if(parameterFileName.compare(parameterFileName.length()-4, 4, ".par"))
 	{
-		// El archivo de parámetro no tiene la extensión .par.
-		cout<<"El archivo de parámetros no tiene la extensión .par."<<endl;
-		return -1;
+	  // El archivo de parámetro no tiene la extensión .par.
+	  cout<<"El archivo de parámetros no tiene la extensión .par."<<endl;
+	  return -1;
 	}
 
 	// Leo cada uno de los campos del archivo de parámetros. Para esto utilizo la función parametersFile_readMultipleKeys
@@ -229,7 +242,44 @@ int main (int argc, char *argv[])
 	  return -1;
 	}
 	
-	forwardprojector = (Projector*)new SiddonProjector();
+	
+	// Leer projector, que es opcional:
+	strcpy(keyWords[0], "projector"); 
+	if((errorCode=parametersFile_readMultipleKeys((char*)parameterFileName.c_str(), (char*)"generateACFs", (char**)keyWords, 1, (char**)multipleReturnValue, errorMessage)) != 0)
+	{
+	  // Hubo un error. Salgo del comando.
+	  cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
+	  return -1;
+	}
+	strForwardprojector.assign(multipleReturnValue[0]);
+	
+	// Inicializo el proyector a utilizar:
+	if(strForwardprojector.compare("Siddon") == 0)
+	{
+	  forwardprojector = (Projector*)new SiddonProjector();
+	}
+	#ifdef __USE_CUDA__
+	  else if(strForwardprojector.compare("CuSiddonProjector") == 0)
+	  {
+	    cuProjector = (CuProjector*)new CuSiddonProjector();
+	    cuProjectorInterface = new CuProjectorInterface(cuProjector);
+	    // Get size of kernels:
+	    if(getProjectorBlockSize(parameterFileName, "generateACFs", &projectorBlockSize))
+	    {
+	      return -1;
+	    }
+	    if(getGpuId(parameterFileName, "generateACFs", &gpuId))
+	    {
+	      return -1;
+	    }
+	    // Set the configuration:
+	    cuProjectorInterface->setGpuId(gpuId);
+	    cuProjectorInterface->setProjectorBlockSizeConfig(projectorBlockSize);
+	    forwardprojector = (Projector*)cuProjectorInterface;
+	  }
+	#endif
+	else
+	  forwardprojector = (Projector*)new SiddonProjector(); // Por defecto.
 
 	// Paso la imagen a 1/mm, porque todas las distnacias están calculadas en mm en Siddon (verificarlo):
 	SizeImage size = inputImage->getSize();
@@ -244,6 +294,8 @@ int main (int argc, char *argv[])
 	  }
 	}
 	
+	cout<<"Starting projection:" << endl;
+	double startTime = omp_get_wtime();	
 	// Ahora hago la proyección según el tipo de dato de entrada:
 	if(outputType.compare("Sinogram2D")==0)
 	{
@@ -483,9 +535,7 @@ int main (int argc, char *argv[])
 	  cout<<"Tipo de dato de entrada no válido. Formatos válidos: ""Sinogram2d"", ""Sinogram3D"", ""Michelogram"""<<endl;
 	  return -1;
 	}
-	
-	
-	  
-	cout<<"Operación de projection finalizada." << endl;
+	double stopTime = omp_get_wtime();
+	cout<<"Projection finished. Processing time: " << (stopTime-startTime) << "sec." << endl;
  
 }

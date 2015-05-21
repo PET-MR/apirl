@@ -95,8 +95,8 @@ if(ENABLE_GPU)
 	#SET(CUDA_USE_FAST_MATH ON)
 	# Tipo de Cache que se habilita:
 	#SET(CUDA_USE_CACHE_L1_L2 ON)
-	#SET(CUDA_USE_CACHE_ONLY_L2 ON)
-	#SET(CUDA_MAX_REG_COUNT 20)
+	SET(CUDA_USE_CACHE_ONLY_L2 ON)
+	#SET(CUDA_MAX_REG_COUNT 32)
 	set(nvcc_flags "${nvcc_flags} -rdc=true -lineinfo")
 
 	add_subdirectory(cmdGPU)

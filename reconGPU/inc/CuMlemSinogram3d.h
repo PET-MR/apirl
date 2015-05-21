@@ -60,12 +60,6 @@ using namespace::std;
 	
     \todo 
 */
-
-typedef enum
-{
-  SIDDON_CYLINDRICAL_SCANNER,
-  SIDDON_HEXAGONAL_SCANNER
-} TipoProyector;
     
 class DLLEXPORT CuMlemSinogram3d : public MlemSinogram3d
 {
@@ -90,6 +84,10 @@ class DLLEXPORT CuMlemSinogram3d : public MlemSinogram3d
     /* Puntero a al dirección de memoria en GPU donde se tendrá la imagen de sensibilidad.*/
     float* d_sensitivityImage;
 
+    /// CudaArray para manejar la imagen en una textura.
+    /** CudaArray para manejar la imagen en una textura 3d. */
+    cudaArray *d_imageArray;
+    
     /// Array con el índice de ring1 (z1) para cada sinograma 2d del sino3D. En realidad es slice.
     /** El largo del vector es igual a la suma total de sinogramas 2d que tiene el sino3d.Es sólo el índice de anillo!
      * Para obtener la coordenada en el world hay que entrar con este indice al vector de coordenadas de los anillos.
@@ -199,6 +197,24 @@ class DLLEXPORT CuMlemSinogram3d : public MlemSinogram3d
     /**  Solo debería usarse para iniciar la reconstrucción con alguna iamgen deseada.
      */
     void CopyReconstructedImageHostToGpu();
+    
+    /// Copia imagen a textura en GPU.
+    /** Copia una imagen pasada como parámetro a la única memoria de textura disponible. */
+    bool CopyHostImageToTexture(Image* image);
+    
+    /// Copia desde la memoria de textura en GPU a una imagen en cpu.
+    /** Copia una imagen almacenada en la única memoria de textura disponible en GPU 
+     *	a una imagen en CPU rexibida como parámetro. */
+    bool CopyTextureToHostImage(Image* image);
+    
+    /// Copia imagen e GPU a textura en GPU.
+    /** Copia una imagen en memoria de gpu pasada como parámetro a la única memoria de textura disponible. */
+    bool CopyDevImageToTexture(float* d_image, SizeImage imageSize);
+    
+    /// Copia desde la memoria de textura en GPU a una memoria lineal en gpu.
+    /** Copia una imagen almacenada en la única memoria de textura disponible en GPU 
+     *	a una imagen en GPU rexibida como parámetro. */
+    bool CopyTextureToDevtImage(float* d_image, SizeImage imageSize);
   public:
     /// Constructores de la clase.
     /* Constructor que carga los parámetros base de una reconstrucción MLEM para Sinogram3D. */

@@ -12,7 +12,11 @@
 % function CreateGenAcfConfigFile(configfilename, outputType, outputProjection, inputImageFile, outputFilename)
 %   Ahora:
 % function CreateGenAcfConfigFile(configfilename, structSizeSino, outputProjection, inputImageFile, outputFilename)
-function CreateGenAcfConfigFile(configfilename, structSizeSino, outputProjection, inputImageFile, outputFilename)
+function CreateGenAcfConfigFile(configfilename, structSizeSino, outputProjection, inputImageFile, outputFilename, useGpu)
+
+if nargin == 5
+    useGpu = 0;
+end
 
 % Uso solo los datos del cilindrical, por uso esos para los acf:
 cylindricalRadius_mm = 370;
@@ -37,7 +41,13 @@ fprintf(fid,'output type := %s\n', sinogramType);
 fprintf(fid,'input file := %s\n', inputImageFile);
 fprintf(fid,'output projection := %s\n', outputProjection);
 fprintf(fid,'output filename := %s\n', outputFilename);
-
+if useGpu == 0
+    fprintf(fid,'projector := Siddon\n');
+else
+    fprintf(fid,'projector := CuSiddonProjector\n');
+    fprintf(fid,'projector block size := {128,1,1}\n');
+    fprintf(fid,'gpu id := 0\n');
+end
 fprintf(fid,'cylindrical pet radius (in mm) := %f\n', cylindricalRadius_mm);
 fprintf(fid,'radius fov (in mm) := %f\n', structSizeSino.rFov_mm);
 fprintf(fid,'axial fov (in mm) := %f\n', structSizeSino.zFov_mm);

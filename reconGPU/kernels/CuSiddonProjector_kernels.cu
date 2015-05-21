@@ -92,12 +92,16 @@ __global__ void cuSiddonBackprojection(float* d_inputSinogram, float* d_outputIm
   int iR = iBin % numR;
   int iProj = (int)((float)iBin / (float)numR);
   iBin = iBin + blockIdx.y * d_numBinsSino2d;
-  CUDA_GetPointsFromLOR(d_thetaValues_deg[iProj], d_RValues_mm[iR], d_ring1_mm[blockIdx.y], d_ring2_mm[blockIdx.y], d_RadioScanner_mm, &P1, &P2);
-  //CUDA_GetPointsFromLOR(d_thetaValues_deg[iProj], d_RValues_mm[iR], d_ring1[blockIdx.y], d_ring2[blockIdx.y], d_RadioScanner_mm, &P1, &P2);
-  LOR.x = P2.x - P1.x;
-  LOR.y = P2.y - P1.y;
-  LOR.z = P2.z - P1.z;
-  cuSiddonWithSurfaces(&LOR, &P1, d_outputImage, d_inputSinogram, iBin);
+  if(d_inputSinogram[iBin] != 0)
+  {
+    CUDA_GetPointsFromLOR(d_thetaValues_deg[iProj], d_RValues_mm[iR], d_ring1_mm[blockIdx.y], d_ring2_mm[blockIdx.y], d_RadioScanner_mm, &P1, &P2);
+    //CUDA_GetPointsFromLOR(d_thetaValues_deg[iProj], d_RValues_mm[iR], d_ring1[blockIdx.y], d_ring2[blockIdx.y], d_RadioScanner_mm, &P1, &P2);
+    LOR.x = P2.x - P1.x;
+    LOR.y = P2.y - P1.y;
+    LOR.z = P2.z - P1.z;
+    //cuSiddonWithSurfaces(&LOR, &P1, d_outputImage, d_inputSinogram, iBin);
+    CuSiddonBackprojection(&LOR, &P1, d_outputImage, d_inputSinogram, iBin);
+  }
 }
 
 /// El ángulo de GetPointsFromLOR debe estar en radianes.

@@ -14,7 +14,11 @@
 %  acfFile. It also receives the filename of the sinogram which is intenden
 %  to correct for attenuation as it's needed in APIRl. And finally the
 %  struct with the size of the sinogram.
-function acfs = createACFsFromImage(attenuationMap_1_cm, sizePixel_mm, outputPath, acfFilename, filenameSinogram, structSizeSinos, visualization)
+function acfs = createACFsFromImage(attenuationMap_1_cm, sizePixel_mm, outputPath, acfFilename, filenameSinogram, structSizeSinos, visualization, useGpu)
+
+if nargin == 7
+    useGpu = 0;
+end
 
 % Call function to create phantom:
 attenuationMapFilename = [outputPath 'attenMapPhantom'];
@@ -24,7 +28,7 @@ interfilewrite(single(attenuationMap_1_cm), attenuationMapFilename, sizePixel_mm
 % generateACFs:
 genAcfFilename = [outputPath 'genACFs_' acfFilename '.par'];
 % I have to add the extensions of the interfiles:
-CreateGenAcfConfigFile(genAcfFilename, structSizeSinos, [filenameSinogram '.h33'], [attenuationMapFilename '.h33'], [outputPath acfFilename]);
+CreateGenAcfConfigFile(genAcfFilename, structSizeSinos, [filenameSinogram '.h33'], [attenuationMapFilename '.h33'], [outputPath acfFilename], useGpu);
 
 % Then execute APIRL:
 status = system(['generateACFs ' genAcfFilename]); 

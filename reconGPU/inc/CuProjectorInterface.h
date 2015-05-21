@@ -49,13 +49,6 @@
 	#define DLLEXPORT
 	#define DLLLOCAL
 #endif
-typedef enum
-{
-  SIDDON_CYLINDRICAL_SCANNER,
-  SIDDON_PROJ_TEXT_CYLINDRICAL_SCANNER,
-  SIDDON_BACKPROJ_SURF_CYLINDRICAL_SCANNER,
-  SIDDON_HEXAGONAL_SCANNER
-} TipoProyector;
 
 class DLLEXPORT CuProjectorInterface : virtual Projector
 {
