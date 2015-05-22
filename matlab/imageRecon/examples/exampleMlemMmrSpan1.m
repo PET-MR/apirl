@@ -32,12 +32,19 @@ setenv('LD_LIBRARY_PATH', [getenv('LD_LIBRARY_PATH') sepEnvironment apirlPath pa
 sinogramFilename = '/home/mab15/workspace/KCL/Biograph_mMr/Mediciones/NEMA_IQ_20_02_2014/PET_ACQ_194_20150220154553-0uncomp.s';
 normFilename = '/home/mab15/workspace/KCL/Biograph_mMr/Mediciones/NEMA_IQ_20_02_2014/norm/Norm_20150210112413.n';
 attMapBaseFilename = '/home/mab15/workspace/KCL/Biograph_mMr/Mediciones/NEMA_IQ_20_02_2014/umap/PET_ACQ_194_20150220154553';
-outputPath = '/fast/NemaReconstruction/testMatlabMlem/';
 pixelSize_mm = [2.08625 2.08625 2.03125];
-pixelSize_mm(1:2) = pixelSize_mm(1:2).*2;
-%% MATLAB MLEM
-numIterations = 60;
-volume = MatlabMlemMmrSpan1(sinogramFilename, normFilename, attMapBaseFilename, outputPath, pixelSize_mm, numIterations)
+
 %% MLEM
+outputPath = '/fast/NemaReconstruction/cuMLEM/';
 numIterations = 60;
-volume = MlemMmrSpan1(sinogramFilename, normFilename, attMapBaseFilename, outputPath, pixelSize_mm, numIterations);
+useGpu =1;
+volume = MlemMmrSpan1(sinogramFilename, normFilename, attMapBaseFilename, outputPath, pixelSize_mm, numIterations, useGpu);
+%% MLEM
+outputPath = '/fast/NemaReconstruction/MLEM/';
+numIterations = 60;
+useGpu = 0;
+volume = MlemMmrSpan1(sinogramFilename, normFilename, attMapBaseFilename, outputPath, pixelSize_mm, numIterations, useGpu);
+% %% MATLAB MLEM
+% outputPath = '/fast/NemaReconstruction/testMatlabMlem/';
+% numIterations = 60;
+% volume = MatlabMlemMmrSpan1(sinogramFilename, normFilename, attMapBaseFilename, outputPath, pixelSize_mm, numIterations)

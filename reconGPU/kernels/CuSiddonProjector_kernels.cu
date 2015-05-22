@@ -51,31 +51,35 @@ __global__ void cuSiddonDivideAndBackproject(float* d_inputSinogram, float* d_es
   float4 P2;
   float4 LOR;
   /// Calculo dentro del sinograma 2D, se obtiene con threadIdx.x y blockIdx.x.
-  int iBin2d =  threadIdx.x + (blockIdx.x * blockDim.x);
-  if(iBin2d >= (numR*numProj))
+  int iBin =  threadIdx.x + (blockIdx.x * blockDim.x);
+  // First compare inside the sinogram:
+  if(iBin>= d_numBinsSino2d)
     return;
-  int iR = iBin2d % numR;
-
-  int iProj = (int)((float)iBin2d / (float)numR);
-  int indiceMichelogram = iBin2d + blockIdx.y * (numProj * numR);
+  int iR = iBin % numR;
+  int iProj = (int)((float)iBin / (float)numR);
+  iBin = iBin + blockIdx.y * d_numBinsSino2d;
 
   // Primero hago la división:
-  if(d_estimatedSinogram[indiceMichelogram]!=0)
-    d_estimatedSinogram[indiceMichelogram] = d_inputSinogram[indiceMichelogram] / d_estimatedSinogram[indiceMichelogram];
-  else if(d_inputSinogram[indiceMichelogram] != 0)
+  if(d_estimatedSinogram[iBin]!=0)
+  {
+    d_estimatedSinogram[iBin] = d_inputSinogram[iBin] / d_estimatedSinogram[iBin];
+    // Después backprojection:
+    CUDA_GetPointsFromLOR(d_thetaValues_deg[iProj], d_RValues_mm[iR], d_ring1[blockIdx.y], d_ring2[blockIdx.y], d_RadioScanner_mm, &P1, &P2);
+    LOR.x = P2.x - P1.x;
+    LOR.y = P2.y - P1.y;
+    LOR.z = P2.z - P1.z;
+    CuSiddonBackprojection(&LOR, &P1, d_outputImage, d_estimatedSinogram, iBin);
+  }
+  // If denominator 0, or inputsinogram 0, dont do anything (backroject of a zero)
+  /*else if(d_inputSinogram[iBin] != 0)
   {
     /// Los bins de los sinogramas Input y Estimates son 0, o sea tengo el valor indeterminado 0/0.
     /// Lo más lógico pareciera ser dejarlo en 0 al cociente, para que no sume al backprojection.
     /// Sumarle 0 es lo mismo que nada.
     d_estimatedSinogram[indiceMichelogram] = 0;
   }
-
-  // Después backprojection:
-  CUDA_GetPointsFromLOR(d_thetaValues_deg[iProj], d_RValues_mm[iR], d_ring1[blockIdx.y], d_ring2[blockIdx.y], d_RadioScanner_mm, &P1, &P2);
-  LOR.x = P2.x - P1.x;
-  LOR.y = P2.y - P1.y;
-  LOR.z = P2.z - P1.z;
-  CuSiddon(&LOR, &P1, d_estimatedSinogram, d_outputImage, BACKPROJECTION, indiceMichelogram);
+  */
+  
 }
 
 __global__ void cuSiddonBackprojection(float* d_inputSinogram, float* d_outputImage, 

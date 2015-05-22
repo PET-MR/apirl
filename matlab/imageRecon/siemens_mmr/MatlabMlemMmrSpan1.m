@@ -22,12 +22,14 @@
 %  version directly. This version runs with APIRL only the projection and
 %  backprojection. Stores each iteration in a different folder from the bas
 %  outputPath.
-%
+%  
+%  The save interval parameter permits to store data of each "saveInterval"
+%  iterations, if zero, only temporary files are written in a temp folder
+%  and are overwritten for each iteration.
 % Examples:
-%   volume = MatlabMlemMmrSpan1(sinogramFilename, normFilename, attMapBaseFilename, outputPath, pixelSize_mm, numInputIterations)
-%   volume = MatlabMlemMmrSpan1(sinogramFilename, normFilename, attMapBaseFilename, outputPath, [2.08625 2.08625 2.03125])
-%   volume = MatlabMlemMmrSpan1(sinogramFilename, normFilename, attMapBaseFilename, outputPath)
-function volume = MatlabMlemMmrSpan1(sinogramFilename, normFilename, attMapBaseFilename, outputPath, pixelSize_mm, numInputIterations)
+%   volume = MatlabMlemMmrSpan1(sinogramFilename, normFilename, attMapBaseFilename, outputPath, pixelSize_mm, numInputIterations, saveInterval, useGpu)
+
+function volume = MatlabMlemMmrSpan1(sinogramFilename, normFilename, attMapBaseFilename, outputPath, pixelSize_mm, numInputIterations, saveInterval, useGpu)
 
 mkdir(outputPath);
 % Check what OS I am running on:
@@ -42,18 +44,19 @@ else
     return;
 end
 
-useGpu  = 1;
 % Check if we have received pixel size:
 numIterations = 40;
 if nargin < 5
     % Default pixel size:
     pixelSize_mm = [2.08625 2.08625 2.03125];
     imageSize_pixels = [286 286 127]; 
-    imageSize_mm = pixelSize_mm.*imageSize_pixelsl
+    imageSize_mm = pixelSize_mm.*imageSize_pixels;
+    useGpu = 0;
+    saveInterval = 0;
 else
-    imageSize_mm = [600 600 258];
+    imageSize_mm = [600 600 257];
     imageSize_pixels = ceil(imageSize_mm./pixelSize_mm);
-    if nargin == 6
+    if nargin == 8
         numIterations = numInputIterations;
     else
         error('Wrong number of parameters: volume = OsemMmrSpan1(sinogramFilename, normFilename, attMapBaseFilename, outputPath, [2.08625 2.08625 2.03125], 60)');
@@ -148,7 +151,7 @@ anfSino(anfSino~= 0) = 1./anfSino(anfSino~= 0); % anf.
 % Backproject sinogram in other path:
 sensitivityPath = [outputPath pathBar 'SensitivityImage/'];
 mkdir(sensitivityPath);
-[sensImage, pixelSize_mm] = BackprojectMmrSpan1(anfSino, imageSize_pixels, pixelSize_mm, sensitivityPath, 1);
+[sensImage, pixelSize_mm] = BackprojectMmrSpan1(anfSino, imageSize_pixels, pixelSize_mm, sensitivityPath, useGpu);
 
 % 2) Reconstruction.
 emRecon = initialEstimate; % em_recon is the current reconstructed image.
@@ -156,10 +159,15 @@ emRecon = initialEstimate; % em_recon is the current reconstructed image.
 for iter = 1 : numIterations
     disp(sprintf('Iteration %d...', iter));
     % 2.a) Create working directory:
-    iterationPath = [outputPath pathBar sprintf('Iteration%d', iter) pathBar];
-    mkdir(iterationPath);
+    if rem(iter,saveInterval) == 0
+        iterationPath = [outputPath pathBar sprintf('Iteration%d', iter) pathBar];
+        mkdir(iterationPath);
+    else
+        iterationPath = [outputPath 'temp' pathBar];
+        mkdir(iterationPath);
+    end
     % 2.b) Project current image:
-    [projectedImage, structSizeSinogram] = ProjectMmrSpan1(emRecon, pixelSize_mm, iterationPath, 1);
+    [projectedImage, structSizeSinogram] = ProjectMmrSpan1(emRecon, pixelSize_mm, iterationPath, useGpu);
     % 2.c) Multiply by the anf (this can be avoided if it is also taken
     % from the backprojection):
     projectedImage = projectedImage .* anfSino;
@@ -167,10 +175,14 @@ for iter = 1 : numIterations
     ratioSinograms = zeros(size(projectedImage), 'single');
     ratioSinograms(projectedImage~=0) = sinogramSpan1(projectedImage~=0) ./ projectedImage(projectedImage~=0);
     % 2.e) Backprojection:
-    [backprojImage, pixelSize_mm] = BackprojectMmrSpan1(ratioSinograms, imageSize_pixels, pixelSize_mm, iterationPath, 1);
+    [backprojImage, pixelSize_mm] = BackprojectMmrSpan1(ratioSinograms, imageSize_pixels, pixelSize_mm, iterationPath, useGpu);
     % 2.f) Apply sensitiivty image and correct current image:
     emRecon(sensImage~=0) = emRecon(sensImage~=0) .* backprojImage(sensImage~=0)./ sensImage(sensImage~=0);
     emRecon(sensImage==0) = 0;
+    if rem(iter,saveInterval) == 0
+        interfilewrite(emRecon, [outputPath pathBar sprintf('emImage_iter%d', iter)], pixelSize_mm);
+    end
 end
 %% OUTPUT PARAMETER
+interfilewrite(emRecon, [outputPath pathBar 'emImage_final'], pixelSize_mm);
 volume = emRecon;

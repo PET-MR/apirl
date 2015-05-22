@@ -128,27 +128,45 @@ bool CuOsemSinogram3d::InitGpuMemory()
   int numPixels = reconstructionImage->getPixelCount();
   // Número total de bins del sinograma:
   int numBins = inputProjection->getBinCount();
+  // Número total de bins por subset, que es el que voy a tener que usar para los proyectores:
+  int numBinsSubset = inputProjection->getSubset(0)->getBinCount();
   // Pido memoria para la gpu, debo almacenar los sinogramas y las imágenes.
   // Lo hago acá y no en el proyector para mantenerme en memmoria de gpu durante toda la reconstrucción.
-  checkCudaErrors(cudaMalloc((void**) &d_sensitivityImage, sizeof(float)*numPixels));
+  
   checkCudaErrors(cudaMalloc((void**) &d_reconstructionImage, sizeof(float)*numPixels));
   checkCudaErrors(cudaMalloc((void**) &d_backprojectedImage, sizeof(float)*numPixels));
-  checkCudaErrors(cudaMalloc((void**) &d_inputProjection, sizeof(float)*numBins));
-  checkCudaErrors(cudaMalloc((void**) &d_estimatedProjection, sizeof(float)*numBins));
+  // Para la proyección estimada siempre va a ser del tamaño del subset.
+  checkCudaErrors(cudaMalloc((void**) &d_estimatedProjection, sizeof(float)*numBinsSubset));
   checkCudaErrors(cudaMalloc((void**) &d_ring1, sizeof(float)*inputProjection->getNumSinograms()));
   checkCudaErrors(cudaMalloc((void**) &d_ring2, sizeof(float)*inputProjection->getNumSinograms()));
+  // Para la sensitivity iamge, tengo un array de sensitivity images:
+  checkCudaErrors(cudaMalloc((void***) &d_sensitivityImages, sizeof(float*)*numSubsets));	// Memory for the array.
+  // Para los subsets lo mismo:
+  checkCudaErrors(cudaMalloc((void***) &d_inputProjectionSubsets, sizeof(float*)*numSubsets));
+  for(int i = 0; i < numSubsets; i++)
+  {
+    // Memoria para cada sensitivty image:
+    checkCudaErrors(cudaMalloc((void**) &(d_sensitivityImages[i]), sizeof(float)*numPixels));	// Memoria para la imagen.
+    // Pongo en cero la imágens de sensibilidad:
+    checkCudaErrors(cudaMemset(d_sensitivityImages[i], 0,sizeof(float)*numPixels));
+    // Memoria para cada subset del sinograma de entrada:
+    checkCudaErrors(cudaMalloc((void**) &(d_inputProjectionSubsets[i]), sizeof(float)*numBinsSubset));
+    // Copio el subset del sinograma de entrada, llamo a una función porque tengo que ir recorriendo todos los sinogramas:
+    
+    CopySinogram3dHostToGpu(d_inputProjectionSubsets[i], inputProjection->getSubset(i));
+  }
   // Copio la iamgen inicial:
   checkCudaErrors(cudaMemcpy(d_reconstructionImage, initialEstimate->getPixelsPtr(),sizeof(float)*numPixels,cudaMemcpyHostToDevice));
-  // Pongo en cero la imágens de sensibilidad y la de retroproyección:
-  checkCudaErrors(cudaMemset(d_sensitivityImage, 0,sizeof(float)*numPixels));
+  // Pongo en cero la imágen de retroproyección:
   checkCudaErrors(cudaMemset(d_backprojectedImage, 0,sizeof(float)*numPixels));
   // Copio el sinograma de entrada, llamo a una función porque tengo que ir recorriendo todos los sinogramas:
-  CopySinogram3dHostToGpu(d_inputProjection, inputProjection);
+  CopySinogram3dHostToGpu(d_inputProjection, inputProjection); // No se si realmente lo necesito.
   // Pongo en cero el sinograma de proyección:
-  checkCudaErrors(cudaMemset(d_estimatedProjection, 0,sizeof(float)*numBins));
+  checkCudaErrors(cudaMemset(d_estimatedProjection, 0,sizeof(float)*numBinsSubset));
   
   // Además de copiar los valores de todos los bins, debo inicializar todas las constantes de reconstrucción.
   // Por un lado tengo los valores de coordenadas posibles de r, theta y z. Los mismos se copian a memoria constante de GPU (ver vectores globales al inicio de este archivo.
+  /// LOS THETA VALUES LOS TENGO QUE CAMBIAR, ES UN POR SUBSET.
   checkCudaErrors(cudaMemcpyToSymbol(d_thetaValues_deg, inputProjection->getAngPtr(), sizeof(float)*inputProjection->getNumProj()));
   checkCudaErrors(cudaMemcpyToSymbol(d_RValues_mm, inputProjection->getRPtr(), sizeof(float)*inputProjection->getNumR()));
   checkCudaErrors(cudaMemcpyToSymbol(d_AxialValues_mm, inputProjection->getAxialPtr(), sizeof(float)*inputProjection->getNumRings()));

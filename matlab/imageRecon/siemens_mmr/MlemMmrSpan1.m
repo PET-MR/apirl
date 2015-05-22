@@ -19,10 +19,10 @@
 %  - numIterations: number of iterations.
 %
 % Examples:
-%   volume = OsemMmrSpan1(sinogramFilename, normFilename, attMapBaseFilename, outputPath, [2.08625 2.08625 2.03125], numIterations)
+%   volume = OsemMmrSpan1(sinogramFilename, normFilename, attMapBaseFilename, outputPath, [2.08625 2.08625 2.03125], numIterations, useGpu)
 %   volume = OsemMmrSpan1(sinogramFilename, normFilename, attMapBaseFilename, outputPath, [2.08625 2.08625 2.03125])
 %   volume = OsemMmrSpan1(sinogramFilename, normFilename, attMapBaseFilename, outputPath)
-function volume = MlemMmrSpan1(sinogramFilename, normFilename, attMapBaseFilename, outputPath, pixelSize_mm, numInputIterations)
+function volume = MlemMmrSpan1(sinogramFilename, normFilename, attMapBaseFilename, outputPath, pixelSize_mm, numInputIterations, optUseGpu)
 
 mkdir(outputPath);
 % Check what OS I am running on:
@@ -44,12 +44,14 @@ if nargin < 5
     % Default pixel size:
     pixelSize_mm = [2.08625 2.08625 2.03125];
     imageSize_pixels = [286 286 127]; 
-    imageSize_mm = pixelSize_mm.*imageSize_pixelsl
+    imageSize_mm = pixelSize_mm.*imageSize_pixels;
+    useGpu = 0;
 else
-    imageSize_mm = [600 600 258];
+    imageSize_mm = [600 600 257];
     imageSize_pixels = ceil(imageSize_mm./pixelSize_mm);
-    if nargin == 6
+    if nargin == 7
         numIterations = numInputIterations;
+        useGpu = optUseGpu;
     else
         error('Wrong number of parameters: volume = OsemMmrSpan1(sinogramFilename, normFilename, attMapBaseFilename, outputPath, [2.08625 2.08625 2.03125], 60)');
         return;
@@ -119,7 +121,7 @@ if ~strcmp(attMapBaseFilename, '')
     % Create ACFs of a computed phatoms with the linear attenuation
     % coefficients:
     acfFilename = ['acfsSinogramSpan1'];
-    acfsSinogramSpan1 = createACFsFromImage(attenMap, imageSizeAtten_mm, outputPath, acfFilename, sinogramFilename, structSizeSino3dSpan1, 0);
+    acfsSinogramSpan1 = createACFsFromImage(attenMap, imageSizeAtten_mm, outputPath, acfFilename, sinogramFilename, structSizeSino3dSpan1, 0, useGpu);
 
     % After the projection read the acfs:
     acfFilename = [outputPath acfFilename];
@@ -145,18 +147,29 @@ anfFilename = [outputPath '/ANF_Span1'];
 interfileWriteSino(single(atteNormFactorsSpan1), anfFilename, structSizeSino3dSpan1);
 clear atteNormFactorsSpan1;
 %clear normFactorsSpan11;
-%% GENERATE OSEM AND MLEM RECONSTRUCTION FILES FOR APIRL
-disp('Osem reconstruction...');
-saveInterval = 1;
-saveIntermediate = 0;
-outputFilenamePrefix = [outputPath 'reconImage'];
-filenameMlemConfig = [outputPath sprintf('osem_%dsubsets.par', numSubsets)];
-CreateMlemConfigFileForMmr(filenameMlemConfig, [sinogramFilename '.h33'], [filenameInitialEstimate '.h33'], outputFilenamePrefix, numIterations, [],...
-    saveInterval, saveIntermediate, [], [], [], [anfFilename '.h33']);
+%% GENERATE MLEM RECONSTRUCTION FILES FOR APIRL
+if useGpu == 0
+    disp('Mlem reconstruction...');
+    saveInterval = 1;
+    saveIntermediate = 0;
+    outputFilenamePrefix = [outputPath 'reconImage'];
+    filenameMlemConfig = [outputPath 'mlem.par'];
+    CreateMlemConfigFileForMmr(filenameMlemConfig, [sinogramFilename '.h33'], [filenameInitialEstimate '.h33'], outputFilenamePrefix, numIterations, [],...
+        saveInterval, saveIntermediate, [], [], [], [anfFilename '.h33']);
+    % Execute APIRL: 
+    status = system(['MLEM ' filenameMlemConfig]) 
+else
+    disp('cuMlem reconstruction...');
+    saveInterval = 10;
+    saveIntermediate = 0;
+    outputFilenamePrefix = [outputPath 'reconImage'];
+    filenameMlemConfig = [outputPath 'cumlem.par'];
+    CreateCuMlemConfigFileForMmr(filenameMlemConfig, [sinogramFilename '.h33'], [filenameInitialEstimate '.h33'], outputFilenamePrefix, numIterations, [],...
+        saveInterval, saveIntermediate, [], [], [], [anfFilename '.h33'], 0, 576, 576, 512);
+    % Execute APIRL: 
+    status = system(['cuMLEM ' filenameMlemConfig]) 
+end
 
-%% RECONSTRUCTION OF HIGH RES IMAGE
-% Execute APIRL: 
-status = system(['MLEM ' filenameMlemConfig]) 
 %% READ RESULTS
 % Read interfile reconstructed image:
 volume = interfileRead([outputFilenamePrefix '_final.h33']);

@@ -70,8 +70,13 @@ class DLLEXPORT CuOsemSinogram3d : public OsemSinogram3d
     /** Puntero donde se almacenará el sinograma de entrada. */
     float* d_inputProjection;
     
+    /// Subsets de la proyección a reconstruir.
+    /** Puntero a puntero donde se almacenará un array de sinogramas con los subsets. O sea que d_inputProjectionSubsets[i] es el subset de un sinograma
+     * e i va desde 0 a numSubsets-1. */
+    float** d_inputProjectionSubsets;
+    
     /// Proyección a reconstruir.
-    /** Puntero donde se almacenará el sinograma intermedio de proyección. */
+    /** Puntero donde se almacenará el sinograma intermedio de proyección. Tendrá el tamaño de un subset, ya que no tiene sentido guardar todos los subsets en este caso. */
     float* d_estimatedProjection;
     
     /// Imagen a reconstruir en gpu.
@@ -82,9 +87,9 @@ class DLLEXPORT CuOsemSinogram3d : public OsemSinogram3d
     /* Puntero a al dirección de memoria en GPU donde se tendrá la imagen retroproyectada en cada iteración.*/
     float* d_backprojectedImage;
     
-    /// Sensitivity Image.
+    /// Puntero a array de Sensitivity Image (una por subset).
     /* Puntero a al dirección de memoria en GPU donde se tendrá la imagen de sensibilidad.*/
-    float* d_sensitivityImage;
+    float** d_sensitivityImages;
 
     /// Array con las coordenadas del ring1 (z1) para cada sinograma 2d.
     /** El largo del vector es igual a la suma total de sinogramas 2d que tiene el sino3d.

@@ -210,6 +210,7 @@ bool CuMlemSinogram3d::InitGpuMemory(TipoProyector tipoProy)
   numSinograms = inputProjection->getNumSinograms();
     
   float aux;
+  int auxInt;
   // Pido memoria para la gpu, debo almacenar los sinogramas y las imágenes.
   // Lo hago acá y no en el proyector para mantenerme en memmoria de gpu durante toda la reconstrucción.
   checkCudaErrors(cudaMalloc((void**) &d_sensitivityImage, sizeof(float)*numPixels));
@@ -247,6 +248,10 @@ bool CuMlemSinogram3d::InitGpuMemory(TipoProyector tipoProy)
 //   checkCudaErrors(cudaMemcpyToSymbol(cuda_rows_splitter, &rowSplitter, sizeof(unsigned int)));
   SizeImage size =  reconstructionImage->getSize();
   checkCudaErrors(cudaMemcpyToSymbol(d_imageSize, &size, sizeof(reconstructionImage->getSize())));
+  auxInt = size.nPixelsX * size.nPixelsY;
+  checkCudaErrors(cudaMemcpyToSymbol(d_numPixelsPerSlice, &auxInt, sizeof(int)));
+  auxInt = inputProjection->getSegment(0)->getSinogram2D(0)->getNumProj()*inputProjection->getSegment(0)->getSinogram2D(0)->getNumR();
+  checkCudaErrors(cudaMemcpyToSymbol(d_numBinsSino2d, &auxInt, sizeof(int)));
   aux = reconstructionImage->getFovRadio(); // Esto podría ser del sinograma también.
   checkCudaErrors(cudaMemcpyToSymbol(d_RadioFov_mm, &aux, sizeof(inputProjection->getRadioFov_mm())));
   aux = reconstructionImage->getFovHeight(); // Esto podría ser del sinograma.
@@ -598,6 +603,10 @@ bool CuMlemSinogram3d::Reconstruct(TipoProyector tipoProy, int indexGpu)
     /// Proyección de la imagen:
     switch(tipoProy)
     {
+      case SIDDON_PROJ_TEXT_CYLINDRICAL_SCANNER: // This siddon implementation has only projection, so it uses the standard backprojection.
+	CopyDevImageToTexture(d_reconstructionImage, sensitivityImage->getSize()); // Copy the reconstruction iamge to texture.
+	forwardprojector->Project(d_reconstructionImage, d_estimatedProjection, d_ring1_mm, d_ring2_mm, reconstructionImage, (Sinogram3DCylindricalPet*)inputProjection, false);
+	break;
       case SIDDON_CYLINDRICAL_SCANNER:
 	forwardprojector->Project(d_reconstructionImage, d_estimatedProjection, d_ring1_mm, d_ring2_mm, reconstructionImage, (Sinogram3DCylindricalPet*)inputProjection, false);
 	break;
@@ -619,6 +628,7 @@ bool CuMlemSinogram3d::Reconstruct(TipoProyector tipoProy, int indexGpu)
     checkCudaErrors(cudaMemset(d_backprojectedImage, 0,sizeof(float)*nPixels));
     switch(tipoProy)
     {
+      case SIDDON_PROJ_TEXT_CYLINDRICAL_SCANNER: // This siddon implementation has only projection, so it uses the standard backprojection.
       case SIDDON_CYLINDRICAL_SCANNER:
 	backprojector->DivideAndBackproject(d_inputProjection, d_estimatedProjection, d_backprojectedImage, d_ring1_mm, d_ring2_mm, (Sinogram3DCylindricalPet*)inputProjection, backprojectedImage, false);
 	break;
@@ -754,8 +764,8 @@ bool CuMlemSinogram3d::computeSensitivity(TipoProyector tipoProy)
   /// Por último hago la backprojection
   switch(tipoProy)
   {
+    case SIDDON_PROJ_TEXT_CYLINDRICAL_SCANNER: // This siddon implementation has only projection, so it uses the standard backprojection.
     case SIDDON_CYLINDRICAL_SCANNER:
-      printf("aux");
       backprojector->Backproject(d_estimatedProjection, d_sensitivityImage, d_ring1_mm, d_ring2_mm, (Sinogram3DCylindricalPet*)inputProjection, reconstructionImage, false);
       // Copio la memoria de gpu a cpu, así se puede actualizar el umbral:
       checkCudaErrors(cudaMemcpy(sensitivityImage->getPixelsPtr(), d_sensitivityImage,sizeof(float)*sensitivityImage->getPixelCount(),cudaMemcpyDeviceToHost));
