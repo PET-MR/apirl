@@ -38,15 +38,17 @@ SET (CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} --main-stacksize=85
 
 ################## CHECK IF CUDA AVAILABLE ############################
 # Directorio donde se encuentra el FindCUDA:
-SET(FindCUDA_Dir ${CMAKE_SOURCE_DIR}/FindCUDA)
-set(CMAKE_MODULE_PATH "${FindCUDA_Dir}/CMake/cuda" ${CMAKE_MODULE_PATH})
-find_package(CUDA)
-if (CUDA_FOUND)
-	SET(ENABLE_GPU ON)
-	add_definitions(-D__USE_CUDA__)
-else (CUDA_FOUND)
-	SET(ENABLE_GPU OFF)	
-endif (CUDA_FOUND)
+if(ENABLE_GPU)
+	SET(FindCUDA_Dir ${CMAKE_SOURCE_DIR}/FindCUDA)
+	set(CMAKE_MODULE_PATH "${FindCUDA_Dir}/CMake/cuda" ${CMAKE_MODULE_PATH})
+	find_package(CUDA)
+	if (CUDA_FOUND)
+		SET(ENABLE_GPU OFF)
+		add_definitions(-D__USE_CUDA__)
+	else (CUDA_FOUND)
+		SET(ENABLE_GPU OFF)	
+	endif (CUDA_FOUND)
+endif(ENABLE_GPU)
 #######################################################################
 
 # Genero una variable con los directorios de invlude para cada subproyecto. Las creo en este, para que

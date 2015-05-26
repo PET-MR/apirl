@@ -398,45 +398,45 @@ bool Sinogram3D::readFromInterfile(string headerFilename, float radioScanner_mm)
       int z1_aux = z1;
       for(int z2 = 0; z2 < numRings; z2++)
       {
-	// Ahora voy avanzando en los sinogramas correspondientes,
-	// disminuyendo z1 y aumentnado z2 hasta que la diferencia entre
-	// anillos llegue a maxRingDiff.
-	if (((z1_aux-z2)<=maxRingDiffPerSegment[i])&&((z1_aux-z2)>=minRingDiffPerSegment[i]))
-	{
-	  // Me asguro que esté dentro del tamaño del michelograma:
-	  if ((z1_aux>=0)&&(z2>=0)&&(z1_aux<numRings)&&(z2<numRings))
-	  {
-	    //Agrego el sinograma a la lista de anillos:
-	    listaRing1[numSinosZ1inSegment] = z1_aux;
-	    listaRing2[numSinosZ1inSegment] = z2;
-	    // También las coordenadas axiales:
-	    listaZ1_mm[numSinosZ1inSegment] = ptrAxialvalues_mm[z1_aux];
-	    listaZ2_mm[numSinosZ1inSegment] = ptrAxialvalues_mm[z2];
-	    // Incremento:
-	    numSinosZ1inSegment = numSinosZ1inSegment + 1;
+		// Ahora voy avanzando en los sinogramas correspondientes,
+		// disminuyendo z1 y aumentnado z2 hasta que la diferencia entre
+		// anillos llegue a maxRingDiff.
+		if (((z1_aux-z2)<=maxRingDiffPerSegment[i])&&((z1_aux-z2)>=minRingDiffPerSegment[i]))
+		{
+			// Me asguro que esté dentro del tamaño del michelograma:
+			if ((z1_aux>=0)&&(z2>=0)&&(z1_aux<numRings)&&(z2<numRings))
+			{
+			//Agrego el sinograma a la lista de anillos:
+			listaRing1[numSinosZ1inSegment] = z1_aux;
+			listaRing2[numSinosZ1inSegment] = z2;
+			// También las coordenadas axiales:
+			listaZ1_mm[numSinosZ1inSegment] = ptrAxialvalues_mm[z1_aux];
+			listaZ2_mm[numSinosZ1inSegment] = ptrAxialvalues_mm[z2];
+			// Incremento:
+			numSinosZ1inSegment = numSinosZ1inSegment + 1;
 	      
-	  }
-	}
-	// Pase esta combinación de (z1,z2), paso a la próxima:
-	z1_aux = z1_aux - 1;
+			}
+		}
+		// Pase esta combinación de (z1,z2), paso a la próxima:
+		z1_aux = z1_aux - 1;
       }
       if(numSinosZ1inSegment>0)
       {
-	// Si entré acá significa que hay combinaciones de anillos para este sinograma. Lo leo del i33 y lo cargo:
-	// Leo un sinograma del i33 y lo asigno al sinograma del segmento correspondiente:
-	unsigned int numBytes = fread(rawSino, sizeof(float), numProj*numR, fp);
-	if (numBytes != (numProj*numR))
-	{
-	  cout << "Falló la lectura de los datos del sinograma3d, puede que no coincida la cantidad de bytes a leer con los del archivo .i33" << endl;
-	  return false;
-	}
-	float* ptrSino = this->getSegment(i)->getSinogram2D(numSinosThisSegment)->getSinogramPtr();
-	this->getSegment(i)->getSinogram2D(numSinosThisSegment)->setMultipleRingConfig(numSinosZ1inSegment, listaRing1, listaRing2, listaZ1_mm, listaZ2_mm);
-	memcpy(ptrSino, rawSino, sizeof(float) * numProj * numR);
+		// Si entré acá significa que hay combinaciones de anillos para este sinograma. Lo leo del i33 y lo cargo:
+		// Leo un sinograma del i33 y lo asigno al sinograma del segmento correspondiente:
+		unsigned int numBytes = fread(rawSino, sizeof(float), numProj*numR, fp);
+		if (numBytes != (numProj*numR))
+		{
+			cout << "Falló la lectura de los datos del sinograma3d, puede que no coincida la cantidad de bytes a leer con los del archivo .i33" << endl;
+			return false;
+		}
+		float* ptrSino = this->getSegment(i)->getSinogram2D(numSinosThisSegment)->getSinogramPtr();
+		this->getSegment(i)->getSinogram2D(numSinosThisSegment)->setMultipleRingConfig(numSinosZ1inSegment, listaRing1, listaRing2, listaZ1_mm, listaZ2_mm);
+		memcpy(ptrSino, rawSino, sizeof(float) * numProj * numR);
 
-	// Cuenta la cantidad de segmentos para verificar que se cumpla:
-	numSinosThisSegment = numSinosThisSegment + 1;
-	indiceSino = indiceSino + 1;
+		// Cuenta la cantidad de segmentos para verificar que se cumpla:
+		numSinosThisSegment = numSinosThisSegment + 1;
+		indiceSino = indiceSino + 1;
       }
     }
     if(numSinosThisSegment != numSinogramsPerSegment[i])

@@ -46,7 +46,7 @@ using namespace::std;
 		#endif
 	#endif
 #else                         // static linking
-	#define DLLEXPORT
+	#define DLLEXPORT 
 	#define DLLLOCAL
 #endif
 
@@ -62,8 +62,7 @@ extern __global__ void cuGetLikelihoodValue (float* estimated_michelogram, float
 	
     \todo 
 */
-    
-class DLLEXPORT CuMlemSinogram3d : public MlemSinogram3d
+class CuMlemSinogram3d : public MlemSinogram3d
 {
   protected:  
     /// Proyección a reconstruir.

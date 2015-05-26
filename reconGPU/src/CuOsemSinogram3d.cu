@@ -174,12 +174,14 @@ bool CuOsemSinogram3d::InitGpuMemory(TipoProyector tipoProy)
 bool CuOsemSinogram3d::InitSubsetConstants(int indexSubset)
 {
   checkCudaErrors(cudaMemcpyToSymbol(d_thetaValues_deg, inputProjection->getSubset(indexSubset, numSubsets)->getAngPtr(), sizeof(float)*inputProjection->getSubset(indexSubset, numSubsets)->getNumProj()));
+  return true;
 }
 
 // Método de reconstrucción que no se le indica el índice de GPU, incializa la GPU 0 por defecto.
 bool CuOsemSinogram3d::Reconstruct(TipoProyector tipoProy)
 {
   Reconstruct(tipoProy,0);
+  return true;
 }
 
 /// Método público que realiza la reconstrucción en base a los parámetros pasados al objeto Mlem instanciado

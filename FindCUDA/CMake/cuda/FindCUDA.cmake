@@ -1654,10 +1654,18 @@ endif()
         COMMENT "Building NVCC intermediate link file ${output_file_relative_path}"
         )
     else()
+		#### THIS LINE IS FOR WINDOWS TO COMPILE SEPARABLE #############
+		get_filename_component(output_file_dir "${output_file}" DIRECTORY)
+		################################################################
       add_custom_command(
         TARGET ${cuda_target}
         PRE_LINK
         COMMAND ${CMAKE_COMMAND} -E echo "Building NVCC intermediate link file ${output_file_relative_path}"
+		
+		#### THIS LINE IS FOR WINDOWS TO COMPILE SEPARABLE #############
+		COMMAND ${CMAKE_COMMAND} -E make_directory "${output_file_dir}"
+		################################################################
+		
         COMMAND ${CUDA_NVCC_EXECUTABLE} ${nvcc_flags} ${flags} -dlink ${object_files} -o "${output_file}"
         )
     endif()

@@ -1,4 +1,4 @@
-#  Main File for the cmdGPU executables files for PET
+﻿#  Main File for the cmdGPU executables files for PET
 #
 #  Martin Belzunce, UTN-FRBA, Proyecto AR-PET (CNEA)
 #  Copyright (c) 2010
@@ -6,7 +6,7 @@
 PROJECT(cmdGPU)
 
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
-
+SET(BUILD_SHARED_LIBS  OFF)
 ###################### CUDA CONFIGURATION #############################
 # Ejecuto el FindCUDA.
 #SET(FIND_CUDA_DIR ${APIRL_SOLUTION_SOURCE_DIR}/FindCUDA)
@@ -66,6 +66,7 @@ if(CMAKE_HOST_WIN32)
 	endif()
 endif()	
 # Linkeo de DLL necesarias.
+message(STATUS "cuMLEM LinkLibs: ${LinkLibs} ${CUDA_LIBRARIES_BUILD} ${CUDA_LIBRARIES_BUILD} ${reconGPU_BINARY_DIR}")
 TARGET_LINK_LIBRARIES(cuMLEM ${LinkLibs})
 
 # Instalación de ejecutables: install(TARGETS "todos los ejecutables" RUNTIME DESTINATION "path")

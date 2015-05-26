@@ -792,6 +792,7 @@ bool CuMlemSinogram3d::CopyHostImageToTexture(Image* image)
   copyParams.extent   = extentImageSize;
   copyParams.kind     = cudaMemcpyHostToDevice;
   checkCudaErrors(cudaMemcpy3D(&copyParams));
+  return true;
 }
 
 bool CuMlemSinogram3d::CopyTextureToHostImage(Image* image)
@@ -803,6 +804,7 @@ bool CuMlemSinogram3d::CopyTextureToHostImage(Image* image)
   copyParams.extent   = extentImageSize;
   copyParams.kind     = cudaMemcpyDeviceToHost;
   checkCudaErrors(cudaMemcpy3D(&copyParams));
+  return true;
 } 
 
 bool CuMlemSinogram3d::CopyDevImageToTexture(float* d_image, SizeImage imageSize)
@@ -815,7 +817,7 @@ bool CuMlemSinogram3d::CopyDevImageToTexture(float* d_image, SizeImage imageSize
   copyParams.extent   = extentImageSize;
   copyParams.kind     = cudaMemcpyDeviceToDevice;
   checkCudaErrors(cudaMemcpy3D(&copyParams));
-  
+  return true;
 }
 
 bool CuMlemSinogram3d::CopyTextureToDevtImage(float* d_image, SizeImage imageSize)
@@ -827,4 +829,5 @@ bool CuMlemSinogram3d::CopyTextureToDevtImage(float* d_image, SizeImage imageSiz
   copyParams.extent   = extentImageSize;
   copyParams.kind     = cudaMemcpyDeviceToDevice;
   checkCudaErrors(cudaMemcpy3D(&copyParams));
+  return true;
 } 
