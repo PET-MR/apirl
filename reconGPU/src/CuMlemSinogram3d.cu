@@ -635,11 +635,11 @@ bool CuMlemSinogram3d::Reconstruct(TipoProyector tipoProy, int indexGpu)
     }
     if(saveIntermediateProjectionAndBackprojectedImage)
     {
-      // Copio el sinograma de entrada, llamo a una función porque tengo que ir recorriendo todos los sinogramas:
-      CopySinogram3dGpuToHost(estimatedProjection, d_estimatedProjection);	// Es una copia de los mismos sinogramas. O sea en cpu y gpu ocupan el mismo espacio.
-      sprintf(c_string, "%s_projectionDiv_iter_%d", outputFilenamePrefix.c_str(), t); /// La extensión se le agrega en write interfile.
+      // Copio la imagen en gpu a cpu:
+      checkCudaErrors(cudaMemcpy(backprojectedImage, d_backprojectedImage, sizeof(float)*reconstructionImage->getPixelCount(),cudaMemcpyDeviceToHost)); 
+      sprintf(c_string, "%s_backprojection_iter_%d", outputFilenamePrefix.c_str(), t); /// La extensión se le agrega en write interfile.
       outputFilename.assign(c_string);
-      estimatedProjection->writeInterfile((char*)outputFilename.c_str());
+      backprojectedImage->writeInterfile((char*)outputFilename.c_str());
     }
     clock_t finalClockBackprojection = clock();
     /// Actualización del Pixel

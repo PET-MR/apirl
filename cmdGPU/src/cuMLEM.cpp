@@ -42,6 +42,7 @@
 #include <string.h>
 #include <Michelogram.h>
 #include <CuMlemSinogram3d.h>
+#include <CuOsemSinogram3d.h>
 #include <ParametersFile.h>
 #include <Images.h>
 #include <Geometry.h>
@@ -64,66 +65,66 @@ using namespace std;
 using	std::string;
 
 /**
-	\fn void main (int argc, char *argv[])
-	\brief Ejecutable que realiza la reconstrucci�n MLEM en GPU, para eso recibe como par�metro el nombre del archivo de configuraci�n de reconstrucci�n.
-	
-	Este comando realiza la reconstrucci�n de un sinograma con el m�todo Maximum Likelihood Expectation Maximization (MLEM) sobre CUDA(GPU).
-	Para esto recibe como argumento de entrada el nombre del archivo de configuraci�n de par�metros de reconstrucci�n. Dicho argumento
-	es obligatorio para poder ejecutar este comando, ya que en el se describen los par�metros necesarios para su ejecuci�n y el nombre
-	y caracter�sticas del sinograma a reconstruir.
-	Hasta el momento el comando ejecuta siempre la recnstrucci�n en GPU a trav�s de la reconstrucci�n por Michelorgama, si el tipo
-	de dato de entrada es del tipo Sinogram3D la convierte a Michelograma.
-	El archivo de par�metros tiene un formato similar a los archivos interfile, se diferencia en que la primera l�nea debe ser
-	"MLEMParameter :=" y debe finalizar con un "END :=". Este formato est� basado en el propuesto por STIR para configurar sus
-	m�todos de reconstrucci�n.
-	Cada par�metro es ingresado en el archivo a trav�s de keyword := value, siendo keyword el nombre del par�metros y value el valor
-	que se le asigna. Hay campos obligatorios, y otros opcionales.
-	Campos Obligatorios:
-		- "input type" : tipo de entrada a reconstruir. Los valores posibles son: Sinogram2D, Sinogram3D y Michelogram.
-		- "input file" : nombre del archivo header (*.hs) del sinograma a reconstruir en formato interfile.
-		- "output filename prefix" : prefijo para los nombres de archivo de salida (principalmente nombres de las im�genes).
-		- "number of iterations" : n�mero de iteraciones a realizar.
-		- "initial estimate" : nombre del archivo de header de la imagen que ser� utilizada como estimador inicial. Puede ser
-							   una imagen constante con valores mayores a 0. Esta imagen inicial, es a su vez la que se utilizar�
-							   para determinar las caracter�sticas de la imagen de salida; esto es, la cantidad de dimensiones, 
-							   el tama�o en p�xeles, y las dimensiones de cada p�xel en cada eje.
-	Campos Opcionales:
-		- "enforce initial positivity condition" : habilita (1) o deshabilita (0) el forzado de p�xeles positivo en la imagen inicial. Esta condici�n
-												   es necesaria para asegurar la convergencia en MLEM (o Least Squares?). Si se omite esta
-												   entrada se considera que est� dehabilitada.
-	    - "save estimates at iteration intervals" : indica cada cuantas iteraciones se desea guardar la imagen de salida (Por ejemplo,
-													para guardar las imagenes de salida de todas las iteraciones, este par�metro debe
-													valer 1). Si se omite, por default vale 0, o sea que no se guardan los resultados de
-													las iteraciones, sino que solo la imagen final.
-		- "sensitivity filename" : nombre del header de la imagen de snesibilidad utilziada en el algoritmo MLEM. Esta imagen es la resultante de la
-								   proyecci�n de una imagen constante. Si se omite este par�metro se calcula antes de iniciar la reconstrucci�n.
+  \fn void main (int argc, char *argv[])
+  \brief Ejecutable que realiza la reconstrucci�n MLEM en GPU, para eso recibe como par�metro el nombre del archivo de configuraci�n de reconstrucci�n.
+  
+  Este comando realiza la reconstrucci�n de un sinograma con el m�todo Maximum Likelihood Expectation Maximization (MLEM) sobre CUDA(GPU).
+  Para esto recibe como argumento de entrada el nombre del archivo de configuraci�n de par�metros de reconstrucci�n. Dicho argumento
+  es obligatorio para poder ejecutar este comando, ya que en el se describen los par�metros necesarios para su ejecuci�n y el nombre
+  y caracter�sticas del sinograma a reconstruir.
+  Hasta el momento el comando ejecuta siempre la recnstrucci�n en GPU a trav�s de la reconstrucci�n por Michelorgama, si el tipo
+  de dato de entrada es del tipo Sinogram3D la convierte a Michelograma.
+  El archivo de par�metros tiene un formato similar a los archivos interfile, se diferencia en que la primera l�nea debe ser
+  "MLEMParameter :=" y debe finalizar con un "END :=". Este formato est� basado en el propuesto por STIR para configurar sus
+  m�todos de reconstrucci�n.
+  Cada par�metro es ingresado en el archivo a trav�s de keyword := value, siendo keyword el nombre del par�metros y value el valor
+  que se le asigna. Hay campos obligatorios, y otros opcionales.
+  Campos Obligatorios:
+	  - "input type" : tipo de entrada a reconstruir. Los valores posibles son: Sinogram2D, Sinogram3D y Michelogram.
+	  - "input file" : nombre del archivo header (*.hs) del sinograma a reconstruir en formato interfile.
+	  - "output filename prefix" : prefijo para los nombres de archivo de salida (principalmente nombres de las im�genes).
+	  - "number of iterations" : n�mero de iteraciones a realizar.
+	  - "initial estimate" : nombre del archivo de header de la imagen que ser� utilizada como estimador inicial. Puede ser
+						      una imagen constante con valores mayores a 0. Esta imagen inicial, es a su vez la que se utilizar�
+						      para determinar las caracter�sticas de la imagen de salida; esto es, la cantidad de dimensiones, 
+						      el tama�o en p�xeles, y las dimensiones de cada p�xel en cada eje.
+  Campos Opcionales:
+	  - "enforce initial positivity condition" : habilita (1) o deshabilita (0) el forzado de p�xeles positivo en la imagen inicial. Esta condici�n
+											      es necesaria para asegurar la convergencia en MLEM (o Least Squares?). Si se omite esta
+											      entrada se considera que est� dehabilitada.
+      - "save estimates at iteration intervals" : indica cada cuantas iteraciones se desea guardar la imagen de salida (Por ejemplo,
+												  para guardar las imagenes de salida de todas las iteraciones, este par�metro debe
+												  valer 1). Si se omite, por default vale 0, o sea que no se guardan los resultados de
+												  las iteraciones, sino que solo la imagen final.
+	  - "sensitivity filename" : nombre del header de la imagen de snesibilidad utilziada en el algoritmo MLEM. Esta imagen es la resultante de la
+							      proyecci�n de una imagen constante. Si se omite este par�metro se calcula antes de iniciar la reconstrucci�n.
 
-	\par Ejemplo de Archivo de par�metro .par
-	\code
-	MLEMParameters :=
-	; Ejemplo de archivo de configuraci�n de reconstrucci�n MLEM.
-	input type := Sinogram3D
-	input file := test.hs
-	; if the next parameter is disabled, 
-	; the sensitivity will be computed
-	sensitivity filename:= sens.hv
-	initial estimate:= some_image
-	; enable this when you read an initial estimate with negative data
-	enforce initial positivity condition:=0
-	output filename prefix := test_QP
-	number of iterations := 24
-	save estimates at subiteration intervals:= 12
+  \par Ejemplo de Archivo de par�metro .par
+  \code
+  MLEMParameters :=
+  ; Ejemplo de archivo de configuraci�n de reconstrucci�n MLEM.
+  input type := Sinogram3D
+  input file := test.hs
+  ; if the next parameter is disabled, 
+  ; the sensitivity will be computed
+  sensitivity filename:= sens.hv
+  initial estimate:= some_image
+  ; enable this when you read an initial estimate with negative data
+  enforce initial positivity condition:=0
+  output filename prefix := test_QP
+  number of iterations := 24
+  save estimates at subiteration intervals:= 12
 
 
-	END :=
-	\endcode
+  END :=
+  \endcode
 
-	@param argc Cantidad de argumentos de entrada
-	@param argv Puntero a vector con los argumentos de entrada. El comando debe ejecutarse con el nombre del archivo de par�metros como argumento.
-	@return 0 si no uhbo errores, 1  si fall� la operaci�n.
-	\author Mart�n Belzunce (martin.sure@gmail.com)
-	\date 2010.11.24
-	\version 1.0.0
+  @param argc Cantidad de argumentos de entrada
+  @param argv Puntero a vector con los argumentos de entrada. El comando debe ejecutarse con el nombre del archivo de par�metros como argumento.
+  @return 0 si no uhbo errores, 1  si fall� la operaci�n.
+  \author Mart�n Belzunce (martin.sure@gmail.com)
+  \date 2010.11.24
+  \version 1.0.0
 */	
 
 int main (int argc, char *argv[])
@@ -153,6 +154,7 @@ int main (int argc, char *argv[])
   CuProjector* forwardprojector;
   CuProjector* backprojector;
   int saveIterationInterval;
+  int numberOfSubsets = 0;
   bool saveIntermediateData = false, bSensitivityFromFile = 0;
   Image* initialEstimate;
   unsigned int nIterations = 0;	// Número de iteraciones.
@@ -328,15 +330,23 @@ int main (int argc, char *argv[])
     exit(1);
   }
   
-  // Configruo los kernels de los proyectores:
-  
-  
   // Pido los singoramas de corrección si es que están disponibles:
   if(getCorrectionSinogramNames(parameterFileName, "MLEM", &acfFilename, &estimatedRandomsFilename, &estimatedScatterFilename))
     return -1;
   // Idem para normalización:
   if(getNormalizationSinogramName(parameterFileName,  "MLEM",&normFilename))
     return -1;
+  
+  // If I get the number of subsets as parameters I need to call CuOsem... later instead of CuMlem...:
+  strcpy(keyWords[0], "number of subsets");
+  if((errorCode=parametersFile_readMultipleKeys((char*)parameterFileName.c_str(), (char*)"MLEM", (char**)keyWords, 1, (char**)multipleReturnValue, errorMessage)) != 0)
+  {
+    // No se encontró el parámetro, standard MLEM:
+    numberOfSubsets = 0;
+  }
+  else
+    numberOfSubsets = atoi(multipleReturnValue[0]);
+  
   // Lectura de proyecciones y reconstrucción, depende del tipo de dato de entrada:
   if(inputType.compare("Sinogram2D")==0)
   {
@@ -421,7 +431,10 @@ int main (int argc, char *argv[])
   {
     // Sinograma 3D
     Sinogram3D* inputProjection = new Sinogram3DSiemensMmr((char*)inputFilename.c_str());
-    mlem = new CuMlemSinogram3d(inputProjection, initialEstimate, "", outputPrefix, numIterations, saveIterationInterval, saveIntermediateData, bSensitivityFromFile, forwardprojector, backprojector);
+    if(numberOfSubsets == 0)
+      mlem = new CuMlemSinogram3d(inputProjection, initialEstimate, "", outputPrefix, numIterations, saveIterationInterval, saveIntermediateData, bSensitivityFromFile, forwardprojector, backprojector);
+    else
+      mlem = new CuOsemSinogram3d(inputProjection, initialEstimate, "", outputPrefix, numIterations, saveIterationInterval, saveIntermediateData, bSensitivityFromFile, forwardprojector, backprojector, numberOfSubsets);
     if(bSensitivityFromFile)
     {
       mlem->setSensitivityFilename(sensitivityFilename);

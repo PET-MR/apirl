@@ -51,7 +51,9 @@ using namespace::std;
 #endif
 
 
+extern __global__ void cuUpdatePixelValue(float *RawImage, float *FactorRawImage, float* SumAij, SizeImage size, float threshold);
 
+extern __global__ void cuGetLikelihoodValue (float* estimated_michelogram, float* measured_michelogram, float* likelihood, int numR, int numProj, int numRings, int numSinos);
 /**
     \brief Clase abstracta del método de reconstrucción MLEM.
     Esta clase abstracta define de forma general una reconstrucción del tipo MLEM. Las clases derivadas

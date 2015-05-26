@@ -14,7 +14,7 @@
 #define _CU_OSEMSINOGRAM3D_H_
 
 #include <Mlem.h>
-#include <OsemSinogram3d.h>
+#include <CuMlemSinogram3d.h>
 #include <Sinogram3D.h>
 #include <Logger.h>
 #include <omp.h>
@@ -63,106 +63,56 @@ using namespace::std;
 #ifdef __cplusplus
 //extern "C"
 #endif
-class DLLEXPORT CuOsemSinogram3d : public OsemSinogram3d
+class DLLEXPORT CuOsemSinogram3d : public CuMlemSinogram3d
 {	
   protected:  
-    /// Proyección a reconstruir.
-    /** Puntero donde se almacenará el sinograma de entrada. */
-    float* d_inputProjection;
+    /// Cantidad de subsets que se utilizan para el Osem.
+    int numSubsets;
+    
+    /// Método que calcula la imagen de sensibilidad para uno de los subsets dados.
+    /** Método que hace la backprojection de una imagen cosntante para obtener
+    la imagen de sensibilidad necesaria para la reconstrucción. */
+    bool computeSensitivity(Image*, int indexSubset, TipoProyector tipoProy);
+    
+    /// Actualiza la imagen en una iteración para un subset.
+    /** Actualiza los valores de los píxeles de la imagen reconstruida en una iteración. Es el último paso de la iteración. Depende del subset porque
+     * utiliza la sensitivity image. */
+    bool updatePixelValue(int subset);
+    
+    /// Array de imágenes de sensibilidad, una por cada subset.
+    /** Tener cuidado con que la memoria que requiere no sea demasiado si los subsets son mucho.
+     */
+    Image** sensitivityImages;
+    
+    /// Un umbral de actualización para cada sensitivity image.
+    float* updateThresholds;
     
     /// Subsets de la proyección a reconstruir.
     /** Puntero a puntero donde se almacenará un array de sinogramas con los subsets. O sea que d_inputProjectionSubsets[i] es el subset de un sinograma
      * e i va desde 0 a numSubsets-1. */
     float** d_inputProjectionSubsets;
-    
-    /// Proyección a reconstruir.
-    /** Puntero donde se almacenará el sinograma intermedio de proyección. Tendrá el tamaño de un subset, ya que no tiene sentido guardar todos los subsets en este caso. */
-    float* d_estimatedProjection;
-    
-    /// Imagen a reconstruir en gpu.
-    /* Puntero a al dirección de memoria en GPU donde se tendrá la imagen a reconstruir.*/
-    float* d_reconstructionImage;
-    
-    /// Imagen retroproyectada en gpu.
-    /* Puntero a al dirección de memoria en GPU donde se tendrá la imagen retroproyectada en cada iteración.*/
-    float* d_backprojectedImage;
-    
+
     /// Puntero a array de Sensitivity Image (una por subset).
     /* Puntero a al dirección de memoria en GPU donde se tendrá la imagen de sensibilidad.*/
     float** d_sensitivityImages;
 
-    /// Array con las coordenadas del ring1 (z1) para cada sinograma 2d.
-    /** El largo del vector es igual a la suma total de sinogramas 2d que tiene el sino3d.
-     */
-    float* d_ring1;
-    
-    /// Array con las coordenadas del ring2 (z2) para cada sinograma 2d.
-    /** El largo del vector es igual a la suma total de sinogramas 2d que tiene el sino3d.
-     */
-    float* d_ring2;
-    
-    /// Array con el índice de ring1 (z1) para cada sinograma 2d del sino3D.
-    /** El largo del vector es igual a la suma total de sinogramas 2d que tiene el sino3d.Es sólo el índice de anillo!
-     * Para obtener la coordenada en el world hay que entrar con este indice al vector de coordenadas de los anillos.
-     */
-    float* d_ring1_mm;
-    
-    /// Array con el índice de ring1 (z2) para cada sinograma 2d del sino3D.
-    /** El largo del vector es igual a la suma total de sinogramas 2d que tiene el sino3d.Es sólo el índice de anillo!
-     * Para obtener la coordenada en el world hay que entrar con este indice al vector de coordenadas de los anillos.
-     */
-    float* d_ring2_mm;
-    
-    /// Dim3 con configuración de threads per block en cada dimensión para el kernel de proyección.
-    dim3 blockSizeProjector;
-    
-    /// Dim3 con configuración de la grilla en cada dimensión para el kernel de proyección.
-    dim3 gridSizeProjector;
-    
-    /// Dim3 con configuración de threads per block en cada dimensión para el kernel de retroproyección.
-    dim3 blockSizeBackprojector;
-    
-    /// Dim3 con configuración de la grilla en cada dimensión para el kernel de retroproyección.
-    dim3 gridSizeBackprojector;
-    
-    /// im3 con configuración de threads per block en cada dimensión para el kernel de actualización de píxel.
-    dim3 blockSizeImageUpdate;
-    
-    /// Dim3 con configuración de la grilla en cada dimensión para el kernel de píxel.
-    dim3 gridSizeImageUpdate;
-    
-    /// Método que configura los tamaños de ejecución del kernel de proyección.
-    void setProjectorKernelConfig(unsigned int numThreadsPerBlockX, unsigned int numThreadsPerBlockY, unsigned int numThreadsPerBlockZ, 
-			  unsigned int numBlocksX, unsigned int numBlocksY, unsigned int numBlocksZ);
-    
-    /// Método que configura los tamaños de ejecución del kernel de retroproyección.
-    void setBackprojectorKernelConfig(unsigned int numThreadsPerBlockX, unsigned int numThreadsPerBlockY, unsigned int numThreadsPerBlockZ, 
-			  unsigned int numBlocksX, unsigned int numBlocksY, unsigned int numBlocksZ);
-    
-    /// Método que configura los tamaños de ejecución del kernel de actualización de píxel.
-    void setUpdatePixelKernelConfig(unsigned int numThreadsPerBlockX, unsigned int numThreadsPerBlockY, unsigned int numThreadsPerBlockZ, 
-			  unsigned int numBlocksX, unsigned int numBlocksY, unsigned int numBlocksZ);
-    
     /// Inicio la memoria en gpu
     /** Se pide memoria para cada uno de los vectores y se copian los datos de entrada
      */
-    bool InitGpuMemory();
+    bool InitGpuMemory(TipoProyector tipoProy);
     
     /// Inicio las constantes del subset.
     /** Inicia las constantes del subset, que por ahora solo se necesita copiar los ángulos de proyección del subset a la memoria cosntante.
      */
     bool InitSubsetConstants(int indexSubset);
     
-    /// Método que copia memoria de cpu en gpu.
-    int CopySinogram3dHostToGpu(float* d_destino, Sinogram3D* h_source);
-    
-    /// Método que inicializa la gpu.
-    bool initCuda (int, Logger*);
+    /// Override del likelihood del cumlemsinogramd.
+    float getLikelihoodValue(TipoProyector tipoProy);
     
   public:
     /// Constructores de la clase.
     /* Constructor que carga los parámetros base de una reconstrucción MLEM para Sinogram3D. */
-    CuOsemSinogram3d(Sinogram3D* cInputProjection, Image* cInitialEstimate, string cPathSalida, string cOutputPrefix, int cNumIterations, int cSaveIterationInterval, bool cSaveIntermediate, bool cSensitivityImageFromFile, Projector* cForwardprojector, Projector* cBackprojector, int cNumSubsets);
+    CuOsemSinogram3d(Sinogram3D* cInputProjection, Image* cInitialEstimate, string cPathSalida, string cOutputPrefix, int cNumIterations, int cSaveIterationInterval, bool cSaveIntermediate, bool cSensitivityImageFromFile, CuProjector* cForwardprojector, CuProjector* cBackprojector, int cNumSubsets);
     
     /// Constructores de la clase a partir de un archivo de configuración.
     /* Constructor que carga los parámetros base de una reconstrucción MLEM
@@ -177,7 +127,6 @@ class DLLEXPORT CuOsemSinogram3d : public OsemSinogram3d
     /// Método que realiza la reconstrucción y permite al usuario establecer el índice de GPU a utilizar
     virtual bool Reconstruct(TipoProyector tipoProy, int indexGpu);
     
-		
 };
 
 #endif
