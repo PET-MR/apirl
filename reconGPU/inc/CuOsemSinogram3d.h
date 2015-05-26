@@ -101,6 +101,18 @@ class DLLEXPORT CuOsemSinogram3d : public OsemSinogram3d
      */
     float* d_ring2;
     
+    /// Array con el índice de ring1 (z1) para cada sinograma 2d del sino3D.
+    /** El largo del vector es igual a la suma total de sinogramas 2d que tiene el sino3d.Es sólo el índice de anillo!
+     * Para obtener la coordenada en el world hay que entrar con este indice al vector de coordenadas de los anillos.
+     */
+    float* d_ring1_mm;
+    
+    /// Array con el índice de ring1 (z2) para cada sinograma 2d del sino3D.
+    /** El largo del vector es igual a la suma total de sinogramas 2d que tiene el sino3d.Es sólo el índice de anillo!
+     * Para obtener la coordenada en el world hay que entrar con este indice al vector de coordenadas de los anillos.
+     */
+    float* d_ring2_mm;
+    
     /// Dim3 con configuración de threads per block en cada dimensión para el kernel de proyección.
     dim3 blockSizeProjector;
     
@@ -136,6 +148,11 @@ class DLLEXPORT CuOsemSinogram3d : public OsemSinogram3d
      */
     bool InitGpuMemory();
     
+    /// Inicio las constantes del subset.
+    /** Inicia las constantes del subset, que por ahora solo se necesita copiar los ángulos de proyección del subset a la memoria cosntante.
+     */
+    bool InitSubsetConstants(int indexSubset);
+    
     /// Método que copia memoria de cpu en gpu.
     int CopySinogram3dHostToGpu(float* d_destino, Sinogram3D* h_source);
     
@@ -153,12 +170,12 @@ class DLLEXPORT CuOsemSinogram3d : public OsemSinogram3d
     CuOsemSinogram3d(string configFilename);
     
     
+    using Mlem::Reconstruct; // To avoid the warning on possible unintended override.
     /// Método que realiza la reconstrucción de las proyecciones. 
-    bool Reconstruct();
+    virtual bool Reconstruct(TipoProyector tipoProy);
     
     /// Método que realiza la reconstrucción y permite al usuario establecer el índice de GPU a utilizar
-    bool Reconstruct(int indexGpu);
-    
+    virtual bool Reconstruct(TipoProyector tipoProy, int indexGpu);
     
 		
 };

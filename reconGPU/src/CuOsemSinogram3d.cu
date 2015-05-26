@@ -1,6 +1,34 @@
 #include <CuOsemSinogram3d.h>
 #include "../kernels/CuSiddonProjector_kernels.cu"
 
+#ifndef __RECONGPU_GLOBALS__
+#define __RECONGPU_GLOBALS__
+// Memoria constante con los valores de los angulos de la proyeccion,
+__device__ __constant__ float d_thetaValues_deg[MAX_PHI_VALUES];
+
+// Memoria constante con los valores de la distancia r.
+__device__ __constant__ float d_RValues_mm[MAX_R_VALUES];
+
+// Memoria constante con los valores de la coordenada axial o z.
+__device__ __constant__ float d_AxialValues_mm[MAX_Z_VALUES];
+
+__device__ __constant__ float d_RadioScanner_mm;
+
+__device__ __constant__ float d_AxialFov_mm;
+
+__device__ __constant__ float d_RadioFov_mm;
+
+__device__ __constant__ SizeImage d_imageSize;
+
+__device__ __constant__ int d_numPixelsPerSlice;
+
+__device__ __constant__ int d_numBinsSino2d;
+
+extern texture<float, 3, cudaReadModeElementType> texImage;  // 3D texture
+
+extern surface<void, 3> surfImage;
+  
+#endif
 
 CuOsemSinogram3d::CuOsemSinogram3d(Sinogram3D* cInputProjection, Image* cInitialEstimate, string cPathSalida, string cOutputPrefix, int cNumIterations, int cSaveIterationInterval, bool cSaveIntermediate, bool cSensitivityImageFromFile, Projector* cForwardprojector, Projector* cBackprojector, int cNumSubsets) : OsemSinogram3d(cInputProjection, cInitialEstimate, cPathSalida, cOutputPrefix, cNumIterations, cSaveIterationInterval, cSaveIntermediate, cSensitivityImageFromFile, cForwardprojector, cBackprojector, cNumSubsets)
 {
@@ -130,6 +158,8 @@ bool CuOsemSinogram3d::InitGpuMemory()
   int numBins = inputProjection->getBinCount();
   // Número total de bins por subset, que es el que voy a tener que usar para los proyectores:
   int numBinsSubset = inputProjection->getSubset(0)->getBinCount();
+  // Lo mismo para el numero de sinogramas:
+  int numSinograms = inputProjection->getNumSinograms();
   // Pido memoria para la gpu, debo almacenar los sinogramas y las imágenes.
   // Lo hago acá y no en el proyector para mantenerme en memmoria de gpu durante toda la reconstrucción.
   
@@ -139,6 +169,10 @@ bool CuOsemSinogram3d::InitGpuMemory()
   checkCudaErrors(cudaMalloc((void**) &d_estimatedProjection, sizeof(float)*numBinsSubset));
   checkCudaErrors(cudaMalloc((void**) &d_ring1, sizeof(float)*inputProjection->getNumSinograms()));
   checkCudaErrors(cudaMalloc((void**) &d_ring2, sizeof(float)*inputProjection->getNumSinograms()));
+  // Por ahora tengo las dos, d_ring1 me da el índice de anillo, y d_ring1_mm me da directamente la coordenada axial.
+  // Agregue esto porque para usar una única LOR para
+  checkCudaErrors(cudaMalloc((void**) &d_ring1_mm, sizeof(int)*numSinograms));
+  checkCudaErrors(cudaMalloc((void**) &d_ring2_mm, sizeof(int)*numSinograms));
   // Para la sensitivity iamge, tengo un array de sensitivity images:
   checkCudaErrors(cudaMalloc((void***) &d_sensitivityImages, sizeof(float*)*numSubsets));	// Memory for the array.
   // Para los subsets lo mismo:
@@ -166,8 +200,8 @@ bool CuOsemSinogram3d::InitGpuMemory()
   
   // Además de copiar los valores de todos los bins, debo inicializar todas las constantes de reconstrucción.
   // Por un lado tengo los valores de coordenadas posibles de r, theta y z. Los mismos se copian a memoria constante de GPU (ver vectores globales al inicio de este archivo.
-  /// LOS THETA VALUES LOS TENGO QUE CAMBIAR, ES UN POR SUBSET.
-  checkCudaErrors(cudaMemcpyToSymbol(d_thetaValues_deg, inputProjection->getAngPtr(), sizeof(float)*inputProjection->getNumProj()));
+  // Los theta values los tengo que cargar por cada subset.
+  // checkCudaErrors(cudaMemcpyToSymbol(d_thetaValues_deg, inputProjection->getAngPtr(), sizeof(float)*inputProjection->getNumProj()));
   checkCudaErrors(cudaMemcpyToSymbol(d_RValues_mm, inputProjection->getRPtr(), sizeof(float)*inputProjection->getNumR()));
   checkCudaErrors(cudaMemcpyToSymbol(d_AxialValues_mm, inputProjection->getAxialPtr(), sizeof(float)*inputProjection->getNumRings()));
   SizeImage size =  reconstructionImage->getSize();
@@ -184,21 +218,75 @@ bool CuOsemSinogram3d::InitGpuMemory()
   int iSino = 0;
   float* auxRings1 = new float[inputProjection->getNumSinograms()];
   float* auxRings2 = new float[inputProjection->getNumSinograms()];
+  float* auxRings1_mm = (float*)malloc(sizeof(float)*numSinograms);
+  float* auxRings2_mm = (float*)malloc(sizeof(float)*numSinograms);
+  float numZ;
   for(int i = 0; i < inputProjection->getNumSegments(); i++)
   {
     for(int j = 0; j < inputProjection->getSegment(i)->getNumSinograms(); j++)
     {
-      // Como voy a agarrar solo la combinación del medio:
-      int indexMedio = floor(inputProjection->getSegment(i)->getSinogram2D(j)->getNumZ()/2);
-      auxRings1[iSino] = inputProjection->getSegment(i)->getSinogram2D(j)->getRing1FromList(indexMedio);
-      auxRings2[iSino] = inputProjection->getSegment(i)->getSinogram2D(j)->getRing2FromList(indexMedio);
+      numZ = inputProjection->getSegment(i)->getSinogram2D(j)->getNumZ();
+      // The ring is in fact the slice, goes from 1 to 2*numRings-1 (in c 0 to 2*numRings-2). For the real ring it would be (max+min)/2 bu since we want the slice we need to multiply by 2.
+      auxRings1[iSino] = (inputProjection->getSegment(i)->getSinogram2D(j)->getRing1FromList(0)+inputProjection->getSegment(i)->getSinogram2D(j)->getRing1FromList(numZ-1));
+      auxRings2[iSino] = (inputProjection->getSegment(i)->getSinogram2D(j)->getRing2FromList(0)+inputProjection->getSegment(i)->getSinogram2D(j)->getRing2FromList(numZ-1));
+      // Es el promedio : cuando es par el index medio me da el índice menor pero con base 1, por eso le debo restar 1 para tener indices que inician en cero.
+      auxRings1_mm[iSino] = (inputProjection->getSegment(i)->getSinogram2D(j)->getAxialValue1FromList(0) + inputProjection->getSegment(i)->getSinogram2D(j)->getAxialValue1FromList(numZ-1))/2;
+      auxRings2_mm[iSino] = (inputProjection->getSegment(i)->getSinogram2D(j)->getAxialValue2FromList(0) + inputProjection->getSegment(i)->getSinogram2D(j)->getAxialValue2FromList(numZ-1))/2;
       iSino++;
     }
   }
   // Copio los índices de anillos a memoris de GPU:
   checkCudaErrors(cudaMemcpy(d_ring1, auxRings1, sizeof(float)*inputProjection->getNumSinograms(), cudaMemcpyHostToDevice));
   checkCudaErrors(cudaMemcpy(d_ring2, auxRings2, sizeof(float)*inputProjection->getNumSinograms(), cudaMemcpyHostToDevice));
+  checkCudaErrors(cudaMemcpy(d_ring1_mm, auxRings1_mm, sizeof(float)*numSinograms, cudaMemcpyHostToDevice));
+  checkCudaErrors(cudaMemcpy(d_ring2_mm, auxRings2_mm, sizeof(float)*numSinograms, cudaMemcpyHostToDevice));
 
+  // Datos que dependen del proyctor:
+  switch(tipoProy)
+  {
+    case SIDDON_CYLINDRICAL_SCANNER:
+      aux = ((Sinogram3DCylindricalPet*)inputProjection)->getRadioScanner_mm();
+      checkCudaErrors(cudaMemcpyToSymbol(d_RadioScanner_mm, &aux, sizeof(float)));
+      //checkCudaErrors(cudaMemcpy(&d_RadioScanner_mm, &aux, sizeof(aux), cudaMemcpyHostToDevice));
+      break;
+    case SIDDON_BACKPROJ_SURF_CYLINDRICAL_SCANNER:
+      aux = ((Sinogram3DCylindricalPet*)inputProjection)->getRadioScanner_mm();
+      checkCudaErrors(cudaMemcpyToSymbol(d_RadioScanner_mm, &aux, sizeof(float)));
+      //checkCudaErrors(cudaMemcpy(&d_RadioScanner_mm, &aux, sizeof(aux), cudaMemcpyHostToDevice));
+      break;
+    case SIDDON_PROJ_TEXT_CYLINDRICAL_SCANNER:
+      aux = ((Sinogram3DCylindricalPet*)inputProjection)->getRadioScanner_mm();
+      checkCudaErrors(cudaMemcpyToSymbol(d_RadioScanner_mm, &aux, sizeof(float)));
+      //checkCudaErrors(cudaMemcpy(&d_RadioScanner_mm, &aux, sizeof(aux), cudaMemcpyHostToDevice));
+      break;
+  }
+  
+  // Initialize texture (might be used with the some projectors):
+  cudaChannelFormatDesc floatTex = cudaCreateChannelDesc<float>();
+  const cudaExtent extentImageSize = make_cudaExtent(reconstructionImage->getSize().nPixelsX, reconstructionImage->getSize().nPixelsY, reconstructionImage->getSize().nPixelsZ);
+  cudaMemcpy3DParms copyParams = {0};
+  // set texture parameters
+  texImage.normalized = false;                      // access with normalized texture coordinates
+  texImage.filterMode = cudaFilterModeLinear;      // linear interpolation
+  texImage.addressMode[0] = cudaAddressModeClamp;   // wrap texture coordinates
+  texImage.addressMode[1] = cudaAddressModeClamp;
+  texImage.addressMode[2] = cudaAddressModeClamp;
+  // The image is in a texture memory:  cudaChannelFormatDesc floatTex;
+  checkCudaErrors(cudaMalloc3DArray(&d_imageArray, &floatTex, extentImageSize));
+  // bind array to 3D texture
+  checkCudaErrors(cudaBindTextureToArray(texImage, d_imageArray, floatTex));
+  
+  // Libero memoria de vectores auxiliares:
+  free(auxRings1);
+  free(auxRings2);
+  free(auxRings1_mm);
+  free(auxRings2_mm);
+  return true;
+}
+
+bool CuOsemSinogram3d::InitSubsetConstants(int indexSubset)
+{
+  checkCudaErrors(cudaMemcpyToSymbol(d_thetaValues_deg, inputProjection->getSubset(indexSubset, numSubsets)->getAngPtr(), sizeof(float)*inputProjection->getSubset(indexSubset, numSubsets)->getNumProj()));
 }
 
 int CuOsemSinogram3d::CopySinogram3dHostToGpu(float* d_destino, Sinogram3D* h_source)
@@ -220,13 +308,13 @@ int CuOsemSinogram3d::CopySinogram3dHostToGpu(float* d_destino, Sinogram3D* h_so
 }
 
 // Método de reconstrucción que no se le indica el índice de GPU, incializa la GPU 0 por defecto.
-bool CuOsemSinogram3d::Reconstruct()
+bool CuOsemSinogram3d::Reconstruct(TipoProyector tipoProy)
 {
   Reconstruct(0);
 }
 
 /// Método público que realiza la reconstrucción en base a los parámetros pasados al objeto Mlem instanciado
-bool CuOsemSinogram3d::Reconstruct(int indexGpu)
+bool CuOsemSinogram3d::Reconstruct(TipoProyector tipoProy, int indexGpu)
 {
   /// Hago el log de la reconstrucción:
   Logger* logger = new Logger(logFileName);
@@ -251,6 +339,7 @@ bool CuOsemSinogram3d::Reconstruct(int indexGpu)
   float* ptrBackprojectedPixels = backprojectedImage->getPixelsPtr();
   /// Puntero del array con los tiempos de reconstrucción por iteración.
   float* timesIteration_mseg;
+  float timesTotalIteration_seg;
   /// Puntero del array con los tiempos de backprojection por iteración.
   float* timesBackprojection_mseg;
   /// Puntero del array con los tiempos de forwardprojection por iteración.
@@ -324,28 +413,47 @@ bool CuOsemSinogram3d::Reconstruct(int indexGpu)
   strcpy(c_string, "_______RECONSTRUCCION_______");
   logger->writeLine(c_string, strlen(c_string));
   /// Voy generando mensajes con los archivos creados en el log de salida:
-
   int nPixels = reconstructionImage->getPixelCount();
+  int nBins = inputProjection->getSubset(0)->getBinCount();	// The number of bins that we use in the projection and backrpojection is the one of the subset.
   for(unsigned int t = 0; t < this->numIterations; t++)
   {
-    clock_t initialClockIteration = clock();
+    printf("Iteration Nº: %d\n", t+1);
+    timesTotalIteration_seg = 0;
     // Por cada iteración debo repetir la operación para todos los subsets.
     for(unsigned int s = 0; s < this->numSubsets; s++)
     {
-      // Tengo que generar el subset del sinograma correspondiente para reconstruir con ese:
-      inputSubset = inputProjection->getSubset(s, numSubsets);
-      // La estimated también la cambio, porque van cambiando los ángulos de la proyección.
-      estimatedProjection = inputProjection->getSubset(s, numSubsets); 
-      estimatedProjection->FillConstant(0);
-      printf("Iteración Nº: %d\n", t);
+      printf("\tsubiteration Nº: %d", s+1);
+      clock_t initialClockIteration = clock();
+      // Init constants for the subset.
+      InitSubsetConstants(s);
+      // Now I need to use the sinogram d_inputProjectionSubsets[s].
+      /// Pongo en cero la proyección estimada, y hago la backprojection.
+      checkCudaErrors(cudaMemset(d_estimatedProjection, 0,sizeof(float)*nBins));
       /// Proyección de la imagen:
-      forwardprojector->Project(reconstructionImage, estimatedProjection);
-
-      //clock_t finalClockProjection = clock();
+      switch(tipoProy)
+      {
+	case SIDDON_PROJ_TEXT_CYLINDRICAL_SCANNER: // This siddon implementation has only projection, so it uses the standard backprojection.
+	  CopyDevImageToTexture(d_reconstructionImage, reconstructionImage->getSize()); // Copy the reconstruction iamge to texture.
+	  forwardprojector->Project(d_reconstructionImage, d_estimatedProjection, d_ring1_mm, d_ring2_mm, reconstructionImage, (Sinogram3DCylindricalPet*)inputProjection->getSubset(s, numSubsets), false); // Debo pasa el subset para tener el tamaño correcto de sino.
+	  break;
+	case SIDDON_CYLINDRICAL_SCANNER:
+	  forwardprojector->Project(d_reconstructionImage, d_estimatedProjection, d_ring1_mm, d_ring2_mm, reconstructionImage, (Sinogram3DCylindricalPet*)inputProjection->getSubset(s, numSubsets), false);
+	  break;
+      }
+      clock_t finalClockProjection = clock();
       /// Guardo el likelihood (Siempre va una iteración atrás, ya que el likelihhod se calcula a partir de la proyección
       /// estimada, que es el primer paso del algoritmo). Se lo calculo al sinograma
       /// proyectado, respecto del de entrada.
-      this->likelihoodValues[t] = estimatedProjection->getLikelihoodValue(inputSubset);
+      this->likelihoodValues[t] = this->getLikelihoodValue();
+      /// Si quiero guardar la proyección intermedia, lo hago acá, porque luego en la backprojection se modifica para hacer el cociente entre entrada y estimada:
+      if(saveIntermediateProjectionAndBackprojectedImage)
+      {
+	CopySinogram3dGpuToHost(estimatedProjection, d_estimatedProjection);
+	sprintf(c_string, "%s_projection_iter_%d", outputFilenamePrefix.c_str(), t); /// La extensión se le agrega en write interfile.
+	outputFilename.assign(c_string);
+	estimatedProjection->writeInterfile((char*)outputFilename.c_str());
+      }
+      
       /// Pongo en cero la proyección estimada, y hago la backprojection.
       backprojectedImage->fillConstant(0);
       backprojector->DivideAndBackproject(inputSubset, estimatedProjection, backprojectedImage);
