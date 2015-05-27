@@ -80,7 +80,7 @@ int parametersFile_read(char* fileName, char* parameterType, char* searchWord, c
   }
 
                   /* check from first line if file is really interfile header */
-  n=fread(&c,1,1,interfileHeader); if(n<1) {
+  n=(int)fread(&c,1,1,interfileHeader); if(n<1) {
     strcpy(errorMessage,"wrong file header format?! No Header at start of ");
     strcat(errorMessage,fileName);
     fclose(interfileHeader);
@@ -90,7 +90,7 @@ int parametersFile_read(char* fileName, char* parameterType, char* searchWord, c
   memcpy(&line[i],c,1);
   while (memcmp(c,"\n",1) && memcmp(c,"\r",1)) {
     i++;
-    n=fread(&c,1,1,interfileHeader); if(n<1) {
+    n=(int)fread(&c,1,1,interfileHeader); if(n<1) {
 		strcpy(errorMessage,"wrong file header format?! No 'Method Parameters :=' at start of ");
       strcat(errorMessage,fileName);
       fclose(interfileHeader);
@@ -119,7 +119,7 @@ int parametersFile_read(char* fileName, char* parameterType, char* searchWord, c
              /* on Sun-Solaris end with \n, on Intel-Windows with \r\n        */
     while (memcmp(c,"\r",1) && memcmp(c,"\n",1) && i<516) {
       memcpy(&line[i],c,1);
-      n=fread(&c,1,1,interfileHeader); if(n<1) {
+      n=(int)fread(&c,1,1,interfileHeader); if(n<1) {
         strcpy(errorMessage,"wrong file header format: ");
         strcat(errorMessage,fileName);
         fclose(interfileHeader);

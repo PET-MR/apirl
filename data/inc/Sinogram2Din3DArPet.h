@@ -30,6 +30,7 @@
 // DLL export/import declaration: visibility of objects
 #ifndef LINK_STATIC
 	#ifdef WIN32               // Win32 build
+		#pragma warning( disable: 4251 ) // Disable warning for using string in a class interface.
 		#ifdef DLL_BUILD    // this applies to DLL building
 			#define DLLEXPORT __declspec(dllexport)
 		#else                   // this applies to DLL clients/users

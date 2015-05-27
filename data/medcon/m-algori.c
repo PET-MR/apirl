@@ -429,7 +429,7 @@ char *MdcImagesPixelFiddle(FILEINFO *fi)
   for (i=0; i<MDC_MAX_DIMS; i++) if (fi->dim[i] <= 0) fi->dim[i] = 1;
 
   /* check number of slices */
-  for (t=1, i=3; i <= fi->dim[0]; i++) {
+  for (t=1, i=3; i <= (Uint32)fi->dim[0]; i++) {
      MdcDebugPrint("dim[] TEST : fi->dim[%d] = %u",i,fi->dim[i]);
      t *= fi->dim[i];
   }
@@ -514,7 +514,7 @@ char *MdcImagesPixelFiddle(FILEINFO *fi)
 
   for (j=0; j<fi->number; j++) {
 
-     if (MDC_PROGRESS) MdcProgress(MDC_PROGRESS_INCR,1./(float)fi->number,NULL);
+     if (MDC_PROGRESS) MdcProgress(MDC_PROGRESS_INCR,1.0f/(float)fi->number,NULL);
 
      id = &fi->image[j];
 
@@ -564,7 +564,7 @@ char *MdcImagesPixelFiddle(FILEINFO *fi)
     sprintf(mdcbufr,"Internal Error ## fi->dim[0]=%d",fi->dim[0]);
     return(mdcbufr);
   }else{
-    for (t=1; t<=fi->dim[0]; t++) {
+    for (t=1; t<=(Uint32)fi->dim[0]; t++) {
        if (fi->dim[t] <= 0 ) {
          sprintf(mdcbufr,"Internal Error ## fi->dim[%d]=%d",t,fi->dim[t]);
          return(mdcbufr);
@@ -578,7 +578,7 @@ char *MdcImagesPixelFiddle(FILEINFO *fi)
       fi->pixdim[0] == 5.0 ||
       fi->pixdim[0] == 6.0 ||
       fi->pixdim[0] == 7.0 ) { 
-    for (t=1; t<=(Int32)fi->pixdim[0]; t++) {
+    for (t=1; t<=(Uint32)fi->pixdim[0]; t++) {
        if (fi->pixdim[t] <= 0.0 ) fi->pixdim[t] = 1.;
     }
   }else{
@@ -599,7 +599,7 @@ char *MdcImagesPixelFiddle(FILEINFO *fi)
   /* max/min, endian, quantitation */ 
   for (j=0; j<fi->number; j++) {
 
-     if (MDC_PROGRESS) MdcProgress(MDC_PROGRESS_INCR,1./(float)fi->number,NULL);
+     if (MDC_PROGRESS) MdcProgress(MDC_PROGRESS_INCR,1.0f/(float)fi->number,NULL);
 
      id = &fi->image[j];
      n = id->width * id->height;
@@ -1790,7 +1790,7 @@ Uint8 *MdcMakeImgSwapped(Uint8 *cbuf, FILEINFO *fi, Uint32 img,
 {
   IMG_DATA *id = &fi->image[img];
   Uint8 *pixel=NULL;
-  int i, pixbytes;
+  Uint32 i, pixbytes;
 
   /* giving a width, heigth & type, allows to use this function directly */
   /* for swapping of none IMG_DATA image buffers                         */

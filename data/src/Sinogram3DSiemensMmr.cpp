@@ -6,19 +6,19 @@
 //using namespace::iostream;
 
 /** Radio del Scanner en mm. */
-const float Sinogram3DSiemensMmr::radioScanner_mm = 656/2;
+const float Sinogram3DSiemensMmr::radioScanner_mm = 656.0f/2.0f;
 
 /** Radio del FOV en mm. */
-const float Sinogram3DSiemensMmr::radioFov_mm = 594/2;
+const float Sinogram3DSiemensMmr::radioFov_mm = 594.0f/2.0f;
 
 /** Largo axial del FOV en mm. */
-const float Sinogram3DSiemensMmr::axialFov_mm = 258;
+const float Sinogram3DSiemensMmr::axialFov_mm = 258.0f;
 
 /// Size of each pixel element.
-const float Sinogram3DSiemensMmr::crystalElementSize_mm = 4.0891;
+const float Sinogram3DSiemensMmr::crystalElementSize_mm = 4.0891f;
 
 /// Width of each rings.
-const float Sinogram3DSiemensMmr::widthRings_mm = 4.0312; //axialFov_mm / numRings;
+const float Sinogram3DSiemensMmr::widthRings_mm = 4.0312f; //axialFov_mm / numRings;
 
 Sinogram3DSiemensMmr::Sinogram3DSiemensMmr(char* fileHeaderPath):Sinogram3DCylindricalPet(this->radioFov_mm, this->axialFov_mm, this->radioScanner_mm)
 {

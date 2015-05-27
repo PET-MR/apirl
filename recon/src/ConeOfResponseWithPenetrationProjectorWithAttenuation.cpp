@@ -13,7 +13,7 @@
 #include <Siddon.h>
 #include <ConeOfResponseWithPenetrationProjectorWithAttenuation.h>
 
-const float ConeOfResponseWithPenetrationProjectorWithAttenuation::attenuationThreshold = 0.95;
+const float ConeOfResponseWithPenetrationProjectorWithAttenuation::attenuationThreshold = 0.95f;
 
 ConeOfResponseWithPenetrationProjectorWithAttenuation::ConeOfResponseWithPenetrationProjectorWithAttenuation(int nSamplesOnDetector, int nSamplesOnCollimatorSurf, float linAttCoef_cm, Image* attImage)
 {
@@ -181,8 +181,8 @@ bool ConeOfResponseWithPenetrationProjectorWithAttenuation::Project(Image* input
   /// el detector ya se podría.A los puntos del colimador también le doy un margen basado en obtener
   /// el largo de plomo a cada costado, y restarle la fistancia de umbral. Porque sabemos que sin importar
   /// el largo del colimador, a partir de ese margen ya va a estar muy atenuado el gamma.
-  float margenDetector_mm = 12.4;
-  float margenCollimador_mm = 35;
+  float margenDetector_mm = 12.4f;
+  float margenCollimador_mm = 35.0f;
   float stepOnDetector_mm = (outputProjection->getWidthDetector_mm()-2*margenDetector_mm) /  numSamplesOnDetector;
   float stepOnCollimator_mm = (outputProjection->getWidthCollimator_mm()-2*margenCollimador_mm)  /  numSamplesOnCollimatorSurf;
   float firstPointOnDetector_mm = -(outputProjection->getWidthDetector_mm()/2-margenDetector_mm) + stepOnDetector_mm /2;
@@ -190,10 +190,10 @@ bool ConeOfResponseWithPenetrationProjectorWithAttenuation::Project(Image* input
   float firstPointOnCollimatorSurf_mm = -(outputProjection->getWidthCollimator_mm()/2-margenCollimador_mm) + stepOnDetector_mm /2;
   float lastPointOnCollimatorSurf_mm = (outputProjection->getWidthCollimator_mm()/2-margenCollimador_mm) - stepOnDetector_mm /2;
   
-  for(unsigned int i = 0; i < outputProjection->getNumProj(); i++)
+  for(int i = 0; i < outputProjection->getNumProj(); i++)
   {
 	
-	for(unsigned int j = 0; j < outputProjection->getNumR(); j++)
+	for(int j = 0; j < outputProjection->getNumR(); j++)
 	{
 	  outputProjection->setSinogramBin(i,j,0);
 	  for(float offsetDetector = firstPointOnDetector_mm; offsetDetector <= lastPointOnDetector_mm; offsetDetector+=stepOnDetector_mm)
@@ -246,10 +246,10 @@ bool ConeOfResponseWithPenetrationProjectorWithAttenuation::Project(Image* input
 				  (pointOnDetector.Y-yPixel_mm) * (pointOnDetector.Y-yPixel_mm));
 				// Donde entro al FoV, supongo que todo lo anterior fue aire, por lo que la atenuación incial, es
 				// la distancia a la entrada, por el coeficiente de atenuación del aire en 1/mm:
-				attenuationLength = distanceValue * 0.0000097063;
+				attenuationLength = distanceValue * 0.0000097063f;
 				attenuationFactorEntryLimit = exp(-attenuationLength);
 			
-				for(unsigned int l = 0; l < LengthList; l++)
+				for(int l = 0; l < LengthList; l++)
 				{
 				  // for every element of the systema matrix different from zero,we do
 				  // the sum(Aij*Xj) for every J

@@ -64,7 +64,7 @@ class DLLEXPORT Sinogram2DinCylindrical3Dpet : public Sinogram2D
 	  
 	  /** Cantidad de LORs representadas por cada bin del sinograma. Este parámetro tiene
 		  sentido cuando es un sinograma 2d dentro de uno 3d, y hay polar mashing. */
-	  unsigned int numZ;
+	  int numZ;
 	  /** Vectores con los anillos 1 y 2 para cada lor representada para cualquier bin de este
 		  sinograma. Tiene tantos elementos como numZ. */
 	  int* ptrListRing1, *ptrListRing2;	
@@ -108,7 +108,7 @@ class DLLEXPORT Sinogram2DinCylindrical3Dpet : public Sinogram2D
 	  /** Método que devuelve cantidad de combinación de anillos que representa este sinograma.
 		  Solo se tiene en cuenta cuando es parte de un sinograma 3d y hay polar mashing.
 	  */
-	  unsigned int getNumZ(){ return numZ;};
+	  int getNumZ(){ return numZ;};
 	  
 	  /** Método que devuelve el valor del anillo 1 correspondiente a este sinograma. */
 	  int getRing1(){ return ring1;};

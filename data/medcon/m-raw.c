@@ -196,7 +196,7 @@ char *MdcReadRAW(FILEINFO *fi)
     for (i=0; i<fi->number; i++) {
 
        if (MDC_PROGRESS)
-         MdcProgress(MDC_PROGRESS_INCR,1./(float)fi->number,NULL);
+         MdcProgress(MDC_PROGRESS_INCR,1.0f/(float)fi->number,NULL);
  
        id = &fi->image[i];
 
@@ -414,7 +414,7 @@ char *MdcWriteRAW(FILEINFO *fi)
 
   for (i=0; i<fi->number; i++) {
 
-     if (MDC_PROGRESS) MdcProgress(MDC_PROGRESS_INCR,1./(float)fi->number,NULL);
+     if (MDC_PROGRESS) MdcProgress(MDC_PROGRESS_INCR,1.0f/(float)fi->number,NULL);
 
      id = &fi->image[i];
      size = id->width * id->height;

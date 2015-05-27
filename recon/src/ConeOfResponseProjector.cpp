@@ -111,7 +111,7 @@ bool ConeOfResponseProjector::DivideAndBackproject (Sinogram2Dtgs* InputSinogram
 			
 			int LengthList;
 			Siddon(LOR, outputImage, MyWeightsList, &LengthList,1);
-			for(unsigned int l = 0; l < LengthList; l++)
+			for(int l = 0; l < LengthList; l++)
 			{
 				// for every element of the systema matrix different from zero,we do
 				// the sum(Aij*bi/Projected) for every i
@@ -145,9 +145,9 @@ bool ConeOfResponseProjector::Project (Image* inputImage, Sinogram2Dtgs* outputP
 	float firstPointOnDetector_mm = -(outputProjection->getWidthHoleCollimator_mm()/2) + stepOnDetector_mm /2;
 	float lastPointOnDetector_mm = (outputProjection->getWidthHoleCollimator_mm()/2) - stepOnDetector_mm /2;
 	
-	for(unsigned int i = 0; i < outputProjection->getNumProj(); i++)
+	for(int i = 0; i < outputProjection->getNumProj(); i++)
 	{  
-	  for(unsigned int j = 0; j < outputProjection->getNumR(); j++)
+	  for(int j = 0; j < outputProjection->getNumR(); j++)
 	  {
 		outputProjection->setSinogramBin(i,j,0);
 		for(float offsetDetector = firstPointOnDetector_mm; offsetDetector <= lastPointOnDetector_mm; offsetDetector+=stepOnDetector_mm)
@@ -165,7 +165,7 @@ bool ConeOfResponseProjector::Project (Image* inputImage, Sinogram2Dtgs* outputP
 			
 			int LengthList;
 			Siddon(LOR, inputImage, MyWeightsList, &LengthList,1);
-			for(unsigned int l = 0; l < LengthList; l++)
+			for(int l = 0; l < LengthList; l++)
 			{
 				// for every element of the systema matrix different from zero,we do
 				// the sum(Aij*Xj) for every J

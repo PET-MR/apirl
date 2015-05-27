@@ -49,7 +49,7 @@ using namespace::std;
 	#define DLLEXPORT
 	#define DLLLOCAL
 #endif
-
+#define DLLEXPORT
 
 
 /**

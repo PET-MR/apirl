@@ -211,11 +211,11 @@ char *MdcReduceColor(FILEINFO *fi)
   if (ptr->next)
     ptr->next->prev = ptr;
 
-  if (MDC_PROGRESS) MdcProgress(MDC_PROGRESS_BEGIN,0.,"Reducing colors: ");
+  if (MDC_PROGRESS) MdcProgress(MDC_PROGRESS_BEGIN,0.0f,"Reducing colors: ");
 
   for (n=0; n<fi->number; n++) {
 
-     if (MDC_PROGRESS) MdcProgress(MDC_PROGRESS_INCR,.5/(float)fi->number,NULL);
+     if (MDC_PROGRESS) MdcProgress(MDC_PROGRESS_INCR,.5f/(float)fi->number,NULL);
 
      get_histogram(fi->image[n].buf, ptr, n);
 
@@ -266,7 +266,7 @@ char *MdcReduceColor(FILEINFO *fi)
    */
   for (n=0; n<fi->number; n++) {
 
-     if (MDC_PROGRESS) MdcProgress(MDC_PROGRESS_INCR,.5/(float)fi->number,NULL);
+     if (MDC_PROGRESS) MdcProgress(MDC_PROGRESS_INCR,.5f/(float)fi->number,NULL);
 
      id = &fi->image[n];
 
@@ -295,9 +295,9 @@ char *MdcReduceColor(FILEINFO *fi)
    */
 
   for (i = 0; i < MAX_CMAP_SIZE; ++i) {
-    fi->palette[i*3 + 0] = rm[i];
-    fi->palette[i*3 + 1] = gm[i];
-    fi->palette[i*3 + 2] = bm[i];
+    fi->palette[i*3 + 0] = (Uint8)rm[i];
+    fi->palette[i*3 + 1] = (Uint8)gm[i];
+    fi->palette[i*3 + 2] = (Uint8)bm[i];
   }
 
   return (NULL);
@@ -403,9 +403,9 @@ char *MdcRgb2Indexed(Uint8 *srcRGB, Uint8 *dest8, Uint32 width, Uint32 height, U
    */
 
   for (i = 0; i < MAX_CMAP_SIZE; ++i) {
-    palette[i*3 + 0] = rm[i];
-    palette[i*3 + 1] = gm[i];
-    palette[i*3 + 2] = bm[i];
+    palette[i*3 + 0] = (Uint8)rm[i];
+    palette[i*3 + 1] = (Uint8)gm[i];
+    palette[i*3 + 2] = (Uint8)bm[i];
   }
 
   return (msg);

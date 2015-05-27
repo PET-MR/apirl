@@ -5,7 +5,7 @@
 #  Copyright (c) 2010
 
 # Linking Directories. Shared libraries: recon, utils and data.
-LINK_DIRECTORIES(${cmdGPU_BINARY_DIR} ${reconGPU_BINARY_DIR} ${utils_BINARY_DIR} ${data_BINARY_DIR} ${CUDA_CUT_LIBRARY})
-SET(LinkLibs data reconGPU.lib utils data)
+LINK_DIRECTORIES(${cmdGPU_BINARY_DIR} ${reconGPU_BINARY_DIR} ${utils_BINARY_DIR} ${data_BINARY_DIR} ${CUDA_CUT_LIBRARY} ${recon_BINARY_DIR})
+SET(LinkLibs data reconGPU.lib utils data recon)
 
 

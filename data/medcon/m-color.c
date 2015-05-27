@@ -44,6 +44,7 @@
 #include "m-depend.h"
 
 #include <stdio.h>
+#include <string.h>
 #ifdef HAVE_STRING_H
 #include <string.h>
 #endif
@@ -180,17 +181,17 @@ void MdcHotmetalScale(Uint8 *palette)
   float intensity, delta_intensity;
  
   intensity = 0.0;
-  delta_intensity = 1.0/182;
+  delta_intensity = 1.0f/182.0f;
   for (p=0, i=0;i<182;i++,p+=3) {               /* red */
-     palette[p]=255*intensity;
+     palette[p]=(Uint8)255*intensity;
      intensity+=delta_intensity;
   }
   for (i=182;i<256;i++,p+=3) palette[p]=255;
   for (i=0,p=1;i<128;i++,p+=3) palette[p]=0;   /* green */
   intensity = 0.0;
-  delta_intensity = 1.0/91;
+  delta_intensity = 1.0f/91.0f;
   for (i=128;i<219; i++,p+=3) {
-     palette[p]=255*intensity;
+     palette[p]=(Uint8)255*intensity;
      intensity+=delta_intensity; 
   }
   for (i=219;i<256;i++,p+=3) palette[p]=255;   
@@ -198,7 +199,7 @@ void MdcHotmetalScale(Uint8 *palette)
   intensity=0.0;
   delta_intensity = 1.0/64;
   for (i=192;i<256;i++,p+=3) {
-     palette[p]=255*intensity;
+     palette[p]=(Uint8)255*intensity;
      intensity += delta_intensity; 
   }
 }

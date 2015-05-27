@@ -88,7 +88,7 @@ class SegmentInCylindrical3Dpet: public Segment
 		@param initSinos Flag que indica si se desea incializar los sinogramas que forman el segmento.  Debería incializarse
 		  si se quiere usar esta clase como objeto del sinograma, y 0 desde una clase derivada.
 	*/
-	SegmentInCylindrical3Dpet(int nProj, int nR, int nRings, float rFov_mm, float zFov_mm, int rScanner_mm, 
+	SegmentInCylindrical3Dpet(int nProj, int nR, int nRings, float rFov_mm, float zFov_mm, float rScanner_mm, 
 	  int nSinograms, int nMinRingDiff, int nMaxRingDiff, bool initSinos);
 	
 	/** Constructor que realiza una copia de un segmento existente.

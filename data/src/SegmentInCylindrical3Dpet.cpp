@@ -17,7 +17,7 @@
 using namespace::std;
 //using namespace::iostream;
 
-SegmentInCylindrical3Dpet::SegmentInCylindrical3Dpet(int nProj, int nR, int nRings, float rFov_mm, float zFov_mm, int rScanner_mm, 
+SegmentInCylindrical3Dpet::SegmentInCylindrical3Dpet(int nProj, int nR, int nRings, float rFov_mm, float zFov_mm, float rScanner_mm, 
 	  int nSinograms, int nMinRingDiff, int nMaxRingDiff, bool initSinos):Segment(nProj, nR, nRings, rFov_mm, zFov_mm, 
 	  nSinograms, nMinRingDiff, nMaxRingDiff)
 {

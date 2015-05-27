@@ -14,9 +14,9 @@
 #include <Sinogram2DinSiemensMmr.h>
 
 /// Size of each crystal element.
-const float Sinogram2DinSiemensMmr::crystalElementSize_mm = 4.0891;
+const float Sinogram2DinSiemensMmr::crystalElementSize_mm = 4.0891f;
 /// Size of each sinogram's bin.
-const float Sinogram2DinSiemensMmr::binSize_mm = 4.0891/2;
+const float Sinogram2DinSiemensMmr::binSize_mm = 4.0891f/2.0f;
 
 Sinogram2DinSiemensMmr::Sinogram2DinSiemensMmr(char* fileHeaderPath): Sinogram2DinCylindrical3Dpet(fileHeaderPath, 297, 328)
 {
@@ -35,12 +35,12 @@ Sinogram2DinSiemensMmr::Sinogram2DinSiemensMmr(unsigned int nProj, unsigned int 
   float PhiIncrement = (float)maxAng_deg / numProj;
   // The r value is non linear in the sinogram, because each bin represent one detector element and
   // with the curve of the cylindrical scanner the distance r to the center axis increases with the cos of the bin.
-  for(unsigned int i = 0; i < numProj; i ++)
+  for(int i = 0; i < numProj; i ++)
   {
     // Initialization of Phi Values
     ptrAngValues_deg[i] = i * PhiIncrement;	// Modification now goes from 0, phiincrement, ...180-phiincrement.
     //ptrAngValues_deg[i] = PhiIncrement/2 + i * PhiIncrement;
-    for(unsigned int j = 0; j < numR; j++)
+    for(int j = 0; j < numR; j++)
     {
       if(i == 0)
       {
@@ -103,6 +103,7 @@ bool Sinogram2DinSiemensMmr::getFovLimits(Line2D lor, Point2D* limitPoint1, Poin
   limitPoint1->Y = lor.P0.Y + alpha_xy_1*lor.Vy;
   limitPoint2->X = lor.P0.X + alpha_xy_2*lor.Vx;
   limitPoint1->Y = lor.P0.Y + alpha_xy_2*lor.Vy;
+  return true;
 }
 
 bool Sinogram2DinSiemensMmr::getPointsFromLor(int indexProj, int indexR, int indexRingConfig, Point3D* p1, Point3D* p2, float* geomFactor)

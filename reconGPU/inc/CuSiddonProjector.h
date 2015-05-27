@@ -31,8 +31,8 @@
 #define MAX_Z_VALUES	92	// Idem para anillos (z)
 #define MAX_SPAN	7	// Máximo valor de combinación de anillos por sinograma 2D.auto
 
-// DLL export/import declaration: visibility of objects
-#ifndef LINK_STATIC
+// DLL export/import declaration: visibility of objects. Cuda libraries is always static.
+/*#ifndef LINK_STATIC
 	#ifdef WIN32               // Win32 build
 		#ifdef DLL_BUILD    // this applies to DLL building
 			#define DLLEXPORT __declspec(dllexport)
@@ -52,7 +52,12 @@
 #else                         // static linking
 	#define DLLEXPORT
 	#define DLLLOCAL
+#endif*/
+
+#ifdef WIN32               // Win32 build
+	#pragma warning( disable: 4251 )
 #endif
+#define DLLEXPORT
 
 /// Memoria Estática de GPU definido en Otra clase (Debería ser en la de reconstrucción: CuMlem, CuOsem, etc)
 // Memoria constante con los valores de los angulos de la proyeccion,

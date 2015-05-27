@@ -93,7 +93,7 @@ bool ConeOfResponseProjectorWithAttenuation::Project(Image* inputImage, Sinogram
 				(pointOnDetector.Y-yPixel_mm) * (pointOnDetector.Y-yPixel_mm));
 			  // Donde entro al FoV, supongo que todo lo anterior fue aire, por lo que la atenuación incial, es
 			  // la distancia a la entrada, por el coeficiente de atenuación del aire en 1/mm:
-			  attenuationLength = distanceValue * 0.0000097063;
+			  attenuationLength = distanceValue * 0.0000097063f;
 			  attenuationFactorEntryLimit = exp(-attenuationLength);
 			
 			  for(int l = 0; l < LengthList; l++)
@@ -222,7 +222,7 @@ bool ConeOfResponseProjectorWithAttenuation::Backproject (Sinogram2Dtgs* inputSi
 			  (pointOnDetector.Y-yPixel_mm) * (pointOnDetector.Y-yPixel_mm));
 			// Donde entro al FoV, supongo que todo lo anterior fue aire, por lo que la atenuación incial, es
 			// la distancia a la entrada, por el coeficiente de atenuación del aire en 1/mm:
-			attenuationLength = distanceValue * 0.0000097063;
+			attenuationLength = distanceValue * 0.0000097063f;
 			attenuationFactorEntryLimit = exp(-attenuationLength);
 			for(int l = 0; l < LengthList; l++)
 			{

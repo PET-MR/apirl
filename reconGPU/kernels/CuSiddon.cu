@@ -43,7 +43,7 @@ __device__ void CuSiddon (float4* LOR, float4* P0, float* Input, float* Result, 
 
   // Variables relacionadas con el parámetro alpha de la recta de la lor.
   float alpha_x_1, alpha_x_2, alpha_y_1, alpha_y_2;	// Valores de alpha para la intersección de la recta con el círculo del fov.
-  float alpha_x_min, alpha_y_min, alpha_z_min, alpha_x_max, alpha_y_max, alpha_z_max;	// Valores de alpha de ambos puntos por coordenada, pero ahora separados por menor y mayor.
+  float alpha_x_min, alpha_y_min, alpha_x_max, alpha_y_max; //, alpha_z_min, alpha_z_max;	// Valores de alpha de ambos puntos por coordenada, pero ahora separados por menor y mayor.
   float alpha_min, alpha_max;	// Valores de alpha mínimo y máximo finales, o sea de entrada y salida al fov de la lor.
 
   // Valores de alpha para recorrer la lor:
@@ -69,7 +69,7 @@ __device__ void CuSiddon (float4* LOR, float4* P0, float* Input, float* Result, 
   float x_1_mm, x_2_mm, y_1_mm, y_2_mm, z_1_mm, z_2_mm;
 
   // Largo de la lor teniendo en cuenta P0 y P1, y largo de la lor dentro del fov:
-  float rayLength_mm, rayLengthInFov_mm;
+  float rayLengthInFov_mm,rayLength_mm;
 
   
 // For Fov cilindrico:
@@ -336,7 +336,7 @@ __device__ void CuSiddonBackprojection (float4* LOR, float4* P0, float* image, f
 
   // Variables relacionadas con el parámetro alpha de la recta de la lor.
   float alpha_x_1, alpha_x_2, alpha_y_1, alpha_y_2;	// Valores de alpha para la intersección de la recta con el círculo del fov.
-  float alpha_x_min, alpha_y_min, alpha_z_min, alpha_x_max, alpha_y_max, alpha_z_max;	// Valores de alpha de ambos puntos por coordenada, pero ahora separados por menor y mayor.
+  float alpha_x_min, alpha_y_min, alpha_x_max, alpha_y_max;//, alpha_z_min, alpha_z_max;	// Valores de alpha de ambos puntos por coordenada, pero ahora separados por menor y mayor.
   float alpha_min, alpha_max;	// Valores de alpha mínimo y máximo finales, o sea de entrada y salida al fov de la lor.
 
   // Valores de alpha para recorrer la lor:

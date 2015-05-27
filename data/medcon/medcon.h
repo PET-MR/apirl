@@ -72,7 +72,9 @@ extern "C" {
 #include "m-progress.h"
 
 #include "m-raw.h"
-
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 
 #if MDC_INCLUDE_GIF
 #  include "m-gif.h"

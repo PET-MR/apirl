@@ -45,12 +45,12 @@ Sinogram2DinCylindrical3Dpet::Sinogram2DinCylindrical3Dpet(unsigned int nProj, u
   // Initialization
   float RIncrement = (2 * radioFov_mm) / numR;
   float PhiIncrement = (float)maxAng_deg / numProj;
-  for(unsigned int i = 0; i < numProj; i ++)
+  for(int i = 0; i < numProj; i ++)
   {
     // Initialization of Phi Values
     ptrAngValues_deg[i] = i * PhiIncrement;	// Modification now goes from 0, phiincrement, ...180-phiincrement.
     //ptrAngValues_deg[i] = PhiIncrement/2 + i * PhiIncrement;
-    for(unsigned int j = 0; j < numR; j++)
+    for(int j = 0; j < numR; j++)
     {
       if(i == 0)
       {
@@ -205,6 +205,7 @@ bool Sinogram2DinCylindrical3Dpet::getFovLimits(Line2D lor, Point2D* limitPoint1
   limitPoint1->Y = lor.P0.Y + alpha_xy_1*lor.Vy;
   limitPoint2->X = lor.P0.X + alpha_xy_2*lor.Vx;
   limitPoint1->Y = lor.P0.Y + alpha_xy_2*lor.Vy;
+  return true;
 }
 
 bool Sinogram2DinCylindrical3Dpet::getPointsFromLor(int indexProj, int indexR, int indexRingConfig, Point3D* p1, Point3D* p2, float* geomFactor)

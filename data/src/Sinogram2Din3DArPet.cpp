@@ -19,19 +19,19 @@
 const int Sinogram2Din3DArPet::numCabezales = 6;
 
 /** Largo del detector en y. */
-const float Sinogram2Din3DArPet::lengthDetectorY_mm = 304.6;
+const float Sinogram2Din3DArPet::lengthDetectorY_mm = 304.6f;
 
 /** Largo del detector en x.*/
-const float Sinogram2Din3DArPet::lengthDetectorX_mm = 406.8;
+const float Sinogram2Din3DArPet::lengthDetectorX_mm = 406.8f;
 
 /** Espesor del detector, */
-const float Sinogram2Din3DArPet::depthDetector_mm = 25.4;
+const float Sinogram2Din3DArPet::depthDetector_mm = 25.4f;
 
 /** Linear attenuation coef for collimator. */
-const float Sinogram2Din3DArPet::linearAttenuationCoef_1_cm = 0.34;
+const float Sinogram2Din3DArPet::linearAttenuationCoef_1_cm = 0.34f;
 
 /** Distancia del centro del FOV a la superficie de cada detector. */
-const float Sinogram2Din3DArPet::distCenterToDetector_mm = 360;	 
+const float Sinogram2Din3DArPet::distCenterToDetector_mm = 360.0f;	 
 	
 
 Sinogram2Din3DArPet::Sinogram2Din3DArPet(char* fileHeaderPath, float rFov_mm)
@@ -88,7 +88,7 @@ bool Sinogram2Din3DArPet::getPointsFromLor(int indexProj, int indexR, Point2D* p
  float x,y;
  int numPoints = 0;
  // Paso el ángulo de la proyección a radianes:
- double theta_rad = this->getAngValue(indexProj) * DEG_TO_RAD;
+ float theta_rad = this->getAngValue(indexProj) * DEG_TO_RAD;
  // Corte en y de las rectas de los cabezales (o sea del hexágono). Sale de rotar el punto medio del
  // detector en 60º, que quedaría en (-distCenterToDetector_mm*cos60,distCenterToDetector_mm*sen60)
  // Reemplazano en y = tan30x +b, se obtiene la ordenada al origen:
@@ -221,10 +221,10 @@ bool Sinogram2Din3DArPet::getPointsFromLor(int indexProj, int indexR, int indexR
  // Voy viendo a que cabezal pertence. Para ello calculo la intersección con las seis rectas de los
  // detectores y me fijo si da en el segmento del detector.
  // La recta es r = x.cos(theta)+y.sin(theta)
- float x,y,z,x_atras,y_atras,z_atras;
+ float x,y;
  int numPoints = 0;
  // Paso el ángulo de la proyección a radianes:
- double theta_rad = this->getAngValue(indexProj) * DEG_TO_RAD;
+ float theta_rad = this->getAngValue(indexProj) * DEG_TO_RAD;
  // También uso los indices de cabezal para determinar el peso, y también puedo definir de esa forma si no se utiliza
  // cabezales contiguos:
  int indexCabezal1 = 0, indexCabezal2 = 0;
@@ -433,10 +433,10 @@ bool Sinogram2Din3DArPet::getPointsFromLor (int indexProj, int indexR, Point2D* 
  // Voy viendo a que cabezal pertence. Para ello calculo la intersección con las seis rectas de los
  // detectores y me fijo si da en el segmento del detector.
  // La recta es r = x.cos(theta)+y.sin(theta)
- float x, y, x_cabezal, y_cabezal;
+ float x, y;
  int numPoints = 0;
  // Paso el ángulo de la proyección a radianes:
- double theta_rad = this->getAngValue(indexProj) * DEG_TO_RAD;
+ float theta_rad = this->getAngValue(indexProj) * DEG_TO_RAD;
  // También uso los indices de cabezal para determinar el peso, y también puedo definir de esa forma si no se utiliza
  // cabezales contiguos:
  int indexCabezal1 = 0, indexCabezal2 = 0;
@@ -445,8 +445,6 @@ bool Sinogram2Din3DArPet::getPointsFromLor (int indexProj, int indexR, Point2D* 
  float lengthInDetector2_cm = depthDetector_mm/10;
  float probDetCabezal1;
  float probDetCabezal2;
- // Largo en z de la lor en el detector, no depende del cabezal ni nada solo de z1 y z2 (verificar).
- float lengthZinDetector1_cm, lengthZinDetector2_cm;
  // Utilizo un valor promedio para la profundidad del detector:
  float zDetector_mm = depthDetector_mm*2/3;
  // Corte en y de las rectas de los cabezales (o sea del hexágono). Sale de rotar el punto medio del

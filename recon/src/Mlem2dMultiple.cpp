@@ -57,7 +57,7 @@ bool Mlem2dMultiple::setRandomCorrectionProjection(string randomsFilename)
 bool Mlem2dMultiple::setNormalizationFactorsProjection(string normFilename)
 {
   // Seteo un valor arbitro de radio del scanner para que sea más grande que el fov.
-  normalizationCorrectionFactorsProjection= new Sinograms2DinCylindrical3Dpet((char*)normFilename.c_str(), inputProjection->getRadioFov_mm(), inputProjection->getAxialFoV_mm(), inputProjection->getRadioFov_mm()*1.4);
+  normalizationCorrectionFactorsProjection= new Sinograms2DinCylindrical3Dpet((char*)normFilename.c_str(), inputProjection->getRadioFov_mm(), inputProjection->getAxialFoV_mm(), inputProjection->getRadioFov_mm()*1.4f);
   enableNormalization = true;
   return enableNormalization;
 }

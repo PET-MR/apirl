@@ -17,12 +17,12 @@ Michelogram::Michelogram(unsigned int myNProj, unsigned int myNR, unsigned int m
 	Span = mySpan;
 	MaxRingDiff = myMaxRingDiff;
 	/// Radio del Scanner en mm: Ver como hacer para que dependa del equipo
-	rScanner = 886.2/2;
+	rScanner = 886.2f/2.0f;
 	RFOV = myRFOV;
 	ZFOV = myZFOV;
 	Sinograms2D = new Sinogram2DinCylindrical3Dpet *[NZ*NZ];	// Allocate memroy for the array of pointers to Sinograms
 	// Initialization of each Sinogram object
-	for(unsigned int i = 0; i < NZ*NZ; i++)
+	for(int i = 0; i < NZ*NZ; i++)
 	{
 		Sinograms2D[i] = (Sinogram2DinCylindrical3Dpet*)new Sinogram2DinCylindrical3Dpet(NProj, NR, RFOV, rScanner);
 		Sinograms2D[i]->setRing1(i%NZ); //Ring 1 : Las columnas
@@ -34,7 +34,7 @@ Michelogram::Michelogram(unsigned int myNProj, unsigned int myNR, unsigned int m
 	float ZIncrement = (float)ZFOV/NZ;
 	/// Corregir esto, la diferencia entre anillos debe ser un par�metro!
 	DistanceBetweenBins = (ZFOV - ZIncrement/2)/ZBins;
-	for(unsigned int i = 0; i < NZ; i ++)
+	for(int i = 0; i < NZ; i ++)
 	{
 		// Initialization of Z Values
 		ZValues[i] = ZIncrement/2 + i * ZIncrement;
@@ -51,10 +51,10 @@ Michelogram::Michelogram(SizeMichelogram MySizeMichelogram)
 	RFOV = MySizeMichelogram.RFOV;
 	ZFOV = MySizeMichelogram.ZFOV;
 	/// Radio del Scanner en mm: Ver como hacer para que dependa del equipo
-	rScanner = 886.2/2;
+	rScanner = 886.2f/2.0f;
 	Sinograms2D = new Sinogram2DinCylindrical3Dpet *[NZ*NZ];	// Allocate memroy for the array of pointers to Sinograms
 	// Initialization of each Sinogram object
-	for(unsigned int i = 0; i < NZ*NZ; i++)
+	for(int i = 0; i < NZ*NZ; i++)
 	{
 		Sinograms2D[i] = (Sinogram2DinCylindrical3Dpet*) new Sinogram2DinCylindrical3Dpet(NProj, NR, RFOV, rScanner);
 		Sinograms2D[i]->setRing1(i%NZ); //Ring 1 : Las columnas
@@ -63,7 +63,7 @@ Michelogram::Michelogram(SizeMichelogram MySizeMichelogram)
 	// Initialization of Z values
 	ZValues = (float*) malloc(NZ*sizeof(float));
 	float ZIncrement = (float)ZFOV/NZ;
-	for(unsigned int i = 0; i < NZ; i ++)
+	for(int i = 0; i < NZ; i ++)
 	{
 		// Initialization of Z Values
 		ZValues[i] = ZIncrement/2 + i * ZIncrement;
@@ -72,7 +72,7 @@ Michelogram::Michelogram(SizeMichelogram MySizeMichelogram)
 
 Michelogram::~Michelogram()
 {
-	for(unsigned int i = 0; i < NZ*NZ; i++)
+	for(int i = 0; i < NZ*NZ; i++)
 	{
 		delete Sinograms2D[i];
 	}
@@ -110,12 +110,12 @@ float* Michelogram::RawData()
 	float* Raw;
 	float* ptrSinogram2D;
 	Raw = (float*) malloc(sizeof(float)*NZ*NZ*NR*NProj);
-	for(unsigned int k = 0; k < NZ * NZ; k++)
+	for(int k = 0; k < NZ * NZ; k++)
 	{
 	  ptrSinogram2D = Sinograms2D[k]->getSinogramPtr();
-	  for(unsigned int j = 0; j < NProj; j++)
+	  for(int j = 0; j < NProj; j++)
 	  {
-		  for(unsigned int i = 0; i < NR; i++)
+		  for(int i = 0; i < NR; i++)
 		  {
 			  Raw[k * (NR * NProj) + j * NR + i] = ptrSinogram2D[j * NR + i];
 		  }
@@ -128,12 +128,12 @@ float* Michelogram::RawData()
 bool Michelogram::FromRawData(float* Raw)
 {
   float* ptrSinogram2D;
-  for(unsigned int k = 0; k < NZ * NZ; k++)
+  for(int k = 0; k < NZ * NZ; k++)
   {
 	ptrSinogram2D = Sinograms2D[k]->getSinogramPtr();
-	  for(unsigned int j = 0; j < NProj; j++)
+	  for(int j = 0; j < NProj; j++)
 	  {
-		  for(unsigned int i = 0; i < NR; i++)
+		  for(int i = 0; i < NR; i++)
 		  {
 			  ptrSinogram2D[j * NR + i] = Raw[k * (NR * NProj) + j * NR + i];
 		  }
@@ -151,15 +151,15 @@ bool Michelogram::readFromFile(string filePath)
 	const unsigned int SizeData = NProj * NR * NZ * NZ;
 	float* MichelogramAux = (float*) malloc(SizeData*sizeof(float));
 	float* ptrSinogram2D;
-	if((CantBytes =  fread(MichelogramAux,SIZE_ELEMENT, SizeData , fileMichelogram)) != SizeData)
+	if((CantBytes =  (int)fread(MichelogramAux,SIZE_ELEMENT, SizeData , fileMichelogram)) != SizeData)
 		return false;
 	// Now I fill the Michelogram
-	for(unsigned int k = 0; k < NZ * NZ; k++)
+	for(int k = 0; k < NZ * NZ; k++)
 	{
 	  ptrSinogram2D = Sinograms2D[k]->getSinogramPtr();
-		for(unsigned int j = 0; j < NProj; j++)
+		for(int j = 0; j < NProj; j++)
 		{
-			for(unsigned int i = 0; i < NR; i++)
+			for(int i = 0; i < NR; i++)
 			{
 				ptrSinogram2D[j * NR + i] = MichelogramAux[k * (NR * NProj) + j * NR + i];
 			}
@@ -176,9 +176,9 @@ bool Michelogram::SaveInFile(char* filePath)
 	FILE* fileMichelogram = fopen(filePath,"wb");
 	unsigned int CantBytes;
 	const unsigned int SizeData = NProj * NR * NZ * NZ;
-	for(unsigned int i = 0; i < NZ * NZ; i++)
+	for(int i = 0; i < NZ * NZ; i++)
 	{
-		if((CantBytes =  fwrite(Sinograms2D[i]->getSinogramPtr(), sizeof(float), NProj*NR , fileMichelogram)) !=  (NProj*NR))
+		if((CantBytes = (int)fwrite(Sinograms2D[i]->getSinogramPtr(), sizeof(float), NProj*NR , fileMichelogram)) !=  (NProj*NR))
 			return false;
 	}
 	fclose(fileMichelogram);
@@ -218,11 +218,11 @@ bool Michelogram::ReadDataFromSiemensBiograph16(char* FileName)
 	//the most significant bit in all event words is the bit 0
 	// for further information about the bit sampling, please refer to the Petlink document
 	int counter=0;
-	unsigned int nbins = 192*192*175;
+	int nbins = 192*192*175;
 	float* MichelogramBio16 = (float*) malloc(sizeof(float)*nbins);
-	for(unsigned int i=0; i<nbins; i++)
+	for(int i=0; i<nbins; i++)
 	   MichelogramBio16[i] = 0;
-	unsigned int aux;
+	int aux;
 	for(unsigned int i=0; i<Length_in_Int; i++)
 	{    
 	   if (!(DatosLista[i] & 0x80000000))
@@ -246,18 +246,18 @@ bool Michelogram::ReadDataFromSiemensBiograph16(char* FileName)
 	// Pero ese Michelograma utiliza Span, y sirve solo para este scanner
 	// Entonces lo paso al Michelograma Generico que arme. Para eso a cada
 	// bin 
-	unsigned int indexPhi;
-	unsigned int indexR;
-	unsigned int indexZ;
-	const unsigned int bins_sino2D = 192 * 192;
-	unsigned int auxr1 = 0;
-	unsigned int auxr2 = 0;
-	for(unsigned int i=0; i < nbins; i++)
+	int indexPhi;
+	int indexR;
+	int indexZ;
+	const int bins_sino2D = 192 * 192;
+	int auxr1 = 0;
+	int auxr2 = 0;
+	for(int i=0; i < nbins; i++)
 	{
-		indexZ = (unsigned int)floorf(i/bins_sino2D); // Z its the index of sinograms2D
+		indexZ = (int)floorf((float)i/(float)bins_sino2D); // Z its the index of sinograms2D
 		// A partir del indice de bin, saco el indice Phi, el indice R, y el indice Z
 		indexR = i % 192;	// R are the cloumns
-		indexPhi= (unsigned int)floor((double)(i - indexZ * bins_sino2D)/192); // Phi Rows
+		indexPhi= (int)floorf((i - indexZ * bins_sino2D)/192.0f); // Phi Rows
 		// A partir del indice de Z, busco que tipo de Sinograma es.\
 		// Y teniendo en cuenta eso sumo los eventos correspondientes
 		// all sinogram which include just 1 ring
@@ -846,7 +846,7 @@ void FillValues(MichelogramValues* MyMichelogramValues, SizeMichelogram MySizeMi
 	MyMichelogramValues->RValues = (float*) malloc(MySizeMichelogram.NR*sizeof(float));
 	MyMichelogramValues->ZValues = (float*) malloc(MySizeMichelogram.NZ*sizeof(float));
 	float ZIncrement = (float)MySizeMichelogram.ZFOV/MySizeMichelogram.NZ;
-	for(unsigned int i = 0; i < MySizeMichelogram.NZ; i ++)
+	for(int i = 0; i < MySizeMichelogram.NZ; i ++)
 	{
 		// Initialization of Z Values
 		MyMichelogramValues->ZValues[i] = ZIncrement/2 + i * ZIncrement;
@@ -854,12 +854,12 @@ void FillValues(MichelogramValues* MyMichelogramValues, SizeMichelogram MySizeMi
 	// Initialization
 	float RIncrement = (2 * MySizeMichelogram.RFOV) / MySizeMichelogram.NR;
 	float PhiIncrement = (float)MySizeMichelogram.MAXANG / MySizeMichelogram.NProj;
-	for(unsigned int i = 0; i < MySizeMichelogram.NProj; i ++)
+	for(int i = 0; i < MySizeMichelogram.NProj; i ++)
 	{
 		// Initialization of Phi Values
 		MyMichelogramValues->PhiValues[i] = PhiIncrement/2 + i * PhiIncrement;
 	}
-	for(unsigned int j = 0; j < MySizeMichelogram.NR; j++)
+	for(int j = 0; j < MySizeMichelogram.NR; j++)
 	{
 		MyMichelogramValues->RValues[j] = RIncrement/2 + j * RIncrement - MySizeMichelogram.RFOV;
 	}

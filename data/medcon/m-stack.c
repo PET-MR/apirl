@@ -256,7 +256,7 @@ char *MdcStackSlices(void)
   }
 
   /* correct slice_spacing */
-  for (i=1; i<nr_of_images; i++) {
+  for (i=1; i<(int)nr_of_images; i++) {
      id1 = &ofi->image[i];
      id2 = &ofi->image[i-1];
      id1->slice_spacing=MdcGetNormSliceSpacing(id1,id2);

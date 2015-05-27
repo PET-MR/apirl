@@ -234,23 +234,24 @@ int getPositivityCondition (string mlemFilename, string cmd)
   // "enforce initial positivity condition"
   if((errorCode=parametersFile_read((char*)mlemFilename.c_str(), (char*)cmd.c_str(), "enforce initial positivity condition", returnValue, errorMessage)) != 0)
   {
-	  // Hubo un error. Salgo del comando.
-	  // Si no encontró el keyoword, está bien porque era opcional, cualquier otro código de error
-	  // signfica que hubo un error.
-	  if(errorCode == PMF_KEY_NOT_FOUND)
-	  {
-	    // No está la keyword, como era opcional se carga con su valor por default.
-	  }
-	  else
-	  {
-	    cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
-	    return -1;
-	  }
+	// Hubo un error. Salgo del comando.
+	// Si no encontró el keyoword, está bien porque era opcional, cualquier otro código de error
+	// signfica que hubo un error.
+	if(errorCode == PMF_KEY_NOT_FOUND)
+	{
+		// No está la keyword, como era opcional se carga con su valor por default.
+	}
+	else
+	{
+		cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
+		return -1;
+	}
   }
   else
   {
-    
+    return -1;
   }
+  return 0;
 }
 	
 	
@@ -282,7 +283,7 @@ int getCylindricalScannerParameters(string mlemFilename, string cmd, float* radi
   }
   else
   {
-    *radiusScanner_mm = atof(returnValue);
+    *radiusScanner_mm = (float)atof(returnValue);
   }
   
   // Radio del Fov:
@@ -305,7 +306,7 @@ int getCylindricalScannerParameters(string mlemFilename, string cmd, float* radi
   }
   else
   {
-    *radiusFov_mm = atof(returnValue);
+    *radiusFov_mm = (float)atof(returnValue);
   }
   
   // largo del scanner:
@@ -327,7 +328,7 @@ int getCylindricalScannerParameters(string mlemFilename, string cmd, float* radi
   }
   else
   {
-    *zFov_mm = atof(returnValue);
+    *zFov_mm = (float)atof(returnValue);
   }
   
   return 0;
@@ -364,7 +365,7 @@ int getNumberOfSubsets(string mlemFilename, string cmd, float* numberOfSubsets)
   }
   else
   {
-    *numberOfSubsets = atof(returnValue);
+    *numberOfSubsets = (float)atof(returnValue);
   }
   return 0;
 }
@@ -395,7 +396,7 @@ int getArPetParameters(string mlemFilename, string cmd, float* radiusFov_mm, flo
   }
   else
   {
-    *radiusFov_mm = atof(returnValue);
+    *radiusFov_mm = (float)atof(returnValue);
   }
   
   
@@ -419,7 +420,7 @@ int getArPetParameters(string mlemFilename, string cmd, float* radiusFov_mm, flo
   }
   else
   {
-    *blindArea_mm = atof(returnValue);
+    *blindArea_mm = (float)atof(returnValue);
   }
   
   // Radio del scanner:
@@ -465,7 +466,7 @@ int getArPetParameters(string mlemFilename, string cmd, float* radiusFov_mm, flo
   }
   else
   {
-    *zFov_mm = atof(returnValue);
+    *zFov_mm = (float)atof(returnValue);
   }
   
   return 0;

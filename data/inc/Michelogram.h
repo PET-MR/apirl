@@ -39,12 +39,12 @@
 
 struct SizeMichelogram
 {
-	unsigned int NR;
-	unsigned int NProj;
-	unsigned int NZ;
+	int NR;
+	int NProj;
+	int NZ;
 	float RFOV;			// Radial Dimension of the trnsaxial plane Field of View
 	float ZFOV;			// Axial Length of the Field of View
-	static const unsigned int MAXANG = 180;
+	static const int MAXANG = 180;
 };
 
 
@@ -57,15 +57,15 @@ class DLLEXPORT Michelogram : virtual Projection
 		
 	public:
 		Sinogram2DinCylindrical3Dpet** Sinograms2D;	// All Sinograms that take part of the Michelogram
-		unsigned char Span;	// Span of the Michelogram
-		unsigned char MaxRingDiff;	// Maximum Ring Difference
+		int Span;	// Span of the Michelogram
+		int MaxRingDiff;	// Maximum Ring Difference
 		float RFOV;			// Radial Dimension of the trnsaxial plane Field of View
 		float ZFOV;			// Axial Length of the Field of View
 		float rScanner;
-		unsigned int NProj;	// Number of Projections (=Number of Angles Values)
-		unsigned int NR;	// Number of distance values (spatial sampling)
-		unsigned int NZ;	// Number of rings (Axial Sampling)
-		unsigned int ZBins;	// Cantidad de bins en el eje Z
+		int NProj;	// Number of Projections (=Number of Angles Values)
+		int NR;	// Number of distance values (spatial sampling)
+		int NZ;	// Number of rings (Axial Sampling)
+		int ZBins;	// Cantidad de bins en el eje Z
 		float DistanceBetweenRings;	// Distancia entre anillos.
 		float DistanceBetweenBins;	// Distancia entre los bins del eje Z
 		//float 

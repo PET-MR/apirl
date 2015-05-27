@@ -38,20 +38,20 @@
 #ifdef __cplusplus
 	extern "C" 
 #endif
-DLLEXPORT struct Point3D
+struct Point3D
 {
-	double X;
-	double Y;
-	double Z;
+	float X;
+	float Y;
+	float Z;
 };
 
 #ifdef __cplusplus
 	extern "C" 
 #endif
-DLLEXPORT struct Point2D
+struct Point2D
 {
-	double X;
-	double Y;
+	float X;
+	float Y;
 };
 
 #ifdef __cplusplus
@@ -62,11 +62,11 @@ DLLEXPORT struct Point2D
 // and a point that belongs to the line. So the line
 // is defined by P = P0 + a*(Vx,Vy,Vz). Also can be written>
 // a = (X-X0)/Vx=(Y-Y0)/Vy=(Z-Z0)/Vz
-DLLEXPORT struct Line3D
+struct Line3D
 {
-	double Vx;
-	double Vy;
-	double Vz;
+	float Vx;
+	float Vy;
+	float Vz;
 	Point3D P0;
 };
 
@@ -78,10 +78,10 @@ DLLEXPORT struct Line3D
 // and a point that belongs to the line. So the line
 // is defined by P = P0 + a*(Vx,Vy). Also can be written>
 // a = (X-X0)/Vx=(Y-Y0)/Vy
-DLLEXPORT struct Line2D
+struct Line2D
 {
-	double Vx;
-	double Vy;
+	float Vx;
+	float Vy;
 	Point2D P0;
 };
 
@@ -92,14 +92,14 @@ DLLEXPORT struct Line2D
 // The line parameters are the 2 direction vector (Vx,Vy,Vz)
 // and (Ux,Uy,Uz) and a point that belongs to the plane. So the plane
 // is defined by P = P0 + a*(Vx,Vy,Vz) + b*(Ux,Uy,Uz).
-DLLEXPORT struct PlaneWithVectors
+struct PlaneWithVectors
 {
-	double Ux;
-	double Uy;
-	double Uz;
-	double Vx;
-	double Vy;
-	double Vz;
+	float Ux;
+	float Uy;
+	float Uz;
+	float Vx;
+	float Vy;
+	float Vz;
 
 	Point3D P0;
 };
@@ -108,12 +108,12 @@ DLLEXPORT struct PlaneWithVectors
 	extern "C" 
 #endif
 // Plane defined by the short way: A*x+B*y+C*z+D =0
-DLLEXPORT struct Plane
+struct Plane
 {
-	double A;
-	double B;
-	double C;
-	double D;
+	float A;
+	float B;
+	float C;
+	float D;
 };
 
 
@@ -123,7 +123,7 @@ DLLEXPORT void IntersectionLinePlane(Line3D myLine, Plane myPlane, Point3D* Inte
 DLLEXPORT void CalculatePixelsPlanes(Plane* PlanesX, Plane* PlanesY,Plane* PlanesZ, unsigned int SizeX,
 					 unsigned int SizeY, unsigned int SizeZ, double RFOV, double ZFOV);
 
-DLLEXPORT void GetPointsFromLOR(double PhiAngle, double r, double Z1, double Z2, double Rscanner,
+DLLEXPORT void GetPointsFromLOR(float PhiAngle, float r, float Z1, float Z2, float Rscanner,
 					  Point3D* P1, Point3D* P2);
 /*
 DLLEXPORT void GetPointsFromLOR(double PhiAngle, double r, double Rscanner,

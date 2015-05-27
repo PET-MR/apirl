@@ -119,7 +119,7 @@ int MdcIsArrayKey(void);
 int MdcGetMaxIntArrayKey(void);
 int MdcGetIntKey(void);
 int MdcGetYesNoKey(void);
-double MdcGetFloatKey(void);
+float MdcGetFloatKey(void);
 void MdcGetStrKey(char *str);
 void MdcGetSubStrKey(char *str, int n);
 void MdcGetDateKey(char *str);

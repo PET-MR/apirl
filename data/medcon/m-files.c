@@ -949,7 +949,7 @@ char *MdcGetFname(char path[])
 
 void MdcSetExt(char path[], char *ext)
 {
-  char *p;
+  //char *p;
 
   if (path == NULL) return;
 
@@ -1799,7 +1799,7 @@ Int8 MdcTryPatSliceOrient(char *pat_orient)
   char buffer[MDC_MAXSTR], *p1, *p2;
   Int8 orient1=MDC_UNKNOWN, orient2=MDC_UNKNOWN;
 
-  MdcStringCopy(buffer,pat_orient,strlen(pat_orient));
+  MdcStringCopy(buffer,pat_orient,(Uint32)strlen(pat_orient));
 
   p1 = buffer;
   p2 = strrchr(buffer, '\\');
@@ -1918,11 +1918,11 @@ float MdcGetHeartRate(GATED_DATA *gd, Int16 type)
      switch (type) {
        case MDC_HEART_RATE_ACQUIRED:
          /* note: [ms] -> [min] */
-         heart_rate = (gd->cycles_acquired * 60. * 1000.) / gd->study_duration;
+         heart_rate = (gd->cycles_acquired * 60.0f * 1000.0f) / gd->study_duration;
          break;
        case MDC_HEART_RATE_OBSERVED:
          /* note: [ms] -> [min] */
-         heart_rate = (gd->cycles_observed * 60. * 1000.) / gd->study_duration;
+         heart_rate = (gd->cycles_observed * 60.0f * 1000.0f) / gd->study_duration;
          break;
      }
    } 

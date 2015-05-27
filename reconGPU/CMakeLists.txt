@@ -14,7 +14,7 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 # Ejecuto el FindCUDA.
 #SET(FIND_CUDA_DIR ${APIRL_SOLUTION_SOURCE_DIR}/FindCUDA)
 #INCLUDE(${FIND_CUDA_DIR}/CMake/cuda/FindCUDA.cmake)
-set(CMAKE_MODULE_PATH "${FindCUDA_Dir}/CMake/cuda" ${CMAKE_MODULE_PATH})
+#set(CMAKE_MODULE_PATH "${FindCUDA_Dir}/CMake/cuda" ${CMAKE_MODULE_PATH})
 find_package(CUDA REQUIRED FIND_CUDA_DIR)
 # Llamo al script FindCUTIL que me genera las variables CUDA_CUT_INCLUDE_DIR y CUDA_CUT_LIBRARIES.
 #INCLUDE(${FindCUDA_Dir}/FindCUTIL.cmake)
@@ -54,8 +54,8 @@ message(STATUS "Output Directory: ${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}")
 ###################### BUILD CONFIGURATION ############################
 #ADD_DEFINITIONS(DLL_BUILD)
 # Genero una DLL.
-#ADD_Library(reconGPU SHARED ${reconGPU_Sources} ${reconGPU_Headers})${CUDA_LIBRARIES_BUILD}
-#CUDA_ADD_LIBRARY(reconGPU  ${CUDA_LIBRARIES_BUILD} ${reconGPU_Sources} ${reconGPU_cuSources} ${reconGPU_Headers} ${reconGPU_cuHeaders})
+set(CUDA_SEPARABLE_COMPILATION ON)
+#CUDA_ADD_LIBRARY(reconGPU STATIC ${CUDA_LIBRARIES_BUILD} ${reconGPU_Sources} ${reconGPU_cuSources} ${reconGPU_Headers} ${reconGPU_cuHeaders})
 # Genero varias DLLs, una por cada proyector y los m¨¦todos de reconstrucci¨®n:
 CUDA_ADD_LIBRARY(reconGPU "src/CuSiddonProjector.cu" "src/CuProjector.cpp"  "src/CuMlemSinogram3d.cu" "src/CuOsemSinogram3d.cu" "src/CuProjectorInterface.cu" ${reconGPU_Sources}) #"src/CuOsemSinogram3d.cu"
 #CUDA_ADD_LIBRARY(cuOsem  "src/CuOsemSinogram3d.cu")

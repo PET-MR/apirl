@@ -53,12 +53,12 @@ bool RotationBasedProjector::RotateImage(Image* inputImage, Image* rotatedImage,
   // el centro del píxel de arriba a la izquierda. Por lo que los límites de la imagen van
   // a estar en -0.5 y (nPixelsX-1+0.5) en cada eje. El centro de la imagen en índices de píxeles
   // es (sizeImage.nPixelsX-1)/2.
-  float centroInputX_pixels = (sizeInputImage.nPixelsX-1) / 2;
-  float centroInputY_pixels = (sizeInputImage.nPixelsY-1) / 2;
-  float centroRotatedX_pixels = (sizeRotatedImage.nPixelsX-1) / 2;
-  float centroRotatedY_pixels = (sizeRotatedImage.nPixelsY-1) / 2;
+  float centroInputX_pixels = (float)(sizeInputImage.nPixelsX-1) / 2.0f;
+  float centroInputY_pixels = (float)(sizeInputImage.nPixelsY-1) / 2.0f;
+  float centroRotatedX_pixels = (float)(sizeRotatedImage.nPixelsX-1) / 2.0f;
+  float centroRotatedY_pixels = (float)(sizeRotatedImage.nPixelsY-1) / 2.0f;
   float i_entrada, j_entrada, i_entrada_ent, j_entrada_ent, i_entrada_frac, j_entrada_frac, value;
-  float radioFovCuadrado = (sizeRotatedImage.nPixelsX*sizeRotatedImage.nPixelsX/4);
+  float radioFovCuadrado = (float)sizeRotatedImage.nPixelsX*sizeRotatedImage.nPixelsX/4.0f;
   // Podría poner los if para el método de interpolación dentro del for, porque la rotación
   // de coordenadas las hacen todas por igual, pero como la interpolación cambia bastante, separo
   // toda la operación directamente aunque se repita un poco de código, así no repite el if para
@@ -87,7 +87,7 @@ bool RotationBasedProjector::RotateImage(Image* inputImage, Image* rotatedImage,
 		  j_entrada = floor(j_entrada);
 		  if((i_entrada>=0)&&(i_entrada<sizeInputImage.nPixelsX)&&(j_entrada>=0)&&(j_entrada<sizeInputImage.nPixelsY))
 		  {
-			value = inputImage->getPixelValue(i_entrada, j_entrada, 0);
+			value = inputImage->getPixelValue((int)i_entrada, (int)j_entrada, 0);
 			rotatedImage->setPixelValue(i, j, 0, value);
 		  }
 		}
@@ -114,10 +114,10 @@ bool RotationBasedProjector::RotateImage(Image* inputImage, Image* rotatedImage,
 		j_entrada_frac = j_entrada - j_entrada_ent;
 		if((i_entrada>=0)&&(i_entrada<(sizeInputImage.nPixelsX-1))&&(j_entrada>=0)&&(j_entrada<(sizeInputImage.nPixelsY-1)))
 		{
-		  value = (1-i_entrada_frac)*(1-j_entrada_frac)*inputImage->getPixelValue(i_entrada_ent, j_entrada_ent, 0) +
-				  (i_entrada_frac)*(1-j_entrada_frac)*inputImage->getPixelValue(i_entrada_ent+1, j_entrada_ent, 0) +
-				  (1-i_entrada_frac)*(j_entrada_frac)*inputImage->getPixelValue(i_entrada_ent, j_entrada_ent+1, 0) +
-				  (i_entrada_frac)*(j_entrada_frac)*inputImage->getPixelValue(i_entrada_ent+1, j_entrada_ent+1, 0);
+		  value = (1-i_entrada_frac)*(1-j_entrada_frac)*inputImage->getPixelValue((int)i_entrada_ent, (int)j_entrada_ent, 0) +
+				  (i_entrada_frac)*(1-j_entrada_frac)*inputImage->getPixelValue((int)i_entrada_ent+1, (int)j_entrada_ent, 0) +
+				  (1-i_entrada_frac)*(j_entrada_frac)*inputImage->getPixelValue((int)i_entrada_ent, (int)j_entrada_ent+1, 0) +
+				  (i_entrada_frac)*(j_entrada_frac)*inputImage->getPixelValue((int)i_entrada_ent+1, (int)j_entrada_ent+1, 0);
 		  rotatedImage->setPixelValue(i, j, 0, value);
 		}
 		else
@@ -131,43 +131,43 @@ bool RotationBasedProjector::RotateImage(Image* inputImage, Image* rotatedImage,
 		  {
 			if(j_entrada==-1)
 			{
-			  value = inputImage->getPixelValue(i_entrada_ent+1, j_entrada_ent+1, 0);
+			  value = inputImage->getPixelValue((int)i_entrada_ent+1, (int)j_entrada_ent+1, 0);
 			}
 			else if(j_entrada==(sizeInputImage.nPixelsY-1))
 			{
-			  value = inputImage->getPixelValue(i_entrada_ent+1, j_entrada_ent, 0);
+			  value = inputImage->getPixelValue((int)i_entrada_ent+1, (int)j_entrada_ent, 0);
 			}
 			else
 			{
-			  value = (1-j_entrada_frac)*inputImage->getPixelValue(i_entrada_ent+1, j_entrada_ent, 0) +
-					  (j_entrada_frac)*inputImage->getPixelValue(i_entrada_ent+1, j_entrada_ent+1, 0);
+			  value = (1-j_entrada_frac)*inputImage->getPixelValue((int)i_entrada_ent+1, (int)j_entrada_ent, 0) +
+					  (j_entrada_frac)*inputImage->getPixelValue((int)i_entrada_ent+1, (int)j_entrada_ent+1, 0);
 			}
 		  }
 		  else if(i_entrada==(sizeInputImage.nPixelsX-1))
 		  {
 			if(j_entrada==-1)
 			{
-			  value = inputImage->getPixelValue(i_entrada_ent, j_entrada_ent+1, 0);
+			  value = inputImage->getPixelValue((int)i_entrada_ent, (int)j_entrada_ent+1, 0);
 			}
 			else if(j_entrada==(sizeInputImage.nPixelsY-1))
 			{
-			  value = inputImage->getPixelValue(i_entrada_ent, j_entrada_ent, 0);
+			  value = inputImage->getPixelValue((int)i_entrada_ent, (int)j_entrada_ent, 0);
 			}
 			else
 			{
-			  value = (1-j_entrada_frac)*inputImage->getPixelValue(i_entrada_ent, j_entrada_ent, 0) +
-					  (j_entrada_frac)*inputImage->getPixelValue(i_entrada_ent, j_entrada_ent+1, 0);
+			  value = (1-j_entrada_frac)*inputImage->getPixelValue((int)i_entrada_ent, (int)j_entrada_ent, 0) +
+					  (j_entrada_frac)*inputImage->getPixelValue((int)i_entrada_ent, (int)j_entrada_ent+1, 0);
 			}
 		  }
 		  else if(j_entrada==-1)
 		  {
-			value = (1-i_entrada_frac)*inputImage->getPixelValue(i_entrada_ent, j_entrada_ent+1, 0) +
-					(i_entrada_frac)*inputImage->getPixelValue(i_entrada_ent+1, j_entrada_ent+1, 0);
+			value = (1-i_entrada_frac)*inputImage->getPixelValue((int)i_entrada_ent, (int)j_entrada_ent+1, 0) +
+					(i_entrada_frac)*inputImage->getPixelValue((int)i_entrada_ent+1, (int)j_entrada_ent+1, 0);
 		  }
 		  else if(j_entrada==(sizeInputImage.nPixelsX-1))
 		  {
-			value = (1-i_entrada_frac)*inputImage->getPixelValue(i_entrada_ent, j_entrada_ent, 0) +
-					(i_entrada_frac)*inputImage->getPixelValue(i_entrada_ent+1, j_entrada_ent, 0);
+			value = (1-i_entrada_frac)*inputImage->getPixelValue((int)i_entrada_ent, (int)j_entrada_ent, 0) +
+					(i_entrada_frac)*inputImage->getPixelValue((int)i_entrada_ent+1, (int)j_entrada_ent, 0);
 		  }
 		  rotatedImage->setPixelValue(i, j, 0, value);
 		}
@@ -209,9 +209,6 @@ bool RotationBasedProjector::Backproject (Sinogram2D* inputProjection, Image* ou
   // Para la backprojection, voy recorriendo cada píxel de la imagen, y lo debo proyectar en la dirección
   // de la lor (o sea según el ángulo de la proyección), y obtener un valor de r, que lo interpolaré entre 
   // dos valores del sinograma.
-  
-  Point2D P1, P2;
-  Line2D LOR;
   Image* rotatedImage;
   float binValue;
   // El tamaño de la iamgen rotada, lo hago igual que numR del sinograma para después directamente
@@ -219,11 +216,11 @@ bool RotationBasedProjector::Backproject (Sinogram2D* inputProjection, Image* ou
   SizeImage sizeImage = outputImage->getSize();
   outputImage->fillConstant(0);
   rotatedImage = new Image(sizeImage);
-  float centroRotatedX_pixels = (sizeImage.nPixelsX-1) / 2;
-  float centroRotatedY_pixels = (sizeImage.nPixelsY-1) / 2;
+  float centroRotatedX_pixels = ((float)sizeImage.nPixelsX-1) / 2.0f;
+  float centroRotatedY_pixels = ((float)sizeImage.nPixelsY-1) / 2.0f;
   // Genero imagen para acotar calculo a fov circular:
   fovImage = new Image(sizeImage);
-  float radioFovCuadrado = (sizeImage.nPixelsX*sizeImage.nPixelsX/4);
+  float radioFovCuadrado = ((float)sizeImage.nPixelsX*(float)sizeImage.nPixelsX/4.0f);
   for(int i = 0; i < sizeImage.nPixelsX; i++)
   {
 	for(int j = 0; j < sizeImage.nPixelsY; j++)
@@ -238,7 +235,7 @@ bool RotationBasedProjector::Backproject (Sinogram2D* inputProjection, Image* ou
   // Esto es para un sinograma genérico por lo que no tengo als dimensiones del detector. Entonces
   // los numR de las proyecciones se distribuyen a lo largo de la imagen:
   float r_columna = 0, r1, r2;
-  float scaleXtoR = inputProjection->getNumProj() / sizeImage.nPixelsX;
+  float scaleXtoR = (float)inputProjection->getNumProj() / (float)sizeImage.nPixelsX;
   for(int j = 0; j < sizeImage.nPixelsX; j++)
   {
 	for(int k = 0; k < sizeImage.nPixelsY; k++)
@@ -278,16 +275,14 @@ bool RotationBasedProjector::Backproject (Sinogram2D* inputProjection, Image* ou
 /// Sobrecarga que realiza la Backprojection de InputSinogram/EstimatedSinogram
 bool RotationBasedProjector::DivideAndBackproject (Sinogram2D* InputSinogram, Sinogram2Dtgs* EstimatedSinogram, Image* outputImage)
 {
-  Point2D P1, P2;
-  Line2D LOR;
+//  Point2D P1, P2;
+//  Line2D LOR;
 
   return true;
 }
 
 bool RotationBasedProjector::Project (Image* inputImage, Sinogram2D* outputProjection)
 {
-  Point2D P1, P2;
-  Line2D LOR;
   Image* rotatedImage;
   float binValue;
   // El tamaño de la iamgen rotada, lo hago igual que numR del sinograma para después directamente
@@ -298,11 +293,11 @@ bool RotationBasedProjector::Project (Image* inputImage, Sinogram2D* outputProje
   sizeImage.nPixelsY = outputProjection->getNumR();
   sizeImage.nPixelsZ = 1;
   rotatedImage = new Image(sizeImage);
-  float centroRotatedX_pixels = (sizeImage.nPixelsX-1) / 2;
-  float centroRotatedY_pixels = (sizeImage.nPixelsY-1) / 2;
+  float centroRotatedX_pixels = ((float)sizeImage.nPixelsX-1) / 2.0f;
+  float centroRotatedY_pixels = ((float)sizeImage.nPixelsY-1) / 2.0f;
   // Genero imagen para acotar calculo a fov circular:
   fovImage = new Image(sizeImage);
-  float radioFovCuadrado = (sizeImage.nPixelsX*sizeImage.nPixelsX/4);
+  float radioFovCuadrado = ((float)sizeImage.nPixelsX*(float)sizeImage.nPixelsX/4.0f);
   for(int i = 0; i < sizeImage.nPixelsX; i++)
   {
 	for(int j = 0; j < sizeImage.nPixelsY; j++)
@@ -342,24 +337,17 @@ bool RotationBasedProjector::Project (Image* inputImage, Sinogram2D* outputProje
 /** Sección para Sinogram3D. */
 bool RotationBasedProjector::Project (Image* inputImage, Sinogram3D* outputProjection)
 {
-  Point3D P1, P2;
-  Line3D LOR;
   return true;
 }
 
 bool RotationBasedProjector::Backproject (Sinogram3D* inputProjection, Image* outputImage)
 {
-  Point3D P1, P2;
-  Line3D LOR;
-
   return true;
 }
 
 /// Sobrecarga que realiza la Backprojection del cociente InputSinogram3D/EstimatedSinogram3D
 bool RotationBasedProjector::DivideAndBackproject (Sinogram3D* InputSinogram3D, Sinogram3D* EstimatedSinogram3D, Image* outputImage)
 {
-  Point3D P1, P2;
-  Line3D LOR;
 
   return true;
 }

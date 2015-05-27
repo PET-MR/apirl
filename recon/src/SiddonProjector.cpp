@@ -40,9 +40,9 @@ bool SiddonProjector::Backproject (Sinogram2D* InputSinogram, Image* outputImage
   {
     //MyWeightsList = (SiddonSegment**)malloc(sizeof(SiddonSegment*));
     //#pragma omp for
-    for(int i = 0; i < InputSinogram->getNumProj(); i++)
+    for(i = 0; i < InputSinogram->getNumProj(); i++)
     {
-      for(int j = 0; j < InputSinogram->getNumR(); j++)
+      for(j = 0; j < InputSinogram->getNumR(); j++)
       {
 	// Obtengo puntos de entrada y salida de la lor:
 	if(InputSinogram->getPointsFromLor(i, j, &P1, &P2, &geomFactor))
@@ -153,9 +153,9 @@ bool SiddonProjector::Project (Image* inputImage, Sinogram2D* outputProjection)
   {
     MyWeightsList = (SiddonSegment**)malloc(sizeof(SiddonSegment*));
     #pragma omp for
-    for(int i = 0; i < outputProjection->getNumProj(); i++)
+    for(i = 0; i < outputProjection->getNumProj(); i++)
     {
-      for(int j = 0; j < outputProjection->getNumR(); j++)
+      for(j = 0; j < outputProjection->getNumR(); j++)
       {
 	if(outputProjection->getPointsFromLor(i, j, &P1, &P2, &geomFactor))
 	{
@@ -249,13 +249,13 @@ bool SiddonProjector::DivideAndBackproject (Sinogram2Dtgs* InputSinogram, Sinogr
       
       int LengthList;
       Siddon(LOR, outputImage, MyWeightsList, &LengthList,1);
-      for(unsigned int l = 0; l < LengthList; l++)
+      for(int l = 0; l < LengthList; l++)
       {
-	// for every element of the systema matrix different from zero,we do
-	// the sum(Aij*bi/Projected) for every i
-	if((MyWeightsList[0][l].IndexY>=0) && (MyWeightsList[0][l].IndexX>=0))
-	  ptrPixels[MyWeightsList[0][l].IndexY * sizeImage.nPixelsX + MyWeightsList[0][l].IndexX] +=
-	    MyWeightsList[0][l].Segment * InputSinogram->getSinogramBin(i,j) / EstimatedSinogram->getSinogramBin(i,j);	
+		// for every element of the systema matrix different from zero,we do
+		// the sum(Aij*bi/Projected) for every i
+		if((MyWeightsList[0][l].IndexY>=0) && (MyWeightsList[0][l].IndexX>=0))
+		  ptrPixels[MyWeightsList[0][l].IndexY * sizeImage.nPixelsX + MyWeightsList[0][l].IndexX] +=
+			MyWeightsList[0][l].Segment * InputSinogram->getSinogramBin(i,j) / EstimatedSinogram->getSinogramBin(i,j);	
       }
       // Now I have my estimated projection for LOR i
       free(MyWeightsList[0]);
@@ -274,9 +274,9 @@ bool SiddonProjector::Project (Image* inputImage, Sinogram2Dtgs* outputProjectio
   // Puntero a los píxeles:
   float* ptrPixels = inputImage->getPixelsPtr();
   // I only need to calculate the ForwardProjection of the bins were ara at least one event
-  for(unsigned int i = 0; i < outputProjection->getNumProj(); i++)
+  for(int i = 0; i < outputProjection->getNumProj(); i++)
   {
-    for(unsigned int j = 0; j < outputProjection->getNumR(); j++)
+    for(int j = 0; j < outputProjection->getNumR(); j++)
     {
       // The bin is different zero so we start calculatin forward project
       // First we get the values of the SystemMAtrix for this LOR
@@ -294,14 +294,14 @@ bool SiddonProjector::Project (Image* inputImage, Sinogram2Dtgs* outputProjectio
       int LengthList;
       Siddon(LOR, inputImage, MyWeightsList, &LengthList,1);
       outputProjection->setSinogramBin(i,j,0);
-      for(unsigned int l = 0; l < LengthList; l++)
+      for(int l = 0; l < LengthList; l++)
       {
-	// for every element of the systema matrix different from zero,we do
-	// the sum(Aij*Xj) for every J
-	if((MyWeightsList[0][l].IndexY>=0) && (MyWeightsList[0][l].IndexX>=0))
-	  outputProjection->incrementSinogramBin(i,j, MyWeightsList[0][l].Segment * 
-	    ptrPixels[MyWeightsList[0][l].IndexY * sizeImage.nPixelsX + MyWeightsList[0][l].IndexX]);  
-	//printf("r:%d phi:%d z1:%d z2:%d x:%d y:%d z:%d w:%f", j, i, indexRing1, indexRing2, MyWeightsList[0][l].IndexX, MyWeightsList[0][l].IndexY, MyWeightsList[0][l].IndexZ, MyWeightsList[0][l].Segment);	
+		// for every element of the systema matrix different from zero,we do
+		// the sum(Aij*Xj) for every J
+		if((MyWeightsList[0][l].IndexY>=0) && (MyWeightsList[0][l].IndexX>=0))
+		  outputProjection->incrementSinogramBin(i,j, MyWeightsList[0][l].Segment * 
+			ptrPixels[MyWeightsList[0][l].IndexY * sizeImage.nPixelsX + MyWeightsList[0][l].IndexX]);  
+		//printf("r:%d phi:%d z1:%d z2:%d x:%d y:%d z:%d w:%f", j, i, indexRing1, indexRing2, MyWeightsList[0][l].IndexX, MyWeightsList[0][l].IndexY, MyWeightsList[0][l].IndexZ, MyWeightsList[0][l].Segment);	
 
       }
       free(MyWeightsList[0]);
@@ -321,7 +321,8 @@ bool SiddonProjector::Project (Image* inputImage, Sinogram3D* outputProjection)
   // Puntero a los píxeles:
   float* ptrPixels = inputImage->getPixelsPtr();
   float geomFactor = 0;
-  int indexRing1, indexRing2, numZ;
+  // int indexRing1, indexRing2;
+  int numZ;
   float z1_mm, z2_mm;
   // Inicializo el sino 3D con el que voy a trabajar en cero.
   // Lo incializo acá porque despues distintas cobinaciones de z aportan al mismo bin.
@@ -492,7 +493,6 @@ bool SiddonProjector::Backproject (Sinogram3D* inputProjection, Image* outputIma
 		  /// Por lo que cada bin me va a sumar cuentas en lors con distintos ejes axiales.
 		  /// El sinograma de salida lo incializo en cero antes de recorrer los distintos anillos de cada elemento del
 		  /// sinograma, ya que varias LORS deben aportar al mismo bin del sinograma.
-		  int lorOk;
 		  if(numSamplesOnDetector == 1)
 		  {
 		    lorOk = inputProjection->getSegment(i)->getSinogram2D(j)->getPointsFromLor(k,l,m, &P1, &P2, &geomFactor);
@@ -566,7 +566,8 @@ bool SiddonProjector::DivideAndBackproject (Sinogram3D* InputSinogram3D, Sinogra
   unsigned long indexPixel;
   float newValue;
   float geomFactor = 0;
-  int indexRing1, indexRing2, numZ;
+  //int indexRing1, indexRing2;
+  int numZ;
   float z1_mm, z2_mm;
   #pragma omp parallel private(i, j, k, l, m, o, LOR, P1, P2, MyWeightsList, LengthList, n, newValue, indexPixel, geomFactor) shared(InputSinogram3D,EstimatedSinogram3D,ptrPixels)
   {

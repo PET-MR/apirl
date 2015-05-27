@@ -114,6 +114,7 @@ bool Image::setSlice(int sliceIndex, Image* sliceToCopy)
     int offsetSlice = sliceIndex*numPixelsSlice;
     
     memcpy(this->pixels+offsetSlice, sliceToCopy->getPixelsPtr(),numPixelsSlice*sizeof(float));
+	return true;
 }
 
 Image* Image::getSlice(int sliceIndex)
@@ -134,7 +135,7 @@ Image* Image::getSlice(int sliceIndex)
 
 void Image::fillConstant(float value)
 {
-	for(unsigned int i = 0; i < this->nPixels; i++)
+	for(int i = 0; i < this->nPixels; i++)
 	{
 		this->pixels[i] = value;
 	}
@@ -144,8 +145,8 @@ void Image::fillConstant(float value)
 bool Image::writeRawFile(char* filePath)
 {
 	FILE* fileImage = fopen(filePath,"wb");
-	unsigned int CantBytes;
-	if((CantBytes =  fwrite(this->pixels, sizeof(float), this->nPixels , fileImage)) !=  (this->nPixels))
+	int CantBytes;
+	if((CantBytes =  (int)fwrite(this->pixels, sizeof(float), this->nPixels , fileImage)) !=  (this->nPixels))
 		return false;
 	fclose(fileImage);
 	return true;
@@ -192,7 +193,7 @@ bool Image::writeInterfile(char* filePath)
   fi->image = (IMG_DATA*)malloc((sizeof(IMG_DATA)*fi->dim[3]));
   // Cargo la imagen en la estructura:
   int sizeSlice = this->size.nPixelsX * this->size.nPixelsY;
-  for (int i=0; i<fi->number; i++)
+  for (int i=0; i<(int)fi->number; i++)
   {
     fi->image[i].bits = MdcType2Bytes(fi->type);
     fi->image[i].height = fi->dim[2];
@@ -204,7 +205,7 @@ bool Image::writeInterfile(char* filePath)
 
   }
   /// Pongo por default como imagen reconstruida. Se podr�a poner adquirida o darle la opci�n al m�todo, despu�s se puede modificar.
-  fi->reconstructed == MDC_YES;
+  fi->reconstructed = MDC_YES;
 
   // Debo
   // Escribo la imagen. Para eso primero creo el archivo, y lo abro antes de llamar a la función.
@@ -250,8 +251,8 @@ bool Image::writeInterfile(char* filePath)
 bool Image::readFromFile(char* filePath)
 {
   FILE* fileImage = fopen(filePath,"wb");
-  unsigned int CantBytes;
-  if((CantBytes =  fread(this->pixels, sizeof(float), this->nPixels, fileImage)) !=  this->nPixels)
+  int CantBytes;
+  if((CantBytes =  (int)fread(this->pixels, sizeof(float), this->nPixels, fileImage)) !=  this->nPixels)
     return false;
   fclose(fileImage);
   return true;
@@ -361,7 +362,7 @@ bool Image::readFromInterfile(char* filePath)
   {
     int nPixelsSlice = this->size.nPixelsX * this->size.nPixelsY;
     IMG_DATA *id;
-    for(int i = 0; i < fi->number; i++)
+    for(int i = 0; i < (int)fi->number; i++)
     {
       id = &fi->image[i];
       memcpy(this->pixels + i*nPixelsSlice, id->buf, sizeof(float)*nPixelsSlice);
@@ -435,18 +436,18 @@ float Image::getMaxValue()
 void Image::getPixelGeomCoord(int x, int y, float* x_mm, float* y_mm)
 {
   // El extremo en x es -fovRadio_mm, le debo agregar la cantidad de píxeles más un medio para tener el centro del mismo.
-  (*x_mm) = -this->fovRadio_mm + this->size.sizePixelX_mm *  ((float)x + 0.5); 
+  (*x_mm) = -this->fovRadio_mm + this->size.sizePixelX_mm *  ((float)x + 0.5f); 
   // El extremo en y es +fovRadio_mm, le debo agregar la cantidad de píxeles más un medio para tener el centro del mismo.
-  (*y_mm) = -this->fovRadio_mm + this->size.sizePixelY_mm *  ((float)y + 0.5); 
+  (*y_mm) = -this->fovRadio_mm + this->size.sizePixelY_mm *  ((float)y + 0.5f); 
 }
 
 void Image::getPixelGeomCoord(int x, int y, int z, float* x_mm, float* y_mm, float* z_mm)
 {
   // El extremo en x es -fovRadio_mm, le debo agregar la cantidad de píxeles más un medio para tener el centro del mismo.
-  (*x_mm) = -this->fovRadio_mm + this->size.sizePixelX_mm *  ((float)x + 0.5); 
+  (*x_mm) = -this->fovRadio_mm + this->size.sizePixelX_mm *  ((float)x + 0.5f); 
   // El extremo en y es +fovRadio_mm, le debo agregar la cantidad de píxeles más un medio para tener el centro del mismo.
-  (*y_mm) = -this->fovRadio_mm + this->size.sizePixelY_mm *  ((float)y + 0.5); 
+  (*y_mm) = -this->fovRadio_mm + this->size.sizePixelY_mm *  ((float)y + 0.5f); 
   // El extremo en z es fovHeight_mm, le debo agregar la cantidad de píxeles más un medio para tener el centro del mismo.
   //(*z_mm) = this->fovHeight_mm - this->size.sizePixelZ_mm *  ((float)z + 0.5);
-  (*z_mm) = this->size.sizePixelZ_mm *  ((float)z + 0.5); 
+  (*z_mm) = this->size.sizePixelZ_mm *  ((float)z + 0.5f); 
 }

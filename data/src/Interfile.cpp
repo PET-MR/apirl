@@ -88,7 +88,7 @@ int interfile_read(char* headerName, char* searchWord, char* returnValue, char* 
   }
 
                   /* check from first line if file is really interfile header */
-  n=fread(&c,1,1,interfileHeader); if(n<1) {
+  n=(int)fread(&c,1,1,interfileHeader); if(n<1) {
     strcpy(errorMessage,"wrong file header format?! No '!INTERFILE' at start of ");
     strcat(errorMessage,headerName);
     fclose(interfileHeader);
@@ -98,7 +98,7 @@ int interfile_read(char* headerName, char* searchWord, char* returnValue, char* 
   memcpy(&line[i],c,1);
   while (memcmp(c,"\n",1) && memcmp(c,"\r",1)) {
     i++;
-    n=fread(&c,1,1,interfileHeader); if(n<1) {
+    n=(int)fread(&c,1,1,interfileHeader); if(n<1) {
       strcpy(errorMessage,"wrong file header format?! No '!INTERFILE' at start of ");
       strcat(errorMessage,headerName);
       fclose(interfileHeader);
@@ -124,7 +124,7 @@ int interfile_read(char* headerName, char* searchWord, char* returnValue, char* 
     //while (memcmp(c,"\r",1) && memcmp(c,"\n",1) && i<516) {
     while (memcmp(c,"\n",1) && i<1024) {	// En linux es solo \n
       memcpy(&line[i],c,1);
-      n=fread(&c,1,1,interfileHeader); if(n<1) {
+      n=(int)fread(&c,1,1,interfileHeader); if(n<1) {
         strcpy(errorMessage,"wrong file header format: ");
         strcat(errorMessage,headerName);
         fclose(interfileHeader);

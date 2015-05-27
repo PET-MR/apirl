@@ -202,8 +202,8 @@ bool Sinogram3DCylindricalPet::ReadInterfileDiscoverySTE(char* fileDataPath)
   numRings = 24;
   radioFov_mm = 350;
   /// Radio del Scanner en mm
-  radioScanner_mm = 886.2/2;
-  axialFov_mm = 156.96;
+  radioScanner_mm = 886.2f/2.0f;
+  axialFov_mm = 156.96f;
   /// Ahora los segmentos
   int SinogramasPorSegmento[ConstCantSegmentos] = { 47, 43, 43, 39, 39, 35, 35, 31, 31, 27, 27, 23, 23, 19, 19, 15, 15, 11, 11, 7, 7, 3, 3 };
   ///(Segmentos**) malloc (sizeof(Segmento*));
@@ -274,7 +274,7 @@ bool Sinogram3DCylindricalPet::ReadInterfileDiscoverySTE(char* fileDataPath)
 		CantLORSimpar = segments[i]->getMaxRingDiff() + 1;
 	  }
 	  /// Los rings van desde 0 a numRings -1
-	  int iRing1 = floorf(segments[i]->getMinRingDiff()/2);	/// Empiezo desde un "ring imaginario" negativo, para poder recorrer todo				
+	  int iRing1 = (int)floorf(segments[i]->getMinRingDiff()/2.0f);	/// Empiezo desde un "ring imaginario" negativo, para poder recorrer todo				
 	  /// Para el segmento central, supongo que el minringdiff es negativo y el maxringdiff es positivo, e iguales
 	  /// en valor absoluto.
 	  for(int j = 0; j < segments[i]->getNumSinograms(); j++)
@@ -282,7 +282,7 @@ bool Sinogram3DCylindricalPet::ReadInterfileDiscoverySTE(char* fileDataPath)
 		float* ptrSinogram2D = segments[i]->getSinogram2D(j)->getSinogramPtr();
 		/// Copio Datos del Sinograma
 		int n;
-		if(( n = fread(ptrSinogram2D, sizeof(float), numR*numProj, fileSino3D))!= (numR*numProj))
+		if(( n = (int)fread(ptrSinogram2D, sizeof(float), numR*numProj, fileSino3D))!= (numR*numProj))
 			printf("Error al leer los datos del sinograma\n");
 		/// En dos vectores auxiliares reservo para la lista de posicionZ la máxima cantidad de LORs posibles para 
 		/// el segemtno correspondiente. Luego las lleno, y seteo dicha configuración en el sinograma2d según
@@ -360,9 +360,9 @@ bool Sinogram3DCylindricalPet::ReadInterfileDiscoverySTE(char* fileDataPath)
 	  /// ring. Siempre el primero contiene una cantidad impar de LORs, el segundo para, y va alternando
 	  /// entre esos dos valores hasta el final.
 	  /// Recorro todos los singoramas del segmento.
-	  int CantLORSimpar = ceilf(((float)(MaxAbsRing - MinAbsRing))/2);
-	  int CantLORSpar = ceilf(((float)(MaxAbsRing - MinAbsRing + 1))/2);
-	  int iRing1 = - floorf((MaxAbsRing-MinAbsRing)/2);
+	  int CantLORSimpar = (int)ceilf(((float)(MaxAbsRing - MinAbsRing))/2);
+	  int CantLORSpar = (int)ceilf(((float)(MaxAbsRing - MinAbsRing + 1))/2);
+	  int iRing1 = (int)(-floorf(((float)MaxAbsRing-(float)MinAbsRing)/2));
 	  /* Si la diferencia entre anillos es positiva o negativa, lo analizo reci�n a la hora de cargar los anillos
 	  en el objeto Sinogram2D porque el c�lculo es totalmente sim�trico. Entonces si la diferencia de anillos es
 	  positiva le asigno al Ring1 el indice calculado normalmente, si la diferencia es negativa invierto los valores

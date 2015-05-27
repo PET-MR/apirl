@@ -13,12 +13,12 @@
 float Siddon (Line3D LOR, Image* image, SiddonSegment** weightsList, int* lengthList, float factor)
 {
   // Coordenadas (x,y,z) de los dos puntos de intersección de la lor con el fov:
-  float xCirc_1_mm, xCirc_2_mm, yCirc_1_mm, yCirc_2_mm, zCirc_1_mm, zCirc_2_mm;
+//  float xCirc_1_mm, xCirc_2_mm, yCirc_1_mm, yCirc_2_mm, zCirc_1_mm, zCirc_2_mm;
   
   // Variables relacionadas con el parámetro alpha de la recta de la lor.
-  float alpha_xy_1, alpha_xy_2;	// Valores de alpha para la intersección de la recta con el círculo del fov.
-  float alpha_x_1, alpha_y_1, alpha_z_1, alpha_x_2, alpha_y_2, alpha_z_2; // Valores de alpha para el punto de salida y entrada al fov.
-  float alpha_x_min, alpha_y_min, alpha_z_min, alpha_x_max, alpha_y_max, alpha_z_max;	// Valores de alpha de ambos puntos por coordenada, pero ahora separados por menor y mayor.
+//  float alpha_xy_1, alpha_xy_2;	// Valores de alpha para la intersección de la recta con el círculo del fov.
+  float alpha_x_1, alpha_y_1, alpha_x_2, alpha_y_2; //, alpha_z_1, alpha_z_2; // Valores de alpha para el punto de salida y entrada al fov.
+  float alpha_x_min, alpha_y_min, alpha_x_max, alpha_y_max; //, alpha_z_min, alpha_z_max;	// Valores de alpha de ambos puntos por coordenada, pero ahora separados por menor y mayor.
   float alpha_min, alpha_max;	// Valores de alpha mínimo y máximo finales, o sea de entrada y salida al fov de la lor.
   // Valores de alpha para recorrer la lor:
   float alpha_x, alpha_y, alpha_z;	// Valores de alpha si avanzo en x o en y, siempre debo ir siguiendo al más cercano.
@@ -33,7 +33,7 @@ float Siddon (Line3D LOR, Image* image, SiddonSegment** weightsList, int* length
   int i_incr = 0, j_incr = 0, k_incr = 0;
   
   // Cantidad de píxeles intersectados:
-  float numIntersectedPixels;
+  int numIntersectedPixels;
   // Punto de entrada y salida al fov trasladado al borde del píxel, ya que en esta versión el píxel
   // de entrada se considera entero, y no desde el punto exacto de itnersección con el círculo:
   float x_1_mm, x_2_mm, y_1_mm, y_2_mm, z_1_mm, z_2_mm;
@@ -174,12 +174,12 @@ float Siddon (Line3D LOR, Image* image, SiddonSegment** weightsList, int* length
   // los índices de los píxeles de entrada y salida del fov.
   // En este caso me interesa el píxel de entrada, para luego considerarlo entero,
   // por más que la entrada al fov sea en un punto intermedio:
-  i_min = floor((x_1_mm + rFov_mm)/sizeImage.sizePixelX_mm); // In X increase of System Coordinate = Increase Pixels.
-  j_min = floor((y_1_mm + rFov_mm)/sizeImage.sizePixelY_mm); 
-  k_min = floor((z_1_mm - offsetZ_mm)/sizeImage.sizePixelZ_mm); 
-  i_max = floor((x_2_mm + rFov_mm)/sizeImage.sizePixelX_mm); // In X increase of System Coordinate = Increase Pixels.
-  j_max = floor((y_2_mm + rFov_mm)/sizeImage.sizePixelY_mm); // 
-  k_max = floor((z_2_mm - offsetZ_mm)/sizeImage.sizePixelZ_mm);
+  i_min = (int)floor((x_1_mm + rFov_mm)/sizeImage.sizePixelX_mm); // In X increase of System Coordinate = Increase Pixels.
+  j_min = (int)floor((y_1_mm + rFov_mm)/sizeImage.sizePixelY_mm); 
+  k_min = (int)floor((z_1_mm - offsetZ_mm)/sizeImage.sizePixelZ_mm); 
+  i_max = (int)floor((x_2_mm + rFov_mm)/sizeImage.sizePixelX_mm); // In X increase of System Coordinate = Increase Pixels.
+  j_max = (int)floor((y_2_mm + rFov_mm)/sizeImage.sizePixelY_mm); // 
+  k_max = (int)floor((z_2_mm - offsetZ_mm)/sizeImage.sizePixelZ_mm);
 
   // En algunos casos puede quedarme el punto justo en el límite y que el píxel sea el contiguo a la imagen. En ese caso lo reduzco en 1:
 //   if(i_min<0)
@@ -344,13 +344,13 @@ float Siddon (Line3D LOR, Image* image, SiddonSegment** weightsList, int* length
 float Siddon (Line2D LOR, Image* image, SiddonSegment** weightsList, int* lengthList, float factor)
 {
   // Coordenadas (x,y) de los dos puntos de intersección de la lor con el fov:
-  float xCirc_1_mm, xCirc_2_mm, yCirc_1_mm, yCirc_2_mm;
+//  float xCirc_1_mm, xCirc_2_mm, yCirc_1_mm, yCirc_2_mm;
   // Valores de entrada y salida para fov cuadrado. Por ahora solo dejamos la parte de fov circular.
   //float minValueX_mm, minValueY_mm, maxValueX_mm, maxValueY_mm;
   
   // Variables relacionadas con el parámetro alpha de la recta de la lor.
   float alpha_xy_1, alpha_xy_2;	// Valores de alpha para la intersección de la recta con el círculo del fov.
-  float alpha_x_1, alpha_y_1, alpha_x_2, alpha_y_2; // Valores de alpha para el punto de salida y entrada al fov.
+  //float alpha_x_1, alpha_y_1, alpha_x_2, alpha_y_2; // Valores de alpha para el punto de salida y entrada al fov.
   float alpha_x_min, alpha_y_min, alpha_x_max, alpha_y_max;	// Valores de alpha de ambos puntos por coordenada, pero ahora separados por menor y mayor.
   float alpha_min, alpha_max;	// Valores de alpha mínimo y máximo finales, o sea de entrada y salida al fov de la lor.
   // Valores de alpha para recorrer la lor:
@@ -366,7 +366,7 @@ float Siddon (Line2D LOR, Image* image, SiddonSegment** weightsList, int* length
   int i_incr = 0, j_incr = 0, k_incr = 0;
   
   // Cantidad de píxeles intersectados:
-  float numIntersectedPixels;
+  int numIntersectedPixels;
   // Punto de entrada y salida al fov trasladado al borde del píxel, ya que en esta versión el píxel
   // de entrada se considera entero, y no desde el punto exacto de itnersección con el círculo:
   float x_1_mm, x_2_mm, y_1_mm, y_2_mm;
@@ -454,10 +454,10 @@ float Siddon (Line2D LOR, Image* image, SiddonSegment** weightsList, int* length
   // los índices de los píxeles de entrada y salida del fov.
   // En este caso me interesa el píxel de entrada, para luego considerarlo entero,
   // por más que la entrada al fov sea en un punto intermedio:
-  i_min = floor((x_1_mm + rFov_mm)/sizeImage.sizePixelX_mm); // In X increase of System Coordinate = Increase Pixels.
-  j_min = floor((y_1_mm + rFov_mm)/sizeImage.sizePixelY_mm); 
-  i_max = floor((x_2_mm + rFov_mm)/sizeImage.sizePixelX_mm); // In X increase of System Coordinate = Increase Pixels.
-  j_max = floor((y_2_mm + rFov_mm)/sizeImage.sizePixelY_mm); // 
+  i_min = (int)floor((x_1_mm + rFov_mm)/sizeImage.sizePixelX_mm); // In X increase of System Coordinate = Increase Pixels.
+  j_min = (int)floor((y_1_mm + rFov_mm)/sizeImage.sizePixelY_mm); 
+  i_max = (int)floor((x_2_mm + rFov_mm)/sizeImage.sizePixelX_mm); // In X increase of System Coordinate = Increase Pixels.
+  j_max = (int)floor((y_2_mm + rFov_mm)/sizeImage.sizePixelY_mm); // 
   
   // Verifico que los índices de i y j dieron dentro de la imagen, sino es que que estoy fuera del fov.
   if(((i_min<0)&&(i_max<0))||((j_min<0)&&(j_max<0))||((i_min>=sizeImage.nPixelsX)&&(i_max>=sizeImage.nPixelsX))|| ((j_min>=sizeImage.nPixelsY)&&(j_max>=sizeImage.nPixelsY)))
@@ -625,15 +625,15 @@ void Siddon (Point2D point1, Point2D point2, Image* image, SiddonSegment** Weigh
   
   //First touch in an x limit of the fov
   if(LOR.Vx>0)
-	  i_min = floor(i_min + 0.5);	// To avoid error of caclulations, because of the precision
+	  i_min = floor(i_min + 0.5f);	// To avoid error of caclulations, because of the precision
   else
-	  i_min = floor(i_min - 0.5); // If gets inside the FOV by the greatest value we have to go down
+	  i_min = floor(i_min - 0.5f); // If gets inside the FOV by the greatest value we have to go down
 
   //First touch in an y limit of the fov
   if(LOR.Vy>0)
-	  j_min = floor(j_min + 0.5);
+	  j_min = floor(j_min + 0.5f);
   else
-	  j_min = floor(j_min - 0.5);
+	  j_min = floor(j_min - 0.5f);
   i_min = floor(i_min);
 
   // Calculus of end pixel
@@ -643,16 +643,16 @@ void Siddon (Point2D point1, Point2D point2, Image* image, SiddonSegment** Weigh
   
   //First touch in an x limit of the fov
   if(LOR.Vx>0)
-	  i_max = floor(i_max - 0.5);
+	  i_max = floor(i_max - 0.5f);
   else
-	  i_max = floor(i_max + 0.5);
+	  i_max = floor(i_max + 0.5f);
   j_max = floor(j_max);
 
   //First touch in an y limit of the fov
   if(LOR.Vy > 0)
-	  j_max = floor(j_max - 0.5);
+	  j_max = floor(j_max - 0.5f);
   else
-	  j_max = floor(j_max + 0.5);
+	  j_max = floor(j_max + 0.5f);
   i_max = floor(i_max);
   
   // Pixels increments
@@ -667,7 +667,7 @@ void Siddon (Point2D point1, Point2D point2, Image* image, SiddonSegment** Weigh
 	  j_incr = -1;
 
   // Amount of pixels intersected
-  float Np = fabs(i_max - i_min) + fabs(j_max - j_min) + 1; // +0 in each dimension(for getting the amount of itnersections) -1 toget pixels> 3x1-1 = +2
+  int Np = (int)(fabs(i_max - i_min) + fabs(j_max - j_min) + 1); // +0 in each dimension(for getting the amount of itnersections) -1 toget pixels> 3x1-1 = +2
   // Allocates memory for the segments
   WeightsList[0] = (SiddonSegment*) malloc((size_t)(sizeof(SiddonSegment)* Np));
 
@@ -738,24 +738,21 @@ float getRayLengthInFov(Line2D LOR, Image* image)
 {
   // Variables relacionadas con el parámetro alpha de la recta de la lor.
   float alpha_xy_1, alpha_xy_2;	// Valores de alpha para la intersección de la recta con el círculo del fov.
-  float alpha_x_1, alpha_y_1, alpha_x_2, alpha_y_2; // Valores de alpha para el punto de salida y entrada al fov.
+  //float alpha_x_1, alpha_y_1, alpha_x_2, alpha_y_2; // Valores de alpha para el punto de salida y entrada al fov.
   float alpha_x_min, alpha_y_min, alpha_x_max, alpha_y_max;	// Valores de alpha de ambos puntos por coordenada, pero ahora separados por menor y mayor.
   float alpha_min, alpha_max;	// Valores de alpha mínimo y máximo finales, o sea de entrada y salida al fov de la lor.
   // Variables relacionadas con los índices de píxeles recorridos:
   int i_min = 0, j_min = 0;	// Índices (i,j) del píxel de entrada al fov.
   int i_max = 0, j_max = 0;	// Índices (i,j) del píxel de salida al fov.
-  int i, j;	// Índices con que recorro los píxeles de la lor.
+  //int i, j;	// Índices con que recorro los píxeles de la lor.
   // Incrementos en píxeles. Puede ser +-1 según la dirección de la lor.
   int i_incr = 0, j_incr = 0, k_incr = 0;
-  
-  // Cantidad de píxeles intersectados:
-  float numIntersectedPixels;
 
   // Punto de entrada y salida al fov trasladado al borde del píxel, ya que en esta versión el píxel
   // de entrada se considera entero, y no desde el punto exacto de itnersección con el círculo:
   float x_1_mm, x_2_mm, y_1_mm, y_2_mm;
   // Largo de la lor teniendo en cuenta P0 y P1, y largo de la lor dentro del fov:
-  float rayLength_mm, rayLengthInFov_mm;
+  float rayLengthInFov_mm;
   
   // Tamaño de la imagen.
   SizeImage sizeImage = image->getSize();
@@ -788,10 +785,10 @@ float getRayLengthInFov(Line2D LOR, Image* image)
   // los índices de los píxeles de entrada y salida del fov.
   // En este caso me interesa el píxel de entrada, para luego considerarlo entero,
   // por más que la entrada al fov sea en un punto intermedio:
-  i_min = floor((LOR.P0.X + LOR.Vx * alpha_min + rFov_mm)/sizeImage.sizePixelX_mm); // In X increase of System Coordinate = Increase Pixels.
-  j_min = floor((LOR.P0.Y + LOR.Vy * alpha_min + rFov_mm)/sizeImage.sizePixelY_mm); 
-  i_max = floor((LOR.P0.X + LOR.Vx * alpha_max + rFov_mm)/sizeImage.sizePixelX_mm); // In X increase of System Coordinate = Increase Pixels.
-  j_max = floor((LOR.P0.Y + LOR.Vy * alpha_max + rFov_mm)/sizeImage.sizePixelY_mm); // 
+  i_min = (int)floor((LOR.P0.X + LOR.Vx * alpha_min + rFov_mm)/sizeImage.sizePixelX_mm); // In X increase of System Coordinate = Increase Pixels.
+  j_min = (int)floor((LOR.P0.Y + LOR.Vy * alpha_min + rFov_mm)/sizeImage.sizePixelY_mm); 
+  i_max = (int)floor((LOR.P0.X + LOR.Vx * alpha_max + rFov_mm)/sizeImage.sizePixelX_mm); // In X increase of System Coordinate = Increase Pixels.
+  j_max = (int)floor((LOR.P0.Y + LOR.Vy * alpha_max + rFov_mm)/sizeImage.sizePixelY_mm); // 
   
   // Verifico que los índices de i y j dieron dentro de la imagen, sino es que que estoy fuera del fov.
   if(((i_min<0)&&(i_max<0))||((j_min<0)&&(j_max<0))||((i_min>=sizeImage.nPixelsX)&&(i_max>=sizeImage.nPixelsX))|| ((j_min>=sizeImage.nPixelsY)&&(j_max>=sizeImage.nPixelsY)))

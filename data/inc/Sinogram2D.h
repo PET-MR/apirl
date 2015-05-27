@@ -39,9 +39,9 @@ class DLLEXPORT Sinogram2D : public Projection
 	  int maxAng_deg;
 	  
 	  /** Número de proyecciones o ángulos. */
-	  unsigned int numProj;	
+	  int numProj;	
 	  /** Número de muestras espaciales por proyección. */
-	  unsigned int numR;
+	  int numR;
 	  
 	  /** Radio del Field of View. */
 	  float radioFov_mm;
@@ -57,8 +57,6 @@ class DLLEXPORT Sinogram2D : public Projection
 	  
 	  /** String donde se guardan mensajes del último error ocurrido durante la ejecución. */
 	  string strError;
-	  
-	  
 
 	public:
 		/** Constructor Base */
@@ -103,10 +101,10 @@ class DLLEXPORT Sinogram2D : public Projection
 		virtual Sinogram2D* Copy() = 0;
 	
 		/** Método que devuelve cantidad de ángulos de proyecciones. */
-		unsigned int getNumProj(){ return numProj;};
+		int getNumProj(){ return numProj;};
 		
 		/** Método que devuelve cantidad de muestras espaciales de cada proyección. */
-		unsigned int getNumR(){ return numR;};
+		int getNumR(){ return numR;};
 		
 		/** Método que devuelve el incremento de la variable transversal r. Depende la Lor ya que puede
 		    ser no uniforme, por ejemplo por el efecto de arc correction.

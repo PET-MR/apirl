@@ -23,7 +23,7 @@ Sinogram2Dtgs::Sinogram2Dtgs()
   /* Para un sinograma genérico los ángulos de proyecciones van de 0 a 180º. */
   minAng_deg = 0;
   maxAng_deg = 360;
-  widthDetector_mm = 50.8;
+  widthDetector_mm = 50.8f;
 }
 
 Sinogram2Dtgs::Sinogram2Dtgs(unsigned int nProj, unsigned int nR, float rFov_mm, float dCrystalToCenterFov, 
@@ -37,7 +37,7 @@ Sinogram2Dtgs::Sinogram2Dtgs(unsigned int nProj, unsigned int nR, float rFov_mm,
   lengthColimator_mm = lColimator_mm;
   widthCollimator_mm = wCollimator_mm;
   widthHoleCollimator_mm = wHoleCollimator_mm;
-  widthDetector_mm = 50.8;
+  widthDetector_mm = 50.8f;
   // Allocates Memory for th Sinogram
   ptrSinogram = (float*) malloc(numProj*numR*sizeof(float));
   // Allocates Memory for the value's vectors
@@ -46,11 +46,11 @@ Sinogram2Dtgs::Sinogram2Dtgs(unsigned int nProj, unsigned int nR, float rFov_mm,
   // Initialization
   float RIncrement = (2 * radioFov_mm) / numR;
   float PhiIncrement = (float)maxAng_deg / numProj;
-  for(unsigned int i = 0; i < numProj; i ++)
+  for(int i = 0; i < numProj; i ++)
   {
 	  // Initialization of Phi Values
 	  ptrAngValues_deg[i] = PhiIncrement/2 + i * PhiIncrement;
-	  for(unsigned int j = 0; j < numR; j++)
+	  for(int j = 0; j < numR; j++)
 	  {
 		  if(i == 0)
 		  {
@@ -81,7 +81,7 @@ void Sinogram2Dtgs::setGeometricParameters(float rFov_mm, float dCrystalToCenter
   this->widthCollimator_mm = wCollimator_mm;
   this->widthHoleCollimator_mm = wHoleCollimator_mm;
   float rStep = (2 * radioFov_mm) / numR;
-  for(unsigned int j = 0; j < numR; j++)
+  for(int j = 0; j < numR; j++)
   {	  
 	ptrRvalues_mm[j] = rStep/2 + j * rStep - radioFov_mm;
   }
@@ -312,14 +312,14 @@ void Sinogram2Dtgs::getPointsFromTgsLor (int indexAng, int indexR, float offsetD
   float r = getRValue(indexR);
   /// Para lor lor debo obtener un punto sobre el detector, y un punto en el extremo opuesto.
   /// Punto sobre el detector:
-  double x0 = r + offsetDetector_mm;	/// Posición en X del punto sobre el detector: r + offsetDetector.
+  float x0 = r + offsetDetector_mm;	/// Posición en X del punto sobre el detector: r + offsetDetector.
   // En el sistema final es y0 = -this->distCrystalToCenterFov, tenerlo en cuenta porque algunas simulaciones no lo tienen así, y por eso
   // por ahora lo estoy poniendo en +this->distCrystalToCenterFov
-  double y0 = this->distCrystalToCenterFov;	/// Coordenada Y sobre el detector.
+  float y0 = this->distCrystalToCenterFov;	/// Coordenada Y sobre el detector.
   /// Punto en cara opuesta. La coordenada Y es la misma pero con signo opuesto, mientras que para la X
   /// la debo proyectar en base a la recta que forma entre (r+OffsetDetector) y (r+OffsetCaraColimador):
-  double y1 = -this->distCrystalToCenterFov;
-  double x1 = x0 + (offsetCollimator_mm-offsetDetector_mm) / this->lengthColimator_mm * this->distCrystalToCenterFov * 2;
+  float y1 = -this->distCrystalToCenterFov;
+  float x1 = x0 + (offsetCollimator_mm-offsetDetector_mm) / this->lengthColimator_mm * this->distCrystalToCenterFov * 2;
   
   p1->X = x0 * cos(thita_rad) + y0 * sin(thita_rad);
   p1->Y = -x0 * sin(thita_rad) + y0 * cos(thita_rad);
@@ -338,14 +338,14 @@ bool Sinogram2Dtgs::getPointsFromOverSampledLor (int indexAng, int indexR, int i
   r = r - (incrementR/2) + incrementR/numSubsamples * indexSubsample + (incrementR/(2*numSubsamples));
   /// Para lor lor debo obtener un punto sobre el detector, y un punto en el extremo opuesto.
   /// Punto sobre el detector:
-  double x0 = r + offsetDetector_mm;	/// Posición en X del punto sobre el detector: r + offsetDetector.
+  float x0 = r + offsetDetector_mm;	/// Posición en X del punto sobre el detector: r + offsetDetector.
   // En el sistema final es y0 = -this->distCrystalToCenterFov, tenerlo en cuenta porque algunas simulaciones no lo tienen así, y por eso
   // por ahora lo estoy poniendo en +this->distCrystalToCenterFov
-  double y0 = this->distCrystalToCenterFov;	/// Coordenada Y sobre el detector.
+  float y0 = this->distCrystalToCenterFov;	/// Coordenada Y sobre el detector.
   /// Punto en cara opuesta. La coordenada Y es la misma pero con signo opuesto, mientras que para la X
   /// la debo proyectar en base a la recta que forma entre (r+OffsetDetector) y (r+OffsetCaraColimador):
-  double y1 = -this->distCrystalToCenterFov;
-  double x1 = x0 + (offsetCollimator_mm-offsetDetector_mm) / this->lengthColimator_mm * this->distCrystalToCenterFov * 2;
+  float y1 = -this->distCrystalToCenterFov;
+  float x1 = x0 + (offsetCollimator_mm-offsetDetector_mm) / this->lengthColimator_mm * this->distCrystalToCenterFov * 2;
   
   p1->X = x0 * cos(thita_rad) + y0 * sin(thita_rad);
   p1->Y = -x0 * sin(thita_rad) + y0 * cos(thita_rad);

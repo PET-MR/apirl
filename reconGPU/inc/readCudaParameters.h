@@ -33,7 +33,7 @@
   #define DLLEXPORT
   #define DLLLOCAL
 #endif
-
+#define DLLEXPORT
 /* Encabezados de Funciones relacioandas con la carga de parámetros del Mlem */
 DLLEXPORT int getProjectorBlockSize (string mlemFilename, string cmd, dim3* projectorBlockSize);
 DLLEXPORT int getBackprojectorBlockSize (string mlemFilename, string cmd, dim3* backprojectorBlockSize);

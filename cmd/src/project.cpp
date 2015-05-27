@@ -149,17 +149,10 @@ using	std::string;
 int main (int argc, char *argv[])
 {
 	char errorMessage[300];	// string de error para la función de lectura de archivo de parámetros.
-	char returnValue[256];	// string en el que se recibe el valor de un keyword en la lectura del archivo de parámetros.
 	char** keyWords;  // múltiples keywords para la función de lectura de múltiples keys.
 	char** multipleReturnValue; // array de strings para la función de multples keys.
 	int	errorCode;
-	int nx, ny, nz, n_voxels, resolution, numIterations, file, Recon;
-	unsigned int hTimer;
-	const char* pathSensImage;
-	double timerValue;
-	SizeImage MySizeVolume;
 	float rFov_mm = 0, axialFov_mm = 0, rScanner_mm = 0;
-	char NombreRecon[50];
 	string parameterFileName;	// string para el Nombre de Archivo de parámetros.
 	
 	string inputFilename;	// string para el Nombre del archivo de header del sinograma.
@@ -171,14 +164,12 @@ int main (int argc, char *argv[])
 	string attenMapFilename;
 	string normProjFilename;
 	Projector* forwardprojector;
-	Image* attenuationImage;
 	bool enableAttenuationCorrection = false;
 	#ifdef __USE_CUDA__
 	  CuProjector* cuProjector;
 	  CuProjectorInterface* cuProjectorInterface;
 	#endif
-	// Variables para sinogram2Dtgs y Sinogram2DtgsInSegment:
-	float widthSegment_mm, diameterFov_mm, distCrystalToCenterFov, lengthColimator_mm, widthCollimator_mm, widthHoleCollimator_mm;
+
 	// Asigno la memoria para los punteros dobles, para el array de strings.
 	keyWords = (char**)malloc(sizeof(*keyWords)*FIXED_KEYS);
 	multipleReturnValue = (char**)malloc(sizeof(*multipleReturnValue)*FIXED_KEYS);

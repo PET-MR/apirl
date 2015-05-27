@@ -25,7 +25,7 @@ void OsemSinogram3d::updateUpdateThreshold()
 {
   for(int s = 0; s < numSubsets; s++)
   {
-    updateThresholds[s] = sensitivityImages[s]->getMinValue() + (sensitivityImages[s]->getMaxValue()-sensitivityImages[s]->getMinValue()) * 0.002;  
+    updateThresholds[s] = sensitivityImages[s]->getMinValue() + (sensitivityImages[s]->getMaxValue()-sensitivityImages[s]->getMinValue()) * 0.002f;  
     #ifdef __DEBUG__
       printf("Threshold: %f\n", updateThresholds[s]);
     #endif
@@ -40,7 +40,7 @@ bool OsemSinogram3d::Reconstruct()
   /// Proyección auxiliar, donde guardo el sinograma proyectado:
   Sinogram3D* estimatedProjection; // = new Sinogram3D(inputProjection);
   Sinogram3D *inputSubset;
-  Sinogram3D *normalizationSubset; // Pointer to a sinogram3d to get each subset of normalization factors.
+//  Sinogram3D *normalizationSubset; // Pointer to a sinogram3d to get each subset of normalization factors.
   //estimatedProjection->FillConstant(0);
   /// Imagen donde guardo la backprojection.
   Image* backprojectedImage = new Image(reconstructionImage->getSize());
@@ -147,16 +147,16 @@ bool OsemSinogram3d::Reconstruct()
   printf("Iniciando Reconstrucción...\n");
   /// Arranco con el log de los resultados:
   strcpy(c_string, "_______RECONSTRUCCION_______");
-  logger->writeLine(c_string, strlen(c_string));
+  logger->writeLine(c_string, (int)strlen(c_string));
   /// Voy generando mensajes con los archivos creados en el log de salida:
 
   int nPixels = reconstructionImage->getPixelCount();
-  for(unsigned int t = 0; t < this->numIterations; t++)
+  for(int t = 0; t < this->numIterations; t++)
   {
     printf("Iteration Nº: %d\n", t+1);
     timesTotalIteration_seg = 0;
     // Por cada iteración debo repetir la operación para todos los subsets.
-    for(unsigned int s = 0; s < this->numSubsets; s++)
+    for(int s = 0; s < this->numSubsets; s++)
     {
       printf("\tsubiteration Nº: %d", s+1);
       clock_t initialClockIteration = clock();
@@ -310,25 +310,25 @@ bool OsemSinogram3d::Reconstruct()
   float tiempoTotal = (float)(finalClock - initialClock)*1000/(float)CLOCKS_PER_SEC;
   /// Termino con el log de los resultados:
   strcpy(c_string, "_______RESULTADOS DE RECONSTRUCCION_______");
-  logger->writeLine(c_string, strlen(c_string));
+  logger->writeLine(c_string, (int)strlen(c_string));
   sprintf(c_string, "%f", tiempoTotal);
   logger->writeValue("Tiempo Total de Reconstrucción:", c_string);
   /// Ahora guardo los tiempos por iteración y por etapa, en fila de valores.
   strcpy(c_string, "Tiempos de Reconstrucción por Iteración [mseg]");
-  logger->writeLine(c_string, strlen(c_string));
+  logger->writeLine(c_string, (int)strlen(c_string));
   logger->writeRowOfNumbers(timesIteration_mseg, this->numIterations*this->numSubsets);
   strcpy(c_string, "Tiempos de Forwardprojection por Iteración [mseg]");
-  logger->writeLine(c_string, strlen(c_string));
+  logger->writeLine(c_string, (int)strlen(c_string));
   logger->writeRowOfNumbers(timesForwardprojection_mseg, this->numIterations*this->numSubsets);
   strcpy(c_string, "Tiempos de Backwardprojection por Iteración [mseg]");
-  logger->writeLine(c_string, strlen(c_string));
+  logger->writeLine(c_string, (int)strlen(c_string));
   logger->writeRowOfNumbers(timesBackprojection_mseg, this->numIterations*this->numSubsets);
   strcpy(c_string, "Tiempos de UpdatePixel por Iteración [mseg]");
-  logger->writeLine(c_string, strlen(c_string));
+  logger->writeLine(c_string, (int)strlen(c_string));
   logger->writeRowOfNumbers(timesPixelUpdate_mseg, this->numIterations*this->numSubsets);
   /// Por último registro los valores de likelihood:
   strcpy(c_string, "Likelihood por Iteración:");
-  logger->writeLine(c_string, strlen(c_string));
+  logger->writeLine(c_string, (int)strlen(c_string));
   logger->writeRowOfNumbers(this->likelihoodValues, this->numIterations*this->numSubsets + 1);
 
   /// Libero la memoria de los arrays:
@@ -343,7 +343,7 @@ bool OsemSinogram3d::computeSensitivity(Image* outputImage, int indexSubset)
 {
   /// Creo un Sinograma del subset correspondiente:
   Sinogram3D* backprojectSinogram3D;
-  char c_string[100];
+//  char c_string[100];
   /// Si no hay normalización lo lleno con un valor constante, de lo contrario bakcprojec normalizacion:
   if (enableNormalization)
     backprojectSinogram3D = normalizationCorrectionFactorsProjection->getSubset(indexSubset, numSubsets);

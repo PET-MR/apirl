@@ -16,6 +16,8 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   add_definitions(-D__DEBUG__)
 endif()
 
+# Disable secure Warnings for stdc functions.
+add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 
 ###################### OPENMP CONFIGURATION #############################
 INCLUDE(FindOpenMP)
@@ -35,21 +37,6 @@ ENDIF(OPENMP_FOUND)
 #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} --main-stacksize=8500000")
 SET (CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} --main-stacksize=8500000")
 #########################################################
-
-################## CHECK IF CUDA AVAILABLE ############################
-# Directorio donde se encuentra el FindCUDA:
-if(ENABLE_GPU)
-	SET(FindCUDA_Dir ${CMAKE_SOURCE_DIR}/FindCUDA)
-	set(CMAKE_MODULE_PATH "${FindCUDA_Dir}/CMake/cuda" ${CMAKE_MODULE_PATH})
-	find_package(CUDA)
-	if (CUDA_FOUND)
-		SET(ENABLE_GPU OFF)
-		add_definitions(-D__USE_CUDA__)
-	else (CUDA_FOUND)
-		SET(ENABLE_GPU OFF)	
-	endif (CUDA_FOUND)
-endif(ENABLE_GPU)
-#######################################################################
 
 # Genero una variable con los directorios de invlude para cada subproyecto. Las creo en este, para que
 # puedan ser accesibles desde cada uno de ellos.
@@ -78,11 +65,6 @@ if(CMAKE_HOST_UNIX)
   endif()
 endif()
 
-# Agrego los directorios de cada proyecto:
-add_subdirectory(recon)
-add_subdirectory(data)
-add_subdirectory(utils)
-add_subdirectory(cmd)
 if(ENABLE_GPU)
 	# Seteo en ON CUDA_VERBOSE_BUILD para visualizar todos los resultados del nvcc.
 	SET(CUDA_VERBOSE_BUILD ON)
@@ -92,15 +74,81 @@ if(ENABLE_GPU)
 	SET(CUDA_LIBRARIES_BUILD	STATIC)
 	#SET(CUDA_LIBRARIES_BUILD	SHARED)
 	# Seteo las compute capabilities con las que quiero compilar (Por default es la más baja: 1.0):
-	SET(CUDA_COMPUTE_CAPABILITY 3.5)
+	SET(CUDA_COMPUTE_CAPABILITY 3.0)
 	# Algunas opciones adicionales para cuda.
 	#SET(CUDA_USE_FAST_MATH ON)
 	# Tipo de Cache que se habilita:
 	#SET(CUDA_USE_CACHE_L1_L2 ON)
 	SET(CUDA_USE_CACHE_ONLY_L2 ON)
 	#SET(CUDA_MAX_REG_COUNT 32)
-	set(nvcc_flags "${nvcc_flags} -rdc=true -lineinfo")
+	#set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -rdc=true -lineinfo")
+endif(ENABLE_GPU)
 
+if(NOT CUDA_COMPUTE_CAPABILITY)
+	set(CUDA_COMPUTE_CAPABILITY 1.0)
+endif()
+if(CUDA_COMPUTE_CAPABILITY STREQUAL 1.0)
+	set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} ";-arch=sm_10")
+elseif(CUDA_COMPUTE_CAPABILITY STREQUAL 1.1)
+	set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} ";-arch=sm_11")
+elseif(CUDA_COMPUTE_CAPABILITY STREQUAL 1.2)
+	set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} ";-arch=sm_12")
+elseif(CUDA_COMPUTE_CAPABILITY STREQUAL 1.3)
+	set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} ";-arch=sm_13")
+elseif(CUDA_COMPUTE_CAPABILITY STREQUAL 2.0)
+	set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} ";-arch=sm_20")
+	set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} ";-gencode=arch=compute_20,code=sm_20")
+elseif(CUDA_COMPUTE_CAPABILITY STREQUAL 2.1)
+	set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} ";-arch=sm_21")
+elseif(CUDA_COMPUTE_CAPABILITY STREQUAL 3.0)
+	set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} ";-arch=sm_30")
+	set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} ";-gencode=arch=compute_30,code=sm_30")
+elseif(CUDA_COMPUTE_CAPABILITY STREQUAL 3.5)
+	set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} ";-arch=sm_35")
+	set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} ";-gencode=arch=compute_35,code=sm_35")
+endif()
+# Agregado Martin Belzunce (14/04/11): Flags según el compute capability por default 1.0 (el mínimo):
+if(CUDA_USE_FAST_MATH)
+	set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} ";-use_fast_math")
+endif()
+  if(CUDA_MAX_REG_COUNT)
+    set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} ";-maxrregcount=${CUDA_MAX_REG_COUNT}")
+  endif()
+if(CUDA_USE_CACHE_L1_L2)
+ set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} ";-Xptxas=-v,-dlcm=ca -lineinfo")
+  #set(nvcc_flags ${nvcc_flags} "-Xptxas --dlcm=ca")
+elseif(CUDA_USE_CACHE_ONLY_L2)
+  set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} ";-Xptxas=-v,-dlcm=cg -lineinfo")
+  #set(nvcc_flags ${nvcc_flags} "-Xptxas --dlcm=cg")
+else()
+  set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} ";-Xptxas=-v -lineinfo")
+endif()
+
+set(CUDA_NVCC_FLAGS_RELEASE ${CUDA_NVCC_FLAGS_RELEASE} "-03")
+set(CUDA_NVCC_FLAGS_DEBUG ${CUDA_NVCC_FLAGS_DEBUG} "-G")
+MESSAGE(STATUS "NVCC FLAGS: ${CUDA_NVCC_FLAGS}")
+
+################## CHECK IF CUDA AVAILABLE ############################
+# Directorio donde se encuentra el FindCUDA:
+if(ENABLE_GPU)
+	#SET(FindCUDA_Dir ${CMAKE_SOURCE_DIR}/FindCUDA)
+	#set(CMAKE_MODULE_PATH "${FindCUDA_Dir}/CMake/cuda" ${CMAKE_MODULE_PATH})
+	find_package(CUDA)
+	if (CUDA_FOUND)
+		SET(ENABLE_GPU ON)
+		add_definitions(-D__USE_CUDA__)
+	else (CUDA_FOUND)
+		SET(ENABLE_GPU OFF)	
+	endif (CUDA_FOUND)
+endif(ENABLE_GPU)
+#######################################################################
+
+# Agrego los directorios de cada proyecto:
+add_subdirectory(recon)
+add_subdirectory(data)
+add_subdirectory(utils)
+add_subdirectory(cmd)
+if(ENABLE_GPU)
 	add_subdirectory(cmdGPU)
 	add_subdirectory(reconGPU)
 endif(ENABLE_GPU)

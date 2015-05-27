@@ -28,7 +28,7 @@
 #include <CuProjector.h>
 
 // DLL export/import declaration: visibility of objects
-#ifndef LINK_STATIC
+/*#ifndef LINK_STATIC
 	#ifdef WIN32               // Win32 build
 		#ifdef DLL_BUILD    // this applies to DLL building
 			#define DLLEXPORT __declspec(dllexport)
@@ -48,8 +48,8 @@
 #else                         // static linking
 	#define DLLEXPORT
 	#define DLLLOCAL
-#endif
-
+#endif*/
+#define DLLEXPORT
 class DLLEXPORT CuProjectorInterface : virtual Projector
 {
   private:
@@ -148,7 +148,7 @@ class DLLEXPORT CuProjectorInterface : virtual Projector
 	void setProjectorBlockSizeConfig(dim3 blockSize);
     
 	/// Selecciona la Gpu a utilizar.
-	bool setGpuId(int id){gpuId = id;};
+	bool setGpuId(int id){gpuId = id; return true;};
 	
 	/** Backprojection con Siddon para Sinogram2D. */
 	bool Backproject (Sinogram2D* InputSinogram, Image* outputImage){return false;};  
@@ -167,7 +167,7 @@ class DLLEXPORT CuProjectorInterface : virtual Projector
 	/** Backprojection con Siddon para Sinogram3D. */
 	bool Backproject (Sinogram3D* InputSinogram, Image* outputImage); 
 	/** DivideAndBackprojection con Siddon para Sinogram3D. */
-	bool DivideAndBackproject (Sinogram3D* InputSinogram, Sinogram3D* EstimatedSinogram, Image* outputImage){};
+	bool DivideAndBackproject (Sinogram3D* InputSinogram, Sinogram3D* EstimatedSinogram, Image* outputImage){return false;};
 	/** Projection con Siddon para Sinogram3D. */
 	bool Project(Image* image, Sinogram3D* projection);
 };

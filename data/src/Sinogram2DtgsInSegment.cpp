@@ -46,7 +46,7 @@ void Sinogram2DtgsInSegment::setGeometricParameters(float rFov_mm, float dCrysta
   this->widthCollimator_mm = wCollimator_mm;
   this->widthHoleCollimator_mm = wHoleCollimator_mm;
   float rStep = (2 * radioFov_mm) / numR;
-  for(unsigned int j = 0; j < numR; j++)
+  for(int j = 0; j < numR; j++)
   {	  
 	ptrRvalues_mm[j] = rStep/2 + j * rStep - radioFov_mm;
   }

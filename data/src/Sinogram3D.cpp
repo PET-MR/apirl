@@ -348,7 +348,7 @@ bool Sinogram3D::readFromInterfile(string headerFilename, float radioScanner_mm)
   else
   {
     // No estaba la leyenda por lo que calculo para un segmento distinto de 1:
-    numRings = floor((numSinogramsPerSegment[0]+1)/2);
+    numRings = (int)floor((numSinogramsPerSegment[0]+1)/2);
   }
   
   // Con la cantidad de anillos genero las coordenadas de los anillos:
@@ -374,7 +374,7 @@ bool Sinogram3D::readFromInterfile(string headerFilename, float radioScanner_mm)
   // ya que se fusionan varios sinos del michelograma en uno solo. Genero una lista auxiliar con la cantidad
   // maxima de anillos que puede tener un sinograma, que es ceil(span/2):
   span = abs(maxRingDiffPerSegment[0]) + abs(minRingDiffPerSegment[0])+1;
-  int maxRingsPerSino = ceil((float)span/2);
+  int maxRingsPerSino = (int)ceil((float)span/2);
   int* listaRing1, *listaRing2;
   float *listaZ1_mm, *listaZ2_mm;
   listaRing1 = (int*) malloc(sizeof(int)*maxRingsPerSino);
@@ -424,7 +424,7 @@ bool Sinogram3D::readFromInterfile(string headerFilename, float radioScanner_mm)
       {
 		// Si entré acá significa que hay combinaciones de anillos para este sinograma. Lo leo del i33 y lo cargo:
 		// Leo un sinograma del i33 y lo asigno al sinograma del segmento correspondiente:
-		unsigned int numBytes = fread(rawSino, sizeof(float), numProj*numR, fp);
+		int numBytes = (int)fread(rawSino, sizeof(float), numProj*numR, fp);
 		if (numBytes != (numProj*numR))
 		{
 			cout << "Falló la lectura de los datos del sinograma3d, puede que no coincida la cantidad de bytes a leer con los del archivo .i33" << endl;
@@ -460,10 +460,10 @@ bool Sinogram3D::FillConstant(float Value)
     {
       for(int k=0; k < auxSegment->getSinogram2D(j)->getNumProj(); k++)
       {
-	for(int l=0; l < auxSegment->getSinogram2D(j)->getNumR(); l++)
-	{
-	  auxSegment->getSinogram2D(j)->setSinogramBin(k,l, Value);
-	}
+		for(int l=0; l < auxSegment->getSinogram2D(j)->getNumR(); l++)
+		{
+		  auxSegment->getSinogram2D(j)->setSinogramBin(k,l, Value);
+		}
       }
     }
   }
@@ -477,13 +477,13 @@ bool Sinogram3D::SaveInFile(char* filePath)
 {
   FILE* fileSinogram3D = fopen(filePath,"wb");
   unsigned int CantBytes;
-  for(unsigned int i = 0; i < numSegments; i++)
+  for(int i = 0; i < numSegments; i++)
   {
     Segment* auxSegment = this->getSegment(i);
-    for(unsigned int j = 0; j < auxSegment->getNumSinograms(); j++)
+    for(int j = 0; j < auxSegment->getNumSinograms(); j++)
     {
       float* ptrSinogram2D = auxSegment->getSinogram2D(j)->getSinogramPtr();
-      if((CantBytes =  fwrite(ptrSinogram2D, sizeof(float), auxSegment->getSinogram2D(j)->getNumProj()*auxSegment->getSinogram2D(j)->getNumR() , fileSinogram3D)) !=  (auxSegment->getSinogram2D(j)->getNumProj()*auxSegment->getSinogram2D(j)->getNumR()))
+      if((CantBytes =  (int)fwrite(ptrSinogram2D, sizeof(float), auxSegment->getSinogram2D(j)->getNumProj()*auxSegment->getSinogram2D(j)->getNumR() , fileSinogram3D)) !=  (auxSegment->getSinogram2D(j)->getNumProj()*auxSegment->getSinogram2D(j)->getNumR()))
 	    return false;
     }
     delete auxSegment;
@@ -495,21 +495,21 @@ bool Sinogram3D::SaveInFile(char* filePath)
 float Sinogram3D::getLikelihoodValue(Sinogram3D* referenceProjection)
 {
   float likelihood = 0;
-  for(unsigned int i = 0; i < this->numSegments; i++)
+  for(int i = 0; i < this->numSegments; i++)
   {
-    for(unsigned int j = 0; j < this->getSegment(i)->getNumSinograms(); j++)
+    for(int j = 0; j < this->getSegment(i)->getNumSinograms(); j++)
     {
-      for(unsigned int k = 0; k < this->getSegment(i)->getSinogram2D(j)->getNumProj(); k++)
+      for(int k = 0; k < this->getSegment(i)->getSinogram2D(j)->getNumProj(); k++)
       {
-	for(unsigned int l = 0; l < this->getSegment(i)->getSinogram2D(j)->getNumR(); l++)
-	{
-	  if(this->getSegment(i)->getSinogram2D(j)->getSinogramBin(k,l) != 0)
-	  {
-	    likelihood += referenceProjection->getSegment(i)->getSinogram2D(j)->getSinogramBin(k,l) 
-	      * log(this->getSegment(i)->getSinogram2D(j)->getSinogramBin(k,l))
-	      - this->getSegment(i)->getSinogram2D(j)->getSinogramBin(k,l);
-	  }
-	}
+		for(int l = 0; l < this->getSegment(i)->getSinogram2D(j)->getNumR(); l++)
+		{
+		  if(this->getSegment(i)->getSinogram2D(j)->getSinogramBin(k,l) != 0)
+		  {
+			likelihood += referenceProjection->getSegment(i)->getSinogram2D(j)->getSinogramBin(k,l) 
+			  * log(this->getSegment(i)->getSinogram2D(j)->getSinogramBin(k,l))
+			  - this->getSegment(i)->getSinogram2D(j)->getSinogramBin(k,l);
+		  }
+		}
       }
     }
   }

@@ -281,11 +281,11 @@ int MdcGetYesNoKey(void)
 }
   
 
-double MdcGetFloatKey(void)
+float MdcGetFloatKey(void)
 {
-  double d=-1;
+  float d=-1;
   char* strNum = strstr(keystr,":=") + 2;
-  d = atof(strNum);
+  d = (float)atof(strNum);
   return(d);
 }
 
@@ -617,7 +617,7 @@ char *MdcReadIntfHeader(FILEINFO *fi, MDC_INTERFILE *intf)
       continue;
     }
     if (MdcThisKey("isotope half life [hours]")) {
-      fi->isotope_halflife = (float)MdcGetFloatKey() * 3600.;
+      fi->isotope_halflife = (float)MdcGetFloatKey() * 3600.0f;
       continue;
     }
 #endif
@@ -1003,7 +1003,7 @@ char *MdcReadIntfHeader(FILEINFO *fi, MDC_INTERFILE *intf)
               continue;
             }
             if (MdcThisKey("image duration (sec)")) {
-              sd->image_duration = (float)MdcGetFloatKey() * 1000.;
+              sd->image_duration = (float)MdcGetFloatKey() * 1000.0f;
               continue;
             }
             if (MdcThisKey("image start time")) {
@@ -1031,8 +1031,8 @@ char *MdcReadIntfHeader(FILEINFO *fi, MDC_INTERFILE *intf)
       case MDC_INTF_DIALECT_PET: /* probably GE vendor specific */
 
           if (MdcThisString("image duration (sec)")) {
-            intf->image_duration=MdcGetFloatKey() * 1000.;
-            if ((fi->dyndata != NULL) && (counter < fi->dim[4])) {
+            intf->image_duration=MdcGetFloatKey() * 1000.0f;
+            if ((fi->dyndata != NULL) && (counter < (Uint32)fi->dim[4])) {
               dd = &(fi->dyndata[counter]);
               counter++;
               if (dd != NULL) {
@@ -1105,7 +1105,7 @@ char *MdcReadIntfHeader(FILEINFO *fi, MDC_INTERFILE *intf)
              continue;
            }
            if (MdcThisKey("image duration (sec)")) {
-             intf->image_duration=MdcGetFloatKey() * 1000.;
+             intf->image_duration=MdcGetFloatKey() * 1000.0f;
              if (dd != NULL) {
                float duration;
                duration = intf->image_duration * dd->nr_of_slices;
@@ -1114,7 +1114,7 @@ char *MdcReadIntfHeader(FILEINFO *fi, MDC_INTERFILE *intf)
              continue;
            }
            if (MdcThisKey("pause between images (sec)")) {
-             intf->image_pause=MdcGetFloatKey() * 1000.;
+             intf->image_pause=MdcGetFloatKey() * 1000.0f;
              if (dd != NULL) {
                dd->delay_slices = intf->image_pause;
                dd->time_frame_duration += dd->delay_slices*(dd->nr_of_slices-1);
@@ -1122,7 +1122,7 @@ char *MdcReadIntfHeader(FILEINFO *fi, MDC_INTERFILE *intf)
              continue;
            }
            if (MdcThisKey("pause between frame groups (sec)")) {
-             intf->group_pause=MdcGetFloatKey() * 1000.;
+             intf->group_pause=MdcGetFloatKey() * 1000.0f;
              if (dd != NULL) {
                dd->time_frame_delay = intf->group_pause;
              }
@@ -1167,7 +1167,7 @@ char *MdcReadIntfHeader(FILEINFO *fi, MDC_INTERFILE *intf)
 
       case MDC_INTF_GATED:
           if (MdcThisKey("study duration (acquired) sec")) {
-            gd->study_duration = (float)MdcGetFloatKey() * 1000.;
+            gd->study_duration = (float)MdcGetFloatKey() * 1000.0f;
             continue;
           }
 
@@ -1191,24 +1191,24 @@ char *MdcReadIntfHeader(FILEINFO *fi, MDC_INTERFILE *intf)
              continue;
            }
            if (gd!=NULL && MdcThisKey("image duration (sec)")) {
-             gd->image_duration = (float)MdcGetFloatKey() * 1000.;
+             gd->image_duration = (float)MdcGetFloatKey() * 1000.0f;
              continue;
            }
            if (gd!=NULL && MdcThisKey("time window lower limit (sec)")) {
-             gd->window_low = (float)MdcGetFloatKey() * 1000.;
+             gd->window_low = (float)MdcGetFloatKey() * 1000.0f;
              continue;
            }
            if (gd!=NULL && MdcThisKey("time window upper limit (sec)")) {
-             gd->window_high = (float)MdcGetFloatKey() * 1000.;
+             gd->window_high = (float)MdcGetFloatKey() * 1000.0f;
              continue;
            }
            if (gd!=NULL
                && MdcThisKey("R-R cycles acquired this window")) {
-             v = (float)MdcGetFloatKey(); if (v > 100. || v <= 0.) v = 100.;
+             v = (float)MdcGetFloatKey(); if (v > 100. || v <= 0.) v = 100.0f;
              intf->procent_cycles_acquired = v;
 
              /* calculate observed */
-             v = (gd->cycles_acquired * 100.) / intf->procent_cycles_acquired;
+             v = (gd->cycles_acquired * 100.0f) / intf->procent_cycles_acquired;
              uv = (Uint32)v; v = (float)uv; /* simply chop to integer */
              if ((v > gd->cycles_acquired) || (gd->cycles_observed == 0.)) {
                gd->cycles_observed = v;
@@ -1220,7 +1220,7 @@ char *MdcReadIntfHeader(FILEINFO *fi, MDC_INTERFILE *intf)
              gd->cycles_acquired = (float)MdcGetFloatKey();
 
              /* calculate observed */
-             v = (gd->cycles_acquired * 100.) / intf->procent_cycles_acquired;
+             v = (gd->cycles_acquired * 100.0f) / intf->procent_cycles_acquired;
              uv = (Uint32)v; v = (float)uv; /* simply chop to integer */
              if ((v > gd->cycles_acquired) || (gd->cycles_observed == 0.)) {
                gd->cycles_observed = v;
@@ -1302,7 +1302,7 @@ char *MdcReadIntfHeader(FILEINFO *fi, MDC_INTERFILE *intf)
           }
           if (MdcThisKey("study duration (sec)") ||          /* official */
               MdcThisKey("study duration (elapsed) sec")) {  /* dialects */
-            intf->study_duration = (float)MdcGetFloatKey() * 1000.;
+            intf->study_duration = (float)MdcGetFloatKey() * 1000.0f;
             continue;
           }
           switch (intf->process_status) {
@@ -1391,11 +1391,11 @@ char *MdcReadIntfHeader(FILEINFO *fi, MDC_INTERFILE *intf)
                id->pixel_xsize = intf->pixel_xsize;
                id->pixel_ysize = intf->pixel_ysize;
 
-               id->slice_width  = ((id->pixel_xsize + id->pixel_ysize)/2.)
+               id->slice_width  = ((id->pixel_xsize + id->pixel_ysize)/2.0f)
                                   * intf->slice_thickness;
 
                fi->pat_slice_orient = MdcGetPatSlOrient(intf);
-               id->slice_spacing= ((id->pixel_xsize + id->pixel_ysize)/2.)
+               id->slice_spacing= ((id->pixel_xsize + id->pixel_ysize)/2.0f)
                                   * intf->centre_centre_separation;
 
 
@@ -1413,11 +1413,11 @@ char *MdcReadIntfHeader(FILEINFO *fi, MDC_INTERFILE *intf)
                id->pixel_xsize = intf->pixel_xsize;
                id->pixel_ysize = intf->pixel_ysize;
 
-               id->slice_width = ((id->pixel_xsize + id->pixel_ysize)/2.)
+               id->slice_width = ((id->pixel_xsize + id->pixel_ysize)/2.0f)
                                  * intf->slice_thickness;
 
                fi->pat_slice_orient = MdcGetPatSlOrient(intf);
-               id->slice_spacing= ((id->pixel_xsize + id->pixel_ysize)/2.)
+               id->slice_spacing= ((id->pixel_xsize + id->pixel_ysize)/2.0f)
                                   * intf->centre_centre_separation;
 
                MdcFillImgPos(fi,i,i,0.0);
@@ -1439,11 +1439,11 @@ char *MdcReadIntfHeader(FILEINFO *fi, MDC_INTERFILE *intf)
             continue;
           }
           if (gd!=NULL && MdcThisKey("study duration (acquired) sec")) {
-            gd->study_duration = (float)MdcGetFloatKey() * 1000.;
+            gd->study_duration = (float)MdcGetFloatKey() * 1000.0f;
             continue;
           }
           if (gd!=NULL && MdcThisKey("study duration (elapsed) sec")) {
-            gd->study_duration = (float)MdcGetFloatKey() * 1000.;
+            gd->study_duration = (float)MdcGetFloatKey() * 1000.0f;
             continue;
           }
           if (gd!=NULL
@@ -1468,24 +1468,24 @@ char *MdcReadIntfHeader(FILEINFO *fi, MDC_INTERFILE *intf)
              continue;
           }
           if (gd!=NULL && MdcThisKey("image duration (sec)")) {
-            gd->image_duration = (float)MdcGetFloatKey() * 1000.;
+            gd->image_duration = (float)MdcGetFloatKey() * 1000.0f;
             continue;
           }
           if (gd!=NULL && MdcThisKey("time window lower limit (sec)")) {
-            gd->window_low = (float)MdcGetFloatKey() * 1000.;
+            gd->window_low = (float)MdcGetFloatKey() * 1000.0f;
             continue;
           }
           if (gd!=NULL && MdcThisKey("time window upper limit (sec)")) {
-            gd->window_high = (float)MdcGetFloatKey() * 1000.;
+            gd->window_high = (float)MdcGetFloatKey() * 1000.0f;
             continue;
           }
           if (gd!=NULL
               && MdcThisKey("R-R cycles acquired this window")) {
-            v = (float)MdcGetFloatKey(); if (v > 100. || v <= 0.) v = 100.;
+            v = (float)MdcGetFloatKey(); if (v > 100.0f || v <= 0.) v = 100.0f;
             intf->procent_cycles_acquired = v;
 
             /* calculate observed */
-            v = (gd->cycles_acquired * 100.) / intf->procent_cycles_acquired;
+            v = (gd->cycles_acquired * 100.0f) / intf->procent_cycles_acquired;
             uv = (Uint32)v; v = (float)uv; /* simply chop to integer */
             if ((v > gd->cycles_acquired) || (gd->cycles_observed == 0.)) {
               gd->cycles_observed = v;
@@ -1497,7 +1497,7 @@ char *MdcReadIntfHeader(FILEINFO *fi, MDC_INTERFILE *intf)
             gd->cycles_acquired = (float)MdcGetFloatKey();
 
             /* calculate observed */
-            v = (gd->cycles_acquired * 100.) / intf->procent_cycles_acquired;
+            v = (gd->cycles_acquired * 100.0f) / intf->procent_cycles_acquired;
             uv = (Uint32)v; v = (float)uv; /* simply chop to integer */
             if ((v > gd->cycles_acquired) || (gd->cycles_observed == 0.)) {
               gd->cycles_observed = v;
@@ -1540,7 +1540,7 @@ char *MdcReadIntfHeader(FILEINFO *fi, MDC_INTERFILE *intf)
             continue;
           }
           if (MdcThisKey("time per projection (sec)")) {
-            gd->time_per_proj = (float)MdcGetFloatKey() * 1000.; 
+            gd->time_per_proj = (float)MdcGetFloatKey() * 1000.0f; 
             continue;
           }
           switch (intf->process_status) {
@@ -1623,11 +1623,11 @@ char *MdcReadIntfHeader(FILEINFO *fi, MDC_INTERFILE *intf)
                id->pixel_xsize = intf->pixel_xsize;
                id->pixel_ysize = intf->pixel_ysize;
 
-               id->slice_width  = ((id->pixel_xsize + id->pixel_ysize)/2.)
+               id->slice_width  = ((id->pixel_xsize + id->pixel_ysize)/2.0f)
                                   * intf->slice_thickness;
 
                fi->pat_slice_orient = MdcGetPatSlOrient(intf);
-               id->slice_spacing= ((id->pixel_xsize + id->pixel_ysize)/2.)
+               id->slice_spacing= ((id->pixel_xsize + id->pixel_ysize)/2.0f)
                                   * intf->centre_centre_separation;
 
                MdcFillImgPos(fi,i,i,0.0);
@@ -1644,11 +1644,11 @@ char *MdcReadIntfHeader(FILEINFO *fi, MDC_INTERFILE *intf)
                id->pixel_xsize = intf->pixel_xsize;
                id->pixel_ysize = intf->pixel_ysize;
 
-               id->slice_width = ((id->pixel_xsize + id->pixel_ysize)/2.)
+               id->slice_width = ((id->pixel_xsize + id->pixel_ysize)/2.0f)
                                  * intf->slice_thickness;
 
                fi->pat_slice_orient = MdcGetPatSlOrient(intf);
-               id->slice_spacing= ((id->pixel_xsize + id->pixel_ysize)/2.)
+               id->slice_spacing= ((id->pixel_xsize + id->pixel_ysize)/2.0f)
                                   * intf->centre_centre_separation;
 
                MdcFillImgPos(fi,i,i,0.0);
@@ -1693,7 +1693,7 @@ char *MdcReadIntfImages(FILEINFO *fi, MDC_INTERFILE *intf)
 
   for (i=0; i<fi->number; i++) {
 
-     if (MDC_PROGRESS) MdcProgress(MDC_PROGRESS_INCR,1./(float)fi->number,NULL);
+     if (MDC_PROGRESS) MdcProgress(MDC_PROGRESS_INCR,1.0f/(float)fi->number,NULL);
 
      id = &fi->image[i];
      bytes = id->width * id->height * MdcType2Bytes(id->type);
@@ -1729,7 +1729,7 @@ char *MdcReadIntfImages(FILEINFO *fi, MDC_INTERFILE *intf)
           break;
 
         default: 
-          if ((nbr=fread(id->buf,1,bytes,fi->ifp)) != bytes) { 
+          if ((nbr=(Uint32)fread(id->buf,1,bytes,fi->ifp)) != bytes) { 
               if (nbr > 0) err=MdcHandleTruncated(fi,i+1,MDC_YES);
               else err=MdcHandleTruncated(fi,i,MDC_YES);
               if (err != NULL) return(err);
@@ -2349,7 +2349,7 @@ char *MdcWriteIntfPET(FILEINFO *fi)
   Uint32 i, total_energy_windows=fi->dim[7];
   Uint32 images_per_window = fi->number/total_energy_windows;
   IMG_DATA *id = NULL;
-  STATIC_DATA sdata, *sd;
+  //STATIC_DATA sdata, *sd;
   FILE *fp  = fi->ofp;
   char *msg = NULL;
   char labels[3] = {'x', 'y', 'z'};
@@ -2366,7 +2366,7 @@ char *MdcWriteIntfPET(FILEINFO *fi)
   /// Agregado por Martin Belzunce:
   fprintf(fp,"number of images/energy window := %u\r\n",images_per_window);
   
-  for(i = 0; i < fi->dim[0]; i++)
+  for(i = 0; i < (Uint32)fi->dim[0]; i++)
   {
     fprintf(fp,"!matrix size [%d] := %u\r\n", i+1, fi->dim[i+1]);
     fprintf(fp,"matrix axis label [%d] := %c\r\n", i+1, labels[i]);
@@ -2551,8 +2551,8 @@ char *MdcWriteIntfTomo(FILEINFO *fi)
   }
 
   /* in pixels instead of mm */
-  slice_thickness=id->slice_width/((id->pixel_xsize+id->pixel_ysize)/2.);
-  slice_separation=id->slice_spacing/((id->pixel_xsize+id->pixel_ysize)/2.);
+  slice_thickness=id->slice_width/((id->pixel_xsize+id->pixel_ysize)/2.0f);
+  slice_separation=id->slice_spacing/((id->pixel_xsize+id->pixel_ysize)/2.0f);
 
   fprintf(fp,";\r\n");
   fprintf(fp,"!SPECT STUDY (general) :=\r\n");
@@ -2702,7 +2702,7 @@ char *MdcWriteIntfGated(FILEINFO *fi)
   fprintf(fp,";\r\n");
   fprintf(fp,"number of time windows := %u\r\n",fi->dim[5]);
 
-  for (time_window=0; time_window<fi->dim[5]; time_window++) {
+  for (time_window=0; time_window<(Uint32)fi->dim[5]; time_window++) {
      id = &fi->image[time_window * fi->dim[3]];
      fprintf(fp,";\r\n");
      fprintf(fp,"!Gated Study (each time window) :=\r\n");
@@ -2711,11 +2711,11 @@ char *MdcWriteIntfGated(FILEINFO *fi)
      fprintf(fp,"!image duration (sec) := %.7g\r\n",gd->image_duration / 1000.);
      fprintf(fp,"framing method := Forward\r\n");
      fprintf(fp,"time window lower limit (sec) := %.7g\r\n"
-               ,gd->window_low  / 1000.);
+               ,gd->window_low  / 1000.0f);
      fprintf(fp,"time window upper limit (sec) := %.7g\r\n"
-               ,gd->window_high / 1000.);
+               ,gd->window_high / 1000.0f);
      if (gd->cycles_observed > 0.) {
-       v = (gd->cycles_acquired * 100.) / gd->cycles_observed;
+       v = (gd->cycles_acquired * 100.0f) / gd->cycles_observed;
      }else{
        v = 100.;
      }
@@ -2778,8 +2778,8 @@ char *MdcWriteIntfGSPECT(FILEINFO *fi)
     return("INTF Gated SPECT different types unsupported");
 
   /* in pixels instead of mm */
-  slice_thickness=id->slice_width/((id->pixel_xsize+id->pixel_ysize)/2.);
-  slice_separation=id->slice_spacing/((id->pixel_xsize+id->pixel_ysize)/2.);
+  slice_thickness=id->slice_width/((id->pixel_xsize+id->pixel_ysize)/2.0f);
+  slice_separation=id->slice_spacing/((id->pixel_xsize+id->pixel_ysize)/2.0f);
 
   fprintf(fp,";\r\n");
   fprintf(fp,"!GATED SPECT STUDY (general) :=\r\n");
@@ -2798,20 +2798,20 @@ char *MdcWriteIntfGSPECT(FILEINFO *fi)
   fprintf(fp,";\r\n");
   fprintf(fp,"number of time windows := %u\r\n",fi->dim[5]);
 
-  for (time_window=0; time_window<fi->dim[5]; time_window++) {
+  for (time_window=0; time_window<(Uint32)fi->dim[5]; time_window++) {
      id = &fi->image[time_window * fi->dim[3]];
      fprintf(fp,";\r\n");
      fprintf(fp,"!Gated Study (each time window) :=\r\n");
      fprintf(fp,"!time window number := %u\r\n",time_window+1);
      fprintf(fp,"!number of images in time window := %u\r\n",fi->dim[4]);
-     fprintf(fp,"!image duration (sec) := %.7g\r\n",gd->image_duration / 1000.);
+     fprintf(fp,"!image duration (sec) := %.7g\r\n",gd->image_duration / 1000.0f);
      fprintf(fp,"framing method := Forward\r\n");
      fprintf(fp,"time window lower limit (sec) := %.7g\r\n"
-               ,gd->window_low  / 1000.);
+               ,gd->window_low  / 1000.0f);
      fprintf(fp,"time window upper limit (sec) := %.7g\r\n"
-               ,gd->window_high / 1000.);
+               ,gd->window_high / 1000.0f);
      if (gd->cycles_observed > 0.) {
-       v = (gd->cycles_acquired * 100.) / gd->cycles_observed;
+       v = (gd->cycles_acquired * 100.0f) / gd->cycles_observed;
      }else{
        v = 100.;
      }
@@ -3025,7 +3025,7 @@ char *MdcWriteIntfImages(FILEINFO *fi)
  
   for (i=0; i<fi->number; i++) {
 
-     if (MDC_PROGRESS) MdcProgress(MDC_PROGRESS_INCR,1./(float)fi->number,NULL);
+     if (MDC_PROGRESS) MdcProgress(MDC_PROGRESS_INCR,1.0f/(float)fi->number,NULL);
 
      id = &fi->image[i];
      size = id->width * id->height;

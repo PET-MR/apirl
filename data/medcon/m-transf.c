@@ -388,11 +388,11 @@ char *MdcMakeGray(FILEINFO *fi)
   /* no color file */
   if (fi->map != MDC_MAP_PRESENT) return(NULL);
 
-  if (MDC_PROGRESS) MdcProgress(MDC_PROGRESS_BEGIN,0.,"Grayscaling images: ");
+  if (MDC_PROGRESS) MdcProgress(MDC_PROGRESS_BEGIN,0.0f,"Grayscaling images: ");
 
   for (i=0; i<fi->number; i++) {
 
-     if (MDC_PROGRESS) MdcProgress(MDC_PROGRESS_INCR,1./(float)fi->number,NULL);
+     if (MDC_PROGRESS) MdcProgress(MDC_PROGRESS_INCR,1.0f/(float)fi->number,NULL);
 
      id = &fi->image[i];
 

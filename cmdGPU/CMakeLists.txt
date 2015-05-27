@@ -11,7 +11,7 @@ SET(BUILD_SHARED_LIBS  OFF)
 # Ejecuto el FindCUDA.
 #SET(FIND_CUDA_DIR ${APIRL_SOLUTION_SOURCE_DIR}/FindCUDA)
 #INCLUDE(${FIND_CUDA_DIR}/CMake/cuda/FindCUDA.cmake)
-set(CMAKE_MODULE_PATH "${FindCUDA_Dir}/CMake/cuda" ${CMAKE_MODULE_PATH})
+#set(CMAKE_MODULE_PATH "${FindCUDA_Dir}/CMake/cuda" ${CMAKE_MODULE_PATH})
 find_package(CUDA REQUIRED FIND_CUDA_DIR)
 # Llamo al script FindCUTIL que me genera las variables CUDA_CUT_INCLUDE_DIR y CUDA_CUT_LIBRARIES.
 #INCLUDE(${FindCUDA_Dir}/FindCUTIL.cmake)
@@ -51,6 +51,8 @@ message(STATUS "Output Directory: ${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}")
 
 ###################### BUILD CONFIGURATION ############################
 # Genero un ejecutable por cada comando.
+set(CUDA_ATTACH_VS_BUILD_RULE_TO_CUDA_FILE OFF)
+set(CUDA_SEPARABLE_COMPILATION ON)
 CUDA_ADD_EXECUTABLE(cuMLEM ${cuMLEM_Sources})
 # Para windows se debe definir WIN32 y DLL_BUILD tambien
 if(CMAKE_HOST_WIN32)

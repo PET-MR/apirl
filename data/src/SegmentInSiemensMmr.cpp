@@ -18,7 +18,7 @@
 using namespace::std;
 //using namespace::iostream;
 
-SegmentInSiemensMmr::SegmentInSiemensMmr(int nProj, int nR, int nRings, float rFov_mm, float zFov_mm, int rScanner_mm, 
+SegmentInSiemensMmr::SegmentInSiemensMmr(int nProj, int nR, int nRings, float rFov_mm, float zFov_mm, float rScanner_mm, 
 	  int nSinograms, int nMinRingDiff, int nMaxRingDiff):SegmentInCylindrical3Dpet(nProj, nR, nRings, rFov_mm, zFov_mm, rScanner_mm, 
 	  nSinograms, nMinRingDiff, nMaxRingDiff, 0)	// 0 to not init memory of sinograms.
 {

@@ -133,7 +133,7 @@ class DLLEXPORT Sinogram3DArPet : public Sinogram3D
 	void setLengthOfBlindArea(float length_m);
 	
 	/** Método que obtiene el largo desde el borde de la zona ciega */
-	int getLengthOfBlindArea() {return lengthFromBorderBlindArea_mm;};
+	float getLengthOfBlindArea() {return lengthFromBorderBlindArea_mm;};
 	
 	/** Método que asigna la mínima diferencia entre detectores para las coincidencias 
 	 * y se lo asigna a cada uno de los sinogramas 2d que forman parte de este sino3d.

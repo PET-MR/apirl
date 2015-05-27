@@ -246,10 +246,10 @@ char *MdcSplitSlices(FILEINFO *fi, int format, int prefixnr)
   tpath = (char *)malloc(MDC_MAX_PATH);
   if (tpath == NULL) return("Couldn't malloc tpath");
   if (XMDC_GUI == MDC_NO) {
-    MdcGetSafeString(tpath,fi->ifname,strlen(fi->ifname),MDC_MAX_PATH);
+    MdcGetSafeString(tpath,fi->ifname,(Uint32)strlen(fi->ifname),MDC_MAX_PATH);
   }else{
     /* terminate path and get basename */
-    MdcGetSafeString(tpath,fi->ofname,strlen(fi->ofname),MDC_MAX_PATH);
+    MdcGetSafeString(tpath,fi->ofname,(Uint32)strlen(fi->ofname),MDC_MAX_PATH);
     bname = MdcGetSplitBaseName(tpath);
   }
 
@@ -320,9 +320,9 @@ char *MdcSplitFrames(FILEINFO *fi, int format, int prefixnr)
   tpath = (char *)malloc(MDC_MAX_PATH);
   if (tpath == NULL) return("Couldn't malloc tpath");
   if (XMDC_GUI == MDC_NO) {
-    MdcGetSafeString(tpath,fi->ifname,strlen(fi->ifname),MDC_MAX_PATH);
+    MdcGetSafeString(tpath,fi->ifname,(Uint32)strlen(fi->ifname),MDC_MAX_PATH);
   }else{
-    MdcGetSafeString(tpath,fi->ofname,strlen(fi->ofname),MDC_MAX_PATH);
+    MdcGetSafeString(tpath,fi->ofname,(Uint32)strlen(fi->ofname),MDC_MAX_PATH);
     p = MdcGetLastPathDelim(tpath);
     if (p != NULL) {
       p[0]='\0'; bname = p + 1;

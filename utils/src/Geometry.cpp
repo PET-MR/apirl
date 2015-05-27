@@ -3,7 +3,7 @@
 
 float distBetweenPoints(Point2D point1, Point2D point2)
 {
-  return sqrt( (point2.X-point1.X)*(point2.X-point1.X) + (point2.Y-point1.Y)*(point2.Y-point1.Y) );
+  return sqrtf( (point2.X-point1.X)*(point2.X-point1.X) + (point2.Y-point1.Y)*(point2.Y-point1.Y) );
 }
 
 void IntersectionLinePlane(Line3D myLine, Plane myPlane, Point3D* IntersectionPoint)
@@ -13,7 +13,7 @@ void IntersectionLinePlane(Line3D myLine, Plane myPlane, Point3D* IntersectionPo
 	// Intersection will be: A*(a*Vx+X0)+B*(a*Vy+Y0)+C*(a*Vz+Z0)+D=0
 	// So first I need to calculate a:
 	// a = -(A*X0+B*Y0+C*Z0+D)/(A*Vx+B*Vy+C*Vz)
-	double a = -(myPlane.A*myLine.P0.X + myPlane.B*myLine.P0.Y + myPlane.C*myLine.P0.Z + myPlane.D) /
+	float a = -(myPlane.A*myLine.P0.X + myPlane.B*myLine.P0.Y + myPlane.C*myLine.P0.Z + myPlane.D) /
 		(myPlane.A*myLine.Vx + myPlane.B*myLine.Vy + myPlane.C*myLine.Vz);
 	// Then I get the point coordinates from the line equation:
 	// (X1,Y1,Z1) = (X0,Y0,Z0) + a * (Vx,Vy,Vz)
@@ -28,13 +28,13 @@ void IntersectionLinePlane(Line3D myLine, Plane myPlane, Point3D* IntersectionPo
 // is the center of the Field of View. The length of the arrays will be
 // Pixels + 1 in each axis. The memory for the arrays must be allocated
 // before calling this function.
-void CalculatePixelsPlanes(Plane* PlanesX, Plane* PlanesY,Plane* PlanesZ, unsigned int SizeX,
-					 unsigned int SizeY, unsigned int SizeZ, double RFOV, double ZFOV)
+void CalculatePixelsPlanes(Plane* PlanesX, Plane* PlanesY,Plane* PlanesZ, int SizeX,
+					 int SizeY, int SizeZ, float RFOV, float ZFOV)
 {
-	double stepX = 2 * RFOV / SizeX;
-	double stepY = 2 * RFOV / SizeY;
-	double stepZ = ZFOV / SizeZ;
-	for(unsigned int i = 0; i < SizeX + 1; i ++)
+	float stepX = 2 * RFOV / SizeX;
+	float stepY = 2 * RFOV / SizeY;
+	float stepZ = ZFOV / SizeZ;
+	for(int i = 0; i < SizeX + 1; i ++)
 	{
 		// The planes that define the xlimits of the voxels are X = X0
 		PlanesX[i].A = 1;
@@ -43,7 +43,7 @@ void CalculatePixelsPlanes(Plane* PlanesX, Plane* PlanesY,Plane* PlanesZ, unsign
 		PlanesX[i].D = (-RFOV/2) + stepX * i;
 	}
 	
-	for(unsigned int i = 0; i < SizeY + 1; i ++)
+	for(int i = 0; i < SizeY + 1; i ++)
 	{
 		// The planes that define the xlimits of the voxels are X = X0
 		PlanesY[i].A = 0;
@@ -52,7 +52,7 @@ void CalculatePixelsPlanes(Plane* PlanesX, Plane* PlanesY,Plane* PlanesZ, unsign
 		PlanesY[i].D = (-RFOV/2) + stepY * i;
 	}
 	
-	for(unsigned int i = 0; i < SizeZ + 1; i ++)
+	for(int i = 0; i < SizeZ + 1; i ++)
 	{
 		// The planes that define the xlimits of the voxels are X = X0
 		PlanesX[i].A = 0;
@@ -64,10 +64,10 @@ void CalculatePixelsPlanes(Plane* PlanesX, Plane* PlanesY,Plane* PlanesZ, unsign
 
 
 
-void GetPointsFromLOR (double PhiAngle, double r, double Z1, double Z2, double Rscanner, Point3D* P1, Point3D* P2)
+void GetPointsFromLOR (float PhiAngle, float r, float Z1, float Z2, float Rscanner, Point3D* P1, Point3D* P2)
 {
-	double auxValue = sqrt(Rscanner * Rscanner - r * r);
-	double rad_PhiAngle = PhiAngle * DEG_TO_RAD;
+	float auxValue = sqrt(Rscanner * Rscanner - r * r);
+	float rad_PhiAngle = PhiAngle * DEG_TO_RAD;
 	P1->X = r * cos(rad_PhiAngle) + sin(rad_PhiAngle) * auxValue;
 	P1->Y = r * sin(rad_PhiAngle) - cos(rad_PhiAngle) * auxValue;
 	P1->Z = Z1;
@@ -104,9 +104,9 @@ void GetPointsFromLOR(double PhiAngle, double r, double Rscanner, Point2D* P1, P
 /// largoCol: largo del colimador.
 void GetPointsFromTgsLor (float PhiAngle, float r,  float distCentroFrenteDetector, float largoCol, Point2D* P1, Point2D* P2)
 {
-	double rad_PhiAngle = PhiAngle * DEG_TO_RAD;
-	double X0 = r;	/// Centro en X del colimador.
-	double Y0 = -(distCentroFrenteDetector - largoCol/2);	/// Centro en Y del colimador.
+	float rad_PhiAngle = PhiAngle * DEG_TO_RAD;
+	float X0 = r;	/// Centro en X del colimador.
+	float Y0 = -(distCentroFrenteDetector - largoCol/2);	/// Centro en Y del colimador.
     
 	P1->X = X0 * cos(rad_PhiAngle) + Y0 * sin(rad_PhiAngle);
 	P1->Y = -X0 * sin(rad_PhiAngle) + Y0 * cos(rad_PhiAngle);
@@ -120,15 +120,15 @@ void GetPointsFromTgsLor (float PhiAngle, float r,  float distCentroFrenteDetect
 /// Esas dos distancias permiten obtener la inclinación de la LOR.
 void GetPointsFromTgsLor (float PhiAngle, float r,  float distCentroFrenteDetector, float largoCol, float offsetDetector, float offsetCaraColimador, Point2D* P1, Point2D* P2)
 {
-	double rad_PhiAngle = PhiAngle * DEG_TO_RAD;
+	float rad_PhiAngle = PhiAngle * DEG_TO_RAD;
 	/// Para lor oblicua debo obtener un punto sobre el detector, y un punto en el extremo opuesto.
 	/// Punto sobre el detector:
-	double X0 = r + offsetDetector;	/// Posición en X del punto sobre el detector: r + offsetDetector.
-	double Y0 = distCentroFrenteDetector;	/// Coordenada Y sobre el detector.
+	float X0 = r + offsetDetector;	/// Posición en X del punto sobre el detector: r + offsetDetector.
+	float Y0 = distCentroFrenteDetector;	/// Coordenada Y sobre el detector.
     /// Punto en cara opuesta. La coordenada Y es la misma pero con signo opuesto, mientras que para la X
 	/// la debo proyectar en base a la recta que forma entre (r+OffsetDetector) y (r+OffsetCaraColimador):
-	double Y1 = -distCentroFrenteDetector;
-	double X1 = X0 + (offsetCaraColimador-offsetDetector) / largoCol * distCentroFrenteDetector * 2;
+	float Y1 = -distCentroFrenteDetector;
+	float X1 = X0 + (offsetCaraColimador-offsetDetector) / largoCol * distCentroFrenteDetector * 2;
 	
 	
 	P1->X = X0 * cos(rad_PhiAngle) + Y0 * sin(rad_PhiAngle);

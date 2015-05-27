@@ -103,11 +103,11 @@ bool Mlem2dTgs::Reconstruct()
   printf("Iniciando Reconstrucción...\n");
   /// Arranco con el log de los resultados:
   strcpy(c_string, "_______RECONSTRUCCION_______");
-  logger->writeLine(c_string, strlen(c_string));
+  logger->writeLine(c_string, (int)strlen(c_string));
   /// Voy generando mensajes con los archivos creados en el log de salida:
 
   int nPixels = reconstructionImage->getPixelCount();
-  for(unsigned int t = 0; t < this->numIterations; t++)
+  for(int t = 0; t < this->numIterations; t++)
   {
 	  clock_t initialClockIteration = clock();
 	  printf("Iteración Nº: %d\n", t);
@@ -176,25 +176,25 @@ bool Mlem2dTgs::Reconstruct()
   float tiempoTotal = (float)(finalClock - initialClock)*1000/(float)CLOCKS_PER_SEC;
   /// Termino con el log de los resultados:
   strcpy(c_string, "_______RESULTADOS DE RECONSTRUCCION_______");
-  logger->writeLine(c_string, strlen(c_string));
+  logger->writeLine(c_string, (int)strlen(c_string));
   sprintf(c_string, "%f", tiempoTotal);
   logger->writeValue("Tiempo Total de Reconstrucción:", c_string);
   /// Ahora guardo los tiempos por iteración y por etapa, en fila de valores.
   strcpy(c_string, "Tiempos de Reconstrucción por Iteración [mseg]");
-  logger->writeLine(c_string, strlen(c_string));
+  logger->writeLine(c_string, (int)strlen(c_string));
   logger->writeRowOfNumbers(timesIteration_mseg, this->numIterations);
   strcpy(c_string, "Tiempos de Forwardprojection por Iteración [mseg]");
-  logger->writeLine(c_string, strlen(c_string));
+  logger->writeLine(c_string, (int)strlen(c_string));
   logger->writeRowOfNumbers(timesForwardprojection_mseg, this->numIterations);
   strcpy(c_string, "Tiempos de Backwardprojection por Iteración [mseg]");
-  logger->writeLine(c_string, strlen(c_string));
+  logger->writeLine(c_string, (int)strlen(c_string));
   logger->writeRowOfNumbers(timesBackprojection_mseg, this->numIterations);
   strcpy(c_string, "Tiempos de UpdatePixel por Iteración [mseg]");
-  logger->writeLine(c_string, strlen(c_string));
+  logger->writeLine(c_string, (int)strlen(c_string));
   logger->writeRowOfNumbers(timesPixelUpdate_mseg, this->numIterations);
   /// Por último registro los valores de likelihood:
   strcpy(c_string, "Likelihood por Iteración:");
-  logger->writeLine(c_string, strlen(c_string));
+  logger->writeLine(c_string, (int)strlen(c_string));
   logger->writeRowOfNumbers(this->likelihoodValues, this->numIterations + 1);
 
   /// Libero la memoria de los arrays:

@@ -82,7 +82,7 @@ class SegmentInSiemensMmr: public SegmentInCylindrical3Dpet
 		@param nMinRingDiff	Mínima diferencia entre anillos de este segmento.
 		@param nMaxRingDiff Máxima diferencia entre anillos de este segmento.
 	*/
-	SegmentInSiemensMmr(int nProj, int nR, int nRings, float rFov_mm, float zFov_mm, int rScanner_mm, 
+	SegmentInSiemensMmr(int nProj, int nR, int nRings, float rFov_mm, float zFov_mm, float rScanner_mm, 
 	  int nSinograms, int nMinRingDiff, int nMaxRingDiff);
 	
 	/** Constructor que realiza una copia de un segmento existente.

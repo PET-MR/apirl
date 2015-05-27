@@ -5,17 +5,17 @@
 #include <Geometry.h>
 #include <Siddon.h>
 
-#define RSCANNER	41.35	//radius of PET scanner
-#define RADIO_FOV	29.1
-#define AXIAL_FOV 	16.2
+#define RSCANNER	41.35f	//radius of PET scanner
+#define RADIO_FOV	29.1f
+#define AXIAL_FOV 	16.2f
 #define CANT_R		192
 #define CANT_Z		24
 #define DELTA_R		2 * RADIO_FOV/CANT_R	//muestreo espacial (separación en R de cada LOR)
 #define DELTA_Z		AXIAL_FOV/CANT_Z
 // Pesos para el TriSiddon según la sensibilidad de cada franja dentro de una LOR, ver desarrollo teórico
 // de las integrales para más información
-#define PESO_CENTRAL	DELTA_R*DELTA_R*2*RSCANNER/2 * (1+2.7725+1.0465)
-#define PESO_LATERAL	DELTA_R*DELTA_R*2*RSCANNER/2 * (1+2.1972)
+#define PESO_CENTRAL	DELTA_R*DELTA_R*2.0f*RSCANNER/2.0f * (1.0f+2.7725f+1.0465f)
+#define PESO_LATERAL	DELTA_R*DELTA_R*2.0f*RSCANNER/2.0f * (1.0f+2.1972f)
 
 
 // DLL export/import declaration: visibility of objects

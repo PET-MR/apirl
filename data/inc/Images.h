@@ -13,10 +13,13 @@
 
 #ifndef _IMAGES_H
 #define	_IMAGES_H
+#include <string>
+using namespace std;
 
 // DLL export/import declaration: visibility of objects
 #ifndef LINK_STATIC
 	#ifdef WIN32               // Win32 build
+		#pragma warning( disable: 4251 )
 		#ifdef DLL_BUILD    // this applies to DLL building
 			#define DLLEXPORT __declspec(dllexport)
 		#else                   // this applies to DLL clients/users
@@ -37,8 +40,8 @@
 	#define DLLLOCAL
 #endif
 
-#include <string>
-using namespace std;
+
+
 /**
 	\brief Estructura que define el tamaño de una imagen.
 
@@ -49,10 +52,10 @@ using namespace std;
 */
 struct DLLEXPORT SizeImage
 {
-	unsigned char nDimensions;
-	unsigned int nPixelsX;	// Number of Pixels in X
-	unsigned int nPixelsY;	// Number of Pixels in X
-	unsigned int nPixelsZ;	// Number of Pixels in X
+	int nDimensions;
+	int nPixelsX;	// Number of Pixels in X
+	int nPixelsY;	// Number of Pixels in X
+	int nPixelsZ;	// Number of Pixels in X
 	float sizePixelX_mm;	// Number of Pixels in Y
 	float sizePixelY_mm;	// Number of Pixels in Y
 	float sizePixelZ_mm;	// Number of Pixels in Y

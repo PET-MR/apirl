@@ -64,12 +64,12 @@ Sinogram2D::Sinogram2D(unsigned int myNumProj, unsigned int myNumR, float myRadi
   // Initialization
   float RIncrement = (2 * radioFov_mm) / (numR);
   float PhiIncrement = (float)maxAng_deg / (numProj);
-  for(unsigned int i = 0; i < numProj; i ++)
+  for(int i = 0; i < numProj; i ++)
   {
     // Initialization of Phi Values
     //ptrAngValues_deg[i] = PhiIncrement/2 + i * PhiIncrement;
     ptrAngValues_deg[i] = i * PhiIncrement;	// Modification now goes from 0, phiincrement, ...180-phiincrement.
-    for(unsigned int j = 0; j < numR; j++)
+    for(int j = 0; j < numR; j++)
     {
       if(i == 0)
       {
@@ -110,7 +110,7 @@ Sinogram2D::Sinogram2D(const Sinogram2D* srcSinogram2D, int indexSubset, int num
 {
 
   // Calculo cuantas proyecciones va a tener el subset:
-  int numProjSubset = floor((float)srcSinogram2D->numProj / (float)numSubsets);
+  int numProjSubset = (int)floorf((float)srcSinogram2D->numProj / (float)numSubsets);
   // Siempre calculo por defecto, luego si no dio exacta la división, debo agregar un ángulo a la proyección:
   if((srcSinogram2D->numProj%numSubsets)>indexSubset)
     numProjSubset++;
@@ -131,13 +131,13 @@ Sinogram2D::Sinogram2D(const Sinogram2D* srcSinogram2D, int indexSubset, int num
   // Los valores de r y de los ángulos de las proyecciones, los obtengo del sinograma original. Para
   // el caso de los ángulos solo debo tomar uno cada numSubsets. Ya que hago esto, también copio los valores
   // de los sinogramas:
-  for(unsigned int i = 0; i < numProj; i ++)
+  for(int i = 0; i < numProj; i ++)
   {
     // indice angulo del sino completo:
     int iAngCompleto = indexSubset + numSubsets*i;
     // Initialization of Phi Values
     ptrAngValues_deg[i] = srcSinogram2D->ptrAngValues_deg[iAngCompleto];
-    for(unsigned int j = 0; j < numR; j++)
+    for(int j = 0; j < numR; j++)
     {
       if(i == 0)
       {
@@ -158,13 +158,13 @@ void Sinogram2D::initParameters()
   // Initialization
   float RIncrement = (2 * radioFov_mm) / numR;
   float PhiIncrement = (float)maxAng_deg / numProj;
-  for(unsigned int i = 0; i < numProj; i ++)
+  for(int i = 0; i < numProj; i ++)
   {
 	  // Initialization of Phi Values
 	  //ptrAngValues_deg[i] = PhiIncrement/2 + i * PhiIncrement;
 	  ptrAngValues_deg[i] = i * PhiIncrement;	// Modification now goes from 0, phiincrement, ...180-phiincrement.
   }
-  for(unsigned int j = 0; j < numR; j++)
+  for(int j = 0; j < numR; j++)
   {	  
 	ptrRvalues_mm[j] = RIncrement/2 + j * RIncrement - radioFov_mm;
   }
@@ -192,7 +192,7 @@ void Sinogram2D::setRadioFov_mm(float rFov_mm)
 { 
   radioFov_mm = rFov_mm;
   float rIncrement = (2 * radioFov_mm) / numR;
-  for(unsigned int j = 0; j < numR; j++)
+  for(int j = 0; j < numR; j++)
   {	  
 	ptrRvalues_mm[j] = rIncrement/2 + j * rIncrement - radioFov_mm;
   }
@@ -278,9 +278,9 @@ bool Sinogram2D::Fill(Event2D* Events, unsigned int NEvents)
 
 bool Sinogram2D::FillConstant(float Value)
 {
-  for(unsigned int i = 0; i < numProj; i ++)
+  for(int i = 0; i < numProj; i ++)
   {
-	  for(unsigned int j = 0; j < numR; j++)
+	  for(int j = 0; j < numR; j++)
 	  {
 		  /// Copio el dato desde el array pasado, al array de la clase que contiene los 
 		  /// datos del sinograma.
@@ -293,11 +293,11 @@ bool Sinogram2D::FillConstant(float Value)
 bool Sinogram2D::SaveInFile(char* filePath)
 {
   FILE* fileSinogram = fopen(filePath,"wb");
-  unsigned int CantBytes;
-  const unsigned int SizeData = numProj * numR;
+  int CantBytes;
+  const int SizeData = numProj * numR;
   if (fileSinogram != NULL)
   {
-	  if((CantBytes =  fwrite(ptrSinogram, sizeof(float), numProj*numR , fileSinogram)) !=  (numProj*numR))
+	  if((CantBytes =  (int)fwrite(ptrSinogram, sizeof(float), numProj*numR , fileSinogram)) !=  (numProj*numR))
 		  return false;
   }
   else
@@ -382,7 +382,7 @@ bool Sinogram2D::readFromInterfile(string headerFilename)
 	this->ptrSinogram = (float*) realloc(this->ptrSinogram, sizeof(float)*this->numProj*this->numR);
 	int nBinsSino2d = this->numProj * this->numR;
 	IMG_DATA *id;
-	for(int i = 0; i < fi->number; i++)
+	for(int i = 0; i < (int)fi->number; i++)
 	{
 	  id = &fi->image[i];
 	  memcpy(this->ptrSinogram + i*nBinsSino2d, id->buf, sizeof(float)*nBinsSino2d);
@@ -505,12 +505,12 @@ bool Sinogram2D::writeInterfile(string headerFilename)
 bool Sinogram2D::readFromFile(string filePath)
 {
   FILE* fileSinogram = fopen(filePath.c_str(),"rb");
-  unsigned int CantBytes;
-  const unsigned int SizeData = numProj * numR;
+  int CantBytes;
+  const int SizeData = numProj * numR;
   // Cargo los daots en el punetro Sinogram
   if (fileSinogram != NULL)
   {
-	  if((CantBytes =  fread(ptrSinogram,sizeof(float), SizeData , fileSinogram)) != SizeData)
+	  if((CantBytes =  (int)fread(ptrSinogram,sizeof(float), SizeData , fileSinogram)) != SizeData)
 		  return false;
   }
   else
@@ -523,9 +523,9 @@ bool Sinogram2D::readFromFile(string filePath)
 // expected Sinogram are the ones loaded in the constructor of the class
 bool Sinogram2D::ReadFromArray(float* SinogramArray)
 {
-  for(unsigned int i = 0; i < numProj; i ++)
+  for(int i = 0; i < numProj; i ++)
   {
-	  for(unsigned int j = 0; j < numR; j++)
+	  for(int j = 0; j < numR; j++)
 	  {
 		  /// Copio el dato desde el array pasado, al array de la clase que contiene los 
 		  /// datos del sinograma.
@@ -539,7 +539,7 @@ float* Sinogram2D::getAnglesInRadians()
 {
   float* angles_radians;
   angles_radians = (float*) malloc(numProj*sizeof(float));
-  for(unsigned int i = 0; i < numProj; i ++)
+  for(int i = 0; i < numProj; i ++)
   {
     angles_radians[i] = ptrAngValues_deg[i] * DEG_TO_RAD;
   }
@@ -549,9 +549,9 @@ float* Sinogram2D::getAnglesInRadians()
 float Sinogram2D::getLikelihoodValue(Sinogram2D* referenceProjection)
 {
   float Likelihood = 0;
-  for(unsigned int k = 0; k < this->getNumProj(); k++)
+  for(int k = 0; k < this->getNumProj(); k++)
   {
-	for(unsigned int l = 0; l < this->getNumR(); l++)
+	for(int l = 0; l < this->getNumR(); l++)
 	{
 	  if(this->getSinogramBin(k, l) >0)
 	  {

@@ -91,7 +91,7 @@ char *MdcCheckFI(FILEINFO *fi)
     sprintf(mdcbufr,"Internal ## fi->dim[0]=%d",fi->dim[0]);
     return(mdcbufr);
   }else{
-    for (i=1; i<=fi->dim[0]; i++) {
+    for (i=1; i<=(Uint32)fi->dim[0]; i++) {
        if (fi->dim[i] <= 0 ) {
          sprintf(mdcbufr,"Internal ## fi->dim[%d]=%d",i,fi->dim[i]);
          return(mdcbufr);
@@ -105,7 +105,7 @@ char *MdcCheckFI(FILEINFO *fi)
 
 
   /* check fi->number value */
-  for (i=1, t=3; t <= fi->dim[0]; t++) {
+  for (i=1, t=3; t <= (Uint32)fi->dim[0]; t++) {
      i*=fi->dim[t];
   }
   if (fi->number != i) return("Internal ## Improper fi->dim values");
@@ -838,7 +838,7 @@ char *MdcCopyFI(FILEINFO *dest, FILEINFO *src, int COPY_IMAGES, int KEEP_FILES)
     dest->acqnr = src->acqnr;
     dest->acqdata = (ACQ_DATA *)malloc(dest->acqnr * sizeof(ACQ_DATA));
     if (dest->acqdata == NULL) return("Failed to create ACQ_DATA structs");
-    for (i=0; i<dest->acqnr; i++) {
+    for (i=0; i<(int)dest->acqnr; i++) {
        msg = MdcCopyAD(&dest->acqdata[i],&src->acqdata[i]);
        if (msg != NULL) return(msg);
     }
@@ -851,7 +851,7 @@ char *MdcCopyFI(FILEINFO *dest, FILEINFO *src, int COPY_IMAGES, int KEEP_FILES)
     dest->gatednr = src->gatednr;
     dest->gdata = (GATED_DATA *)malloc(dest->gatednr * sizeof(GATED_DATA));
     if (dest->gdata == NULL) return("Failed to create GATED_DATA structs");
-    for (i=0; i<dest->gatednr; i++) {
+    for (i=0; i<(int)dest->gatednr; i++) {
        msg = MdcCopyGD(&dest->gdata[i],&src->gdata[i]);
        if (msg != NULL) return(msg);
     }
@@ -864,7 +864,7 @@ char *MdcCopyFI(FILEINFO *dest, FILEINFO *src, int COPY_IMAGES, int KEEP_FILES)
     dest->dynnr = src->dynnr;
     dest->dyndata = (DYNAMIC_DATA *)malloc(dest->dynnr * sizeof(DYNAMIC_DATA));
     if (dest->dyndata == NULL) return("Failed to create DYNAMIC_DATA structs");
-    for (i=0; i<dest->dynnr; i++) {
+    for (i=0; i<(int)dest->dynnr; i++) {
        msg = MdcCopyDD(&dest->dyndata[i],&src->dyndata[i]);
        if (msg != NULL) return(msg);
     }
@@ -877,7 +877,7 @@ char *MdcCopyFI(FILEINFO *dest, FILEINFO *src, int COPY_IMAGES, int KEEP_FILES)
     dest->bednr = src->bednr;
     dest->beddata = (BED_DATA *)malloc(dest->bednr * sizeof(BED_DATA));
     if (dest->beddata == NULL) return("Failed to create BED_DATA structs");
-    for (i=0; i<dest->bednr; i++) {
+    for (i=0; i<(int)dest->bednr; i++) {
        msg = MdcCopyBD(&dest->beddata[i],&src->beddata[i]);
        if (msg != NULL) return(msg);
     }
@@ -890,7 +890,7 @@ char *MdcCopyFI(FILEINFO *dest, FILEINFO *src, int COPY_IMAGES, int KEEP_FILES)
     dest->number = src->number;
     dest->image = (IMG_DATA *)malloc(dest->number * sizeof(IMG_DATA));
     if (dest->image == NULL) return("Failed to create IMG_DATA structs");
-    for (i=0; i<dest->number; i++) {
+    for (i=0; i<(int)dest->number; i++) {
        msg = MdcCopyID(&dest->image[i],&src->image[i],MDC_YES);
        if (msg != NULL) return(msg);
     } 

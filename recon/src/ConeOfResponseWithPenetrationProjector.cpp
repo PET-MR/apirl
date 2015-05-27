@@ -13,7 +13,7 @@
 #include <Siddon.h>
 #include <ConeOfResponseWithPenetrationProjector.h>
 
-const float ConeOfResponseWithPenetrationProjector::attenuationThreshold = 0.95;
+const float ConeOfResponseWithPenetrationProjector::attenuationThreshold = 0.95f;
 
 ConeOfResponseWithPenetrationProjector::ConeOfResponseWithPenetrationProjector(int nSamplesOnDetector, int nSamplesOnCollimatorSurf, float linAttCoef_cm)
 {
@@ -174,7 +174,7 @@ bool ConeOfResponseWithPenetrationProjector::DivideAndBackproject (Sinogram2Dtgs
 			  int LengthList;
 			  attenuationWeight = getAttenuationWeight(lengthInCollimator);
 			  Siddon(LOR, outputImage, MyWeightsList, &LengthList,1);
-			  for(unsigned int l = 0; l < LengthList; l++)
+			  for(int l = 0; l < LengthList; l++)
 			  {
 				  // for every element of the systema matrix different from zero,we do
 				  // the sum(Aij*bi/Projected) for every i
@@ -222,10 +222,10 @@ bool ConeOfResponseWithPenetrationProjector::Project (Image* inputImage, Sinogra
 	float firstPointOnCollimatorSurf_mm = -(outputProjection->getWidthCollimator_mm()/2-margenCollimador_mm) + stepOnDetector_mm /2;
 	float lastPointOnCollimatorSurf_mm = (outputProjection->getWidthCollimator_mm()/2-margenCollimador_mm) - stepOnDetector_mm /2;
 	
-	for(unsigned int i = 0; i < outputProjection->getNumProj(); i++)
+	for(int i = 0; i < outputProjection->getNumProj(); i++)
 	{
 	  
-	  for(unsigned int j = 0; j < outputProjection->getNumR(); j++)
+	  for(int j = 0; j < outputProjection->getNumR(); j++)
 	  {
 		outputProjection->setSinogramBin(i,j,0);
 		for(float offsetDetector = firstPointOnDetector_mm; offsetDetector <= lastPointOnDetector_mm; offsetDetector+=stepOnDetector_mm)
@@ -248,7 +248,7 @@ bool ConeOfResponseWithPenetrationProjector::Project (Image* inputImage, Sinogra
 			  int LengthList;
 			  attenuationWeight = getAttenuationWeight(lengthInCollimator);
 			  Siddon(LOR, inputImage, MyWeightsList, &LengthList,1);
-			  for(unsigned int l = 0; l < LengthList; l++)
+			  for(int l = 0; l < LengthList; l++)
 			  {
 				  // for every element of the systema matrix different from zero,we do
 				  // the sum(Aij*Xj) for every J

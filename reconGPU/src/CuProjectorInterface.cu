@@ -62,7 +62,7 @@
   extern texture<float, 3, cudaReadModeElementType> texImage;  // 3D texture
 
   extern surface<void, 3> surfImage;
-  
+
 CuProjectorInterface::CuProjectorInterface(CuProjector* cuProjector)
 {
   this->projector = cuProjector;
@@ -83,7 +83,6 @@ bool CuProjectorInterface::initCuda (int device)
   int deviceCount;
   int driverVersion;
   int runtimeVersion;
-  char c_string[512];
   //Check that I can multiplie the matrix
   cudaGetDeviceCount(&deviceCount);
   if(device>=deviceCount)
@@ -101,7 +100,8 @@ bool CuProjectorInterface::initCuda (int device)
   printf(" Cuda Driver Version %d\n", driverVersion);
   printf(" Cuda Runtime Version %d\n", runtimeVersion);
   printf(" Compute Mode %d\n",  deviceProp.computeMode);
-  printf(" Total Global Memory %lud\n", deviceProp.totalGlobalMem);
+  printf(" CUDA Capability Major/Minor version number:    %d.%d\n", deviceProp.major, deviceProp.minor);
+  printf(" Total Global Memory %llu\n", deviceProp.totalGlobalMem);
   printf(" Shared Memory per Block %lud\n", deviceProp.sharedMemPerBlock);
   printf(" Register pero Block %d\n", deviceProp.regsPerBlock);
   printf(" Warp Size %d\n", deviceProp.warpSize);
@@ -325,6 +325,7 @@ int CuProjectorInterface::CopySinogram3dHostToGpu(float* d_destino, Sinogram3D* 
     {
       checkCudaErrors(cudaMemcpy(d_destino + offset, h_source->getSegment(i)->getSinogram2D(j)->getSinogramPtr(), 
 				  sizeof(float)*h_source->getSegment(i)->getSinogram2D(j)->getNumR() * h_source->getSegment(i)->getSinogram2D(j)->getNumProj(),cudaMemcpyHostToDevice));
+	  checkCudaErrors(cudaThreadSynchronize());
       offset += h_source->getSegment(i)->getSinogram2D(j)->getNumR() * h_source->getSegment(i)->getSinogram2D(j)->getNumProj();
       numSinograms++;
     }
@@ -342,6 +343,7 @@ int CuProjectorInterface::CopySinogram3dGpuToHost(Sinogram3D* h_destino, float* 
     {
       checkCudaErrors(cudaMemcpy(h_destino->getSegment(i)->getSinogram2D(j)->getSinogramPtr(), d_source + offset, 
 				  sizeof(float)*h_destino->getSegment(i)->getSinogram2D(j)->getNumR() * h_destino->getSegment(i)->getSinogram2D(j)->getNumProj(),cudaMemcpyDeviceToHost));
+	  checkCudaErrors(cudaThreadSynchronize());
       offset += h_destino->getSegment(i)->getSinogram2D(j)->getNumR() * h_destino->getSegment(i)->getSinogram2D(j)->getNumProj();
       numSinograms++;
     }
@@ -357,9 +359,6 @@ bool CuProjectorInterface::Backproject (Sinogram3D* inputSinogram, Image* output
   cudaEvent_t start, stop;
   // Número total de píxeles.
   int numPixels = outputImage->getPixelCount();
-  // Número total de bins del sinograma:
-  int numBins, numSinograms;
-  numBins = inputSinogram->getBinCount();
   // Instancio el registrador de eventos:
   cudaEventCreate(&start);
   cudaEventCreate(&stop);
@@ -409,6 +408,7 @@ bool CuProjectorInterface::Backproject (Sinogram3D* inputSinogram, Image* output
   printf(" Execution Time: %f msec\n", timeProc_mseg);
   
   FreeCudaMemory();
+  return true;
 }
 
 bool CuProjectorInterface::Project(Image* image, Sinogram3D* projection)
@@ -418,7 +418,7 @@ bool CuProjectorInterface::Project(Image* image, Sinogram3D* projection)
   // Número total de píxeles.
   int numPixels = image->getPixelCount();
   // Número total de bins del sinograma:
-  int numBins, numSinograms;
+  int numBins;
   numBins = projection->getBinCount();
   // Instancio el registrador de eventos:
   cudaEventCreate(&start);
@@ -460,6 +460,7 @@ bool CuProjectorInterface::Project(Image* image, Sinogram3D* projection)
   printf(" Execution Time: %f msec\n", timeProc_mseg);
   
   FreeCudaMemory();
+  return true;
 }
 
 void CuProjectorInterface::FreeCudaMemory()

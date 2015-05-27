@@ -41,9 +41,9 @@ bool ArPetProjector::Backproject (Sinogram2D* InputSinogram, Image* outputImage)
   {
     //MyWeightsList = (SiddonSegment**)malloc(sizeof(SiddonSegment*));
     #pragma omp for
-    for(int i = 0; i < InputSinogram->getNumProj(); i++)
+    for(i = 0; i < InputSinogram->getNumProj(); i++)
     {
-      for(int j = 0; j < InputSinogram->getNumR(); j++)
+      for(j = 0; j < InputSinogram->getNumR(); j++)
       {
 	// Obtengo puntos de entrada y salida de la lor:
 	if(InputSinogram->getPointsFromLor(i, j, &P1, &P2, &geomFactor))
@@ -169,9 +169,9 @@ bool ArPetProjector::Project (Image* inputImage, Sinogram2D* outputProjection)
   {
     MyWeightsList = (SiddonSegment**)malloc(sizeof(SiddonSegment*));
     #pragma omp for
-    for(int i = 0; i < outputProjection->getNumProj(); i++)
+    for(i = 0; i < outputProjection->getNumProj(); i++)
     {
-      for(int j = 0; j < outputProjection->getNumR(); j++)
+      for(j = 0; j < outputProjection->getNumR(); j++)
       {
 	if(outputProjection->getPointsFromLor(i, j, &P1, &P2, &geomFactor))
 	{
@@ -225,13 +225,13 @@ bool ArPetProjector::Project (Image* inputImage, Sinogram3D* outputProjection)
   // Lo incializo acá porque despues distintas cobinaciones de z aportan al mismo bin.
   outputProjection->FillConstant(0.0);
   outputProjection->writeInterfile("test");
-  for(unsigned int i = 0; i < outputProjection->getNumSegments(); i++)
+  for(int i = 0; i < outputProjection->getNumSegments(); i++)
   {
     printf("Forwardprojection  con ArPetProjector Segmento: %d\n", i);
-    for(unsigned int j = 0; j < outputProjection->getSegment(i)->getNumSinograms(); j++)
+    for(int j = 0; j < outputProjection->getSegment(i)->getNumSinograms(); j++)
     {
       /// Cálculo de las coordenadas z del sinograma
-      for(unsigned int m = 0; m < outputProjection->getSegment(i)->getSinogram2D(j)->getNumZ(); m++)
+      for(int m = 0; m < outputProjection->getSegment(i)->getSinogram2D(j)->getNumZ(); m++)
       {
 	int indexRing1 = outputProjection->getSegment(i)->getSinogram2D(j)->getRing1FromList(m);
 	int indexRing2 = outputProjection->getSegment(i)->getSinogram2D(j)->getRing2FromList(m);

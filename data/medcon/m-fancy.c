@@ -88,6 +88,8 @@
 
 #include <stdio.h>
 #include <ctype.h>
+#include <string.h>
+#include <stdlib.h>
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
@@ -127,7 +129,7 @@ void MdcPrintChar(int c)
 
 void MdcPrintStr(char *str)
 {
-  int t=strlen(str);
+  int t=(int)strlen(str);
 
   if ( t == 0 ) MdcPrntScrn("<null>");
   else MdcPrntScrn("%s",str);
@@ -284,7 +286,7 @@ void MdcKillSpaces(char string[]) /* kill first and last spaces */
 {
   int i=0, shift=0, length;
 
-  length = strlen(string);
+  length = (int)strlen(string);
 
   if (length > 0) { 
     /* kill the first spaces */
@@ -296,7 +298,7 @@ void MdcKillSpaces(char string[]) /* kill first and last spaces */
     if (shift) for (i=0; i<=length; i++) string[i] = string[i+shift];
 
     /* kill the last  spaces */
-    length = strlen(string);
+    length = (int)strlen(string);
     if (length > 0) { 
       i = length - 1;
       while (isspace((int)string[i])) { 
@@ -312,7 +314,7 @@ void MdcRemoveAllSpaces(char string[]) /* remove all spaces */
 {
   int i=0, j=0, length;
 
-  length = strlen(string);
+  length = (int)strlen(string);
 
   while (i < length) {
        if (isspace((int)string[i])) {
@@ -353,7 +355,7 @@ int MdcGetSubStr(char *dest, char *src, int dmax, char sep, int n)
 {
   Uint32 i, b, cnt=1, length, sublength=0;
 
-  length = strlen(src);
+  length = (Uint32)strlen(src);
 
   if (length == 0) return(MDC_NO);
 
@@ -373,7 +375,7 @@ int MdcGetSubStr(char *dest, char *src, int dmax, char sep, int n)
      sublength+=1;
   }
 
-  if ((sublength == 0) || (sublength >= dmax)) return(MDC_NO);
+  if ((sublength == 0) || (sublength >= (Uint32)dmax)) return(MDC_NO);
 
   strncpy(dest,&src[b],sublength);
 
@@ -446,7 +448,7 @@ char *MdcHandleEcatList(char *list, Uint32 **dims, Uint32 max)
   Uint32 a1, a2, t, i, l, length;
   char *p, *item;
 
-  length = strlen(list);
+  length = (Uint32)strlen(list);
 
   /* <enter> default = all */
   if (MdcUseDefault(list)) {
@@ -523,7 +525,7 @@ char *MdcHandleNormList(char *list,Uint32 **inrs,Uint32 *it
   Uint32 a1, a2, t, i, l, length;
   char *p, *item;
 
-  length = strlen(list);
+  length = (Uint32)strlen(list);
 
   /* <enter> = default: all */
   if (MdcUseDefault(list)) { 
@@ -606,7 +608,7 @@ char *MdcHandlePixelList(char *list, Uint32 **cols, Uint32 **rows,
   char *col, *row;
   char *p, *item;
 
-  length = strlen(list);
+  length = (Uint32)strlen(list);
 
   /* <enter> default = all */
   if (MdcUseDefault(list)) {
@@ -1025,7 +1027,7 @@ char *MdcGetStrHHMMSS(float msecs)
 
   hrs  = s / 3600; s -= hrs  * 3600;
 
-  mins = s / 60;   s -= mins * 60.;
+  mins = (unsigned int)( s / 60.0f);   s -= (unsigned int) mins * 60.0f;
 
   secs = s;
 
