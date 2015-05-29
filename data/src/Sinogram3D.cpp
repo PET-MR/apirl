@@ -364,7 +364,7 @@ bool Sinogram3D::readFromInterfile(string headerFilename, float radioScanner_mm)
   
   // Ahora voy llenando cada uno de ellos y leyendo el archivo *.i33:
   FILE* fp = NULL;
-  fp = fopen(filename_i33, "r");
+  fp = fopen(filename_i33, "rb");
   if (fp == NULL)
   {
     cout << "No se pudo abrir el archivo con los datos del sinograma3d." << endl;

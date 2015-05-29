@@ -152,6 +152,8 @@ anfSino(anfSino~= 0) = 1./anfSino(anfSino~= 0); % anf.
 sensitivityPath = [outputPath 'SensitivityImage' pathBar];
 mkdir(sensitivityPath);
 [sensImage, pixelSize_mm] = BackprojectMmrSpan1(anfSino, imageSize_pixels, pixelSize_mm, sensitivityPath, useGpu);
+% Generate update threshold:
+updateThreshold =  min(min(min(sensImage)))+ ( max(max(max(sensImage)))- min(min(min(sensImage)))) * 0.001;
 
 % 2) Reconstruction.
 emRecon = initialEstimate; % em_recon is the current reconstructed image.
@@ -177,8 +179,8 @@ for iter = 1 : numIterations
     % 2.e) Backprojection:
     [backprojImage, pixelSize_mm] = BackprojectMmrSpan1(ratioSinograms, imageSize_pixels, pixelSize_mm, iterationPath, useGpu);
     % 2.f) Apply sensitiivty image and correct current image:
-    emRecon(sensImage~=0) = emRecon(sensImage~=0) .* backprojImage(sensImage~=0)./ sensImage(sensImage~=0);
-    emRecon(sensImage==0) = 0;
+    emRecon(sensImage > updateThreshold) = emRecon(sensImage > updateThreshold) .* backprojImage(sensImage > updateThreshold)./ sensImage(sensImage > updateThreshold);
+    emRecon(sensImage <= updateThreshold) = 0;
     if rem(iter,saveInterval) == 0
         interfilewrite(emRecon, [outputPath pathBar sprintf('emImage_iter%d', iter)], pixelSize_mm);
     end

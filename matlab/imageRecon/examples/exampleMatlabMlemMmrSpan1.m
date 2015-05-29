@@ -35,7 +35,7 @@ attMapBaseFilename = 'E:\UncompressedInterfile\NEMA_IF\umap\PET_ACQ_194_20150220
 outputPath = 'E:\Recontructions\NEMA\';
 pixelSize_mm = [2.08625 2.08625 2.03125];
 %% MATLAB MLEM
-outputPath = 'E:\NemaReconstruction\';
+outputPath = 'E:\NemaReconstruction\testMatlabMlemCuda\';
 numIterations = 60;
 saveInterval = 5;
 useGpu = 1;

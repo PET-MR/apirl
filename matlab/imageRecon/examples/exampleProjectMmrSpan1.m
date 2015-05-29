@@ -33,13 +33,13 @@ fullFilename = 'E:\NemaReconstruction\umap\AttenMapCtManuallyRegistered.h33';
 image = interfileRead(fullFilename); 
 infoVolumeSpan11 = interfileinfo(fullFilename); 
 pixelSize_mm = [infoVolumeSpan11.ScalingFactorMmPixel1 infoVolumeSpan11.ScalingFactorMmPixel2 infoVolumeSpan11.ScalingFactorMmPixel3];
-%% PROJECT CPU
-outputPath = 'E:\NemaReconstruction\testProject\';
-[sinogram, structSizeSinogram] = ProjectMmrSpan1(image, pixelSize_mm, outputPath, 0);
-% Show one sinogram:
-figure;
-indiceSino = 1000;
-imshow(sinogram(:,:,indiceSino), [0 max(max(sinogram(:,:,indiceSino)))]);
+% %% PROJECT CPU
+% outputPath = 'E:\NemaReconstruction\testProject\';
+% [sinogram, structSizeSinogram] = ProjectMmrSpan1(image, pixelSize_mm, outputPath, 0);
+% % Show one sinogram:
+% figure;
+% indiceSino = 1000;
+% imshow(sinogram(:,:,indiceSino), [0 max(max(sinogram(:,:,indiceSino)))]);
 %% PROJECT GPU
 outputPath = 'E:\NemaReconstruction\testProjectCuda\';
 [sinogram, structSizeSinogram] = ProjectMmrSpan1(image, pixelSize_mm, outputPath, 1);

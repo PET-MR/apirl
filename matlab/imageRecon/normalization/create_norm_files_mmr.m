@@ -54,7 +54,12 @@ used_deadtimefactors = [];
 used_axial_factors = [];
 
 % 1) Read the .n files and get each component in a cell array:
-[componentFactors, componentLabels]  = readmMrComponentBasedNormalization(cbn_filename, 0);
+if ~isempty(cbn_filename)
+    [componentFactors, componentLabels]  = readmMrComponentBasedNormalization(cbn_filename, 0);
+else
+    % Use a standard math stored with apirl:
+    [componentFactors, componentLabels]  = readmMrComponentBasedNormalization('exampleBinaryNormFileMmr.n', 0);
+end
 
 % 2) Size of the mmr's sinograms. The 3d parameters are generated from the
 % selected span:

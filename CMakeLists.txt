@@ -74,7 +74,7 @@ if(ENABLE_GPU)
 	SET(CUDA_LIBRARIES_BUILD	STATIC)
 	#SET(CUDA_LIBRARIES_BUILD	SHARED)
 	# Seteo las compute capabilities con las que quiero compilar (Por default es la más baja: 1.0):
-	SET(CUDA_COMPUTE_CAPABILITY 3.0)
+	SET(CUDA_COMPUTE_CAPABILITY 2.0)
 	# Algunas opciones adicionales para cuda.
 	#SET(CUDA_USE_FAST_MATH ON)
 	# Tipo de Cache que se habilita:
@@ -102,6 +102,7 @@ elseif(CUDA_COMPUTE_CAPABILITY STREQUAL 2.0)
 	set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} ";-gencode=arch=compute_20,code=sm_20")
 elseif(CUDA_COMPUTE_CAPABILITY STREQUAL 2.1)
 	set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} ";-arch=sm_21")
+	set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} ";-gencode=arch=compute_21,code=sm_21")
 elseif(CUDA_COMPUTE_CAPABILITY STREQUAL 3.0)
 	set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} ";-arch=sm_30")
 	set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} ";-gencode=arch=compute_30,code=sm_30")
