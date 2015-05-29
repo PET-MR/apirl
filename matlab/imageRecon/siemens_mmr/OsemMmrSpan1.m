@@ -23,7 +23,7 @@
 %   volume = OsemMmrSpan1(sinogramFilename, normFilename, attMapBaseFilename, outputPath, [2.08625 2.08625 2.03125], 21, 3)
 %   volume = OsemMmrSpan1(sinogramFilename, normFilename, attMapBaseFilename, outputPath, [2.08625 2.08625 2.03125])
 %   volume = OsemMmrSpan1(sinogramFilename, normFilename, attMapBaseFilename, outputPath)
-function volume = OsemMmrSpan1(sinogramFilename, normFilename, attMapBaseFilename, outputPath, pixelSize_mm, numInputSubsets, numInputIterations)
+function volume = OsemMmrSpan1(sinogramFilename, normFilename, attMapBaseFilename, outputPath, pixelSize_mm, numInputSubsets, numInputIterations, optUseGpu)
 
 mkdir(outputPath);
 % Check what OS I am running on:
@@ -45,13 +45,15 @@ if nargin < 5
     % Default pixel size:
     pixelSize_mm = [2.08625 2.08625 2.03125];
     imageSize_pixels = [286 286 127]; 
-    imageSize_mm = pixelSize_mm.*imageSize_pixelsl
+    imageSize_mm = pixelSize_mm.*imageSize_pixels;
+    useGpu = 0;
 else
     imageSize_mm = [600 600 258];
     imageSize_pixels = ceil(imageSize_mm./pixelSize_mm);
-    if nargin == 7
+    if nargin == 8
         numSubsets = numInputSubsets;
         numIterations = numInputIterations;
+        useGpu = optUseGpu;
     else
         error('Wrong number of parameters: volume = OsemMmrSpan1(sinogramFilename, normFilename, attMapBaseFilename, outputPath, [2.08625 2.08625 2.03125], 21, 3)');
         return;
@@ -121,7 +123,7 @@ if ~strcmp(attMapBaseFilename, '')
     % Create ACFs of a computed phatoms with the linear attenuation
     % coefficients:
     acfFilename = ['acfsSinogramSpan1'];
-    acfsSinogramSpan1 = createACFsFromImage(attenMap, imageSizeAtten_mm, outputPath, acfFilename, sinogramFilename, structSizeSino3dSpan1, 0);
+    acfsSinogramSpan1 = createACFsFromImage(attenMap, imageSizeAtten_mm, outputPath, acfFilename, sinogramFilename, structSizeSino3dSpan1, 0, useGpu);
 
     % After the projection read the acfs:
     acfFilename = [outputPath acfFilename];
@@ -147,18 +149,28 @@ anfFilename = [outputPath 'ANF_Span1'];
 interfileWriteSino(single(atteNormFactorsSpan1), anfFilename, structSizeSino3dSpan1);
 clear atteNormFactorsSpan1;
 %clear normFactorsSpan11;
-%% GENERATE OSEM AND MLEM RECONSTRUCTION FILES FOR APIRL
-disp('Osem reconstruction...');
-saveInterval = 1;
-saveIntermediate = 0;
-outputFilenamePrefix = [outputPath 'reconImage'];
-filenameOsemConfig = [outputPath sprintf('osem_%dsubsets.par', numSubsets)];
-CreateOsemConfigFileForMmr(filenameOsemConfig, [sinogramFilename '.h33'], [filenameInitialEstimate '.h33'], outputFilenamePrefix, numIterations, [],...
-    numSubsets, saveInterval, saveIntermediate, [], [], [], [anfFilename '.h33']);
-
-%% RECONSTRUCTION OF HIGH RES IMAGE
-% Execute APIRL: 
-status = system(['OSEM ' filenameOsemConfig]) 
+%% GENERATE MLEM RECONSTRUCTION FILES FOR APIRL
+if useGpu == 0
+    disp('Osem reconstruction...');
+    saveInterval = 1;
+    saveIntermediate = 0;
+    outputFilenamePrefix = [outputPath 'reconImage'];
+    filenameOsemConfig = [outputPath 'osem.par'];
+    CreateOsemConfigFileForMmr(filenameOsemConfig, [sinogramFilename '.h33'], [filenameInitialEstimate '.h33'], outputFilenamePrefix, numIterations, [],...
+        numSubsets, saveInterval, saveIntermediate, [], [], [], [anfFilename '.h33']);
+    % Execute APIRL: 
+    status = system(['OSEM ' filenameOsemConfig]) 
+else
+    disp('cuOsem reconstruction...');
+    saveInterval = 10;
+    saveIntermediate = 0;
+    outputFilenamePrefix = [outputPath 'reconImage'];
+    filenameMlemConfig = [outputPath 'cuosem.par'];
+    CreateCuMlemConfigFileForMmr(filenameMlemConfig, [sinogramFilename '.h33'], [filenameInitialEstimate '.h33'], outputFilenamePrefix, numIterations, [],...
+        saveInterval, saveIntermediate, [], [], [], [anfFilename '.h33'], 0, 576, 576, 512);
+    % Execute APIRL: 
+    status = system(['cuMLEM ' filenameMlemConfig]) 
+end
 %% READ RESULTS
 % Read interfile reconstructed image:
 volume = interfileRead([outputFilenamePrefix '_final.h33']);

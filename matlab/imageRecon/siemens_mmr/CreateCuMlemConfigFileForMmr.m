@@ -9,12 +9,15 @@
 % updateThreadsPerBlock parameters are empty ([]) it uses a default
 % configuration of 0, 576, 576 and 512.
 %
+% The last parameter is the number of subsets, because for cuMlem command
+% you can define the number of subsets and then will run the osem version.
+%
 % function CreateCuMlemConfigFileForMmr(configfilename, inputFile, initialEstimate, outputFilenamePrefix, numIterations, sensitivityImage,...
-%    saveInterval, saveIntermediate, acfSinogram, scatterSinogram, randomSinograms, normalizationFactors, gpuId, projectorThreadsPerBlock, backprojectorThreadsPerBlock, updateThreadsPerBlock)
+%    saveInterval, saveIntermediate, acfSinogram, scatterSinogram, randomSinograms, normalizationFactors, gpuId, projectorThreadsPerBlock, backprojectorThreadsPerBlock, updateThreadsPerBlock, numSubsets)
 %
 %
 function CreateCuMlemConfigFileForMmr(configfilename, inputFile, initialEstimate, outputFilenamePrefix, numIterations, sensitivityImage,...
-    saveInterval, saveIntermediate, acfSinogram, scatterSinogram, randomSinograms, normalizationFactors, gpuId, projectorThreadsPerBlock, backprojectorThreadsPerBlock, updateThreadsPerBlock)
+    saveInterval, saveIntermediate, acfSinogram, scatterSinogram, randomSinograms, normalizationFactors, gpuId, projectorThreadsPerBlock, backprojectorThreadsPerBlock, updateThreadsPerBlock, numSubsets)
 
 % Primero genero el archivo de encabezado.
 fid = fopen(configfilename, 'w');
@@ -57,6 +60,11 @@ else
 end
 
 fprintf(fid,'number of iterations := %d\n', numIterations);
+if (nargin == 17)
+    if numSubsets ~= 0
+        fprintf(fid,'number of subsets := %d\n', numSubsets);
+    end
+end
 fprintf(fid,'save estimates at iteration intervals := %d\n', saveInterval);
 fprintf(fid,'save estimated projections and backprojected image := %d\n', saveIntermediate);
 % Por último las correcciones, sino están defnidos los escribo:

@@ -37,7 +37,7 @@ pixelSize_mm = [2.08625 2.08625 2.03125];
 %% MLEM
 outputPath = 'E:\NemaReconstruction\testMlemCuda\';
 numIterations = 5;
-useGpu =1;
+useGpu = 1;
 volume = MlemMmrSpan1(sinogramFilename, normFilename, attMapBaseFilename, outputPath, pixelSize_mm, numIterations, useGpu);
 %% MLEM
 outputPath = 'E:\NemaReconstruction\testMlem\';

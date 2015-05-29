@@ -176,6 +176,7 @@ for iter = 1 : numIterations
     % 2.d) Divide sinogram by projected sinogram:
     ratioSinograms = zeros(size(projectedImage), 'single');
     ratioSinograms(projectedImage~=0) = sinogramSpan1(projectedImage~=0) ./ projectedImage(projectedImage~=0);
+    ratioSinograms = ratioSinograms.* anfSino; % Apply anf.
     % 2.e) Backprojection:
     [backprojImage, pixelSize_mm] = BackprojectMmrSpan1(ratioSinograms, imageSize_pixels, pixelSize_mm, iterationPath, useGpu);
     % 2.f) Apply sensitiivty image and correct current image:

@@ -61,13 +61,14 @@ bool CuOsemSinogram3d::InitGpuMemory(TipoProyector tipoProy)
   checkCudaErrors(cudaMalloc((void**) &d_ring1_mm, sizeof(int)*numSinograms));
   checkCudaErrors(cudaMalloc((void**) &d_ring2_mm, sizeof(int)*numSinograms));
   // Para la sensitivity iamge, tengo un array de sensitivity images:
-  checkCudaErrors(cudaMalloc((void***) &d_sensitivityImages, sizeof(float*)*numSubsets));	// Memory for the array.
+  checkCudaErrors(cudaMalloc(&d_sensitivityImages, sizeof(float*)*numSubsets));	// Memory for the array.
   // Para los subsets lo mismo:
   checkCudaErrors(cudaMalloc((void***) &d_inputProjectionSubsets, sizeof(float*)*numSubsets));
   for(int i = 0; i < numSubsets; i++)
   {
     // Memoria para cada sensitivty image:
-    checkCudaErrors(cudaMalloc((void**) &(d_sensitivityImages[i]), sizeof(float)*numPixels));	// Memoria para la imagen.
+	float** aux = d_sensitivityImages+i;
+    checkCudaErrors(cudaMalloc((void**) aux, sizeof(float)*numPixels));	// Memoria para la imagen.
     // Pongo en cero la imágens de sensibilidad:
     checkCudaErrors(cudaMemset(d_sensitivityImages[i], 0,sizeof(float)*numPixels));
     // Memoria para cada subset del sinograma de entrada:
@@ -200,6 +201,8 @@ bool CuOsemSinogram3d::Reconstruct(TipoProyector tipoProy, int indexGpu)
   {
 	  return false;
   }
+  // Inicializo memoria de GPU:
+  this->InitGpuMemory(tipoProy);
   /// Tamaño de la imagen:
   SizeImage sizeImage = reconstructionImage->getSize();
   /// Proyección auxiliar, donde guardo el sinograma proyectado:
@@ -250,10 +253,10 @@ bool CuOsemSinogram3d::Reconstruct(TipoProyector tipoProy, int indexGpu)
       /// prefijo de los nombres, y luego de les agrega un _%d, siendo %d el índice de subset.
       sprintf(c_string, "%s_subset_%d.h33", sensitivityFilename.c_str(), s);
       /// Leo el sensitivity volume desde el archivo
-      sensitivityImages[s]->readFromInterfile(c_string);
-      sensitivityImages[s]->forcePositive();
+      sensitivityImage->readFromInterfile(c_string);
+      sensitivityImage->forcePositive();
       // Copy to gpu:
-      checkCudaErrors(cudaMemcpy(d_reconstructionImage, initialEstimate->getPixelsPtr(),sizeof(float)*nPixels,cudaMemcpyHostToDevice));
+      checkCudaErrors(cudaMemcpy((void*)d_sensitivityImages[s]	, sensitivityImage->getPixelsPtr(),sizeof(float)*nPixels,cudaMemcpyHostToDevice));
     }
   }
   else
@@ -263,7 +266,7 @@ bool CuOsemSinogram3d::Reconstruct(TipoProyector tipoProy, int indexGpu)
     for(int s = 0; s < numSubsets; s++)
     {
       /// Calculo el sensitivity volume
-      if(computeSensitivity(sensitivityImages[s], s, tipoProy)==false)
+      if(computeSensitivity(sensitivityImage, s, tipoProy)==false)
       {
 	strError = "Error al calcular la sensitivity Image.";
 	return false;
@@ -272,8 +275,8 @@ bool CuOsemSinogram3d::Reconstruct(TipoProyector tipoProy, int indexGpu)
       string sensitivityFileName = outputFilenamePrefix;
       sprintf(c_string, "_sensitivity_subset_%d", s);
       sensitivityFileName.append(c_string);
-      sensitivityImages[s]->writeInterfile((char*)sensitivityFileName.c_str());
-      updateThresholds[s] = sensitivityImages[s]->getMaxValue()*0.05;
+      sensitivityImage->writeInterfile((char*)sensitivityFileName.c_str());
+      updateThresholds[s] = sensitivityImage->getMaxValue()*0.05;
     }
   }
   
