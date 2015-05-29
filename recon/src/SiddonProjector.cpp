@@ -530,11 +530,8 @@ bool SiddonProjector::Backproject (Sinogram3D* inputProjection, Image* outputIma
 						indexPixel = MyWeightsList[0][n].IndexZ*(sizeImage.nPixelsX*sizeImage.nPixelsY)+MyWeightsList[0][n].IndexY * sizeImage.nPixelsX + MyWeightsList[0][n].IndexX;
 						// Por ahora deshabilito el GeomFactor:
 						newValue = MyWeightsList[0][n].Segment * geomFactor * inputProjection->getSegment(i)->getSinogram2D(j)->getSinogramBin(k,l);
-						//#pragma omp atomic 
-						#pragma omp critical
-						{
+						#pragma omp atomic 
 							ptrPixels[indexPixel] +=  newValue;	
-						}
 						}
 					}
 					if(LengthList != 0)

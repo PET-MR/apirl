@@ -149,7 +149,7 @@ disp('Compute sensitivity image...');
 anfSino = overall_ncf_3d .* acfsSinogramSpan1; % ancf.
 anfSino(anfSino~= 0) = 1./anfSino(anfSino~= 0); % anf.
 % Backproject sinogram in other path:
-sensitivityPath = [outputPath pathBar 'SensitivityImage/'];
+sensitivityPath = [outputPath 'SensitivityImage' pathBar];
 mkdir(sensitivityPath);
 [sensImage, pixelSize_mm] = BackprojectMmrSpan1(anfSino, imageSize_pixels, pixelSize_mm, sensitivityPath, useGpu);
 

@@ -72,6 +72,18 @@
 
 function interfileWriteSino(sinogram, filename, structSizeSino)
 
+% Check what OS I am running on:
+if(strcmp(computer(), 'GLNXA64'))
+    os = 'linux';
+    pathBar = '/';
+elseif(strcmp(computer(), 'PCWIN') || strcmp(computer(), 'PCWIN64'))
+    os = 'windows';
+    pathBar = '\';
+else
+    disp('OS not compatible');
+    return;
+end
+
 % Debo agregar la extensión para los nombres de ambos archivos:
 filenameHeader = sprintf('%s.h33', filename);
 filenameSino = sprintf('%s.i33', filename);
@@ -120,15 +132,17 @@ fprintf(fid,'original institution := cnea\n');
 fprintf(fid,'contact person := m. belzunce\n');
 fprintf(fid,'data description := tomo\n');
 fprintf(fid,'!data starting block := 0\n');
-% Debo cargar el nombre del archivo de la imagen:
-% Debo cargar el nombre del archivo de la imagen. Si tengo el h33 en un
-% path con directorios, para el i33 debo eliminarlo:
-barras = strfind(filenameSino, '/');
-if ~isempty(barras)
-    filenameSinoForHeader = filenameSino(barras(end)+1 : end);
-else
-    filenameSinoForHeader = filenameSino;
-end
+% % Debo cargar el nombre del archivo de la imagen:
+% % Debo cargar el nombre del archivo de la imagen. Si tengo el h33 en un
+% % path con directorios, para el i33 debo eliminarlo:
+% barras = strfind(filenameSino, pathBar);
+% if ~isempty(barras)
+%     filenameSinoForHeader = filenameSino(barras(end)+1 : end);
+% else
+%     filenameSinoForHeader = filenameSino;
+% end
+filenameSinoForHeader = filenameSino;
+
 fprintf(fid,'!name of data file := %s\n', filenameSinoForHeader);
 fprintf(fid,'patient name := Phantom\n');
 fprintf(fid,'!patient ID  := 12345\n');

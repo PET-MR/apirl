@@ -363,7 +363,7 @@ bool Sinogram3D::readFromInterfile(string headerFilename, float radioScanner_mm)
   inicializarSegmentos();
   
   // Ahora voy llenando cada uno de ellos y leyendo el archivo *.i33:
-  FILE* fp;
+  FILE* fp = NULL;
   fp = fopen(filename_i33, "r");
   if (fp == NULL)
   {
