@@ -328,17 +328,16 @@ bool Image::readFromInterfile(char* filePath)
 	    // Agrego la tercera dimensión, si hay más dimensiones devuelvo un error.
 	    this->size.nPixelsZ = fi->number;
 	    if(this->size.nPixelsZ == 0)
-		    this->size.nPixelsZ = fi->dim[3];
+			this->size.nPixelsZ = fi->dim[3];
 	    //this->size.sizePixelZ_mm = fi->image[0].slice_width;
 	    //if(fi->image[0].slice_width == 0)
-	      this->size.sizePixelZ_mm = fi->pixdim[3];
+		this->size.sizePixelZ_mm = fi->pixdim[3];
     }
     else if(fi->dim[0] > 3)
     {
 	    this->strError = "No se soportan imágenes de más de 3 dimensiones";
 	    return false;
     }
-
   }
   else
   {

@@ -36,6 +36,14 @@ pixelSize_mm = [infoVolumeSpan11.ScalingFactorMmPixel1 infoVolumeSpan11.ScalingF
 %% PROJECT CPU
 outputPath = 'E:\NemaReconstruction\testProject\';
 [sinogram, structSizeSinogram] = ProjectMmrSpan1(image, pixelSize_mm, outputPath, 0);
+% Show one sinogram:
+figure;
+indiceSino = 1000;
+imshow(sinogram(:,:,indiceSino), [0 max(max(sinogram(:,:,indiceSino)))]);
 %% PROJECT GPU
 outputPath = 'E:\NemaReconstruction\testProjectCuda\';
 [sinogram, structSizeSinogram] = ProjectMmrSpan1(image, pixelSize_mm, outputPath, 1);
+% Show one sinogram:
+figure;
+indiceSino = 1000;
+imshow(sinogram(:,:,indiceSino), [0 max(max(sinogram(:,:,indiceSino)))]);

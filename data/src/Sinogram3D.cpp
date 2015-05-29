@@ -224,7 +224,7 @@ bool Sinogram3D::readFromInterfile(string headerFilename, float radioScanner_mm)
       char* aux = strrchr( buffer, '{'); // Este es el inicio del buffer
       char* end = strrchr( buffer, '}'); // Este es el inicio del buffer
       if ((aux == NULL)||(end == NULL)){
-	cout << "No se encontraron los {} de la lista de sinogramas por segmento." << endl; return false;}
+		cout << "No se encontraron los {} de la lista de sinogramas por segmento." << endl; return false;}
       // Si llegué hasta acá pongo el fin del string donde estaba la llave de cierre y saltea una posición donde estaba la de apertura:
       aux++;
       (*end) = '\0';

@@ -727,8 +727,8 @@ char *MdcReadIntfHeader(FILEINFO *fi, MDC_INTERFILE *intf)
         case MDC_INTF_DIALECT_PET:
                           fi->acquisition_type = MDC_ACQUISITION_TOMO;
                           break;
-	/// Agregado por MArtin Belzunce:
-	case MDC_INTF_PET:
+		/// Agregado por MArtin Belzunce:
+		case MDC_INTF_PET:
                           fi->acquisition_type = MDC_ACQUISITION_PET;
                           break;
         case MDC_INTF_CURVE      : /* default = Static */

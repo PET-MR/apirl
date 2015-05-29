@@ -67,6 +67,7 @@ CuProjectorInterface::CuProjectorInterface(CuProjector* cuProjector)
 {
   this->projector = cuProjector;
   gpuId = 0;
+  d_imageArray = NULL;
   typeOfProjector = SIDDON_CYLINDRICAL_SCANNER;	// The only one available at the moment.
   setProjectorBlockSizeConfig(dim3(128,1,1));
 }
@@ -93,26 +94,27 @@ bool CuProjectorInterface::initCuda (int device)
   /// Info del driver:
   cudaDriverGetVersion(&driverVersion);
   cudaRuntimeGetVersion(&runtimeVersion);
+  #ifdef __DEBUG__
+	  printf("______GPU PROPERTIES_____\n");
+	  printf(" Nombre: %s\n", deviceProp.name);
   
-  printf("______GPU PROPERTIES_____\n");
-  printf(" Nombre: %s\n", deviceProp.name);
-  
-  printf(" Cuda Driver Version %d\n", driverVersion);
-  printf(" Cuda Runtime Version %d\n", runtimeVersion);
-  printf(" Compute Mode %d\n",  deviceProp.computeMode);
-  printf(" CUDA Capability Major/Minor version number:    %d.%d\n", deviceProp.major, deviceProp.minor);
-  printf(" Total Global Memory %llu\n", deviceProp.totalGlobalMem);
-  printf(" Shared Memory per Block %lud\n", deviceProp.sharedMemPerBlock);
-  printf(" Register pero Block %d\n", deviceProp.regsPerBlock);
-  printf(" Warp Size %d\n", deviceProp.warpSize);
-  printf(" Max Threads Per Block %d\n", deviceProp.maxThreadsPerBlock);
-  printf(" Max Threads Dimension %dx%dx%d\n", deviceProp.maxThreadsDim[0], deviceProp.maxThreadsDim[1], deviceProp.maxThreadsDim[2]);
-  printf(" Max Grid Size %dx%dx%d\n", deviceProp.maxGridSize[0], deviceProp.maxGridSize[1], deviceProp.maxGridSize[2]);
-  printf(" Max Threads Per Block %d\n", deviceProp.maxThreadsPerBlock);
-  printf(" Clock Rate %d\n", deviceProp.clockRate);
-  printf(" MultiProcessors count %d\n", deviceProp.multiProcessorCount);
-  printf(" Concurrent Kernels %d\n", deviceProp.concurrentKernels);
-  printf(" kernel Execution Timeout Enabled %d\n", deviceProp.kernelExecTimeoutEnabled);
+	  printf(" Cuda Driver Version %d\n", driverVersion);
+	  printf(" Cuda Runtime Version %d\n", runtimeVersion);
+	  printf(" Compute Mode %d\n",  deviceProp.computeMode);
+	  printf(" CUDA Capability Major/Minor version number:    %d.%d\n", deviceProp.major, deviceProp.minor);
+	  printf(" Total Global Memory %llu\n", deviceProp.totalGlobalMem);
+	  printf(" Shared Memory per Block %lud\n", deviceProp.sharedMemPerBlock);
+	  printf(" Register pero Block %d\n", deviceProp.regsPerBlock);
+	  printf(" Warp Size %d\n", deviceProp.warpSize);
+	  printf(" Max Threads Per Block %d\n", deviceProp.maxThreadsPerBlock);
+	  printf(" Max Threads Dimension %dx%dx%d\n", deviceProp.maxThreadsDim[0], deviceProp.maxThreadsDim[1], deviceProp.maxThreadsDim[2]);
+	  printf(" Max Grid Size %dx%dx%d\n", deviceProp.maxGridSize[0], deviceProp.maxGridSize[1], deviceProp.maxGridSize[2]);
+	  printf(" Max Threads Per Block %d\n", deviceProp.maxThreadsPerBlock);
+	  printf(" Clock Rate %d\n", deviceProp.clockRate);
+	  printf(" MultiProcessors count %d\n", deviceProp.multiProcessorCount);
+	  printf(" Concurrent Kernels %d\n", deviceProp.concurrentKernels);
+	  printf(" kernel Execution Timeout Enabled %d\n", deviceProp.kernelExecTimeoutEnabled);
+  #endif
   ///////////////////////////////////////////////////////////
   // Initialisation of the GPU device
   ///////////////////////////////////////////////////////////
@@ -471,5 +473,6 @@ void CuProjectorInterface::FreeCudaMemory()
   checkCudaErrors(cudaFree(d_ring2));
   checkCudaErrors(cudaFree(d_ring1_mm));
   checkCudaErrors(cudaFree(d_ring2_mm));
-  checkCudaErrors(cudaFreeArray(d_imageArray));
+  if(d_imageArray != NULL)
+	checkCudaErrors(cudaFreeArray(d_imageArray));
 }

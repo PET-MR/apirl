@@ -171,7 +171,7 @@ int getSiddonProjectorParameters(string mlemFilename, string cmd, int* numSample
     // Hubo un error. Salgo del comando.
     if(errorCode == PMF_KEY_NOT_FOUND)
     {
-      cout<<"No se encontró el parámetro ""siddon number of samples on the detector"", se toma el valor por defecto."<<endl;
+      cout<<"Siddon projector with default config: 1 line per sinogram bin."<<endl;
       return -1;
     }
     else

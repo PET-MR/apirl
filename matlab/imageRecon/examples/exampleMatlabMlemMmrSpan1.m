@@ -38,13 +38,13 @@ pixelSize_mm = [2.08625 2.08625 2.03125];
 outputPath = 'E:\Recontructions\NEMA\testMatlabMlem\';
 numIterations = 60;
 saveInterval = 5;
-useGpu = 0;
+useGpu = 1;
 volume = MatlabMlemMmrSpan1(sinogramFilename, normFilename, attMapBaseFilename, outputPath, pixelSize_mm, numIterations, saveInterval, useGpu)
-
 %% MATLAB MLEM
 outputPath = 'E:\Recontructions\NEMA\testMatlabMlem\';
 numIterations = 60;
-
-useGpu = 1;
+saveInterval = 5;
+useGpu = 0;
 volume = MatlabMlemMmrSpan1(sinogramFilename, normFilename, attMapBaseFilename, outputPath, pixelSize_mm, numIterations, saveInterval, useGpu)
+
 

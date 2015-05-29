@@ -172,7 +172,7 @@ Int8 MDC_DICOM_WRITE_NOMETA = MDC_NO;      /* DICOM: write without meta header*/
 Int8 MDC_FORCE_RESCALE = MDC_NO;        /* user specified slope/intercept   */
 Int8 MDC_FORCE_CONTRAST= MDC_NO;        /* user specified center/width      */
 
-Int8 MDC_INFO = MDC_YES;                /* default print header info        */
+Int8 MDC_INFO = MDC_NO;                /* default print header info        */
 Int8 MDC_INTERACTIVE = MDC_NO;          /* interactive read of raw file     */
 Int8 MDC_CONVERT = MDC_NO;              /* image conversion requested       */
 Int8 MDC_EXTRACT = MDC_NO;              /* extract images                   */
