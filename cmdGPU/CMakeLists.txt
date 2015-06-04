@@ -1,10 +1,9 @@
-﻿#  Main File for the cmdGPU executables files for PET
+#  CMAKE Main File for the reconGPU shared library of AR-PET Image Reconstruction library (APIRL)
 #
 #  Martin Belzunce, UTN-FRBA, Proyecto AR-PET (CNEA)
 #  Copyright (c) 2010
 
 PROJECT(cmdGPU)
-
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 SET(BUILD_SHARED_LIBS  OFF)
 ###################### CUDA CONFIGURATION #############################

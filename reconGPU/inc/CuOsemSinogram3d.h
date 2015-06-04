@@ -69,6 +69,9 @@ class DLLEXPORT CuOsemSinogram3d : public CuMlemSinogram3d
     /// Cantidad de subsets que se utilizan para el Osem.
     int numSubsets;
     
+    /// Cantidad de proyecciones de cada subset.
+    int numProj;
+    
     /// Método que calcula la imagen de sensibilidad para uno de los subsets dados.
     /** Método que hace la backprojection de una imagen cosntante para obtener
     la imagen de sensibilidad necesaria para la reconstrucción. */
@@ -91,6 +94,10 @@ class DLLEXPORT CuOsemSinogram3d : public CuMlemSinogram3d
     /** Puntero a puntero donde se almacenará un array de sinogramas con los subsets. O sea que d_inputProjectionSubsets[i] es el subset de un sinograma
      * e i va desde 0 a numSubsets-1. */
     float** d_inputProjectionSubsets;
+    
+    /// Array de punteros para almacenar los ángulos de cada subset..
+    /** Array de punteros para almacenar los ángulos de cada subset. Se almacenan en cpu y se copian a gpu antes de cada subiteración. */
+    float** h_subsetsAngles;
 
     /// Puntero a array de Sensitivity Image (una por subset).
     /* Puntero a al dirección de memoria en GPU donde se tendrá la imagen de sensibilidad.*/
@@ -108,6 +115,16 @@ class DLLEXPORT CuOsemSinogram3d : public CuMlemSinogram3d
     
     /// Override del likelihood del cumlemsinogramd.
     float getLikelihoodValue(TipoProyector tipoProy);
+    
+    /// Updates the grid size for processing a subset.
+    /** Updates the grid size for processing a subset. The blocksize is fixed, it updates the grid size to process a subset.
+     */
+    void updateGridSizeForSubsetSinogram();
+    
+    /// Updates the grid size for processing the whole sinogram.
+    /** Updates the grid size for processing the whole sinogram. The blocksize is fixed, it updates the grid size to process a subset.
+     */
+    void updateGridSizeForWholeSinogram();
     
   public:
     /// Constructores de la clase.

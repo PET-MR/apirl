@@ -34,6 +34,8 @@ __device__ __constant__ float d_RadioFov_mm;
 
 __device__ __constant__ SizeImage d_imageSize;
 
+__device__ __constant__ int d_numPixels;
+
 __device__ __constant__ int d_numPixelsPerSlice;
 
 __device__ __constant__ int d_numBinsSino2d;

@@ -20,6 +20,14 @@ const float Sinogram3DSiemensMmr::crystalElementSize_mm = 4.0891f;
 /// Width of each rings.
 const float Sinogram3DSiemensMmr::widthRings_mm = 4.0312f; //axialFov_mm / numRings;
 
+Sinogram3DSiemensMmr::Sinogram3DSiemensMmr(int numProj, int numR, int numRings, float radioFov_mm, float axialFov_mm, float radioScanner_mm, 
+					   int numSegments, int* numSinogramsPerSegment, int* minRingDiffPerSegment, int* maxRingDiffPerSegment):Sinogram3DCylindricalPet(
+					   numProj, numR, numRings, radioFov_mm, axialFov_mm, radioScanner_mm, numSegments, numSinogramsPerSegment, minRingDiffPerSegment, maxRingDiffPerSegment)
+{
+  
+}
+
+
 Sinogram3DSiemensMmr::Sinogram3DSiemensMmr(char* fileHeaderPath):Sinogram3DCylindricalPet(this->radioFov_mm, this->axialFov_mm, this->radioScanner_mm)
 {
   if(readFromInterfile(fileHeaderPath, this->radioScanner_mm))
@@ -43,6 +51,12 @@ Sinogram3DSiemensMmr::Sinogram3DSiemensMmr(Sinogram3DSiemensMmr* srcSinogram3D):
 Sinogram3DSiemensMmr::~Sinogram3DSiemensMmr()
 {
   // Destructor fo Sinogram3DCylindricalPet frees all the segments memory.
+  /*for(int i = 0; i < numSegments; i++)
+  {
+    delete segments[i];
+  }
+  
+  delete segments;*/
 }
 
 // Constructor que genera un nuevo sinograma 3D a aprtir de los subsets.
@@ -91,35 +105,39 @@ int Sinogram3DSiemensMmr::CopyAllBinsFrom(Sinogram3D* srcSinogram3D)
 
 Sinogram3D* Sinogram3DSiemensMmr::getSubset(int indexSubset, int numSubsets)
 {
-  // El tamaño del nuevo sinograma sería del mismo que el original, luego se hace un setSinogram2d para todos los sinos 
-  // de los segmentos y debería quedar del tamaño correcto. No se pierde memoria porque setSinogram2D hace un delete primero
-  // y luego crea el nuevo.
-  Sinogram3DSiemensMmr* sino3dSubset = new Sinogram3DSiemensMmr(this);
-  Sinogram2DinSiemensMmr* auxSinos2d;
-  // Tengo una copia del sinograma, debo cambiar los sinogramas
+  // El tamaño del nuevo sinograma sería del mismo que el original, pero con menos ángulos de proyección:
+  // Calculo cuantas proyecciones va a tener el subset:
+  int numProjSubset = (int)floorf((float)numProj / (float)numSubsets);
+  // Siempre calculo por defecto, luego si no dio exacta la división, debo agregar un ángulo a la proyección:
+  if((numProj%numSubsets)>indexSubset)
+    numProjSubset++;
+  Sinogram3DSiemensMmr* sino3dSubset = new Sinogram3DSiemensMmr(numProjSubset, numR, numRings, radioFov_mm, axialFov_mm, radioScanner_mm, 
+	 numSegments, numSinogramsPerSegment, minRingDiffPerSegment, maxRingDiffPerSegment);
+  // Copy the ring config of sinos2d:
+  sino3dSubset->CopyRingConfigForEachSinogram(this);
+  // Con este constructor ya tengo la memoria inicializada, copio los bins:
+  float* fullProjAngles = this->getSegment(0)->getSinogram2D(0)->getAngPtr();
+  float* subsetProjAngles = (float*)malloc(sizeof(float)*numProjSubset);
   for(int i = 0; i < numSegments; i++)
   {
     for(int j = 0; j < this->segments[i]->getNumSinograms(); j++)
     {
-      // Create new sinogram2d with the correct dimensiones:
-      auxSinos2d = new Sinogram2DinSiemensMmr((Sinogram2DinSiemensMmr*)this->getSegment(i)->getSinogram2D(j), indexSubset, numSubsets);
-      sino3dSubset->getSegment(i)->setSinogram2D(auxSinos2d, j);
-      // if debug, printf ang values:
-      #ifdef __DEBUG__
-	if ((i==0)&&(j==0))
+      for(int k = 0; k < numProjSubset; k ++)
+      {
+	// indice angulo del sino completo:
+	int kAngCompleto = indexSubset + numSubsets*k;
+	
+	// Initialization of Phi Values
+	subsetProjAngles[k] = fullProjAngles[kAngCompleto];
+	for(int l = 0; l < numR; l++)
 	{
-	  printf("Angulos para subset %d de %d: \n", indexSubset, numSubsets);
-	  for(int ang = 0; ang < auxSinos2d->getNumProj(); ang++)
-	  {
-	    printf("%f\t", auxSinos2d->getAngValue(ang));
-	  }
-	  printf("\n");
+	  sino3dSubset->getSegment(i)->getSinogram2D(j)->setSinogramBin(k,l, this->getSegment(i)->getSinogram2D(j)->getSinogramBin(kAngCompleto,l));
 	}
-      #endif
-      // delete the aux sinogram because set sinograms makes a copy:
-      delete auxSinos2d;
+      }
+      memcpy(sino3dSubset->getSegment(i)->getSinogram2D(j)->getAngPtr(), subsetProjAngles, sizeof(float)*numProjSubset);
     }
   }
+  memcpy(sino3dSubset->getAngPtr(), subsetProjAngles, sizeof(float)*numProjSubset);
   return (Sinogram3D*)sino3dSubset;
 }
 

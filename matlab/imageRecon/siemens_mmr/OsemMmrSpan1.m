@@ -19,6 +19,8 @@
 %  - numSubsets: number of subsets.
 %  - numIterations: number of iterations.
 %
+%   -normFilename: can be a norm file o the overall_ncf matrix directly.
+%
 % Examples:
 %   volume = OsemMmrSpan1(sinogramFilename, normFilename, attMapBaseFilename, outputPath, [2.08625 2.08625 2.03125], 21, 3)
 %   volume = OsemMmrSpan1(sinogramFilename, normFilename, attMapBaseFilename, outputPath, [2.08625 2.08625 2.03125])
@@ -76,49 +78,70 @@ initialEstimate = ones(imageSize_pixels, 'single');
 filenameInitialEstimate = [outputPath pathBar 'initialEstimate'];
 interfilewrite(initialEstimate, filenameInitialEstimate, pixelSize_mm);
 %% NORMALIZATION FACTORS
-disp('Computing the normalization correction factors...');
-% ncf:
-[overall_ncf_3d, scanner_time_invariant_ncf_3d, scanner_time_variant_ncf_3d, used_xtal_efficiencies, used_deadtimefactors, used_axial_factors] = ...
-   create_norm_files_mmr(normFilename, [], [], [], [], 1);
-% invert for nf:
-overall_nf_3d = overall_ncf_3d;
-overall_nf_3d(overall_ncf_3d ~= 0) = 1./overall_nf_3d(overall_ncf_3d ~= 0);
+if isstr(normFilename)
+    disp('Computing the normalization correction factors...');
+    % ncf:
+    [overall_ncf_3d, scanner_time_invariant_ncf_3d, scanner_time_variant_ncf_3d, used_xtal_efficiencies, used_deadtimefactors, used_axial_factors] = ...
+       create_norm_files_mmr(normFilename, [], [], [], [], 1);
+    % invert for nf:
+    overall_nf_3d = overall_ncf_3d;
+    overall_nf_3d(overall_ncf_3d ~= 0) = 1./overall_nf_3d(overall_ncf_3d ~= 0);
+else
+    if size(normFilename) ~= size(sinogramSpan1)
+        error('The size of the normalization correction factors is incorrect.')
+    end
+    disp('Using the normalization correction factors received as a parameter...');
+    overall_ncf_3d = normFilename;
+    clear normFilename;
+    % invert for nf:
+    overall_nf_3d = overall_ncf_3d;
+    overall_nf_3d(overall_ncf_3d ~= 0) = 1./overall_nf_3d(overall_ncf_3d ~= 0);
+end
+   
 %% ATTENUATION MAP
 if ~strcmp(attMapBaseFilename, '')
-    disp('Computing the attenuation correction factors...');
-    % Read the attenuation map and compute the acfs.
-    headerInfo = getInfoFromSiemensIntf([attMapBaseFilename '_umap_human_00.v.hdr']);
-    headerInfo = getInfoFromSiemensIntf([attMapBaseFilename '_umap_hardware_00.v.hdr']);
-    imageSizeAtten_pixels = [headerInfo.MatrixSize1 headerInfo.MatrixSize2 headerInfo.MatrixSize3];
-    imageSizeAtten_mm = [headerInfo.ScaleFactorMmPixel1 headerInfo.ScaleFactorMmPixel2 headerInfo.ScaleFactorMmPixel3];
-    filenameAttenMap_human = [attMapBaseFilename '_umap_human_00.v'];
-    filenameAttenMap_hardware = [attMapBaseFilename '_umap_hardware_00.v'];
-    % Human:
-    fid = fopen(filenameAttenMap_human, 'r');
-    if fid == -1
-        ferror(fid);
-    end
-    attenMap_human = fread(fid, imageSizeAtten_pixels(1)*imageSizeAtten_pixels(2)*imageSizeAtten_pixels(3), 'single');
-    attenMap_human = reshape(attenMap_human, imageSizeAtten_pixels);
-    % Then interchange rows and cols, x and y: 
-    attenMap_human = permute(attenMap_human, [2 1 3]);
-    fclose(fid);
-    % The mumap of the phantom it has problems in the spheres, I force all the
-    % pixels inside the phantom to the same value:
+    % Check if its attenuation from siemens or a post processed image:
+    if attMapBaseFilename(end-3:end) ~= '.h33'
+        disp('Computing the attenuation correction factors from mMR mu maps...');
+        % Read the attenuation map and compute the acfs.
+        headerInfo = getInfoFromSiemensIntf([filenameUncompressedMmr '_umap_human_00.v.hdr']);
+        headerInfo = getInfoFromSiemensIntf([attMapBaseFilename '_umap_hardware_00.v.hdr']);
+        imageSizeAtten_pixels = [headerInfo.MatrixSize1 headerInfo.MatrixSize2 headerInfo.MatrixSize3];
+        imageSizeAtten_mm = [headerInfo.ScaleFactorMmPixel1 headerInfo.ScaleFactorMmPixel2 headerInfo.ScaleFactorMmPixel3];
+        filenameAttenMap_human = [attMapBaseFilename '_umap_human_00.v'];
+        filenameAttenMap_hardware = [attMapBaseFilename '_umap_hardware_00.v'];
+        % Human:
+        fid = fopen(filenameAttenMap_human, 'r');
+        if fid == -1
+            ferror(fid);
+        end
+        attenMap_human = fread(fid, imageSizeAtten_pixels(1)*imageSizeAtten_pixels(2)*imageSizeAtten_pixels(3), 'single');
+        attenMap_human = reshape(attenMap_human, imageSizeAtten_pixels);
+        % Then interchange rows and cols, x and y: 
+        attenMap_human = permute(attenMap_human, [2 1 3]);
+        fclose(fid);
+        % The mumap of the phantom it has problems in the spheres, I force all the
+        % pixels inside the phantom to the same value:
 
-    % Hardware:
-    fid = fopen(filenameAttenMap_hardware, 'r');
-    if fid == -1
-        ferror(fid);
-    end
-    attenMap_hardware = fread(fid, imageSizeAtten_pixels(1)*imageSizeAtten_pixels(2)*imageSizeAtten_pixels(3), 'single');
-    attenMap_hardware = reshape(attenMap_hardware, imageSizeAtten_pixels);
-    % Then interchange rows and cols, x and y: 
-    attenMap_hardware = permute(attenMap_hardware, [2 1 3]);
-    fclose(fid);
+        % Hardware:
+        fid = fopen(filenameAttenMap_hardware, 'r');
+        if fid == -1
+            ferror(fid);
+        end
+        attenMap_hardware = fread(fid, imageSizeAtten_pixels(1)*imageSizeAtten_pixels(2)*imageSizeAtten_pixels(3), 'single');
+        attenMap_hardware = reshape(attenMap_hardware, imageSizeAtten_pixels);
+        % Then interchange rows and cols, x and y: 
+        attenMap_hardware = permute(attenMap_hardware, [2 1 3]);
+        fclose(fid);
 
-    % Compose both images:
-    attenMap = attenMap_hardware + attenMap_human;
+        % Compose both images:
+        attenMap = attenMap_hardware + attenMap_human;
+    else
+        disp('Computing the attenuation correction factors from post processed APIRL mu maps...');
+        attenMap = interfileRead(attMapBaseFilename);
+        infoAtten = interfileinfo(attMapBaseFilename); 
+        imageSizeAtten_mm = [infoAtten.ScalingFactorMmPixel1 infoAtten.ScalingFactorMmPixel2 infoAtten.ScalingFactorMmPixel3];
+    end
 
     % Create ACFs of a computed phatoms with the linear attenuation
     % coefficients:
@@ -167,7 +190,7 @@ else
     outputFilenamePrefix = [outputPath 'reconImage'];
     filenameMlemConfig = [outputPath 'cuosem.par'];
     CreateCuMlemConfigFileForMmr(filenameMlemConfig, [sinogramFilename '.h33'], [filenameInitialEstimate '.h33'], outputFilenamePrefix, numIterations, [],...
-        saveInterval, saveIntermediate, [], [], [], [anfFilename '.h33'], 0, 576, 576, 512);
+        saveInterval, saveIntermediate, [], [], [], [anfFilename '.h33'], 0, 576, 576, 512, numSubsets);
     % Execute APIRL: 
     status = system(['cuMLEM ' filenameMlemConfig]) 
 end

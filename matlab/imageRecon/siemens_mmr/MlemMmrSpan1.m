@@ -76,11 +76,16 @@ interfilewrite(initialEstimate, filenameInitialEstimate, pixelSize_mm);
 %% NORMALIZATION FACTORS
 disp('Computing the normalization correction factors...');
 % ncf:
-[overall_ncf_3d, scanner_time_invariant_ncf_3d, scanner_time_variant_ncf_3d, used_xtal_efficiencies, used_deadtimefactors, used_axial_factors] = ...
-   create_norm_files_mmr(normFilename, [], [], [], [], 1);
-% invert for nf:
-overall_nf_3d = overall_ncf_3d;
-overall_nf_3d(overall_ncf_3d ~= 0) = 1./overall_nf_3d(overall_ncf_3d ~= 0);
+if ~isempty(normFilename)
+    [overall_ncf_3d, scanner_time_invariant_ncf_3d, scanner_time_variant_ncf_3d, used_xtal_efficiencies, used_deadtimefactors, used_axial_factors] = ...
+       create_norm_files_mmr(normFilename, [], [], [], [], 1);
+    % invert for nf:
+    overall_nf_3d = overall_ncf_3d;
+    overall_nf_3d(overall_ncf_3d ~= 0) = 1./overall_nf_3d(overall_ncf_3d ~= 0);
+else
+    overall_ncf_3d = ones(size(sinogramSpan1));
+    overall_nf_3d = overall_ncf_3d;
+end
 %% ATTENUATION MAP
 if ~strcmp(attMapBaseFilename, '')
     disp('Computing the attenuation correction factors...');

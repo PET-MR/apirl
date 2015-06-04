@@ -39,6 +39,11 @@ SegmentInSiemensMmr::SegmentInSiemensMmr(SegmentInSiemensMmr* srcSegment):Segmen
 SegmentInSiemensMmr::~SegmentInSiemensMmr()
 {
   // It's done by the SegmentInCylindrical3Dpet class.
+  /*for(int i = 0; i < numSinograms; i++)
+  {
+    delete sinograms2D[i];
+  }
+  delete sinograms2D;*/
 }
 
 void SegmentInSiemensMmr::initSinograms(int nProj, int nR, float rFov_mm, float zFov_mm)

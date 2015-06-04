@@ -38,10 +38,10 @@ Sinogram2DinCylindrical3Dpet::Sinogram2DinCylindrical3Dpet(unsigned int nProj, u
   ptrListZ1_mm = NULL;
   ptrListZ2_mm = NULL;
   // Allocates Memory for th Sinogram
-  ptrSinogram = (float*) malloc(numProj*numR*sizeof(float));
+  ptrSinogram = (float*) realloc(ptrSinogram, numProj*numR*sizeof(float));
   // Allocates Memory for the value's vectors
-  ptrAngValues_deg = (float*) malloc(numProj*sizeof(float));
-  ptrRvalues_mm = (float*) malloc(numR*sizeof(float));
+  ptrAngValues_deg = (float*) realloc(ptrAngValues_deg, numProj*sizeof(float));
+  ptrRvalues_mm = (float*) realloc(ptrRvalues_mm, numR*sizeof(float));
   // Initialization
   float RIncrement = (2 * radioFov_mm) / numR;
   float PhiIncrement = (float)maxAng_deg / numProj;
@@ -66,10 +66,14 @@ Sinogram2DinCylindrical3Dpet::Sinogram2DinCylindrical3Dpet(unsigned int nProj, u
 Sinogram2DinCylindrical3Dpet::~Sinogram2DinCylindrical3Dpet()
 {
   /// Limpio la memoria
-  free(ptrListRing1);
-  free(ptrListRing2);
-  free(ptrListZ1_mm);
-  free(ptrListZ2_mm);
+  if(ptrListRing1!=NULL)
+    free(ptrListRing1);
+  if(ptrListRing2!=NULL)
+    free(ptrListRing2);
+  if(ptrListZ1_mm!=NULL)
+    free(ptrListZ1_mm);
+  if(ptrListZ2_mm!=NULL)
+    free(ptrListZ2_mm);
 }
 
 /// Constructor de Copia

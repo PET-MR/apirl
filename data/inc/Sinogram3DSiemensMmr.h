@@ -101,6 +101,14 @@ class DLLEXPORT Sinogram3DSiemensMmr : public Sinogram3DCylindricalPet
 	*/
 	Sinogram3DSiemensMmr(char* fileHeaderPath);
 	
+	/// Constructor que genera un nuevo sinograma3d con un tamaño dado.
+	/** Genera un sinograma3d con el tamaño resultante de los aprámetros de entrada. Inicializa los segmentos
+	 * y la memoria.
+	 * 
+	 */
+	Sinogram3DSiemensMmr(int numProj, int numR, int numRings, float radioFov_mm, float axialFov_mm, float radioScanner_mm, 
+	 int numSegments, int* numSinogramsPerSegment, int* minRingDiffPerSegment, int* maxRingDiffPerSegment);
+	
 	/// Constructor que genera un nuevo Sinogram3DSiemensMmr que es un subset de un sinograma orginal.
 	/** Genera un Sinogram3DSiemensMmr cuyo sinogramas 2d son un subsets de los de un sinograma original.
 	 * 

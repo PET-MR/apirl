@@ -42,11 +42,15 @@ SegmentInCylindrical3Dpet::SegmentInCylindrical3Dpet(SegmentInCylindrical3Dpet* 
 /// Destructor de la clase Segmento.
 SegmentInCylindrical3Dpet::~SegmentInCylindrical3Dpet()
 {
-  for(int i = 0; i < numSinograms; i++)
+  if(sinograms2D != NULL)
   {
-    delete sinograms2D[i];
+    for(int i = 0; i < numSinograms; i++)
+    {
+      if(sinograms2D[i] != NULL)
+	delete sinograms2D[i];
+    }
+    delete sinograms2D;
   }
-  free(sinograms2D);
 }
 
 void SegmentInCylindrical3Dpet::initSinograms(int nProj, int nR, float rFov_mm, float zFov_mm)

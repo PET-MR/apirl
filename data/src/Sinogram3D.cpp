@@ -64,7 +64,8 @@ Sinogram3D::Sinogram3D(Sinogram3D* srcSinogram3D)
 /// Desctructor
 Sinogram3D::~Sinogram3D()
 {
-  free(ptrAxialvalues_mm);
+  if(ptrAxialvalues_mm!=NULL)
+    free(ptrAxialvalues_mm);
 }
 
 int Sinogram3D::getBinCount()
@@ -446,6 +447,10 @@ bool Sinogram3D::readFromInterfile(string headerFilename, float radioScanner_mm)
     }
   }
   fclose(fp);
+  free(listaRing1);
+  free(listaRing2);
+  free(listaZ1_mm);
+  free(listaZ2_mm);
   return true;
 }
 

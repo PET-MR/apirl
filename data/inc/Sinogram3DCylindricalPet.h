@@ -100,6 +100,14 @@ class DLLEXPORT Sinogram3DCylindricalPet : public Sinogram3D
 	 */
 	Sinogram3DCylindricalPet(Sinogram3DCylindricalPet* srcSinogram3D, int indexSubset, int numSubsets);
 	
+	/// Constructor que genera un nuevo sinograma3d con un tamaño dado.
+	/** Genera un sinograma3d con el tamaño resultante de los aprámetros de entrada. Inicializa los segmentos
+	 * y la memoria.
+	 * 
+	 */
+	Sinogram3DCylindricalPet(int numProj, int numR, int numRings, float radioFov_mm, float axialFov_mm, float radioScanner_mm, 
+	 int numSegments, int* numSinogramsPerSegment, int* minRingDiffPerSegment, int* maxRingDiffPerSegment);
+	
 	/// Constructor para copia desde otro objeto sinograma3d.
 	/** Constructor que inicializa un nuevo objeto Sinogram3D a partir de un objeto ya existente. Hace una copia
 		de todos los parámetros.

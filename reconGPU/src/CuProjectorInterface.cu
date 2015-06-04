@@ -54,6 +54,8 @@
 
   extern __device__ __constant__ SizeImage d_imageSize;
   
+  extern __device__ __constant__ int d_numPixels;
+
   extern __device__ __constant__ int d_numPixelsPerSlice;
   
   extern __device__ __constant__ int d_numBinsSino2d;
@@ -191,6 +193,8 @@ bool CuProjectorInterface::InitGpuMemory(Sinogram3D* sinogram, Image* image, Tip
   checkCudaErrors(cudaMemcpyToSymbol(d_imageSize, &size, sizeof(SizeImage)));
   auxInt = size.nPixelsX * size.nPixelsY;
   checkCudaErrors(cudaMemcpyToSymbol(d_numPixelsPerSlice, &auxInt, sizeof(int)));
+  auxInt = auxInt * size.nPixelsZ;
+  checkCudaErrors(cudaMemcpyToSymbol(d_numPixels, &auxInt, sizeof(int)));
   auxInt = sinogram->getSegment(0)->getSinogram2D(0)->getNumProj()*sinogram->getSegment(0)->getSinogram2D(0)->getNumR();
   checkCudaErrors(cudaMemcpyToSymbol(d_numBinsSino2d, &auxInt, sizeof(int)));
   aux = image->getFovRadio(); // Esto podría ser del sinograma también.

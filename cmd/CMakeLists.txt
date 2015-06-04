@@ -12,7 +12,7 @@ if(ENABLE_GPU)
 	# Ejecuto el FindCUDA.
 	#SET(FIND_CUDA_DIR ${APIRL_SOLUTION_SOURCE_DIR}/FindCUDA)
 	#INCLUDE(${FIND_CUDA_DIR}/CMake/cuda/FindCUDA.cmake)
-	set(CMAKE_MODULE_PATH "${FindCUDA_Dir}/CMake/cuda" ${CMAKE_MODULE_PATH})
+	#set(CMAKE_MODULE_PATH "${FindCUDA_Dir}/CMake/cuda" ${CMAKE_MODULE_PATH})
 	find_package(CUDA REQUIRED FIND_CUDA_DIR)
 	# Llamo al script FindCUTIL que me genera las variables CUDA_CUT_INCLUDE_DIR y CUDA_CUT_LIBRARIES.
 	#INCLUDE(${FindCUDA_Dir}/FindCUTIL.cmake)

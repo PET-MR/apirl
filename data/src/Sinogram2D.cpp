@@ -142,7 +142,6 @@ Sinogram2D::Sinogram2D(const Sinogram2D* srcSinogram2D, int indexSubset, int num
       if(i == 0)
       {
 	// ptrRvalues initialization is necesary just one time
-	
 	ptrRvalues_mm[j] = srcSinogram2D->ptrRvalues_mm[j];
       }
       ptrSinogram[i * numR + j] = srcSinogram2D->ptrSinogram[iAngCompleto * numR + j];

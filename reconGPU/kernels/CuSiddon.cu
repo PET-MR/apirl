@@ -24,6 +24,8 @@ extern __device__ __constant__ float d_RadioFov_mm;
 
 extern __device__ __constant__ SizeImage d_imageSize;
 
+extern __device__ __constant__ int d_numPixels;
+
 extern __device__ __constant__ int numPixelsPerSlice;
 
 extern __device__ __constant__ int d_numBinsSino2d;
@@ -58,8 +60,6 @@ __device__ void CuSiddon (float4* LOR, float4* P0, float* Input, float* Result, 
 
   // Incrementos en píxeles. Puede ser +-1 según la dirección de la lor.
   int i_incr = 0, j_incr = 0, k_incr = 0;
-
-  
 
   // Cantidad de píxeles intersectados:
   int numIntersectedPixels;
@@ -605,7 +605,8 @@ __device__ void CuSiddonBackprojection (float4* LOR, float4* P0, float* image, f
       alpha_c = alpha_z;
       alpha_z += alpha_z_u;
     }
-    atomicAdd(image+indicePixel, siddonWeight * binValue);
+    if((indicePixel<d_numPixels)&&(indicePixel>=0))
+      atomicAdd(image+indicePixel, siddonWeight * binValue);
     indicePixel = nextIndexPixel;
   }
 }

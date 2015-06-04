@@ -131,8 +131,12 @@ MESSAGE(STATUS "NVCC FLAGS: ${CUDA_NVCC_FLAGS}")
 ################## CHECK IF CUDA AVAILABLE ############################
 # Directorio donde se encuentra el FindCUDA:
 if(ENABLE_GPU)
-	#SET(FindCUDA_Dir ${CMAKE_SOURCE_DIR}/FindCUDA)
-	#set(CMAKE_MODULE_PATH "${FindCUDA_Dir}/CMake/cuda" ${CMAKE_MODULE_PATH})
+	# In cmake 3.0 there is a findcuda embedded in cmake, for previous version use our findcuda.
+	if(CMAKE_MAJOR_VERSION LESS 3)
+		set(CUDA_NVCC_FLAGS "") # Our findcuda set the flags based on the variables on the top. To avoid redefinition clean it.
+		SET(FindCUDA_Dir ${CMAKE_SOURCE_DIR}/FindCUDA)
+		set(CMAKE_MODULE_PATH "${FindCUDA_Dir}/CMake/cuda" ${CMAKE_MODULE_PATH})
+	endif()
 	find_package(CUDA)
 	if (CUDA_FOUND)
 		SET(ENABLE_GPU ON)
@@ -149,8 +153,8 @@ add_subdirectory(data)
 add_subdirectory(utils)
 add_subdirectory(cmd)
 if(ENABLE_GPU)
-	add_subdirectory(cmdGPU)
 	add_subdirectory(reconGPU)
+	add_subdirectory(cmdGPU)
 endif(ENABLE_GPU)
 
 # Configuraciones Adicionales de CUDA. En windows compilo en 32 bits al menos que obtenga un

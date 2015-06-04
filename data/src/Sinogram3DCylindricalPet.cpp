@@ -34,6 +34,31 @@ Sinogram3DCylindricalPet::Sinogram3DCylindricalPet(char* fileHeaderPath, float r
   }*/
 }
 
+Sinogram3DCylindricalPet::Sinogram3DCylindricalPet(int numProj, int numR, int numRings, float radioFov_mm, float axialFov_mm, float radioScanner_mm, 
+	 int numSegments, int* numSinogramsPerSegment, int* minRingDiffPerSegment, int* maxRingDiffPerSegment):Sinogram3D(radioFov_mm, axialFov_mm)
+{
+  // Get the size and configuration of the sinogram 3d:
+  this->numR = numR;
+  this->numProj = numProj;
+  this->numRings = numRings;
+  this->radioFov_mm = radioFov_mm;
+  this->axialFov_mm = axialFov_mm;
+  this->radioScanner_mm = radioScanner_mm;
+  this->numSegments = numSegments;
+  this->numSinogramsPerSegment = (int*)malloc(sizeof(int)*numSegments);
+  memcpy(this->numSinogramsPerSegment, numSinogramsPerSegment, sizeof(int)*numSegments);
+  this->minRingDiffPerSegment = (int*)malloc(sizeof(int)*numSegments);
+  memcpy(this->minRingDiffPerSegment, minRingDiffPerSegment, sizeof(int)*numSegments);
+  this->maxRingDiffPerSegment = (int*)malloc(sizeof(int)*numSegments);
+  memcpy(this->maxRingDiffPerSegment, maxRingDiffPerSegment, sizeof(int)*numSegments);
+  
+  this->ptrAngValues_deg = (float*)realloc(ptrAngValues_deg, sizeof(float)*numProj);
+  ptrAxialvalues_mm = (float*) malloc(sizeof(float)*numRings);
+  // Initilize the segments:
+  segments = NULL;
+  inicializarSegmentos();
+}
+
 /// Constructor para copia desde otro objeto sinograma3d
 Sinogram3DCylindricalPet::Sinogram3DCylindricalPet(Sinogram3DCylindricalPet* srcSinogram3D):Sinogram3D((Sinogram3D*)srcSinogram3D)
 {
@@ -70,6 +95,7 @@ int Sinogram3DCylindricalPet::CopyAllBinsFrom(Sinogram3D* srcSinogram3D)
 int Sinogram3DCylindricalPet::CopyRingConfigForEachSinogram(Sinogram3D* srcSinogram3D)
 {
   int numBins = 0;
+  memcpy(ptrAxialvalues_mm, srcSinogram3D->getAxialPtr(), sizeof(float)*numRings);
   for(int i = 0; i < this->getNumSegments(); i++)
   {
     for(int j = 0; j < this->getSegment(i)->getNumSinograms(); j++)
@@ -99,7 +125,7 @@ Sinogram3DCylindricalPet::~Sinogram3DCylindricalPet()
     delete segments[i];
   }
   
-  free(segments);
+  delete segments;
   // Ya liberada en la clase base sinogram3d.
   //free(ptrAxialvalues_mm);
 }
@@ -133,35 +159,37 @@ Sinogram3D* Sinogram3DCylindricalPet::Copy()
 
 Sinogram3D* Sinogram3DCylindricalPet::getSubset(int indexSubset, int numSubsets)
 {
-  // El tamaño del nuevo sinograma sería del mismo que el original, luego se hace un setSinogram2d para todos los sinos 
-  // de los segmentos y debería quedar del tamaño correcto. No se pierde memoria porque setSinogram2D hace un delete primero
-  // y luego crea el nuevo.
-  Sinogram3DCylindricalPet* sino3dSubset = new Sinogram3DCylindricalPet(this);
-  Sinogram2DinCylindrical3Dpet* auxSinos2d;
-  // Tengo una copia del sinograma, debo cambiar los sinogramas
+  // El tamaño del nuevo sinograma sería del mismo que el original, pero con menos ángulos de proyección:
+  // Calculo cuantas proyecciones va a tener el subset:
+  int numProjSubset = (int)floorf((float)numProj / (float)numSubsets);
+  // Siempre calculo por defecto, luego si no dio exacta la división, debo agregar un ángulo a la proyección:
+  if((numProj%numSubsets)>indexSubset)
+    numProjSubset++;
+  Sinogram3DCylindricalPet* sino3dSubset = new Sinogram3DCylindricalPet(numProjSubset, numR, numRings, radioFov_mm, axialFov_mm, radioScanner_mm, 
+	 numSegments, numSinogramsPerSegment, minRingDiffPerSegment, maxRingDiffPerSegment);
+  // Copy the config of each sinogram2d:
+  sino3dSubset->CopyRingConfigForEachSinogram(this);
+  // Con este constructor ya tengo la memoria inicializada, copio los bins:
+  float* fullProjAngles = this->getSegment(0)->getSinogram2D(0)->getAngPtr();
   for(int i = 0; i < numSegments; i++)
   {
     for(int j = 0; j < this->segments[i]->getNumSinograms(); j++)
     {
-      // Create new sinogram2d with the correct dimensiones:
-      auxSinos2d = new Sinogram2DinCylindrical3Dpet(this->getSegment(i)->getSinogram2D(j), indexSubset, numSubsets);
-      sino3dSubset->getSegment(i)->setSinogram2D(auxSinos2d, j);
-      // if debug, printf ang values:
-      #ifdef __DEBUG__
-	if ((i==0)&&(j==0))
+      for(int k = 0; k < numProjSubset; k ++)
+      {
+	// indice angulo del sino completo:
+	int kAngCompleto = indexSubset + numSubsets*k;
+	// Initialization of Phi Values
+	ptrAngValues_deg[k] = fullProjAngles[kAngCompleto];
+	for(int l = 0; l < numR; l++)
 	{
-	  printf("Angulos para subset %d de %d: \n", indexSubset, numSubsets);
-	  for(int ang = 0; ang < auxSinos2d->getNumProj(); ang++)
-	  {
-	    printf("%f\t", auxSinos2d->getAngValue(ang));
-	  }
-	  printf("\n");
+	  sino3dSubset->getSegment(i)->getSinogram2D(j)->setSinogramBin(k,l, this->getSegment(i)->getSinogram2D(j)->getSinogramBin(kAngCompleto,l));
 	}
-      #endif
-      // delete the aux sinogram because set sinograms makes a copy:
-      delete auxSinos2d;
+      }
+      memcpy(sino3dSubset->getSegment(i)->getSinogram2D(j)->getAngPtr(), ptrAngValues_deg, sizeof(float)*numProjSubset);
     }
   }
+  
   return (Sinogram3D*)sino3dSubset;
 }
 
@@ -169,7 +197,7 @@ Sinogram3D* Sinogram3DCylindricalPet::getSubset(int indexSubset, int numSubsets)
 void Sinogram3DCylindricalPet::inicializarSegmentos()
 {
   /// Instancio los sinogramas 2D
-  segments = new SegmentInCylindrical3Dpet*[numSegments];
+  segments = (SegmentInCylindrical3Dpet**)malloc(sizeof(SegmentInCylindrical3Dpet*)*numSegments);
   for(int i = 0; i < numSegments; i++)
   {
     segments[i] = new SegmentInCylindrical3Dpet(numProj, numR, numRings, radioFov_mm, axialFov_mm, radioScanner_mm, 
