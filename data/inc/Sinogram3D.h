@@ -146,7 +146,7 @@ class DLLEXPORT Sinogram3D : public Sinogram2D
 	*/
 	Sinogram3D(char* fileHeaderPath, float rFov_mm, float zFov_mm);
 	
-	/// Constructor que genera un nuevo sinograma3d que es un subset de un sinograma orginal.
+	/// Obtiene un subset en un nuevo sinograma3d.
 	/** Genera un sinograma3d cuyo sinogramas 2d son un subsets de los de un sinograma original.
 	 * 
 	 */

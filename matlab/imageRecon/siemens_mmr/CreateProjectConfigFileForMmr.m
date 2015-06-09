@@ -16,10 +16,18 @@
 % output filename := Project_PointSources_
 % END :=
 
-function CreateProjectConfigFileForMmr(configfilename, inputFile, outputSample, outputFilename, useGpu)
+function CreateProjectConfigFileForMmr(configfilename, inputFile, outputSample, outputFilename, numberOfSubsets, subsetIndex, useGpu)
 
-if nargin == 4
+if nargin == 6
     useGpu = 0;
+end
+
+% Handle the number of subsets:
+if isempty(numberOfSubsets)
+    numberOfSubsets = 0;
+end
+if(isempty(subsetIndex))
+    subsetIndex = 0;
 end
 
 % Primero genero el archivo de encabezado.
@@ -38,6 +46,12 @@ else
     fprintf(fid,'projector block size := {256,1,1}\n');
     fprintf(fid,'gpu id := 0\n');
 end
+% If we have subsets put it in the config file:
+if numberOfSubsets ~= 0
+    fprintf(fid,'number of subsets := %d\n', numberOfSubsets);
+    fprintf(fid,'subset index := %d\n', subsetIndex-1); % Subset index is 0 base-index in apirl, while 1 in matlab.
+end
+
 fprintf(fid,'input file := %s\n', inputFile);
 fprintf(fid,'output projection := %s\n', outputSample);
 fprintf(fid,'output filename := %s\n', outputFilename);

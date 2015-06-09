@@ -163,6 +163,7 @@ int main (int argc, char *argv[])
 	string strForwardprojector;
 	string attenMapFilename;
 	string normProjFilename;
+	int numberOfSubsets, subsetIndex;
 	Projector* forwardprojector;
 	bool enableAttenuationCorrection = false;
 	#ifdef __USE_CUDA__
@@ -216,6 +217,23 @@ int main (int argc, char *argv[])
 	outputFilename.assign(multipleReturnValue[3]);
 	sampleProjection.assign(multipleReturnValue[4]);
 	
+	// Check if it's intended to project only a subset:
+	// If I get the number of subsets as parameters I need to call CuOsem... later instead of CuMlem...:
+	strcpy(keyWords[0], "number of subsets");
+	strcpy(keyWords[1], "subset index");
+	if((errorCode=parametersFile_readMultipleKeys((char*)parameterFileName.c_str(), (char*)"Projection", (char**)keyWords, 2, (char**)multipleReturnValue, errorMessage)) != 0)
+	{
+	  // No se encontró el parámetro, standard MLEM:
+	  numberOfSubsets = 0;
+	  subsetIndex = 0;
+	}
+	else
+	{
+	  numberOfSubsets = atoi(multipleReturnValue[0]);
+	  subsetIndex = atoi(multipleReturnValue[1]);
+	}
+  
+  
 	// Cargo la imagen de initial estimate, que esta en formato interfile, y de ella obtengo 
 	// los tamaños de la imagen.
 	inputImage = new Image();
@@ -282,7 +300,14 @@ int main (int argc, char *argv[])
 	      return -1;
 	    }
 	  }
-	  Sinogram2D* outputProjection = new Sinogram2DinCylindrical3Dpet((char*)inputFilename.c_str(), rFov_mm, rScanner_mm);
+	  Sinogram2D* outputProjection;
+	  if (numberOfSubsets != 0)
+	  {
+	    Sinogram2DinCylindrical3Dpet* fullProjection = new Sinogram2DinCylindrical3Dpet((char*)inputFilename.c_str(), rFov_mm, rScanner_mm);
+	    outputProjection = new Sinogram2DinCylindrical3Dpet(fullProjection, subsetIndex, numberOfSubsets);
+	  }
+	  else
+	    outputProjection = new Sinogram2DinCylindrical3Dpet((char*)inputFilename.c_str(), rFov_mm, rScanner_mm);
 	  outputProjection->FillConstant(0);
 	  forwardprojector->Project(inputImage, outputProjection);
 	  outputProjection->writeInterfile(outputFilename);
@@ -300,7 +325,14 @@ int main (int argc, char *argv[])
 	      return -1;
 	    }
 	  }
-	  Sinogram2D* outputProjection = new Sinogram2Din3DArPet((char*)inputFilename.c_str(), rFov_mm);
+	  Sinogram2D* outputProjection;
+	  if (numberOfSubsets != 0)
+	  {
+	    Sinogram2Din3DArPet* fullProjection = new Sinogram2Din3DArPet((char*)inputFilename.c_str(), rFov_mm);
+	    outputProjection = new Sinogram2Din3DArPet(fullProjection, subsetIndex, numberOfSubsets);
+	  }
+	  else
+	    outputProjection = new Sinogram2Din3DArPet((char*)inputFilename.c_str(), rFov_mm);
 	  outputProjection->FillConstant(0);
 	  forwardprojector->Project(inputImage, outputProjection);
 	  outputProjection->writeInterfile(outputFilename);
@@ -313,6 +345,7 @@ int main (int argc, char *argv[])
 	    return -1;
 	  }
 	  Sinograms2DinCylindrical3Dpet* outputProjection = new Sinograms2DinCylindrical3Dpet((char*)sampleProjection.c_str(), rFov_mm, axialFov_mm, rScanner_mm); 
+
 	  outputProjection->FillConstant(0);
 	  float x_mm, y_mm, z_mm;
 	  // Recorro todos los slices y hago la proyección:
@@ -417,6 +450,8 @@ int main (int argc, char *argv[])
 	    }
 	  }
 	  Sinogram3D* outputProjection = new Sinogram3DCylindricalPet((char*)sampleProjection.c_str(),rFov_mm,axialFov_mm,rScanner_mm);
+	  if (numberOfSubsets != 0)
+	    outputProjection = outputProjection->getSubset(subsetIndex, numberOfSubsets);
 	  //outputProjection->setGeometryDim(rFov_mm,axialFov_mm,rScanner_mm);
 	  forwardprojector->Project(inputImage, outputProjection);
 	  outputProjection->writeInterfile(outputFilename);
@@ -430,6 +465,8 @@ int main (int argc, char *argv[])
 	  if (getArPetParameters(parameterFileName, "Projection", &rFov_mm, &axialFov_mm, &blindArea_mm, &minDetDiff))
 	    return -1;
 	  Sinogram3DArPet* outputProjection = new Sinogram3DArPet((char*)sampleProjection.c_str(),rFov_mm, axialFov_mm); 
+	  /*if (numberOfSubsets != 0)
+	    outputProjection = outputProjection->getSubset(subsetIndex, numberOfSubsets);*/
 	  outputProjection->setLengthOfBlindArea(blindArea_mm);
 	  outputProjection->setMinDiffDetectors(minDetDiff);
 	  //outputProjection->setGeometryDim(rFov_mm,axialFov_mm,rScanner_mm);
@@ -440,6 +477,8 @@ int main (int argc, char *argv[])
 	{
 	  // Sinograma 3D
 	  Sinogram3D* outputProjection = new Sinogram3DSiemensMmr((char*)sampleProjection.c_str());
+	  if (numberOfSubsets != 0)
+	    outputProjection = outputProjection->getSubset(subsetIndex, numberOfSubsets);
 	  forwardprojector->Project(inputImage, outputProjection);
 	  outputProjection->writeInterfile(outputFilename);
 	}

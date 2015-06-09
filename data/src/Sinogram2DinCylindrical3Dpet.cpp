@@ -152,6 +152,7 @@ Sinogram2DinCylindrical3Dpet::Sinogram2DinCylindrical3Dpet(const Sinogram2DinCyl
   memcpy(ptrListRing2, srcSinogram2D->ptrListRing2, sizeof(int)*numZ);*/
 }
 
+
 void Sinogram2DinCylindrical3Dpet::setMultipleRingConfig(int nZ, int* listRing1, int* listRing2, float* listZ1, float* listZ2)
 {
   numZ = nZ;

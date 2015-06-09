@@ -3,12 +3,14 @@
 %  Autor: Martín Belzunce. Kings College London.
 %  Fecha de Creación: 06/05/2015
 %  *********************************************************************
-%  This function projects
+%  This function projects an image into an span 1 sinogram. It receives
+%  also as a parameter the subset that it is wanted to be projeted. It must
+%  be left empty or in zero for projecting the complete sinogram.
 %
 % Examples:
 %   [sinogram, structSizeSinogram] = ProjectMmrSpan1(image, pixelSize_mm, outputPath)
 
-function [sinogram, structSizeSino3d] = ProjectMmrSpan1(image, pixelSize_mm, outputPath, useGpu)
+function [sinogram, structSizeSino3d] = ProjectMmrSpan1(image, pixelSize_mm, outputPath, numberOfSubsets, subsetIndex, useGpu)
 
 mkdir(outputPath);
 % Check what OS I am running on:
@@ -23,10 +25,17 @@ else
     return;
 end
 
-if nargin == 3
+if nargin == 5
     useGpu = 0;
-elseif nargin < 3
+elseif nargin < 5
     error('Invalid number of parameters: [sinogram, structSizeSinogram] = ProjectMmrSpan1(image, pixelSize_mm, outputPath, useGpu)');
+end
+% Handle the number of subsets:
+if isempty(numberOfSubsets)
+    numberOfSubsets = 0;
+end
+if(isempty(subsetIndex))
+    subsetIndex = 0;
 end
 
 % Create output sample sinogram:
@@ -46,10 +55,14 @@ interfilewrite(single(image), filenameImage, pixelSize_mm);
 % Generate projecte sinogram:
 filenameProjectionConfig = [outputPath 'projectPhantom.par'];
 projectionFilename = [outputPath 'projectedSinogram'];
-CreateProjectConfigFileForMmr(filenameProjectionConfig, [filenameImage '.h33'], [sinogramSampleFilename '.h33'], projectionFilename, useGpu);
+CreateProjectConfigFileForMmr(filenameProjectionConfig, [filenameImage '.h33'], [sinogramSampleFilename '.h33'], projectionFilename, numberOfSubsets, subsetIndex, useGpu);
 status = system(['project ' filenameProjectionConfig])
 
 % Read the projected sinogram:
+% if is a subset, get the new size:
+if numberOfSubsets ~= 0
+    structSizeSino3d.numTheta = ceil(structSizeSino3d.numTheta/numberOfSubsets);
+end
 fid = fopen([projectionFilename '.i33'], 'r');
 numSinos = sum(structSizeSino3d.sinogramsPerSegment);
 [sinogram, count] = fread(fid, structSizeSino3d.numTheta*structSizeSino3d.numR*numSinos, 'single=>single');
