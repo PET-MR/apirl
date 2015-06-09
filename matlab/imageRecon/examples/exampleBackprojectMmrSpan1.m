@@ -37,15 +37,23 @@ outFilenameIntfSinograms = [sinogramsPath 'NemaIq20_02_2014_ApirlIntf_Span1.s'];
 %% IMAGE SIZE
 imageSize_pixels = [286 286 127];
 pixelSize_mm = [2.08625 2.08625 2.03125];
-%% BACKPROJECT CPU
-outputPath = '/fast/NemaReconstruction/Backproject/';
-[image, pixelSize_mm] = BackprojectMmrSpan1(sinogramSpan1, imageSize_pixels, pixelSize_mm, outputPath, 0);
+% %% BACKPROJECT CPU
+% outputPath = '/fast/NemaReconstruction/Backproject/';
+% [image, pixelSize_mm] = BackprojectMmrSpan1(sinogramSpan1, imageSize_pixels, pixelSize_mm, outputPath, 0);
+% figure;
+% slice = 80;
+% imshow(image(:,:,slice), [0 max(max(image(:,:,slice)))]);
+%% BACKPROJECT GPU
+outputPath = '/fast/NemaReconstruction/BackprojectCuda/';
+[image, pixelSize_mm] = BackprojectMmrSpan1(sinogramSpan1, imageSize_pixels, pixelSize_mm, outputPath, [], [], 1);
 figure;
 slice = 80;
 imshow(image(:,:,slice), [0 max(max(image(:,:,slice)))]);
-%% BACKPROJECT GPU
-outputPath = '/fast/NemaReconstruction/BackprojectCuda/';
-[image, pixelSize_mm] = BackprojectMmrSpan1(sinogramSpan1, imageSize_pixels, pixelSize_mm, outputPath, 1);
+%% BACKPROJECT SUBSET GPU
+numberOfSubsets = 21;
+subsetIndex = 5;
+outputPath = '/fast/NemaReconstruction/BackprojectSubsetCuda/';
+[image, pixelSize_mm] = BackprojectMmrSpan1(sinogramSpan1, imageSize_pixels, pixelSize_mm, outputPath, numberOfSubsets, subsetIndex, 1);
 figure;
 slice = 80;
 imshow(image(:,:,slice), [0 max(max(image(:,:,slice)))]);

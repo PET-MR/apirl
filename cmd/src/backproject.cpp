@@ -168,6 +168,7 @@ int main (int argc, char *argv[])
 	string outputFilename;	// string para el Nombre del archivo de imagen de salida.
 	string strBackprojector;
 	string attenMapFilename;
+	int numberOfSubsets, subsetIndex;
 	Projector* backprojector;
 	Image* outputImage;
 	Image* attenuationImage;
@@ -227,6 +228,22 @@ int main (int argc, char *argv[])
 	outputImageFilename.assign(multipleReturnValue[3]);
 	outputFilename.assign(multipleReturnValue[4]);
 	//outputFileName.assign(returnValue);
+	
+	// Check if it's intended to project only a subset:
+	// If I get the number of subsets as parameters I need to call CuOsem... later instead of CuMlem...:
+	strcpy(keyWords[0], "number of subsets");
+	strcpy(keyWords[1], "subset index");
+	if((errorCode=parametersFile_readMultipleKeys((char*)parameterFileName.c_str(), (char*)"Backproject", (char**)keyWords, 2, (char**)multipleReturnValue, errorMessage)) != 0)
+	{
+	  // No se encontró el parámetro, standard MLEM:
+	  numberOfSubsets = 0;
+	  subsetIndex = 0;
+	}
+	else
+	{
+	  numberOfSubsets = atoi(multipleReturnValue[0]);
+	  subsetIndex = atoi(multipleReturnValue[1]);
+	}
 	
 	/// Corrección por Atenuación.
 	attenuationImage = new Image();
@@ -582,12 +599,16 @@ int main (int argc, char *argv[])
 	  }
 	  // Sinograma 3D
 	  Sinogram3D* inputProjection = new Sinogram3DCylindricalPet((char*)inputFilename.c_str(),rFov_mm,axialFov_mm,rScanner_mm);
+	  if (numberOfSubsets != 0)
+	    inputProjection = inputProjection->getSubset(subsetIndex, numberOfSubsets);
 	  backprojector->Backproject(inputProjection, outputImage);
 	}
 	else if(inputType.compare("Sinogram3DSiemensMmr")==0)
 	{
 	  // Sinograma 3D mmr, fixed values of rfoc and rscanner
 	  Sinogram3D* inputProjection = new Sinogram3DSiemensMmr((char*)inputFilename.c_str());
+	  if (numberOfSubsets != 0)
+	    inputProjection = inputProjection->getSubset(subsetIndex, numberOfSubsets);
    	  backprojector->Backproject(inputProjection, outputImage);
 	}
 	else if(inputType.compare("Michelogram")==0)

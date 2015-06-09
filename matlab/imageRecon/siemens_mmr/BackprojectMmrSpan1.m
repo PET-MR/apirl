@@ -11,11 +11,12 @@
 %   -pixelSize_mm: pixel size for each corrdinate, a three elements vector.
 %   e.g.: [4.1725 4.1725 2.03125]
 %
-%
+% It receives also as a parameter the subset that it is wanted to be backprojeted. 
+% It must be left empty or in zero for projecting the complete sinogram.
 % Examples:
-%   [image, pixelSize_mm] = BackprojectMmrSpan1(sinogram, imageSize_pixels, pixelSize_mm, outputPath, useGpu)
+%   [image, pixelSize_mm] = BackprojectMmrSpan1(sinogram, imageSize_pixels, pixelSize_mm, outputPath, numberOfSubsets, subsetIndex, useGpu)
 
-function [image, pixelSize_mm] = BackprojectMmrSpan1(sinogram, imageSize_pixels, pixelSize_mm, outputPath, useGpu)
+function [image, pixelSize_mm] = BackprojectMmrSpan1(sinogram, imageSize_pixels, pixelSize_mm, outputPath, numberOfSubsets, subsetIndex, useGpu)
 
 mkdir(outputPath);
 % Check what OS I am running on:
@@ -30,17 +31,25 @@ else
     return;
 end
 
-if nargin == 3
+if nargin == 6
     useGpu = 0;
-elseif nargin < 3
+elseif nargin < 6
     error('Invalid number of parameters: [image, pixelSize_mm] = BackprojectMmrSpan1(sinogram, imageSize_pixels, pixelSize_mm, outputPath, useGpu)');
+end
+
+% Handle the number of subsets:
+if isempty(numberOfSubsets)
+    numberOfSubsets = 0;
+end
+if(isempty(subsetIndex))
+    subsetIndex = 0;
 end
 
 if numel(pixelSize_mm) ~= 3
     error('The image size (imageSize_pixels) and pixel size (pixelSize_mm) parameters must be a three-elements vector.');
 end
 
-% Create output sample sinogram:
+% Create output sample sinogram.
 % Size of mMr Sinogram's
 numTheta = 252; numR = 344; numRings = 64; maxAbsRingDiff = 60; rFov_mm = 594/2; zFov_mm = 258; span = 1;
 structSizeSino3d = getSizeSino3dFromSpan(numR, numTheta, numRings, rFov_mm, zFov_mm, span, maxAbsRingDiff);
@@ -57,7 +66,7 @@ interfileWriteSino(single(sinogram), sinogramFilename, structSizeSino3d);
 % Generate backprojected image:
 filenameBackprojectionConfig = [outputPath 'backprojectSinogram.par'];
 backprojectionFilename = [outputPath 'backprojectedImage'];
-CreateBackprojectConfigFileForMmr(filenameBackprojectionConfig, [sinogramFilename '.h33'], [filenameImage '.h33'], backprojectionFilename, useGpu);
+CreateBackprojectConfigFileForMmr(filenameBackprojectionConfig, [sinogramFilename '.h33'], [filenameImage '.h33'], backprojectionFilename, numberOfSubsets, subsetIndex, useGpu);
 status = system(['backproject ' filenameBackprojectionConfig])
 
 % Read the image:
