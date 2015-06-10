@@ -3,20 +3,20 @@
 %  Autor: Martín Belzunce. Kings College London.
 %  Fecha de Creación: 19/05/2015
 %  *********************************************************************
-%  This function backprojects an span-1 sinogram that is a three dimensional
+%  This function backprojects an span-x sinogram that is a three dimensional
 %  matrix with the size fixed for the Siemens mMr: (344,252,4084). The
 %  output image is defined by two paramters:
 %   -imageSize_pixels: vector with three elemnts with the size in pixels of
 %   the image. e.g. [172 172 127].
 %   -pixelSize_mm: pixel size for each corrdinate, a three elements vector.
 %   e.g.: [4.1725 4.1725 2.03125]
-%
+% The span of the sinogram is received as a parameter.
 % It receives also as a parameter the subset that it is wanted to be backprojeted. 
 % It must be left empty or in zero for projecting the complete sinogram.
 % Examples:
-%   [image, pixelSize_mm] = BackprojectMmrSpan1(sinogram, imageSize_pixels, pixelSize_mm, outputPath, numberOfSubsets, subsetIndex, useGpu)
+%   [image, pixelSize_mm] = BackprojectMmr(sinogram, imageSize_pixels, pixelSize_mm, outputPath, span, numberOfSubsets, subsetIndex, useGpu)
 
-function [image, pixelSize_mm] = BackprojectMmrSpan1(sinogram, imageSize_pixels, pixelSize_mm, outputPath, numberOfSubsets, subsetIndex, useGpu)
+function [image, pixelSize_mm] = BackprojectMmr(sinogram, imageSize_pixels, pixelSize_mm, outputPath, span, numberOfSubsets, subsetIndex, useGpu)
 
 mkdir(outputPath);
 % Check what OS I am running on:
@@ -31,9 +31,9 @@ else
     return;
 end
 
-if nargin == 6
+if nargin == 7
     useGpu = 0;
-elseif nargin < 6
+elseif nargin < 7
     error('Invalid number of parameters: [image, pixelSize_mm] = BackprojectMmrSpan1(sinogram, imageSize_pixels, pixelSize_mm, outputPath, useGpu)');
 end
 
@@ -51,7 +51,7 @@ end
 
 % Create output sample sinogram.
 % Size of mMr Sinogram's
-numTheta = 252; numR = 344; numRings = 64; maxAbsRingDiff = 60; rFov_mm = 594/2; zFov_mm = 258; span = 1;
+numTheta = 252; numR = 344; numRings = 64; maxAbsRingDiff = 60; rFov_mm = 594/2; zFov_mm = 258;
 structSizeSino3d = getSizeSino3dFromSpan(numR, numTheta, numRings, rFov_mm, zFov_mm, span, maxAbsRingDiff);
 % Generate a constant image:
 image = ones(imageSize_pixels);

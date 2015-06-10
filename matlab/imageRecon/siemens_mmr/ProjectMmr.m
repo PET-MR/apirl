@@ -6,11 +6,11 @@
 %  This function projects an image into an span 1 sinogram. It receives
 %  also as a parameter the subset that it is wanted to be projeted. It must
 %  be left empty or in zero for projecting the complete sinogram.
-%
+% The span of the sinogram is received as a parameter.
 % Examples:
-%   [sinogram, structSizeSinogram] = ProjectMmrSpan1(image, pixelSize_mm, outputPath)
+%   [sinogram, structSizeSinogram] = ProjectMmrSpan1(image, pixelSize_mm, outputPath, span, numberOfSubsets, subsetIndex, useGpu)
 
-function [sinogram, structSizeSino3d] = ProjectMmrSpan1(image, pixelSize_mm, outputPath, numberOfSubsets, subsetIndex, useGpu)
+function [sinogram, structSizeSino3d] = ProjectMmrSpan1(image, pixelSize_mm, outputPath, span, numberOfSubsets, subsetIndex, useGpu)
 
 mkdir(outputPath);
 % Check what OS I am running on:
@@ -25,9 +25,9 @@ else
     return;
 end
 
-if nargin == 5
+if nargin == 6
     useGpu = 0;
-elseif nargin < 5
+elseif nargin < 6
     error('Invalid number of parameters: [sinogram, structSizeSinogram] = ProjectMmrSpan1(image, pixelSize_mm, outputPath, useGpu)');
 end
 % Handle the number of subsets:
@@ -40,7 +40,7 @@ end
 
 % Create output sample sinogram:
 % Size of mMr Sinogram's
-numTheta = 252; numR = 344; numRings = 64; maxAbsRingDiff = 60; rFov_mm = 594/2; zFov_mm = 258; span = 1;
+numTheta = 252; numR = 344; numRings = 64; maxAbsRingDiff = 60; rFov_mm = 594/2; zFov_mm = 258; 
 structSizeSino3d = getSizeSino3dFromSpan(numR, numTheta, numRings, rFov_mm, zFov_mm, span, maxAbsRingDiff);
 % constant sinogram:
 sinogram = ones(numR, numTheta, sum(structSizeSino3d.sinogramsPerSegment), 'single');

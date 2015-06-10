@@ -43,9 +43,10 @@ pixelSize_mm = [2.08625 2.08625 2.03125];
 % figure;
 % slice = 80;
 % imshow(image(:,:,slice), [0 max(max(image(:,:,slice)))]);
-%% BACKPROJECT GPU
+%% BACKPROJECT GPU Span1
+span = 1;
 outputPath = '/fast/NemaReconstruction/BackprojectCuda/';
-[image, pixelSize_mm] = BackprojectMmrSpan1(sinogramSpan1, imageSize_pixels, pixelSize_mm, outputPath, [], [], 1);
+[image, pixelSize_mm] = BackprojectMmr(sinogramSpan1, imageSize_pixels, pixelSize_mm, outputPath, span, [], [], 1);
 figure;
 slice = 80;
 imshow(image(:,:,slice), [0 max(max(image(:,:,slice)))]);
@@ -53,7 +54,7 @@ imshow(image(:,:,slice), [0 max(max(image(:,:,slice)))]);
 numberOfSubsets = 21;
 subsetIndex = 5;
 outputPath = '/fast/NemaReconstruction/BackprojectSubsetCuda/';
-[image, pixelSize_mm] = BackprojectMmrSpan1(sinogramSpan1, imageSize_pixels, pixelSize_mm, outputPath, numberOfSubsets, subsetIndex, 1);
+[image, pixelSize_mm] = BackprojectMmr(sinogramSpan1, imageSize_pixels, pixelSize_mm, outputPath, span, numberOfSubsets, subsetIndex, 1);
 figure;
 slice = 80;
 imshow(image(:,:,slice), [0 max(max(image(:,:,slice)))]);

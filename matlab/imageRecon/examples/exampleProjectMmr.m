@@ -41,22 +41,34 @@ pixelSize_mm = [infoVolumeSpan11.ScalingFactorMmPixel1 infoVolumeSpan11.ScalingF
 % figure;
 % indiceSino = 1000;
 % imshow(sinogram(:,:,indiceSino), [0 max(max(sinogram(:,:,indiceSino)))]);
-%% PROJECT GPU
+%% PROJECT GPU SPAN 1
 useGpu = 1;
+span = 1;
 %outputPath = 'E:\NemaReconstruction\testProjectCuda\';
 outputPath = '/fast/NemaReconstruction/ProjectCuda/';
-[sinogram, structSizeSinogram] = ProjectMmrSpan1(image, pixelSize_mm, outputPath, [], [], useGpu);
+[sinogram, structSizeSinogram] = ProjectMmr(image, pixelSize_mm, outputPath, span, [], [], useGpu);
 % Show one sinogram:
 figure;
 indiceSino = 1000;
 imshow(sinogram(:,:,indiceSino), [0 max(max(sinogram(:,:,indiceSino)))]);
-%% PROJECT SUBSET GPU
+%% PROJECT SUBSET GPU SPAN 1
 numberOfSubsets = 21;
 subsetIndex = 5;
 % outputPath = 'E:\NemaReconstruction\testProjectCudaSubset\';
 outputPath = '/fast/NemaReconstruction/ProjectCudaSubset/';
-[sinogram, structSizeSinogram] = ProjectMmrSpan1(image, pixelSize_mm, outputPath, numberOfSubsets, subsetIndex, useGpu);
+[sinogram, structSizeSinogram] = ProjectMmr(image, pixelSize_mm, outputPath, span, numberOfSubsets, subsetIndex, useGpu);
 % Show one sinogram:
 figure;
 indiceSino = 1000;
+imshow(sinogram(:,:,indiceSino), [0 max(max(sinogram(:,:,indiceSino)))]);
+%% PROJECT SUBSET GPU SPAN 11
+span = 11;
+numberOfSubsets = 21;
+subsetIndex = 5;
+% outputPath = 'E:\NemaReconstruction\testProjectCudaSubset\';
+outputPath = '/fast/NemaReconstruction/ProjectCudaSubset/';
+[sinogram, structSizeSinogram] = ProjectMmr(image, pixelSize_mm, outputPath, span, numberOfSubsets, subsetIndex, useGpu);
+% Show one sinogram:
+figure;
+indiceSino = 64;
 imshow(sinogram(:,:,indiceSino), [0 max(max(sinogram(:,:,indiceSino)))]);
