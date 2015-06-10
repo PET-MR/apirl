@@ -25,7 +25,7 @@
 %   volume = OsemMmrSpan1(sinogramFilename, normFilename, attMapBaseFilename, outputPath, [2.08625 2.08625 2.03125], 21, 3)
 %   volume = OsemMmrSpan1(sinogramFilename, normFilename, attMapBaseFilename, outputPath, [2.08625 2.08625 2.03125])
 %   volume = OsemMmrSpan1(sinogramFilename, normFilename, attMapBaseFilename, outputPath)
-function volume = OsemMmrSpan1(sinogramFilename, normFilename, attMapBaseFilename, outputPath, pixelSize_mm, numInputSubsets, numInputIterations, optUseGpu)
+function volume = OsemMmr(sinogramFilename, normFilename, attMapBaseFilename, outputPath, pixelSize_mm, numInputSubsets, numInputIterations, optUseGpu)
 
 mkdir(outputPath);
 % Check what OS I am running on:

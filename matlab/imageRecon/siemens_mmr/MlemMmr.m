@@ -3,7 +3,7 @@
 %  Autor: Martín Belzunce. Kings College London.
 %  Fecha de Creación: 06/05/2015
 %  *********************************************************************
-%  This function reconstructs a mmr span 1 sinogram. It receives the
+%  This function reconstructs a mmr sinogram. It receives the
 %  uncompressed sinogram raw data, a normalization file, an attenuation map and the outputh
 %  path for the results. It returns a volume.
 % The filename for the attenuation map must include only the path and the
@@ -12,17 +12,15 @@
 % filenames are: 
 %   - 'path/PET_ACQ_190_20150220152253_umap_human_00.v.hdr'
 %   - 'path/PET_ACQ_190_20150220152253_umap_hardware_00.v.hdr'
-%
+%  It receives the span to be used in the reconstruction. The sinogram
 %  It receives two optional parameters
 %  - pixelSize_mm: that is a vector with 3 elements [pixelSizeX_mm
 %  pixelSizeY_mm pixelSizeZ_mm].
 %  - numIterations: number of iterations.
 %
 % Examples:
-%   volume = OsemMmrSpan1(sinogramFilename, normFilename, attMapBaseFilename, outputPath, [2.08625 2.08625 2.03125], numIterations, useGpu)
-%   volume = OsemMmrSpan1(sinogramFilename, normFilename, attMapBaseFilename, outputPath, [2.08625 2.08625 2.03125])
-%   volume = OsemMmrSpan1(sinogramFilename, normFilename, attMapBaseFilename, outputPath)
-function volume = MlemMmrSpan1(sinogramFilename, normFilename, attMapBaseFilename, outputPath, pixelSize_mm, numInputIterations, optUseGpu)
+%   volume = MlemMmr(sinogramFilename, normFilename, attMapBaseFilename, span, outputPath, pixelSize_mm, numInputIterations, optUseGpu)
+function volume = MlemMmr(sinogramFilename, normFilename, attMapBaseFilename, span, outputPath, pixelSize_mm, numInputIterations, optUseGpu)
 
 mkdir(outputPath);
 % Check what OS I am running on:
@@ -63,6 +61,7 @@ end
 disp('Converting input sinogram to APIRL format...');
 % Read the sinograms:
 [pathstr,name,ext] = fileparts(sinogramFilename);
+if 
 outFilenameIntfSinograms = [outputPath pathBar 'sinogramSpan1'];
 [sinogramSpan1, delaySinogramSpan1, structSizeSino3dSpan1] = getIntfSinogramsFromUncompressedMmr(sinogramFilename, outFilenameIntfSinograms);
 % Rewrite the sinogram filename to be used in the next operations:

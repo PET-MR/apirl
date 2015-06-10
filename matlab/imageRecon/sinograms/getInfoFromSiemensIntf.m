@@ -260,4 +260,50 @@ if strcmp(info.SmsMiHeaderNameSpace, 'sinogram subheader')
     rFov_mm = (info.MatrixSize1 * info.ScaleFactorMmPixel1) / 2;
     zFov_mm = (info.ScaleFactorMmPixel3 * (2*info.NumberOfRings+1));
     structSizeSino = getSizeSino3dFromSpan(info.MatrixSize1, info.MatrixSize2, info.NumberOfRings, rFov_mm, zFov_mm, info.AxialCompression, info.MaximumRingDifference);
+else
+    % Process the segment table. Take out spaces and {}:
+    charsToRemove = ['{','}',' '];
+    for i = 1 : numel(charsToRemove)
+        pos = find(info.MatrixSize3 == charsToRemove(i));
+        info.MatrixSize3(pos) = [];
+        
+        pos = find(info.MatrixSize3 == charsToRemove(i));
+        info.MinimumRingDifferencePerSegment(pos) = [];
+        
+        pos = find(info.MatrixSize3 == charsToRemove(i));
+        info.MaximumRingDifferencePerSegment(pos) = [];
+    end
+    % Separate by , and convert to number array
+    cellStrNum = strsplit(info.MatrixSize3,',');
+    % Replace SegmentTable field for a numeric array:
+    info.MatrixSize3 = zeros(1,numel(cellStrNum));
+    for i = 1 : numel(cellStrNum)
+        info.MatrixSize3(i) = str2num(cellStrNum{i});
+    end
+    info.NumberOfSegments = numel(info.MatrixSize3);
+    
+    % Separate by , and convert to number array
+    cellStrNum = strsplit(info.MinimumRingDifferencePerSegment,',');
+    if numel(cellStrNum) ~=  info.NumberOfSegments
+        perror('The number of MinimumRingDifferencePerSegment is different than the number of segments in MatrixSize3.');
+    end
+    % Replace SegmentTable field for a numeric array:
+    info.MinimumRingDifferencePerSegment = zeros(1,numel(cellStrNum));
+    for i = 1 : numel(cellStrNum)
+        info.MinimumRingDifferencePerSegment(i) = str2num(cellStrNum{i});
+    end
+    
+    % Separate by , and convert to number array
+    cellStrNum = strsplit(info.MaximumRingDifferencePerSegment,',');
+    if numel(cellStrNum) ~=  info.NumberOfSegments
+        perror('The number of MaximumRingDifferencePerSegment is different than the number of segments in MatrixSize3.');
+    end
+    % Replace SegmentTable field for a numeric array:
+    info.MaximumRingDifferencePerSegment = zeros(1,numel(cellStrNum));
+    for i = 1 : numel(cellStrNum)
+        info.MaximumRingDifferencePerSegment(i) = str2num(cellStrNum{i});
+    end
+    
+    % Return the size of struct size sino, with only the avialable info:
+    structSizeSino = getSizeSino3Dstruct(info.MatrixSize1, info.MatrixSize2, info.NumberOfRings, 0, 0, info.MatrixSize3, info.MinimumRingDifferencePerSegment, info.MaximumRingDifferencePerSegment, abs(info.MinimumRingDifferencePerSegment(end)));
 end

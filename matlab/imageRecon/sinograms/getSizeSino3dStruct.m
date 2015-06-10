@@ -56,7 +56,7 @@
 %   structSizeSino3D = getSizeSino3Dstruct(192, 192, 24, 300, 200, sinogramsPerSegment, minRingDiff, maxRingDiff)
 
 
-function structSizeSino3D = getSizeSino3Dstruct(numR, numTheta, numZ, rFov, zFov, sinogramsPerSegment, minRingDiff, maxRingDiff, maxAbsRingDiff)
+function structSizeSino3D = getSizeSino3Dstruct(numR, numTheta, numZ, rFov, zFov, sinogramsPerSegment, minRingDiff, minRingDiff, maxAbsRingDiff)
 
 if nargin < 9
     maxAbsRingDiff = numZ;
@@ -73,7 +73,8 @@ deltaZ = zFov / numZ;
 zValues_mm = -(zFov/2 - deltaZ/2) : deltaZ : (zFov/2 - deltaZ/2);
 % Cantidad de segmentos:
 numSegments = numel(sinogramsPerSegment);
-
+% The span, I get it from the ring difference from the first segment:
+span = (maxRingDiff(1) - minRingDiff(1))+1;
 structSizeSino3D = struct('numTheta', numTheta, 'numR', numR, 'numZ', numZ, 'numSegments', numSegments, 'rFov_mm', rFov,...
     'zFov_mm', zFov, 'rValues_mm', rValues_mm, 'thetaValues_deg', thetaValues_deg, ...
-    'zValues_mm', zValues_mm, 'sinogramsPerSegment', sinogramsPerSegment,'minRingDiff', minRingDiff, 'maxRingDiff', maxRingDiff, 'maxAbsRingDiff', maxAbsRingDiff);
+    'zValues_mm', zValues_mm, 'sinogramsPerSegment', sinogramsPerSegment,'minRingDiff', minRingDiff, 'maxRingDiff', maxRingDiff, 'maxAbsRingDiff', maxAbsRingDiff, 'span', span);
