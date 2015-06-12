@@ -64,9 +64,15 @@
 % image relative start time (sec)[1] := 0
 % !END OF INTERFILE :=
 
+% Only header permits to write only the header. Its useful to generate
+% templates.
 
+function interfileWriteStirSino(sinogram, filename, structSizeSino, onlyHeader)
 
-function interfileWriteStirSino(sinogram, filename, structSizeSino)
+% Only use the header only when its specified.
+if nargin == 3
+    onlyHeader = 0;
+end
 
 % Add extensions to both files:
 filenameHeader = sprintf('%s.hs', filename);
@@ -174,6 +180,7 @@ fprintf(fid,'!END OF INTERFILE :=\n');
 % Header ready:
 fclose(fid);
 
+
 % In stir the data is stored in viewgrams per segment, so it can't be puted
 % in a 3d matrix. Because first it goes the first segment with a matrix of
 % numRxnumSinosThisSegmenxnumTheta, and then with the next segment the
@@ -184,39 +191,40 @@ if(fid == -1)
     fprintf('File %s couldn''t be created.', filenameImage);
 end
 
-
-% I have to write it in the order of the sinogram stir, so for each segment
-% of stir I find the equivalent of the traditional sinogram.
-for i = 1 : numel(sinogramsPerSegment_stir)
-    % Get the index of segments for the stir sinogram:
-    % This would be the way if the segments in stir were the same as in
-    % siemens and in apirl:
-%     if(minRingDiff_stir(i) > 0) && (maxRingDiff_stir(i) > 0)
-%         indexSegmentSino = 2*i - numel(sinogramsPerSegment_stir) - 1;
-%     elseif(minRingDiff_stir(i) < 0) && (maxRingDiff_stir(i) < 0)
-%         indexSegmentSino = numel(sinogramsPerSegment_stir) - 2*(i-1);
-%     else
-%         indexSegmentSino = 1;
-%     end
-    % But in stir is used z2-z1 instead of z1-z2, so we have to invert the order -1 the possitive:
-    if(minRingDiff_stir(i) > 0) && (maxRingDiff_stir(i) > 0)
-        indexSegmentSino = 2*i - numel(sinogramsPerSegment_stir);
-    elseif(minRingDiff_stir(i) < 0) && (maxRingDiff_stir(i) < 0)
-        indexSegmentSino = numel(sinogramsPerSegment_stir) - 2*(i-1) - 1;
-    else
-        indexSegmentSino = 1;
+if onlyHeader == 0
+    % I have to write it in the order of the sinogram stir, so for each segment
+    % of stir I find the equivalent of the traditional sinogram.
+    for i = 1 : numel(sinogramsPerSegment_stir)
+        % Get the index of segments for the stir sinogram:
+        % This would be the way if the segments in stir were the same as in
+        % siemens and in apirl:
+    %     if(minRingDiff_stir(i) > 0) && (maxRingDiff_stir(i) > 0)
+    %         indexSegmentSino = 2*i - numel(sinogramsPerSegment_stir) - 1;
+    %     elseif(minRingDiff_stir(i) < 0) && (maxRingDiff_stir(i) < 0)
+    %         indexSegmentSino = numel(sinogramsPerSegment_stir) - 2*(i-1);
+    %     else
+    %         indexSegmentSino = 1;
+    %     end
+        % But in stir is used z2-z1 instead of z1-z2, so we have to invert the order -1 the possitive:
+        if(minRingDiff_stir(i) > 0) && (maxRingDiff_stir(i) > 0)
+            indexSegmentSino = 2*i - numel(sinogramsPerSegment_stir);
+        elseif(minRingDiff_stir(i) < 0) && (maxRingDiff_stir(i) < 0)
+            indexSegmentSino = numel(sinogramsPerSegment_stir) - 2*(i-1) - 1;
+        else
+            indexSegmentSino = 1;
+        end
+        sinogram_stir_thisSegment = zeros([structSizeSino.numR structSizeSino.numTheta sinogramsPerSegment_stir(i)], 'single');
+        % Get the index of sinos for this segment counting the sinograms:
+        indiceBaseSino = 0;
+        for j = 1 : indexSegmentSino-1
+            indiceBaseSino = indiceBaseSino + structSizeSino.sinogramsPerSegment(j);
+        end
+        indicesSino = (indiceBaseSino+1) : (indiceBaseSino+ structSizeSino.sinogramsPerSegment(indexSegmentSino));
+        sinogram_stir_thisSegment = sinogram(:,:,indicesSino);
+        % Interchange 2nd and 3rd dimensions to go from sinograms to viewgrams:
+        sinogram_stir_thisSegment = permute(sinogram_stir_thisSegment, [1 3 2]);
+        % Write to a file:
+        fwrite(fid, sinogram_stir_thisSegment, 'single'); % Write in single.
     end
-    sinogram_stir_thisSegment = zeros([structSizeSino.numR structSizeSino.numTheta sinogramsPerSegment_stir(i)], 'single');
-    % Get the index of sinos for this segment counting the sinograms:
-    indiceBaseSino = 0;
-    for j = 1 : indexSegmentSino-1
-        indiceBaseSino = indiceBaseSino + structSizeSino.sinogramsPerSegment(j);
-    end
-    indicesSino = (indiceBaseSino+1) : (indiceBaseSino+ structSizeSino.sinogramsPerSegment(indexSegmentSino));
-    sinogram_stir_thisSegment = sinogram(:,:,indicesSino);
-    % Interchange 2nd and 3rd dimensions to go from sinograms to viewgrams:
-    sinogram_stir_thisSegment = permute(sinogram_stir_thisSegment, [1 3 2]);
-    % Write to a file:
-    fwrite(fid, sinogram_stir_thisSegment, 'single'); % Write in single.
 end
 fclose(fid);

@@ -101,13 +101,13 @@ end
 
 % Check the structure with the sinogram:
 if (structSizeSino.numR ~= size(sinogram,1)) || (structSizeSino.numTheta ~= size(sinogram,2))
-    perror('interfilewritesino: the size of the sinogram does not match the structure with its size.');
+    error('interfilewritesino: the size of the sinogram does not match the structure with its size.');
 end
 if strcmp(tipo,'sinogram2D') && (structSizeSino.numZ ~= size(sinogram,3))
-    perror('interfilewritesino: the size of the sinogram does not match the structure with its size.');
+    error('interfilewritesino: the size of the sinogram does not match the structure with its size.');
 end
 if strcmp(tipo,'sinogram3D') && (sum(structSizeSino.sinogramsPerSegment) ~= size(sinogram,3))
-    perror('interfilewritesino: the size of the sinogram does not match the structure with its size.');
+    error('interfilewritesino: the size of the sinogram does not match the structure with its size.');
 end
 % Primero genero el archivo de encabezado.
 fid = fopen(filenameHeader, 'w');

@@ -252,6 +252,8 @@ bool CuMlemSinogram3d::InitGpuMemory(TipoProyector tipoProy)
   checkCudaErrors(cudaMemcpyToSymbol(d_imageSize, &size, sizeof(reconstructionImage->getSize())));
   auxInt = size.nPixelsX * size.nPixelsY;
   checkCudaErrors(cudaMemcpyToSymbol(d_numPixelsPerSlice, &auxInt, sizeof(int)));
+  auxInt = auxInt * size.nPixelsZ;
+  checkCudaErrors(cudaMemcpyToSymbol(d_numPixels, &auxInt, sizeof(int)));
   auxInt = inputProjection->getSegment(0)->getSinogram2D(0)->getNumProj()*inputProjection->getSegment(0)->getSinogram2D(0)->getNumR();
   checkCudaErrors(cudaMemcpyToSymbol(d_numBinsSino2d, &auxInt, sizeof(int)));
   aux = reconstructionImage->getFovRadio(); // Esto podría ser del sinograma también.
@@ -638,7 +640,7 @@ bool CuMlemSinogram3d::Reconstruct(TipoProyector tipoProy, int indexGpu)
     if(saveIntermediateProjectionAndBackprojectedImage)
     {
       // Copio la imagen en gpu a cpu:
-      checkCudaErrors(cudaMemcpy(backprojectedImage, d_backprojectedImage, sizeof(float)*reconstructionImage->getPixelCount(),cudaMemcpyDeviceToHost)); 
+      checkCudaErrors(cudaMemcpy(backprojectedImage->getPixelsPtr(), d_backprojectedImage, sizeof(float)*reconstructionImage->getPixelCount(),cudaMemcpyDeviceToHost)); 
       sprintf(c_string, "%s_backprojection_iter_%d", outputFilenamePrefix.c_str(), t); /// La extensión se le agrega en write interfile.
       outputFilename.assign(c_string);
       backprojectedImage->writeInterfile((char*)outputFilename.c_str());
@@ -659,14 +661,6 @@ bool CuMlemSinogram3d::Reconstruct(TipoProyector tipoProy, int indexGpu)
 	/// Termino con el log de los resultados:
 	sprintf(c_string, "Imagen de iteración %d guardada en: %s", t, outputFilename.c_str());
 	logger->writeLine(c_string);
-	if(saveIntermediateProjectionAndBackprojectedImage)
-	{
-	  // Tengo que guardar la estimated projection, y la backprojected image.
-	  checkCudaErrors(cudaMemcpy(backprojectedImage->getPixelsPtr(), d_backprojectedImage,sizeof(float)*nPixels,cudaMemcpyDeviceToHost));
-	  sprintf(c_string, "%s_backprojected_iter_%d", outputFilenamePrefix.c_str(), t); /// La extensión se le agrega en write interfile.
-	  outputFilename.assign(c_string);
-	  backprojectedImage->writeInterfile((char*)outputFilename.c_str());
-	}
       }
     }
     clock_t finalClockIteration = clock();
@@ -768,13 +762,13 @@ bool CuMlemSinogram3d::computeSensitivity(TipoProyector tipoProy)
   {
     case SIDDON_PROJ_TEXT_CYLINDRICAL_SCANNER: // This siddon implementation has only projection, so it uses the standard backprojection.
     case SIDDON_CYLINDRICAL_SCANNER:
-      backprojector->Backproject(d_estimatedProjection, d_sensitivityImage, d_ring1_mm, d_ring2_mm, (Sinogram3DCylindricalPet*)inputProjection, reconstructionImage, false);
+      backprojector->Backproject(d_estimatedProjection, d_sensitivityImage, d_ring1_mm, d_ring2_mm, (Sinogram3DCylindricalPet*)constantSinogram3D, reconstructionImage, false);
       // Copio la memoria de gpu a cpu, así se puede actualizar el umbral:
       checkCudaErrors(cudaMemcpy(sensitivityImage->getPixelsPtr(), d_sensitivityImage,sizeof(float)*sensitivityImage->getPixelCount(),cudaMemcpyDeviceToHost));
       break;
     case SIDDON_BACKPROJ_SURF_CYLINDRICAL_SCANNER:
       CopyDevImageToTexture(d_sensitivityImage, sensitivityImage->getSize());
-      backprojector->Backproject(d_estimatedProjection, d_sensitivityImage, d_ring1_mm, d_ring2_mm, (Sinogram3DCylindricalPet*)inputProjection, reconstructionImage, false);
+      backprojector->Backproject(d_estimatedProjection, d_sensitivityImage, d_ring1_mm, d_ring2_mm, (Sinogram3DCylindricalPet*)constantSinogram3D, reconstructionImage, false);
       CopyTextureToDevtImage(d_sensitivityImage, sensitivityImage->getSize());
       CopyTextureToHostImage(sensitivityImage);
       break;

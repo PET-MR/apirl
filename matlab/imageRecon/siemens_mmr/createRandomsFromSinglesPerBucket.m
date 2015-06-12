@@ -12,7 +12,7 @@
 function [sinoRandoms, structSizeSino] = createRandomsFromSinglesPerBucket(headerFilename)
 
 % Read interfile header:
-[structInterfile, structSizeSino] = getInfoFromSiemensIntf(headerFilename);
+[structInterfile, structSizeSino] = getInfoFromInterfile(headerFilename);
 % Size of the sinogram:
 sinoRandoms = zeros(structSizeSino.numR, structSizeSino.numTheta, sum(structSizeSino.sinogramsPerSegment), 'single');
 

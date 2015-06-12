@@ -3,7 +3,7 @@
 %  Autor: Martín Belzunce. Kings College London.
 %  Fecha de Creación: 06/05/2015
 %  *********************************************************************
-%  This function reconstructs a mmr span 1 sinogram. It receives the
+%  This function reconstructs a mmr span n sinogram. It receives the
 %  uncompressed sinogram raw data, a normalization file, an attenuation map and the outputh
 %  path for the results. It returns a volume.
 % The filename for the attenuation map must include only the path and the
@@ -20,6 +20,8 @@
 %  - numIterations: number of iterations.
 %
 %   -normFilename: can be a norm file o the overall_ncf matrix directly.
+%
+%  The span used of the reconstruction is the same of the sinogram.
 %
 % Examples:
 %   volume = OsemMmrSpan1(sinogramFilename, normFilename, attMapBaseFilename, outputPath, [2.08625 2.08625 2.03125], 21, 3)
@@ -64,13 +66,12 @@ end
 
 
 %% READING THE SINOGRAMS
-disp('Converting input sinogram to APIRL format...');
+disp('Read input sinogram...');
 % Read the sinograms:
-[pathstr,name,ext] = fileparts(sinogramFilename);
-outFilenameIntfSinograms = [outputPath pathBar 'sinogramSpan1'];
-[sinogramSpan1, delaySinogramSpan1, structSizeSino3dSpan1] = getIntfSinogramsFromUncompressedMmr(sinogramFilename, outFilenameIntfSinograms);
-% Rewrite the sinogram filename to be used in the next operations:
-sinogramFilename = [outFilenameIntfSinograms];
+[sinograms, delayedSinograms, structSizeSino3d] = interfileReadSino(sinogramFilename);
+sinogramFilename = [outputPath pathBar 'sinogram'];
+% Write the input sinogram:
+interfileWriteSino(single(sinograms), sinogramFilename, structSizeSino3d);
 %% CREATE INITIAL ESTIMATE FOR RECONSTRUCTION
 disp('Creating inital image...');
 % Inititial estimate:
@@ -82,7 +83,7 @@ if isstr(normFilename)
     disp('Computing the normalization correction factors...');
     % ncf:
     [overall_ncf_3d, scanner_time_invariant_ncf_3d, scanner_time_variant_ncf_3d, used_xtal_efficiencies, used_deadtimefactors, used_axial_factors] = ...
-       create_norm_files_mmr(normFilename, [], [], [], [], 1);
+       create_norm_files_mmr(normFilename, [], [], [], [], structSizeSino3d.span);
     % invert for nf:
     overall_nf_3d = overall_ncf_3d;
     overall_nf_3d(overall_ncf_3d ~= 0) = 1./overall_nf_3d(overall_ncf_3d ~= 0);
@@ -101,11 +102,11 @@ end
 %% ATTENUATION MAP
 if ~strcmp(attMapBaseFilename, '')
     % Check if its attenuation from siemens or a post processed image:
-    if attMapBaseFilename(end-3:end) ~= '.h33'
+    if ~strcmp(attMapBaseFilename(end-3:end),'.h33')
         disp('Computing the attenuation correction factors from mMR mu maps...');
         % Read the attenuation map and compute the acfs.
-        headerInfo = getInfoFromSiemensIntf([filenameUncompressedMmr '_umap_human_00.v.hdr']);
-        headerInfo = getInfoFromSiemensIntf([attMapBaseFilename '_umap_hardware_00.v.hdr']);
+        headerInfo = getInfoFromInterfile([attMapBaseFilename '_umap_human_00.v.hdr']);
+        headerInfo = getInfoFromInterfile([attMapBaseFilename '_umap_hardware_00.v.hdr']);
         imageSizeAtten_pixels = [headerInfo.MatrixSize1 headerInfo.MatrixSize2 headerInfo.MatrixSize3];
         imageSizeAtten_mm = [headerInfo.ScaleFactorMmPixel1 headerInfo.ScaleFactorMmPixel2 headerInfo.ScaleFactorMmPixel3];
         filenameAttenMap_human = [attMapBaseFilename '_umap_human_00.v'];
@@ -145,15 +146,15 @@ if ~strcmp(attMapBaseFilename, '')
 
     % Create ACFs of a computed phatoms with the linear attenuation
     % coefficients:
-    acfFilename = ['acfsSinogramSpan1'];
-    acfsSinogramSpan1 = createACFsFromImage(attenMap, imageSizeAtten_mm, outputPath, acfFilename, sinogramFilename, structSizeSino3dSpan1, 0, useGpu);
+    acfFilename = ['acfsSinogram'];
+    acfsSinogram = createACFsFromImage(attenMap, imageSizeAtten_mm, outputPath, acfFilename, sinogramFilename, structSizeSino3d, 0, useGpu);
 
     % After the projection read the acfs:
     acfFilename = [outputPath acfFilename];
     fid = fopen([acfFilename '.i33'], 'r');
-    numSinos = sum(structSizeSino3dSpan1.sinogramsPerSegment);
-    [acfsSinogramSpan1, count] = fread(fid, structSizeSino3dSpan1.numTheta*structSizeSino3dSpan1.numR*numSinos, 'single=>single');
-    acfsSinogramSpan1 = reshape(acfsSinogramSpan1, [structSizeSino3dSpan1.numR structSizeSino3dSpan1.numTheta numSinos]);
+    numSinos = sum(structSizeSino3d.sinogramsPerSegment);
+    [acfsSinogram, count] = fread(fid, structSizeSino3d.numTheta*structSizeSino3d.numR*numSinos, 'single=>single');
+    acfsSinogram = reshape(acfsSinogram, [structSizeSino3d.numR structSizeSino3d.numTheta numSinos]);
     % Close the file:
     fclose(fid);
 else
@@ -162,15 +163,15 @@ end
 %% GENERATE AND SAVE ATTENUATION AND NORMALIZATION FACTORS AND CORECCTION FACTORS FOR SPAN11 SINOGRAMS FOR APIRL
 disp('Generating the ANF sinogram...');
 % Save:
-outputSinogramName = [outputPath 'NF_Span1'];
-interfileWriteSino(single(overall_nf_3d), outputSinogramName, structSizeSino3dSpan1);
+outputSinogramName = [outputPath 'NF'];
+interfileWriteSino(single(overall_nf_3d), outputSinogramName, structSizeSino3d);
 
 % Compose with acfs:
-atteNormFactorsSpan1 = overall_nf_3d;
-atteNormFactorsSpan1(acfsSinogramSpan1 ~= 0) = overall_nf_3d(acfsSinogramSpan1 ~= 0) ./acfsSinogramSpan1(acfsSinogramSpan1 ~= 0);
-anfFilename = [outputPath 'ANF_Span1'];
-interfileWriteSino(single(atteNormFactorsSpan1), anfFilename, structSizeSino3dSpan1);
-clear atteNormFactorsSpan1;
+atteNormFactors = overall_nf_3d;
+atteNormFactors(acfsSinogram ~= 0) = overall_nf_3d(acfsSinogram ~= 0) ./acfsSinogram(acfsSinogram ~= 0);
+anfFilename = [outputPath 'ANF'];
+interfileWriteSino(single(atteNormFactors), anfFilename, structSizeSino3d);
+clear atteNormFactors;
 %clear normFactorsSpan11;
 %% GENERATE MLEM RECONSTRUCTION FILES FOR APIRL
 if useGpu == 0

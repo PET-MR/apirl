@@ -3,7 +3,7 @@
 %  Autor: Martín Belzunce. Kings College London.
 %  Fecha de Creación: 10/02/2015
 %  *********************************************************************
-%  function [info, structSizeSino]  = getInfoFromSiemensIntf(filename)
+%  function [info, structSizeSino]  = getInfoFromInterfile(filename)
 % 
 %  This function reads the header of an interfile sinograms and gets some
 %  useful information from it. Such as the filename of the raw data, the
@@ -12,7 +12,7 @@
 % Optionally it also returns an structure with the size of the sinogram.
 
 
-function [info, structSizeSino] = getInfoFromSiemensIntf(filename)
+function [info, structSizeSino] = getInfoFromInterfile(filename)
 
 info = [];
 % check header file extension
@@ -210,67 +210,72 @@ end
 % close file
 fclose(fid);
 
-if ~isfield(info, 'SmsMiHeaderNameSpace')
-    structSizeSino = [];
-    return;
-end
+% if ~isfield(info, 'SmsMiHeaderNameSpace')
+%     structSizeSino = [];
+%     return;
+% end
     
-    
-% Post processing, some fields are processed to get them in a more useful
-% format. This changes if its an image or a sinogram
-if strcmp(info.SmsMiHeaderNameSpace, 'sinogram subheader')
-    % Sinograms specific parameters:
-    if (isfield(info, 'NumberOfBuckets'))
-        numBuckets = info.NumberOfBuckets;
-        singlesPerBucket = zeros(1, numBuckets);
-    else
-        perror('The number of bucket was not found.');
-    end
-    for i = 1 : numBuckets
-        field = sprintf('BucketSinglesRate%d',i);
-        if (isfield(info, field))
-            singlesPerBucket(i) = info.(field);
+if isfield(info, 'SmsMiHeaderNameSpace')
+    % Siemens interfiles:
+    % Post processing, some fields are processed to get them in a more useful
+    % format. This changes if its an image or a sinogram
+    if strcmp(info.SmsMiHeaderNameSpace, 'sinogram subheader')
+        % Sinograms specific parameters:
+        if (isfield(info, 'NumberOfBuckets'))
+            numBuckets = info.NumberOfBuckets;
+            singlesPerBucket = zeros(1, numBuckets);
         else
-            perror(sprintf('The singles per bucket for the bucket number %d was not found.', i));
+            perror('The number of bucket was not found.');
         end
-        % After processing it I remove the field, because I will put just an
-        % array:
-        info = rmfield(info, field);
-    end
-    info.SinglesPerBucket = singlesPerBucket;
+        for i = 1 : numBuckets
+            field = sprintf('BucketSinglesRate%d',i);
+            if (isfield(info, field))
+                singlesPerBucket(i) = info.(field);
+            else
+                perror(sprintf('The singles per bucket for the bucket number %d was not found.', i));
+            end
+            % After processing it I remove the field, because I will put just an
+            % array:
+            info = rmfield(info, field);
+        end
+        info.SinglesPerBucket = singlesPerBucket;
 
-    % Process the segment table. Take out spaces and {}:
-    charsToRemove = ['{','}',' '];
-    for i = 1 : numel(charsToRemove)
-        pos = find(info.SegmentTable == charsToRemove(i));
-        info.SegmentTable(pos) = [];
-    end
-    % Separate by , and convert to number array
-    cellStrNum = strsplit(info.SegmentTable,',');
-    % Replace SegmentTable field for a numeric array:
-    info.SegmentTable = zeros(1,numel(cellStrNum));
-    if numel(cellStrNum) ~=  info.NumberOfSegments
-        perror('The number of segments is different than the number of elements in the segment table.');
-    end
-    for i = 1 : numel(cellStrNum)
-        info.SegmentTable(i) = str2num(cellStrNum{i});
-    end
+        % Process the segment table. Take out spaces and {}:
+        charsToRemove = ['{','}',' '];
+        for i = 1 : numel(charsToRemove)
+            pos = find(info.SegmentTable == charsToRemove(i));
+            info.SegmentTable(pos) = [];
+        end
+        % Separate by , and convert to number array
+        cellStrNum = strsplit(info.SegmentTable,',');
+        % Replace SegmentTable field for a numeric array:
+        info.SegmentTable = zeros(1,numel(cellStrNum));
+        if numel(cellStrNum) ~=  info.NumberOfSegments
+            perror('The number of segments is different than the number of elements in the segment table.');
+        end
+        for i = 1 : numel(cellStrNum)
+            info.SegmentTable(i) = str2num(cellStrNum{i});
+        end
 
-    % Get sino struct:
-    rFov_mm = (info.MatrixSize1 * info.ScaleFactorMmPixel1) / 2;
-    zFov_mm = (info.ScaleFactorMmPixel3 * (2*info.NumberOfRings+1));
-    structSizeSino = getSizeSino3dFromSpan(info.MatrixSize1, info.MatrixSize2, info.NumberOfRings, rFov_mm, zFov_mm, info.AxialCompression, info.MaximumRingDifference);
-else
+        % Get sino struct:
+        rFov_mm = (info.MatrixSize1 * info.ScaleFactorMmPixel1) / 2;
+        zFov_mm = (info.ScaleFactorMmPixel3 * (2*info.NumberOfRings+1));
+        structSizeSino = getSizeSino3dFromSpan(info.MatrixSize1, info.MatrixSize2, info.NumberOfRings, rFov_mm, zFov_mm, info.AxialCompression, info.MaximumRingDifference);
+    else
+        % Siemens image:
+        structSizeSino = [];
+    end
+elseif isfield(info, 'MinimumRingDifferencePerSegment') % Apirl sinogram
     % Process the segment table. Take out spaces and {}:
     charsToRemove = ['{','}',' '];
     for i = 1 : numel(charsToRemove)
         pos = find(info.MatrixSize3 == charsToRemove(i));
         info.MatrixSize3(pos) = [];
         
-        pos = find(info.MatrixSize3 == charsToRemove(i));
+        pos = find(info.MinimumRingDifferencePerSegment == charsToRemove(i));
         info.MinimumRingDifferencePerSegment(pos) = [];
         
-        pos = find(info.MatrixSize3 == charsToRemove(i));
+        pos = find(info.MaximumRingDifferencePerSegment == charsToRemove(i));
         info.MaximumRingDifferencePerSegment(pos) = [];
     end
     % Separate by , and convert to number array
@@ -305,5 +310,5 @@ else
     end
     
     % Return the size of struct size sino, with only the avialable info:
-    structSizeSino = getSizeSino3Dstruct(info.MatrixSize1, info.MatrixSize2, info.NumberOfRings, 0, 0, info.MatrixSize3, info.MinimumRingDifferencePerSegment, info.MaximumRingDifferencePerSegment, abs(info.MinimumRingDifferencePerSegment(end)));
+    structSizeSino = getSizeSino3dStruct(info.MatrixSize1, info.MatrixSize2, info.NumberOfRings, 0, 0, info.MatrixSize3, info.MinimumRingDifferencePerSegment, info.MaximumRingDifferencePerSegment, abs(info.MinimumRingDifferencePerSegment(end)));
 end

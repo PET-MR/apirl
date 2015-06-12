@@ -56,7 +56,7 @@
 %   structSizeSino3D = getSizeSino3Dstruct(192, 192, 24, 300, 200, sinogramsPerSegment, minRingDiff, maxRingDiff)
 
 
-function structSizeSino3D = getSizeSino3Dstruct(numR, numTheta, numZ, rFov, zFov, sinogramsPerSegment, minRingDiff, minRingDiff, maxAbsRingDiff)
+function structSizeSino3D = getSizeSino3dStruct(numR, numTheta, numZ, rFov, zFov, sinogramsPerSegment, minRingDiff, maxRingDiff, maxAbsRingDiff)
 
 if nargin < 9
     maxAbsRingDiff = numZ;

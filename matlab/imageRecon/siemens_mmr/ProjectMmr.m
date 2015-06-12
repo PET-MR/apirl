@@ -7,10 +7,13 @@
 %  also as a parameter the subset that it is wanted to be projeted. It must
 %  be left empty or in zero for projecting the complete sinogram.
 % The span of the sinogram is received as a parameter.
+%  When a subset is projected, it returns a sinogram of the original size,
+%  but only filled in the bins of the subset. This was desgined this way to
+%  be more trnsparent for the user.
 % Examples:
-%   [sinogram, structSizeSinogram] = ProjectMmrSpan1(image, pixelSize_mm, outputPath, span, numberOfSubsets, subsetIndex, useGpu)
+%   [sinogram, structSizeSinogram] = ProjectMmr(image, pixelSize_mm, outputPath, span, numberOfSubsets, subsetIndex, useGpu)
 
-function [sinogram, structSizeSino3d] = ProjectMmrSpan1(image, pixelSize_mm, outputPath, span, numberOfSubsets, subsetIndex, useGpu)
+function [sinogram, structSizeSino3d] = ProjectMmr(image, pixelSize_mm, outputPath, span, numberOfSubsets, subsetIndex, useGpu)
 
 mkdir(outputPath);
 % Check what OS I am running on:
@@ -61,10 +64,21 @@ status = system(['project ' filenameProjectionConfig])
 % Read the projected sinogram:
 % if is a subset, get the new size:
 if numberOfSubsets ~= 0
-    structSizeSino3d.numTheta = ceil(structSizeSino3d.numTheta/numberOfSubsets);
+    structSizeSino3dSubset = structSizeSino3d;
+    structSizeSino3dSubset.numTheta = ceil(structSizeSino3d.numTheta/numberOfSubsets);
+    
+    fid = fopen([projectionFilename '.i33'], 'r');
+    numSinos = sum(structSizeSino3dSubset.sinogramsPerSegment);
+    [subset, count] = fread(fid, structSizeSino3dSubset.numTheta*structSizeSino3dSubset.numR*numSinos, 'single=>single');
+    fclose(fid);
+    subset = reshape(subset, [structSizeSino3dSubset.numR structSizeSino3dSubset.numTheta numSinos]);
+    % Fille a sinogram of the original size
+    sinogram = zeros(structSizeSino3d.numR, structSizeSino3d.numTheta, numSinos);
+    sinogram(:,subsetIndex : numberOfSubsets : end, :) = subset;
+else
+    fid = fopen([projectionFilename '.i33'], 'r');
+    numSinos = sum(structSizeSino3d.sinogramsPerSegment);
+    [sinogram, count] = fread(fid, structSizeSino3d.numTheta*structSizeSino3d.numR*numSinos, 'single=>single');
+    fclose(fid);
+    sinogram = reshape(sinogram, [structSizeSino3d.numR structSizeSino3d.numTheta numSinos]);
 end
-fid = fopen([projectionFilename '.i33'], 'r');
-numSinos = sum(structSizeSino3d.sinogramsPerSegment);
-[sinogram, count] = fread(fid, structSizeSino3d.numTheta*structSizeSino3d.numR*numSinos, 'single=>single');
-fclose(fid);
-sinogram = reshape(sinogram, [structSizeSino3d.numR structSizeSino3d.numTheta numSinos]);

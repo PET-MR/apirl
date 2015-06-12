@@ -26,7 +26,7 @@
 %
 %  Return structSizeSino3dSpanN, the size of the sinogram. 
 %
-function structSizeSino3dSpanN = convertMmrIntfSinogramToSpan(filenameUncompressedMmr, outFilenameIntfSinograms, span)
+function [sinogramSpanN, dealyedSinogramSpanN, structSizeSino3dSpanN] = convertMmrIntfSinogramToSpan(filenameUncompressedMmr, outFilenameIntfSinograms, span)
 
 % Size of mMr Sinogram's
 [structInterfile, structSizeSino] = getInfoFromSiemensIntf(filenameUncompressedMmr);

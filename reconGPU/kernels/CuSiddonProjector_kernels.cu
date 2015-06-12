@@ -97,6 +97,7 @@ __global__ void cuSiddonBackprojection(float* d_inputSinogram, float* d_outputIm
   int iR = iBin % numR;
   int iProj = (int)((float)iBin / (float)numR);
   iBin = iBin + blockIdx.y * d_numBinsSino2d;
+  
   if(d_inputSinogram[iBin] != 0)
   {
     CUDA_GetPointsFromLOR(d_thetaValues_deg[iProj], d_RValues_mm[iR], d_ring1_mm[blockIdx.y], d_ring2_mm[blockIdx.y], d_RadioScanner_mm, &P1, &P2);
