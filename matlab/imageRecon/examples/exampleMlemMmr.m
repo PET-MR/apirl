@@ -31,6 +31,19 @@ apirlPath = '/home/mab15/workspace/apirl-code/trunk/';
 addpath(genpath([apirlPath pathBar 'matlab']));
 setenv('PATH', [getenv('PATH') sepEnvironment apirlPath pathBar 'build' pathBar 'bin']);
 setenv('LD_LIBRARY_PATH', [getenv('LD_LIBRARY_PATH') sepEnvironment apirlPath pathBar 'build' pathBar 'bin']);
+%% STIR PATH
+stirPath = '/usr/local/stir3.0/';
+stirMatlabPath = '/home/mab15/workspace/KCL/apirl-kcl/trunk/stir/';
+%%Set path and filenames
+setenv('PATH', [getenv('PATH') ':' stirPath 'bin/']);
+setenv('LD_LIBRARY_PATH', [getenv('LD_LIBRARY_PATH') ':' stirPath 'lib/']);
+setenv('PATH', [getenv('PATH') ':' stirPath 'bin/']);
+
+addpath(genpath(stirMatlabPath));
+scriptsPath = [stirMatlabPath 'scripts/'];
+% Matlab codes of APIRL:
+apirlPath = '/home/mab15/workspace/apirl-code/trunk/';
+addpath(genpath([apirlPath '/matlab']));
 %% RECONSTRUCTION
 sinogramFilename = '/home/mab15/workspace/KCL/Biograph_mMr/Mediciones/NEMA_IQ_20_02_2014/PET_ACQ_194_20150220154553-0uncomp.s.hdr';
 normFilename = '/home/mab15/workspace/KCL/Biograph_mMr/Mediciones/NEMA_IQ_20_02_2014/norm/Norm_20150210112413.n';

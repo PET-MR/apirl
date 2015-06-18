@@ -204,5 +204,6 @@ end
 % 6) Overall factor:
 overall_ncf_3d = scanner_time_invariant_ncf_3d .* scanner_time_variant_ncf_3d;
 
+used_axial_factors = axialFactors;
 
 

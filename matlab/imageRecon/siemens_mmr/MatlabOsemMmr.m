@@ -23,7 +23,7 @@
 %  backprojection. Stores each iteration in a different folder from the bas
 %  outputPath.
 %  
-%  The span for the reconstruction is taken from the sinogram.
+%  The span for the reconstruction is RECEIVED AS A PARAMETER.
 %
 %  The save interval parameter permits to store data of each "saveInterval"
 %  iterations, if zero, only temporary files are written in a temp folder
@@ -31,9 +31,12 @@
 % Examples:
 %   volume = MatlabOsemMmr(sinogramFilename, normFilename, attMapBaseFilename, outputPath, pixelSize_mm, numInputSubsets, numInputIterations, saveInterval, useGpu)
 
-function volume = MatlabOsemMmr(sinogramFilename, normFilename, attMapBaseFilename, outputPath, pixelSize_mm, numInputSubsets, numInputIterations, saveInterval, useGpu)
+function volume = MatlabOsemMmr(sinogramFilename, span, normFilename, attMapBaseFilename, outputPath, pixelSize_mm, numSubsets, numIterations, saveInterval, useGpu, stirMatlabPath)
 
-mkdir(outputPath);
+if ~isdir(outputPath)
+    mkdir(outputPath);
+end
+
 % Check what OS I am running on:
 if(strcmp(computer(), 'GLNXA64'))
     os = 'linux';
@@ -47,36 +50,19 @@ else
 end
 
 % Check if we have received pixel size:
-numIterations = 40;
-if nargin < 5
-    % Default pixel size:
-    pixelSize_mm = [2.08625 2.08625 2.03125];
-    imageSize_pixels = [286 286 127]; 
-    imageSize_mm = pixelSize_mm.*imageSize_pixels;
-    useGpu = 0;
-    saveInterval = 0;
-else
-    imageSize_mm = [600 600 257];
-    imageSize_pixels = ceil(imageSize_mm./pixelSize_mm);
-    
-    if nargin == 9
-        numIterations = numInputIterations;
-        numSubsets = numInputSubsets;
-    elseif nargin == 8
-        numIterations = numInputIterations;
-        numSubsets = numInputSubsets;
-        useGpu = 0;
-    else
-        error('Wrong number of parameters: volume = MatlabOsemMmr(sinogramFilename, normFilename, attMapBaseFilename, outputPath, [2.08625 2.08625 2.03125], 21, 3, 1)');
-        return;
-    end
+if nargin ~= 11
+    error('Wrong number of parameters: volume = MatlabOsemMmr(sinogramFilename, normFilename, attMapBaseFilename, outputPath, [2.08625 2.08625 2.03125], 21, 3, 1)');
+    return;
 end
-
+imageSize_mm = [600 600 257.96875];
+imageSize_pixels = ceil(imageSize_mm./pixelSize_mm);
 
 %% READING THE SINOGRAMS
 disp('Read input sinogram...');
 % Read the sinograms:
-[sinograms, delayedSinograms, structSizeSino3d] = interfileReadSino(sinogramFilename);
+[sinograms, delayedSinograms, structSizeSino3dSpan1] = interfileReadSino(sinogramFilename);
+% Convert to span:
+[sinograms, structSizeSino3d] = convertSinogramToSpan(sinograms, structSizeSino3dSpan1, span);
 sinogramFilename = [outputPath pathBar 'sinogram'];
 % Write the input sinogram:
 interfileWriteSino(single(sinograms), sinogramFilename, structSizeSino3d);
@@ -155,6 +141,21 @@ if ~strcmp(attMapBaseFilename, '')
 else
     acfFilename = '';
 end
+%% RANDOM ESTIMATE
+% If the edlayed sinograms are available and stir is availables, use it, if
+% not use the singles per bucket:
+% Stir computes randoms that are already normalized:
+[randoms, structSizeSino] = estimateRandomsWithStir(delayedSinograms, structSizeSino3dSpan1, overall_ncf_3d, structSizeSino3d, [outputPath pathBar 'stirRandoms' pathBar]);
+%% SCATTER ESTIMATE
+% The scatter needs the image but also the acf to scale, and in the case of
+% the mr is better if this acf include the human?
+if ~strcmp(attMapBaseFilename(end-3:end),'.h33')
+    acfFilename = 'acfsOnlyHuman';
+    acfsOnlyHuman = createACFsFromImage(attenMap_human, imageSizeAtten_mm, outputPath, acfFilename, sinogramFilename, structSizeSino3d, 0, useGpu);
+    acfFilename = [outputPath acfFilename];
+else
+    acfsOnlyHuman = acfsSinogram;
+end
 %% MLEM
 % Runs ordinary poission mlem.
 disp('###################### ML-EM RECONSTRUCTION ##########################');
@@ -172,48 +173,62 @@ for s = 1 : numSubsets
     % Generate update threshold:
     updateThreshold(s) =  min(min(min(sensitivityImages(:,:,:,s))))+ ( max(max(max(sensitivityImages(:,:,:,s))))- min(min(min(sensitivityImages(:,:,:,s))))) * 0.001;
 end
-% 2) Reconstruction.
-emRecon = initialEstimate; % em_recon is the current reconstructed image.
 
-for iter = 1 : numIterations
-    for s = 1 : numSubsets
-        % Sens image:
-        sensImage = sensitivityImages(:,:,:,s);
-        
-        % I work with a sinogram of the original size, instead of the
-        % subset. Project generates a sinogram of the same size of the
-        % orignal size, but only fills the bins of the subset.
-%         % Get subset of the input sinogram and the anfs:
-%         [inputSubset, structSizeSino3dSubset] = getSubsetFromSinogram(sinograms, structSizeSino3d, numSubsets, s);
-%         [anfSubset, structSizeSino3dSubset] = getSubsetFromSinogram(anfSino, structSizeSino3d, numSubsets, s);
-        
-        disp(sprintf('Iteration %d...', iter));
-        % 2.a) Create working directory:
-        if rem(iter,saveInterval) == 0
-            iterationPath = [outputPath pathBar sprintf('Iteration%d', iter) pathBar];
-            mkdir(iterationPath);
-        else
-            iterationPath = [outputPath 'temp' pathBar];
-            mkdir(iterationPath);
+% Scatter parameters:
+thresholdForTail = 1.01;
+stirScriptsPath = [stirMatlabPath pathBar 'scripts'];
+% 2) OSEM Reconstruction.
+numItersScatter = 3;
+scatter = zeros(size(sinograms));
+for iterScatter = 1 : numItersScatter
+    emRecon = initialEstimate; % em_recon is the current reconstructed image.
+    for iter = 1 : numIterations
+        for s = 1 : numSubsets
+            % Sens image:
+            sensImage = sensitivityImages(:,:,:,s);
+
+            % I work with a sinogram of the original size, instead of the
+            % subset. Project generates a sinogram of the same size of the
+            % orignal size, but only fills the bins of the subset.
+    %         % Get subset of the input sinogram and the anfs:
+    %         [inputSubset, structSizeSino3dSubset] = getSubsetFromSinogram(sinograms, structSizeSino3d, numSubsets, s);
+    %         [anfSubset, structSizeSino3dSubset] = getSubsetFromSinogram(anfSino, structSizeSino3d, numSubsets, s);
+
+            disp(sprintf('Iteration %d...', iter));
+            % 2.a) Create working directory:
+            if rem(iter,saveInterval) == 0
+                iterationPath = [outputPath pathBar sprintf('Iteration%d', iter) pathBar];
+                mkdir(iterationPath);
+            else
+                iterationPath = [outputPath 'temp' pathBar];
+                mkdir(iterationPath);
+            end
+            % 2.b) Project current image:
+            [projectedImage, structSizeSinogram] = ProjectMmr(emRecon, pixelSize_mm, iterationPath, structSizeSino3d.span, numSubsets,s, useGpu);
+            % 2.c) Multiply by the anf and add randoms and scatter:
+            maskSubset = projectedImage ~= 0; % Matrix with zeros in the bins that are not of the subset.
+            projectedImage = projectedImage .* anfSino + maskSubset.*randoms + maskSubset.*scatter .* overall_nf_3d;  % Randoms are already normalized, but scatter is not.
+            % 2.d) Divide sinogram by projected sinogram:
+            ratioSinograms = zeros(size(projectedImage), 'single');
+            ratioSinograms(projectedImage~=0) = sinograms(projectedImage~=0) ./ projectedImage(projectedImage~=0);
+            ratioSinograms = ratioSinograms.* anfSino; % Apply anf.
+            % 2.e) Backprojection:
+            [backprojImage, pixelSize_mm] = BackprojectMmr(ratioSinograms, imageSize_pixels, pixelSize_mm, iterationPath, structSizeSino3d.span, numSubsets,s, useGpu);
+            % 2.f) Apply sensitiivty image and correct current image:
+            emRecon(sensImage > updateThreshold(s)) = emRecon(sensImage > updateThreshold(s)) .* backprojImage(sensImage > updateThreshold(s))./ sensImage(sensImage > updateThreshold(s));
+            emRecon(sensImage <= updateThreshold(s)) = 0;
         end
-        % 2.b) Project current image:
-        [projectedImage, structSizeSinogram] = ProjectMmr(emRecon, pixelSize_mm, iterationPath, structSizeSino3d.span, numSubsets,s, useGpu);
-        % 2.c) Multiply by the anf (this can be avoided if it is also taken
-        % from the backprojection):
-        projectedImage = projectedImage .* anfSino;
-        % 2.d) Divide sinogram by projected sinogram:
-        ratioSinograms = zeros(size(projectedImage), 'single');
-        ratioSinograms(projectedImage~=0) = sinograms(projectedImage~=0) ./ projectedImage(projectedImage~=0);
-        ratioSinograms = ratioSinograms.* anfSino; % Apply anf.
-        % 2.e) Backprojection:
-        [backprojImage, pixelSize_mm] = BackprojectMmr(ratioSinograms, imageSize_pixels, pixelSize_mm, iterationPath, structSizeSino3d.span, numSubsets,s, useGpu);
-        % 2.f) Apply sensitiivty image and correct current image:
-        emRecon(sensImage > updateThreshold(s)) = emRecon(sensImage > updateThreshold(s)) .* backprojImage(sensImage > updateThreshold(s))./ sensImage(sensImage > updateThreshold(s));
-        emRecon(sensImage <= updateThreshold(s)) = 0;
+        if rem(iter,saveInterval) == 0
+            interfilewrite(emRecon, [outputPath pathBar sprintf('emImage_iter%d', iter)], pixelSize_mm);
+            show_sinos(emRecon, 3, 'Recon Image', 1 );
+        end
     end
-    if rem(iter,saveInterval) == 0
-        interfilewrite(emRecon, [outputPath pathBar sprintf('emImage_iter%d', iter)], pixelSize_mm);
-    end
+    % SCATTER ESTIMATE
+    % It also uses stir:
+    % The emission sinogram needs to be normalized and corrected for randoms:
+    sinogram_precorrected = (sinograms - randoms).*overall_ncf_3d;
+    sinogram_precorrected(sinogram_precorrected<0) = 0;
+    [scatter, structSizeSino, mask] = estimateScatterWithStir(emRecon, attenMap, pixelSize_mm, sinogram_precorrected, acfsOnlyHuman, structSizeSino3d, [outputPath pathBar sprintf('stirScatter_%d', iterScatter) pathBar], stirScriptsPath, thresholdForTail);
 end
 %% OUTPUT PARAMETER
 interfilewrite(emRecon, [outputPath pathBar 'emImage_final'], pixelSize_mm);

@@ -18,7 +18,9 @@
 
 function [image, pixelSize_mm] = BackprojectMmr(sinogram, imageSize_pixels, pixelSize_mm, outputPath, span, numberOfSubsets, subsetIndex, useGpu)
 
-mkdir(outputPath);
+if ~isdir(outputPath)
+    mkdir(outputPath);
+end
 % Check what OS I am running on:
 if(strcmp(computer(), 'GLNXA64'))
     os = 'linux';

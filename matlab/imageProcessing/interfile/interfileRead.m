@@ -370,7 +370,7 @@ while (i <= window)
         num_rows = get_val(info, 'MatrixSize2', 'matrix size [2]', 2, fid, (i-1)*num_heads+j);
         num_bytes = get_val(info, 'NumberOfBytesPerPixel', 'number of bytes per pixel', 2, fid, (i-1)*num_heads+j);
         % get process status
-        status = get_val(info, 'ProcessStatus', 'process status', 1, fid, (i-1)*num_heads+j);
+        status = get_val(info, 'ProcessStatus', 'process status', 0, fid, (i-1)*num_heads+j);
         if ((isempty(status)) || (strcmpi(status, 'reconstructed')))
             num_img = get_val(info, 'NumberOfSlices', 'number of slices', 0, fid, (i-1)*num_heads+j);
             % Number of slcies or total number of images
@@ -582,7 +582,7 @@ if (err == 1)
     
     err_id = 'Images:interfileread:missingKey';
     err_msg = sprintf('Missing required key ''%s''.', err_key);
-    error(err_id, err_msg);
+    warning(err_id, err_msg);
     
 elseif (err == 2)
     if (nargin >= 5)
