@@ -27,7 +27,7 @@
 %   volume = OsemMmrSpan1(sinogramFilename, normFilename, attMapBaseFilename, outputPath, [2.08625 2.08625 2.03125], 21, 3)
 %   volume = OsemMmrSpan1(sinogramFilename, normFilename, attMapBaseFilename, outputPath, [2.08625 2.08625 2.03125])
 %   volume = OsemMmrSpan1(sinogramFilename, normFilename, attMapBaseFilename, outputPath)
-function volume = OsemMmr(sinogramFilename, span, normFilename, attMapBaseFilename, correctRandoms, correctScatter, outputPath, pixelSize_mm, numSubsets, numIterations, useGpu, stirMatlabPath)
+function [volume scatter] = OsemMmr(sinogramFilename, span, normFilename, attMapBaseFilename, correctRandoms, correctScatter, outputPath, pixelSize_mm, numSubsets, numIterations, useGpu, stirMatlabPath)
 
 mkdir(outputPath);
 % Check what OS I am running on:
@@ -107,8 +107,6 @@ if ~strcmp(attMapBaseFilename, '')
         % Then interchange rows and cols, x and y: 
         attenMap_human = permute(attenMap_human, [2 1 3]);
         fclose(fid);
-        % The mumap of the phantom it has problems in the spheres, I force all the
-        % pixels inside the phantom to the same value:
 
         % Hardware:
         fid = fopen(filenameAttenMap_hardware, 'r');
@@ -123,13 +121,13 @@ if ~strcmp(attMapBaseFilename, '')
 
         % Compose both images:
         attenMap = attenMap_hardware + attenMap_human;
+    
     else
         disp('Computing the attenuation correction factors from post processed APIRL mu maps...');
-        attenMap = interfileRead(attMapBaseFilename);
+        attenMap_human = interfileRead(attMapBaseFilename);
         infoAtten = interfileinfo(attMapBaseFilename); 
         imageSizeAtten_mm = [infoAtten.ScalingFactorMmPixel1 infoAtten.ScalingFactorMmPixel2 infoAtten.ScalingFactorMmPixel3];
     end
-
     % Create ACFs of a computed phatoms with the linear attenuation
     % coefficients:
     acfFilename = ['acfsSinogram'];
@@ -166,10 +164,10 @@ if(correctRandoms)
     [randoms, structSizeSino] = estimateRandomsWithStir(delayedSinograms, structSizeSino3dSpan1, overall_ncf_3d, structSizeSino3d, [outputPath pathBar 'stirRandoms' pathBar]);
     % Precorrect the input sinogram because cuosem stil doesn't include the
     % additive sinogram:
-    sinograms = sinograms - randoms;
-    sinograms(sinograms < 0) = 0;
+    sinograms_rand_scat_subtracted = sinograms - randoms;
+    sinograms_rand_scat_subtracted(sinograms_rand_scat_subtracted < 0) = 0;
     % Rewrite input singoram:
-    interfileWriteSino(single(sinograms), sinogramFilename, structSizeSino3d);
+    interfileWriteSino(single(sinograms_rand_scat_subtracted), sinogramFilename, structSizeSino3d);
 end
 %% GENERATE MLEM RECONSTRUCTION FILES FOR APIRL
 if useGpu == 0
@@ -212,57 +210,39 @@ if correctScatter
     end
 
     % The emission sinogram needs to be normalized and corrected for randoms:
-    outputPathScatter1 = [outputPath pathBar 'Scatter1' pathBar];
-    sinogram_precorrected = sinograms.*overall_ncf_3d;  % Already substracted randoms.
-    sinogram_precorrected(sinogram_precorrected<0) = 0;
-    [scatter_1, structSizeSino, mask] = estimateScatterWithStir(volume, attenMap, pixelSize_mm, sinogram_precorrected, acfsOnlyHuman, structSizeSino3d, outputPathScatter1, stirScriptsPath, thresholdForTail);
+    outputPathScatter = [outputPath pathBar 'Scatter1' pathBar];
+    if ~isdir(outputPathScatter)
+        mkdir(outputPathScatter);
+    end
+    [scatter_1, structSizeSino, mask] = estimateScatterWithStir(volume, attenMap, pixelSize_mm, sinograms, randoms, overall_ncf_3d, acfsOnlyHuman, structSizeSino3d, outputPathScatter, stirScriptsPath, thresholdForTail);
     
     % Reconstruct again with the scatter:
-    interfileWriteSino(single(scatter_1), [outputPathScatter1 'scatter'], structSizeSino3d);
-    
-    sino_precorrected = (sinograms - randoms).*overall_ncf_3d;
-    %sino_precorrected(sino_precorrected<0) = 0; % Avoid this for the
-    %scaling
-    for sinogram_to_scale = 1:size(scatter_1,3)  
-        maskNonZeros = overall_ncf_3d(:,:,sinogram_to_scale) ~= 0;
-    scat_2d_sino = scatter_1(:,:,sinogram_to_scale).*maskNonZeros;
-    
-    true_2d_sino = sino_precorrected(:,:,sinogram_to_scale);
-    acfs_2d_sino = acfsOnlyHuman(:,:,sinogram_to_scale);
-    outside2d_indices(:,:,sinogram_to_scale) = acfs_2d_sino <= 1.01; % Regions
-    
-
-    scale_factor = sum(true_2d_sino(outside2d_indices(:,:,sinogram_to_scale))) / sum(scat_2d_sino(outside2d_indices(:,:,sinogram_to_scale)))
-    %scan_2d_sino = scatter_with_norm_problem(:,:,sinogram_to_scale);
-
-    scatter_1_scaled(:,:,sinogram_to_scale) = scatter_1(:,:,sinogram_to_scale) .* scale_factor;
-    end
-
-    profileSinogram = sum(sino_precorrected(:,126,:),3);
-    profileScatter = sum(scatter_1(:,126,:),3);
-    profileScatter_scaled = sum(scatter_1_scaled(:,126,:),3);
+    interfileWriteSino(single(scatter_1), [outputPathScatter 'scatter'], structSizeSino3d);
+    % Normalize the scatter:
+    normScatter = scatter_1 .* overall_nf_3d;
+    % Plot profiles to test:
+    profileSinogram = sum(sinograms(:,126,:),3);
+    profileRandoms = sum(randoms(:,126,:),3);
+    profileNormScatter = sum(normScatter(:,126,:),3);
     figure;
-    plot([profileSinogram profileScatter profileScatter_scaled]);
-    
-    normScatter = scatter_1_scaled .* overall_nf_3d;
-profileSinogram = sum(sinograms(:,126,:),3);
-profileRandoms = sum(randoms(:,126,:),3);
-profileNormScatter = sum(normScatter(:,126,:),3);
-figure;
-plot([profileSinogram profileRandoms profileNormScatter (profileRandoms+profileNormScatter)]);
-legend('Sinogram', 'Randoms', 'Scatter', 'Randoms+Scatter');
+    plot([profileSinogram profileRandoms profileNormScatter (profileRandoms+profileNormScatter)]);
+    legend('Sinogram', 'Randoms', 'Scatter', 'Randoms+Scatter');
 
-    sinogram_scatter_corrected = sinograms  - randoms - scatter_1 .* overall_nf_3d;
-    sinogram_scatter_corrected(sinogram_scatter_corrected<0) = 0;
+    outputPathScatter = [outputPath pathBar 'Scatter2' pathBar];
+    if ~isdir(outputPathScatter)
+        mkdir(outputPathScatter);
+    end
+    sinograms_rand_scat_subtracted = sinograms  - randoms - normScatter;
+    sinograms_rand_scat_subtracted(sinograms_rand_scat_subtracted<0) = 0;
     % Rewrite input singoram:
-    sinogramFilename = [outputPathScatter1 pathBar 'sinogram'];
-    interfileWriteSino(single(sinogram_scatter_corrected), sinogramFilename, structSizeSino3d);
+    sinogramFilename = [outputPathScatter pathBar 'sinogram'];
+    interfileWriteSino(single(sinograms_rand_scat_subtracted), sinogramFilename, structSizeSino3d);
     if useGpu == 0
         disp('Osem reconstruction...');
         saveInterval = 1;
         saveIntermediate = 0;
-        outputFilenamePrefix = [outputPathScatter1 'reconImage'];
-        filenameOsemConfig = [outputPathScatter1 'osem.par'];
+        outputFilenamePrefix = [outputPathScatter 'reconImage'];
+        filenameOsemConfig = [outputPathScatter 'osem.par'];
         CreateOsemConfigFileForMmr(filenameOsemConfig, [sinogramFilename '.h33'], [filenameInitialEstimate '.h33'], outputFilenamePrefix, numIterations, [],...
             numSubsets, saveInterval, saveIntermediate, [], [], [], [anfFilename '.h33']);
         % Execute APIRL: 
@@ -271,8 +251,8 @@ legend('Sinogram', 'Randoms', 'Scatter', 'Randoms+Scatter');
         disp('cuOsem reconstruction...');
         saveInterval = 10;
         saveIntermediate = 0;
-        outputFilenamePrefix = [outputPathScatter1 'reconImage'];
-        filenameMlemConfig = [outputPathScatter1 'cuosem.par'];
+        outputFilenamePrefix = [outputPathScatter 'reconImage'];
+        filenameMlemConfig = [outputPathScatter 'cuosem.par'];
         CreateCuMlemConfigFileForMmr(filenameMlemConfig, [sinogramFilename '.h33'], [filenameInitialEstimate '.h33'], outputFilenamePrefix, numIterations, [],...
             saveInterval, saveIntermediate, [], [], [], [anfFilename '.h33'], 0, 576, 576, 512, numSubsets);
         % Execute APIRL: 
@@ -280,23 +260,27 @@ legend('Sinogram', 'Randoms', 'Scatter', 'Randoms+Scatter');
     end
     volume = interfileRead([outputFilenamePrefix '_final.h33']);
 
+    [scatter_2, structSizeSino, mask] = estimateScatterWithStir(volume, attenMap, pixelSize_mm, sinograms, randoms, overall_ncf_3d, acfsOnlyHuman, structSizeSino3d, outputPathScatter, stirScriptsPath, thresholdForTail);
+    interfileWriteSino(single(scatter_2), [outputPathScatter 'scatter'], structSizeSino3d);
     
-    outputPathScatter2 = [outputPath pathBar 'Scatter2' pathBar];
-    [scatter_2, structSizeSino, mask] = estimateScatterWithStir(volume, attenMap, pixelSize_mm, sinogram_precorrected, acfsOnlyHuman, structSizeSino3d, outputPathScatter2, stirScriptsPath, thresholdForTail);
-    interfileWriteSino(single(scatter_2), [outputPathScatter2 'scatter'], structSizeSino3d);
+    outputPathScatter = [outputPath pathBar 'ScatterFinal' pathBar];
+    if ~isdir(outputPathScatter)
+        mkdir(outputPathScatter);
+    end
     scatter = (scatter_1+scatter_2)./2;
-    interfileWriteSino(single(scatter), [outputPathScatter2 'scatter_1_2'], structSizeSino3d);
+    interfileWriteSino(single(scatter), [outputPathScatter 'scatter'], structSizeSino3d);
     % Reconstruct again with the scatter:
-    sinogram_scatter_corrected = sinograms - scatter .* overall_nf_3d;
+    sinograms_rand_scat_subtracted = sinograms  - randoms - scatter .* overall_nf_3d;
+    sinograms_rand_scat_subtracted(sinograms_rand_scat_subtracted<0) = 0;
     % Rewrite input singoram:
-    sinogramFilename = [outputPathScatter2 pathBar 'sinogram'];
-    interfileWriteSino(single(sinogram_scatter_corrected), sinogramFilename, structSizeSino3d);
+    sinogramFilename = [outputPathScatter pathBar 'sinogram'];
+    interfileWriteSino(single(sinograms_rand_scat_subtracted), sinogramFilename, structSizeSino3d);
     if useGpu == 0
         disp('Osem reconstruction...');
         saveInterval = 1;
         saveIntermediate = 0;
-        outputFilenamePrefix = [outputPathScatter2 'reconImage'];
-        filenameOsemConfig = [outputPathScatter2 'osem.par'];
+        outputFilenamePrefix = [outputPathScatter 'reconImage'];
+        filenameOsemConfig = [outputPathScatter 'osem.par'];
         CreateOsemConfigFileForMmr(filenameOsemConfig, [sinogramFilename '.h33'], [filenameInitialEstimate '.h33'], outputFilenamePrefix, numIterations, [],...
             numSubsets, saveInterval, saveIntermediate, [], [], [], [anfFilename '.h33']);
         % Execute APIRL: 
@@ -305,8 +289,8 @@ legend('Sinogram', 'Randoms', 'Scatter', 'Randoms+Scatter');
         disp('cuOsem reconstruction...');
         saveInterval = 10;
         saveIntermediate = 0;
-        outputFilenamePrefix = [outputPathScatter2 'reconImage'];
-        filenameMlemConfig = [outputPathScatter2 'cuosem.par'];
+        outputFilenamePrefix = [outputPathScatter 'reconImage'];
+        filenameMlemConfig = [outputPathScatter 'cuosem.par'];
         CreateCuMlemConfigFileForMmr(filenameMlemConfig, [sinogramFilename '.h33'], [filenameInitialEstimate '.h33'], outputFilenamePrefix, numIterations, [],...
             saveInterval, saveIntermediate, [], [], [], [anfFilename '.h33'], 0, 576, 576, 512, numSubsets);
         % Execute APIRL: 

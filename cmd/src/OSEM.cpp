@@ -479,8 +479,9 @@ int main (int argc, char *argv[])
   {
     mlem->setNormalizationFactorsProjection(normFilename);
   }
-  // Aplico las correcciones:
-  mlem->correctInputSinogram();
+  // Ahora solo aplico las correcciones en cada iteración.
+//   // Aplico las correcciones:
+//   mlem->correctInputSinogram();
   // Reconstruyo.
   mlem->Reconstruct();
 //	mlem->reconstructionImage->writeInterfile(sprintf("%s_end", outputPrefix.c_str()));
