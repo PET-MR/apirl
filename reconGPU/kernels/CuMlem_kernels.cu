@@ -50,6 +50,8 @@ __global__ void cuAddVectors (float* outputInput1, float* input2, int numElement
   if(indexSino2D>=numR*numProj)
     return;
   int indiceMichelogram = indexSino2D + blockIdx.y * (numProj * numR);
+  if(indiceMichelogram >= numElements)
+    return;
   outputInput1[indiceMichelogram] = outputInput1[indiceMichelogram] + input2[indiceMichelogram];
   if(outputInput1[indiceMichelogram] < 0)
   {

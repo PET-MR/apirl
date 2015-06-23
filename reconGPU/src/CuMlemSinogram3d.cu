@@ -743,6 +743,15 @@ bool CuMlemSinogram3d::updatePixelValue()
   return true;
 }
 
+bool CuMlemSinogram3d::addSinograms(float* d_inputOuputSino1, float* d_inputSino2, int numElements)
+{
+  // Llamo al kernel que actualiza el pixel.
+  cuUpdatePixelValue<<<gridSizeProjector, blockSizeProjector>>>(d_inputOuputSino1, d_inputSino2, numElements);
+  cudaThreadSynchronize();
+  return true;
+}
+
+
 bool CuMlemSinogram3d::computeSensitivity(TipoProyector tipoProy)
 {
   /// Creo un Sinograma ·D igual que el de entrada.

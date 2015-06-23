@@ -84,6 +84,9 @@ class CuMlemSinogram3d : public MlemSinogram3d
     /// Sensitivity Image.
     /* Puntero a al dirección de memoria en GPU donde se tendrá la imagen de sensibilidad.*/
     float* d_sensitivityImage;
+    
+    /// Additive sinogram in the forward model.
+    float* d_additiveSinogram;
 
     /// CudaArray para manejar la imagen en una textura.
     /** CudaArray para manejar la imagen en una textura 3d. */
@@ -181,6 +184,12 @@ class CuMlemSinogram3d : public MlemSinogram3d
      * El resultado se sobreescribe en d_reconstructionImage.
      */
     bool updatePixelValue();
+    
+    /// Suma dos sinogramas en memoria de GPU.
+    /** Suma dos sinogramas en memoria de gpu y lo guarda en el primero de los parámetros.
+     * 
+     */
+    bool addSinograms(float* d_inputOuputSino1, float* d_inputSino2, int numElements);
     
     /// Obtiene el valor de likelihood actual en la reconstrucción.
     /** Estima el likelihood a nivel de gpu entre d_estimatedProjection y d_inputProjection.
