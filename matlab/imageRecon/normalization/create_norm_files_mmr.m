@@ -120,7 +120,6 @@ crystalInterfFactor = repmat(crystalInterfFactor', 1, structSizeSino3d.numTheta/
 if span_choice == 11
     axialFactors = structSizeSino3d.numSinosMashed'.* (1./(componentFactors{4}.*componentFactors{8}));
 elseif span_choice == 1
-    axialFactors = structSizeSino3d.numSinosMashed'; % All ones!
     % Generate axial factors from a block profile saved before:
     gainPerPixelInBlock = load('axialGainPerPixelInBlock.mat');
     if(isstruct(gainPerPixelInBlock))
@@ -164,6 +163,11 @@ elseif span_choice == 1
             end
         end    
     end
+    % Normalize to ones:
+    axialFactors = axialFactors ./ mean(axialFactors);
+    % Apply sinogram normaliztion (in this case it is not necessary, but fo
+    %r other spans it is:
+    axialFactors = axialFactors'.*structSizeSino3d.numSinosMashed'; % All ones!
 else
     axialFactors = structSizeSino3d.numSinosMashed';
 end
@@ -171,7 +175,7 @@ end
 % Generate scanner time invariant:
 for i = 1 : sum(structSizeSino3d.sinogramsPerSegment)
     % First the geomeitric, crystal interference factors:
-    scanner_time_invariant_ncf_3d(:,:,i) = 1./(geometricFactor);% .* crystalInterfFactor);
+    scanner_time_invariant_ncf_3d(:,:,i) = 1./(geometricFactor .* crystalInterfFactor);
     % Axial factor:
     scanner_time_invariant_ncf_3d(:,:,i) = scanner_time_invariant_ncf_3d(:,:,i) .* (1./axialFactors(i));
 end

@@ -47,6 +47,8 @@ numberOfAxialCrystalsPerBlock = 8;
 mapBucket1Ids = ceil(mapDet1Ids/(numberOfTransverseBlocksPerBucket*numberOfTransverseCrystalsPerBlock));
 mapBucket2Ids = ceil(mapDet2Ids/(numberOfTransverseBlocksPerBucket*numberOfTransverseCrystalsPerBlock));
 
+% histBuckets = zeros(size(1:numberOfBuckets));
+
 % Now we start going through each possible sinogram, then get the rings of
 % each sinogram and get the crystal efficency for that ring in det1 and the
 % crystal effiencies for the sencdo ring with det2. When there is axial
@@ -78,6 +80,7 @@ for segment = 1 : structSizeSino.numSegments
                     axialBucket2 = ceil(z2 / (numberOfAxialBlocksPerBucket*numberOfAxialCrystalsPerBlock));
                     bucketsId1 = mapBucket1Ids + (axialBucket1-1)*numberOfBucketsInRing;
                     bucketsId2 = mapBucket2Ids + (axialBucket2-1)*numberOfBucketsInRing;
+%                     histBuckets = histBuckets + hist([bucketsId1(:); bucketsId2(:)], 1:numberOfBuckets);
                     sinoRandoms(:,:,indiceSino) = structInterfile.CoincidenceWindowWidthNs*1e-9* singles_rates_per_bucket(bucketsId1) ./ (numberOfTransverseCrystalsPerBlock_withoutGaps*numberOfAxialCrystalsPerBlock*numberOfTransverseBlocksPerBucket*numberOfAxialBlocksPerBucket) .* singles_rates_per_bucket(bucketsId2) ./ (numberOfTransverseCrystalsPerBlock_withoutGaps*numberOfAxialCrystalsPerBlock*numberOfTransverseBlocksPerBucket*numberOfAxialBlocksPerBucket); % I need to normalize to singles rate per bin
                 end
             end
@@ -93,7 +96,7 @@ for segment = 1 : structSizeSino.numSegments
         end
     end    
 end
-
+% bar(histBuckets);
 % The image is in cps, convert to total counts, in order to be ready to
 % apply to the randoms correction:
 sinoRandoms = sinoRandoms .* structInterfile.ImageDurationSec;

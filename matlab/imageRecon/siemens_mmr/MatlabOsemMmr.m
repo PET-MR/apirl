@@ -31,7 +31,7 @@
 % Examples:
 %   [volume randoms scatter] = MatlabOsemMmr(sinogramFilename, span, normFilename, attMapBaseFilename, correctRandoms, correctScatter, outputPath, pixelSize_mm, numSubsets, numIterations, saveInterval, useGpu, stirMatlabPath)
 
-function [volume randoms scatter] = MatlabOsemMmr(sinogramFilename, span, normFilename, attMapBaseFilename, correctRandoms, correctScatter, outputPath, pixelSize_mm, numSubsets, numIterations, saveInterval, useGpu, stirMatlabPath)
+function [volume randoms scatter] = MatlabOsemMmr(sinogramInputFilename, span, normFilename, attMapBaseFilename, correctRandoms, correctScatter, outputPath, pixelSize_mm, numSubsets, numIterations, saveInterval, useGpu, stirMatlabPath)
 
 if ~isdir(outputPath)
     mkdir(outputPath);
@@ -51,7 +51,7 @@ end
 
 % Check if we have received pixel size:
 if nargin ~= 13
-    error('Wrong number of parameters: [volume randoms scatter] = MatlabOsemMmr(sinogramFilename, span, normFilename, attMapBaseFilename, correctRandoms, correctScatter, outputPath, pixelSize_mm, numSubsets, numIterations, saveInterval, useGpu, stirMatlabPath)');
+    error('Wrong number of parameters: [volume randoms scatter] = MatlabOsemMmr(sinogramInputFilename, span, normFilename, attMapBaseFilename, correctRandoms, correctScatter, outputPath, pixelSize_mm, numSubsets, numIterations, saveInterval, useGpu, stirMatlabPath)');
 end
 imageSize_mm = [600 600 257.96875];
 imageSize_pixels = ceil(imageSize_mm./pixelSize_mm);
@@ -59,7 +59,7 @@ imageSize_pixels = ceil(imageSize_mm./pixelSize_mm);
 %% READING THE SINOGRAMS
 disp('Read input sinogram...');
 % Read the sinograms:
-[sinograms, delayedSinograms, structSizeSino3dSpan1] = interfileReadSino(sinogramFilename);
+[sinograms, delayedSinograms, structSizeSino3dSpan1] = interfileReadSino(sinogramInputFilename);
 % Convert to span:
 [sinograms, structSizeSino3d] = convertSinogramToSpan(sinograms, structSizeSino3dSpan1, span);
 sinogramFilename = [outputPath pathBar 'sinogram'];
@@ -75,7 +75,7 @@ initialEstimate = ones(imageSize_pixels, 'single');
 if isstr(normFilename)
     disp('Computing the normalization correction factors...');
     % ncf:
-    [overall_ncf_3d, scanner_time_invariant_ncf_3d, scanner_time_variant_ncf_3d, used_xtal_efficiencies, used_deadtimefactors, used_axial_factors] = ...
+    [overall_ncf_3d, scanner_time_invariant_ncf_3d, scanner_time_variant_ncf_3d, acquisition_dependant_ncf_3d, used_xtal_efficiencies, used_deadtimefactors, used_axial_factors] = ...
        create_norm_files_mmr(normFilename, [], [], [], [], structSizeSino3d.span);
     % invert for nf:
     overall_nf_3d = overall_ncf_3d;
@@ -180,6 +180,21 @@ else
     if(correctRandoms)
         % Stir computes randoms that are already normalized:
         [randoms, structSizeSino] = estimateRandomsWithStir(delayedSinograms, structSizeSino3dSpan1, overall_ncf_3d, structSizeSino3d, [outputPath pathBar 'stirRandoms' pathBar]);
+        interfileWriteSino(single(randoms), [outputPath 'randoms'], structSizeSino3d);
+        
+        [detector1SystemMatrix, detector2SystemMatrix] = createDetectorSystemMatrix3d(span, 1);
+        sinoRandomsFromSinglesPerBucket = createRandomsFromSinglesPerBucket(sinogramInputFilename);
+        useOfDetectorsInDelayed = detector1SystemMatrix'*double(delayedSinograms(:)) + detector2SystemMatrix'*double(delayedSinograms(:));
+        useOfDetectorsInRandomsFromBucket = detector1SystemMatrix'*double(sinoRandomsFromSinglesPerBucket(:)) + detector2SystemMatrix'*double(sinoRandomsFromSinglesPerBucket(:));
+        crystalEff = zeros(size(useOfDetectorsInDelayed));
+        crystalEff(useOfDetectorsInRandomsFromBucket~=0) = useOfDetectorsInDelayed(useOfDetectorsInRandomsFromBucket~=0) ./ useOfDetectorsInRandomsFromBucket(useOfDetectorsInRandomsFromBucket~=0);
+        crystalEff = crystalEff ./ mean(crystalEff~=0);
+        crystalEff = reshape(crystalEff, [504 64]);
+        [overall_ncf_3d, scanner_time_invariant_ncf_3d, scanner_time_variant_ncf_3d, acquisition_dependant_ncf_3d, used_xtal_efficiencies, used_deadtimefactors, used_axial_factors] = ...
+            create_norm_files_mmr(normFilename, [], crystalEff, [], [], structSizeSino3d.span);
+        randoms_2 = zeros(size(sinoRandomsFromSinglesPerBucket));
+        randoms_2(scanner_time_variant_ncf_3d~=0) = sinoRandomsFromSinglesPerBucket(scanner_time_variant_ncf_3d~=0) ./ scanner_time_variant_ncf_3d(scanner_time_variant_ncf_3d~=0);
+        interfileWriteSino(single(randoms_2), [outputPath 'randoms_2'], structSizeSino3d);
     else
         randoms = zeros(size(sinograms));
     end
