@@ -13,11 +13,11 @@
 % you can define the number of subsets and then will run the osem version.
 %
 % function CreateCuMlemConfigFileForMmr(configfilename, inputFile, initialEstimate, outputFilenamePrefix, numIterations, sensitivityImage,...
-%    saveInterval, saveIntermediate, acfSinogram, scatterSinogram, randomSinograms, normalizationFactors, gpuId, projectorThreadsPerBlock, backprojectorThreadsPerBlock, updateThreadsPerBlock, numSubsets)
+%    saveInterval, saveIntermediate, multiplicativeSinogram, additiveSinogram, gpuId, projectorThreadsPerBlock, backprojectorThreadsPerBlock, updateThreadsPerBlock, numSubsets)
 %
 %
 function CreateCuMlemConfigFileForMmr(configfilename, inputFile, initialEstimate, outputFilenamePrefix, numIterations, sensitivityImage,...
-    saveInterval, saveIntermediate, acfSinogram, scatterSinogram, randomSinograms, normalizationFactors, gpuId, projectorThreadsPerBlock, backprojectorThreadsPerBlock, updateThreadsPerBlock, numSubsets)
+    saveInterval, saveIntermediate, multiplicativeSinogram, additiveSinogram, gpuId, projectorThreadsPerBlock, backprojectorThreadsPerBlock, updateThreadsPerBlock, numSubsets)
 
 % Primero genero el archivo de encabezado.
 fid = fopen(configfilename, 'w');
@@ -60,7 +60,7 @@ else
 end
 
 fprintf(fid,'number of iterations := %d\n', numIterations);
-if (nargin == 17)
+if (nargin == 15)
     if numSubsets ~= 0
         fprintf(fid,'number of subsets := %d\n', numSubsets);
     end
@@ -68,17 +68,11 @@ end
 fprintf(fid,'save estimates at iteration intervals := %d\n', saveInterval);
 fprintf(fid,'save estimated projections and backprojected image := %d\n', saveIntermediate);
 % Por último las correcciones, sino están defnidos los escribo:
-if ~strcmp(acfSinogram, '')
-    fprintf(fid,'attenuation correction factors := %s\n', acfSinogram);
+if ~strcmp(multiplicativeSinogram, '')
+    fprintf(fid,'multiplicative sinogram := %s\n', multiplicativeSinogram);
 end
-if ~strcmp(scatterSinogram, '')
-    fprintf(fid,'scatter correction sinogram := %s\n', scatterSinogram);
-end
-if ~strcmp(randomSinograms, '')
-    fprintf(fid,'randoms correction sinogram := %s\n', randomSinograms);
-end
-if ~strcmp(normalizationFactors, '')
-    fprintf(fid,'normalization correction factors := %s\n', normalizationFactors);
+if ~strcmp(additiveSinogram, '')
+    fprintf(fid,'additive sinogram := %s\n', additiveSinogram);
 end
 
 

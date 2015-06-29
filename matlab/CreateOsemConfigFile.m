@@ -7,7 +7,7 @@
 % OSEM:
 
 function CreateOsemConfigFile(configfilename, inputType, inputFile, initialEstimate, outputFilenamePrefix, blindArea_mm, minDiffDetectors, numIterations,...
-    numSubsets, saveInterval, saveIntermediate, acfSinogram, scatterSinogram, randomSinograms)
+    numSubsets, saveInterval, saveIntermediate, multiplicativeSinogram, additiveSinogram)
 
 % Primero genero el archivo de encabezado.
 fid = fopen(configfilename, 'w');
@@ -36,15 +36,12 @@ fprintf(fid,'number of subsets := %d\n', numSubsets);
 fprintf(fid,'save estimates at iteration intervals := %d\n', saveInterval);
 fprintf(fid,'save estimated projections and backprojected image := %d\n', saveIntermediate);
 % Por último las correcciones, sino están defnidos los escribo:
-if nargin > 10
-    if ~strcmp(acfSinogram, '')
-        fprintf(fid,'attenuation correction factors := %s\n', acfSinogram);
+if nargin > 11
+    if ~strcmp(multiplicativeSinogram, '')
+    fprintf(fid,'multiplicative sinogram := %s\n', multiplicativeSinogram);
     end
-    if ~strcmp(scatterSinogram, '')
-        fprintf(fid,'scatter correction sinogram := %s\n', scatterSinogram);
-    end
-    if ~strcmp(randomSinograms, '')
-        fprintf(fid,'randoms correction sinogram := %s\n', randomSinograms);
+    if ~strcmp(additiveSinogram, '')
+        fprintf(fid,'additive sinogram := %s\n', additiveSinogram);
     end
 end
 fclose(fid);

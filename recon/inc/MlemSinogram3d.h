@@ -23,22 +23,22 @@ using namespace::std;
 
 // DLL export/import declaration: visibility of objects
 #ifndef LINK_STATIC
-	#ifdef WIN32               // Win32 build
-		#ifdef DLL_BUILD    // this applies to DLL building
-			#define DLLEXPORT __declspec(dllexport)
-		#else                   // this applies to DLL clients/users
-			#define DLLEXPORT __declspec(dllimport)
-		#endif
-		#define DLLLOCAL        // not explicitly export-marked objects are local by default on Win32
-	#else
-		#ifdef HAVE_GCCVISIBILITYPATCH   // GCC 4.x and patched GCC 3.4 under Linux
-			#define DLLEXPORT __attribute__ ((visibility("default")))
-			#define DLLLOCAL __attribute__ ((visibility("hidden")))
-		#else
-			#define DLLEXPORT
-			#define DLLLOCAL
-		#endif
-	#endif
+  #ifdef WIN32               // Win32 build
+    #ifdef DLL_BUILD    // this applies to DLL building
+      #define DLLEXPORT __declspec(dllexport)
+    #else                   // this applies to DLL clients/users
+      #define DLLEXPORT __declspec(dllimport)
+    #endif
+    #define DLLLOCAL        // not explicitly export-marked objects are local by default on Win32
+  #else
+    #ifdef HAVE_GCCVISIBILITYPATCH   // GCC 4.x and patched GCC 3.4 under Linux
+      #define DLLEXPORT __attribute__ ((visibility("default")))
+      #define DLLLOCAL __attribute__ ((visibility("hidden")))
+    #else
+      #define DLLEXPORT
+      #define DLLLOCAL
+    #endif
+  #endif
 #else                         // static linking
 	#define DLLEXPORT
 	#define DLLLOCAL
@@ -65,27 +65,19 @@ class DLLEXPORT MlemSinogram3d : public Mlem
     puede ser alguno de los distintos tipos de proyección: sinograma 2D, sinograma 3D, etc. */
     Sinogram3D* inputProjection;
     
-    /// Proyección con factores de corrección por atenuación.
-    /** Objeto del tipo Projection que será la entrada al algoritmo de reconstrucción,
-    puede ser alguno de los distintos tipos de proyección: sinograma 2D, sinograma 3D, etc. */
-    Sinogram3D* attenuationCorrectionFactorsProjection;
+    /// Sinograma con factores multiplicativos en el modelo de proyección.
+    /** Objeto del tipo Sinogram3D con el factor multiplicativo en el proyector, o sea debe 
+      * incluir factores de atenuación y de normalización entre otros. 
+      */
+    Sinogram3D* multiplicativeProjection;
     
-    /// Proyección con la estimación de randoms en cada posición del sinograma.
-    /** Objeto del tipo Projection que será la entrada al algoritmo de reconstrucción,
-      * puede ser alguno de los distintos tipos de proyección: sinograma 2D, sinograma 3D, etc. 
-      * Este sinograma debe restarse al de la adquisición.	  
+    /// Sinograma con el factor aditivo en el modelo de proyección.
+    /** Objeto del tipo Sinogram3D que será el factor aditivo en la proyección.
+      * Este sinograma es un termino aditivo en la proyección por lo que debe incluir corrección por
+      * randoms y scatter. El término aditivo debe estar dividido por el multiplicative factor, 
+      * ya que este se aplica solo en la sensitivity image.  
     */
-    Sinogram3D* randomsCorrectionProjection;
-    
-    /// Proyección con la estimación del scatter.
-    /** Objeto del tipo Projection que será la entrada al algoritmo de reconstrucción,
-    puede ser alguno de los distintos tipos de proyección: sinograma 2D, sinograma 3D, etc. */
-    Sinogram3D* scatterCorrectionProjection;
-    
-    /// Proyección de normalización. Es unfactor multiplicativo.
-    /** Objeto del tipo Projection que será la entrada al algoritmo de reconstrucción,
-    puede ser alguno de los distintos tipos de proyección: sinograma 2D, sinograma 3D, etc. */
-    Sinogram3D* normalizationCorrectionFactorsProjection;
+    Sinogram3D* additiveProjection;
     
     /// Método que calcula la imagen de sensibilidad.
     /* Método que hace la backprojection de una imagen cosntante para obtener
@@ -102,29 +94,16 @@ class DLLEXPORT MlemSinogram3d : public Mlem
     a partir de un archivo de configuración con cierto formato dado. */
     MlemSinogram3d(string configFilename);
     
-    /// Método que carga los coeficientes de corrección de atenuación desde un archivo interfile para aplicar como corrección.
-    /**  Este método habilita la corrección de atenuación y carga la imagen de mapa de atenuación de una imagen interfile.
-	  
+    /// Método que carga desde un archivo interfile el factor multiplicativo del modelo de proyección.
+    /**  Este método habilita el factor multiplicativo en el forward model de la proyección.
     */
-    bool setAcfProjection(string acfFilename);
+    bool setMultiplicativeProjection(string acfFilename);
     
-    /// Método que carga un sinograma desde un archivo interfile con la estimación de scatter para aplicar como corrección.
-    /**  Este método habilita la corrección por randoms y carga un sinograma para ello.
+    /// Método que carga un sinograma desde un archivo interfile con el término aditivo en el modelo de la proyección.
+    /**  Este método habilita el termino aditivo en el forward model del proyector. El término aditivo
+      * debe estar dividido por el multiplicative factor, ya que este se aplica solo en la sensitivity image.
     */
-    bool setScatterCorrectionProjection(string acfFilename);
-    
-    /// Método que carga un sinograma desde un archivo interfile con la estimación de randomc para aplicar como corrección.
-    /**  Este método habilita la corrección por randoms y carga un sinograma para ello.
-    */
-    bool setRandomCorrectionProjection(string acfFilename);
-    
-    /// Método que carga un sinograma desde un archivo interfile con los factores de normalización.
-    /**  Este método habilita la corrección por randoms y carga un sinograma para ello.
-    */
-    bool setNormalizationFactorsProjection(string normFilename);
-    
-    /// Método que aplica las correcciones habilitadas según se hayan cargado los sinogramas de atenuación, randoms y/o scatter.
-    bool correctInputSinogram();
+    bool setAdditiveProjection(string acfFilename);
 		
     /// Método que realiza la reconstrucción de las proyecciones. 
     bool Reconstruct();

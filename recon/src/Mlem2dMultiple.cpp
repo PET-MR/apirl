@@ -26,82 +26,27 @@ Mlem2dMultiple::Mlem2dMultiple(string configFilename)
   this->likelihoodValues = (float*)malloc(sizeof(float)*1);
 }
 
-/// Método que carga los coeficientes de corrección de atenuación desde un archivo interfile para aplicar como corrección.
-bool Mlem2dMultiple::setAcfProjection(string acfFilename)
+bool Mlem2dMultiple::setMultiplicativeProjection(string multiplicativeFilename)
 {
-  // Los leo como cylindrical, total para la corrección lo único que importa es realizar la resta bin a bin:
-  attenuationCorrectionFactorsProjection = new Sinograms2DinCylindrical3Dpet((char*)acfFilename.c_str(), inputProjection->getRadioFov_mm(), inputProjection->getAxialFoV_mm(), inputProjection->getRadioFov_mm());
-  enableAttenuationCorrection = true;  
-  return enableAttenuationCorrection;
+  // Problema porque sinogram2d no tiene get lor para hacer backprojection
+  // Instead of create a new sinogram instantiating a new object, I copy from inputProject. This way, is independent of the type
+  // of derived class od sinogram3d it is being used.
+  multiplicativeProjection = inputProjection->Copy();
+  multiplicativeProjection->readFromInterfile((char*)multiplicativeFilename.c_str());
+  enableMultiplicativeTerm = true;
+  return enableMultiplicativeTerm;
 }
-    
+
 /// Método que carga un sinograma desde un archivo interfile con la estimación de scatter para aplicar como corrección.
-bool Mlem2dMultiple::setScatterCorrectionProjection(string scatterFilename)
+bool Mlem2dMultiple::setAdditiveProjection(string additiveFilename)
 {
-  // Los leo como cylindrical, total para la corrección lo único que importa es realizar la resta bin a bin:
-  scatterCorrectionProjection = new Sinograms2DinCylindrical3Dpet((char*)scatterFilename.c_str(), inputProjection->getRadioFov_mm(), inputProjection->getAxialFoV_mm(), inputProjection->getRadioFov_mm());
-
-  enableScatterCorrection = true;
-  return enableScatterCorrection;
-}
-    
-/// Método que carga un sinograma desde un archivo interfile con la estimación de randomc para aplicar como corrección.
-bool Mlem2dMultiple::setRandomCorrectionProjection(string randomsFilename)
-{
-  // Los leo como cylindrical, total para la corrección lo único que importa es realizar la resta bin a bin:
-  randomsCorrectionProjection = new Sinograms2DinCylindrical3Dpet((char*)randomsFilename.c_str(), inputProjection->getRadioFov_mm(), inputProjection->getAxialFoV_mm(), inputProjection->getRadioFov_mm());
-  enableRandomsCorrection = true;
-  return enableRandomsCorrection;
-}
-
-bool Mlem2dMultiple::setNormalizationFactorsProjection(string normFilename)
-{
-  // Seteo un valor arbitro de radio del scanner para que sea más grande que el fov.
-  normalizationCorrectionFactorsProjection= new Sinograms2DinCylindrical3Dpet((char*)normFilename.c_str(), inputProjection->getRadioFov_mm(), inputProjection->getAxialFoV_mm(), inputProjection->getRadioFov_mm()*1.4f);
-  enableNormalization = true;
-  return enableNormalization;
-}
-
-/// Método que aplica las correcciones habilitadas según se hayan cargado los sinogramas de atenuación, randoms y/o scatter.
-bool Mlem2dMultiple::correctInputSinogram()
-{
-  for(int j = 0; j < inputProjection->getNumSinograms(); j++)
-  {
-    for(int k = 0; k < inputProjection->getSinogram2D(j)->getNumProj(); k++)
-    {
-      for(int l = 0; l <  inputProjection->getSinogram2D(j)->getNumR(); l++)
-      {
-		if(enableScatterCorrection)
-		{
-			inputProjection->getSinogram2D(j)->setSinogramBin(k,l, inputProjection->getSinogram2D(j)->getSinogramBin(k,l)-
-			scatterCorrectionProjection->getSinogram2D(j)->getSinogramBin(k,l));
-		}
-		if(enableRandomsCorrection)
-		{
-			inputProjection->getSinogram2D(j)->setSinogramBin(k,l, inputProjection->getSinogram2D(j)->getSinogramBin(k,l)-
-			randomsCorrectionProjection->getSinogram2D(j)->getSinogramBin(k,l));
-		}
-		// Verifico que no quedo ningún bin negativo:
-		if(inputProjection->getSinogram2D(j)->getSinogramBin(k,l) < 0)
-		{
-			inputProjection->getSinogram2D(j)->setSinogramBin(k,l,0);
-		}
-	
-		// Por último, aplico la corrección por atenuación:
-		if(enableAttenuationCorrection)
-		{
-			inputProjection->getSinogram2D(j)->setSinogramBin(k,l,inputProjection->getSinogram2D(j)->getSinogramBin(k,l)*
-			attenuationCorrectionFactorsProjection->getSinogram2D(j)->getSinogramBin(k,l));
-		}
-      }
-    }
-  }
-  char c_string[100];
-  sprintf(c_string, "%s_correctedSinogram", this->outputFilenamePrefix.c_str()); 
-  inputProjection->writeInterfile(c_string);
-  return true;
-}
-
+  // Instead of create a new sinogram instantiating a new object, I copy from inputProject. This way, is independent of the type
+  // of derived class od sinogram3d it is being used.
+  additiveProjection = inputProjection->Copy();
+  additiveProjection->readFromInterfile((char*)additiveFilename.c_str());
+  enableAdditiveTerm = true;
+  return enableAdditiveTerm;
+}   
 
 /// Método público que realiza la reconstrucción en base a los parámetros pasados al objeto Mlem instanciado
 bool Mlem2dMultiple::Reconstruct()
@@ -128,9 +73,12 @@ bool Mlem2dMultiple::Reconstruct()
     // Por practicidad no guardo los datos de cada MLEM.
     //mlem2d = new Mlem2d((Sinogram2D*) this->inputProjection->getSinogram2D(i), slice, this->pathSalida, outputPrefixForSlice, this->numIterations, 0, 0,this->sensitivityImageFromFile, this->forwardprojector, this->backprojector);
     mlem2d = new Mlem2d(this->inputProjection->getSinogram2D(i), slice, this->pathSalida, outputPrefixForSlice, this->numIterations, this->saveIterationInterval, this->saveIntermediateProjectionAndBackprojectedImage,this->sensitivityImageFromFile, this->forwardprojector, this->backprojector);
-    // Set the normalization if its enabled:
-    if(enableNormalization)
-      mlem2d->setNormalizationFactorsProjection(this->normalizationCorrectionFactorsProjection->getSinogram2D(i));
+    // Set the multiplcative if its enabled:
+    if(enableMultiplicativeTerm)
+      mlem2d->setMultiplicativeProjection(this->multiplicativeProjection->getSinogram2D(i));
+    // Set the additive if its enabled:
+    if(enableAdditiveTerm)
+      mlem2d->setAdditiveProjection(this->additiveProjection->getSinogram2D(i));
     mlem2d->Reconstruct();
     // Con el slice ya reconstruido lo debo copiar al volumen. Ya previamente verifiqué que tenía un sinograma por slice, así que simplemente lo copio:
     reconstructionImage->setSlice(i, mlem2d->getReconstructedImage());

@@ -168,24 +168,13 @@ bool OsemSinogram3d::Reconstruct()
       
       /// Proyección de la imagen:
       forwardprojector->Project(reconstructionImage, estimatedProjection);
-      /// Si hay normalización, la aplico luego de la proyección:
-      /*if(enableNormalization)
-      {
-	normalizationSubset = normalizationCorrectionFactorsProjection->getSubset(s, numSubsets);
-	estimatedProjection->multiplyBinToBin(normalizationSubset);
-      }*/
-      /// After thr projection, see if there is an estimate for randoms:
-      if(randomsCorrectionProjection != NULL)
-      {
-	// Randoms estimate are included as an additive sinogram in the denominator:
-	estimatedProjection->addBinToBin(randomsCorrectionProjection);
-      }
-      /// The same for scatter:
-      if(scatterCorrectionProjection != NULL)
-      {
-	// Randoms estimate are included as an additive sinogram in the denominator:
-	estimatedProjection->addBinToBin(scatterCorrectionProjection);
-      }
+      // El factor multiplicativo lo aplico solo en la sensitivity, por lo que el aditivo tiene que estar divido por el multiplicativo.
+//     /// Si hay normalización, la aplico luego de la proyección:
+//     if(enableMultiplicativeTerm)
+//       estimatedProjection->multiplyBinToBin(multiplicativeProjection);
+      if(enableAdditiveTerm)
+	estimatedProjection->addBinToBin(additiveProjection);
+      
       // Si hay que guardar la proyección, lo hago acá porque después se modifica:
       if((saveIterationInterval != 0) && ((t%saveIterationInterval)==0) && saveIntermediateProjectionAndBackprojectedImage)
       {
@@ -213,14 +202,10 @@ bool OsemSinogram3d::Reconstruct()
 	outputFilename.assign(c_string);
 	estimatedProjection->writeInterfile((char*)outputFilename.c_str());
       }
-      /// Si hay normalización, la aplico luego de la proyección:
-      /*if(enableNormalization)
-      {
-	// The subset was already generated in the projection process.
-	estimatedProjection->multiplyBinToBin(normalizationSubset);
-	// Free memory
-	delete normalizationSubset;
-      }*/
+      // El factor multiplicativo lo aplico solo en la sensitivity, por lo que el aditivo tiene que estar divido por el multiplicativo.
+//     /// Si hay normalización, la aplico luego de la proyección:
+//     if(enableMultiplicativeTerm)
+//       estimatedProjection->multiplyBinToBin(multiplicativeProjection);
       
       /// Retroproyecto
       backprojector->Backproject(estimatedProjection, backprojectedImage);
@@ -345,8 +330,8 @@ bool OsemSinogram3d::computeSensitivity(Image* outputImage, int indexSubset)
   Sinogram3D* backprojectSinogram3D;
 //  char c_string[100];
   /// Si no hay normalización lo lleno con un valor constante, de lo contrario bakcprojec normalizacion:
-  if (enableNormalization)
-    backprojectSinogram3D = normalizationCorrectionFactorsProjection->getSubset(indexSubset, numSubsets);
+  if (enableMultiplicativeTerm)
+    backprojectSinogram3D = multiplicativeProjection->getSubset(indexSubset, numSubsets);
   else
   {
     backprojectSinogram3D = inputProjection->getSubset(indexSubset, numSubsets);

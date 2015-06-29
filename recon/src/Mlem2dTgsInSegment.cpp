@@ -16,10 +16,10 @@ Mlem2dTgsInSegment::Mlem2dTgsInSegment(string configFilename)
 bool Mlem2dTgsInSegment::setAttenuationImage(string attenImageFilename) 
 {
   Mlem::setAttenuationImage(attenImageFilename);
-  attenuationCorrectionFactorsProjection = new Sinogram2DtgsInSegment(this->inputProjection);
-  this->enableAttenuationCorrection = true;
+  multiplicativeProjection = new Sinogram2DtgsInSegment(this->inputProjection);
+  this->enableMultiplicativeTerm = true;
   SiddonProjector* siddonProjector = new SiddonProjector();
-  siddonProjector->Project(attenuationImage, (Sinogram2DtgsInSegment*)attenuationCorrectionFactorsProjection);
+  siddonProjector->Project(attenuationImage, (Sinogram2DtgsInSegment*)multiplicativeProjection);
   // Hago lo mismo con una imagen constante, para ver lo que obtendría sin atenuación:
   // Ahora que tengo las proyecciones sin coeficiente de atenuación
   /*for(int i = 0; i < ((Sinogram2Dtgs*)attenuationCorrectionFactorsProjection)->getNumProj(); i++)

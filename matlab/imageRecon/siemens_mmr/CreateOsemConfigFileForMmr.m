@@ -7,7 +7,7 @@
 % OSEM para el sinograma Mmr.
 
 function CreateOsemConfigFileForMmr(configfilename, inputFile, initialEstimate, outputFilenamePrefix, numIterations, sensitivityImage,...
-    numSubsets, saveInterval, saveIntermediate, acfSinogram, scatterSinogram, randomSinograms, normalizationFactors, varargin)
+    numSubsets, saveInterval, saveIntermediate, multiplicativeSinogram, additiveSinogram, varargin)
 
 % Primero genero el archivo de encabezado.
 fid = fopen(configfilename, 'w');
@@ -33,18 +33,12 @@ fprintf(fid,'number of subsets := %d\n', numSubsets);
 fprintf(fid,'save estimates at iteration intervals := %d\n', saveInterval);
 fprintf(fid,'save estimated projections and backprojected image := %d\n', saveIntermediate);
 % Por último las correcciones, sino están defnidos los escribo:
-if nargin > 8
-    if ~strcmp(acfSinogram, '')
-        fprintf(fid,'attenuation correction factors := %s\n', acfSinogram);
+if nargin > 9
+    if ~strcmp(multiplicativeSinogram, '')
+        fprintf(fid,'multiplicative sinogram := %s\n', multiplicativeSinogram);
     end
-    if ~strcmp(scatterSinogram, '')
-        fprintf(fid,'scatter correction sinogram := %s\n', scatterSinogram);
-    end
-    if ~strcmp(randomSinograms, '')
-        fprintf(fid,'randoms correction sinogram := %s\n', randomSinograms);
-    end
-    if ~strcmp(normalizationFactors, '')
-        fprintf(fid,'normalization correction factors := %s\n', normalizationFactors);
+    if ~strcmp(additiveSinogram, '')
+        fprintf(fid,'additive sinogram := %s\n', additiveSinogram);
     end
 end
 

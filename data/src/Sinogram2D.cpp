@@ -231,6 +231,17 @@ void Sinogram2D::multiplyBinToBin(Sinogram2D* sinogramFactor)
   }
 }
 
+void Sinogram2D::addBinToBin(Sinogram2D* sinogramToAdd)
+{
+  for(int i = 0; i < numProj; i ++)
+  {
+    for(int j = 0; j < numR; j++)
+    {
+      this->setSinogramBin(i,j, this->getSinogramBin(i,j)+sinogramToAdd->getSinogramBin(i,j));
+    }
+  }
+}
+
 void Sinogram2D::inverseDivideBinToBin(Sinogram2D* sinogramDividend)
 {
   float numerador, denominador;

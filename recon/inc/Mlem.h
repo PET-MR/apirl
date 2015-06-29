@@ -210,35 +210,25 @@ class DLLEXPORT Mlem
 	  /** Flag que habilita la corrección por atenuación, para esto debe estar cargada la attenuationImage
 		 y luego calcular la attenuationCorrectionFactorsProjection->
 	  */
-	  bool enableAttenuationCorrection;
+	  bool enableMultiplicativeTerm;
 	  
-	  bool enableScatterCorrection;
+	  bool enableAdditiveTerm;
 	  
-	  bool enableRandomsCorrection;
-	  
-	  bool enableNormalization;
-	  
-	  /// Proyección con factores de corrección por atenuación.
+	  /// Proyección con factores multiplicativos en el modelo de proyección.
 	  /** Objeto del tipo Projection que será la entrada al algoritmo de reconstrucción,
-	  puede ser alguno de los distintos tipos de proyección: sinograma 2D, sinograma 3D, etc. */
-	  Projection* attenuationCorrectionFactorsProjection;
+	  puede ser alguno de los distintos tipos de proyección: sinograma 2D, sinograma 3D, etc. 
+	  Es el factor multiplicativo en el proyector, o sea debe incluir factores de atenuación y
+	  de normalización entre otros. */
+	  Projection* multiplicativeProjection;
 	  
-	  /// Proyección con la estimación de randoms en cada posición del sinograma.
+	  /// Proyección con el término aditivo en la proyección.
 	  /** Objeto del tipo Projection que será la entrada al algoritmo de reconstrucción,
 	   * puede ser alguno de los distintos tipos de proyección: sinograma 2D, sinograma 3D, etc. 
-	   * Este sinograma debe restarse al de la adquisición.	  
+	   * Este sinograma es un termino aditivo en la proyección por lo que debe incluir corrección por
+	   * randoms y scatter. El término aditivo debe estar dividido por el multiplicative factor, 
+	   * ya que este se aplica solo en la sensitivity image.
 	  */
-	  Projection* randomsCorrectionProjection;
-	  
-	  /// Proyección con la estimación del scatter.
-	  /** Objeto del tipo Projection que será la entrada al algoritmo de reconstrucción,
-	  puede ser alguno de los distintos tipos de proyección: sinograma 2D, sinograma 3D, etc. */
-	  Projection* scatterCorrectionProjection;
-	  
-	  //// Proyección con factores de corrección para normalización.
-	  /** Objeto del tipo Projection que será la entrada al algoritmo de reconstrucción,
-	  puede ser alguno de los distintos tipos de proyección: sinograma 2D, sinograma 3D, etc. */
-	  Projection* normalizationCorrectionFactorsProjection;
+	  Projection* additiveProjection;
 	  
 	  /// Umbral de la sensibility image para considerarla en la actualización del píxel.
 	  /** En el píxel update, se divide la imagen backprojected por la sensibility image. Esto hace que cuando 
@@ -290,29 +280,16 @@ class DLLEXPORT Mlem
 	  */
 	  virtual bool setAttenuationImage(string attenImageFilename);
 	
-	  /// Método que carga los coeficientes de corrección de atenuación desde un archivo interfile para aplicar como corrección.
-	  /**  Este método habilita la corrección de atenuación y carga la imagen de mapa de atenuación de una imagen interfile.
-		
+	  /// Método que carga desde un archivo interfile el factor multiplicativo del modelo de proyección.
+	  /**  Este método habilita el factor multiplicativo en el forward model de la proyección.
 	  */
-	  virtual bool setAcfProjection(string acfFilename) = 0;
+	  virtual bool setMultiplicativeProjection(string acfFilename) = 0;
 	  
-	  /// Método que carga un sinograma desde un archivo interfile con la estimación de scatter para aplicar como corrección.
-	  /**  Este método habilita la corrección por randoms y carga un sinograma para ello.
+	  /// Método que carga un sinograma desde un archivo interfile con el término aditivo en el modelo de la proyección.
+	  /**  Este método habilita el termino aditivo en el forward model del proyector. El término aditivo
+	   * debe estar dividido por el multiplicative factor, ya que este se aplica solo en la sensitivity image.
 	  */
-	  virtual bool setScatterCorrectionProjection(string acfFilename) = 0;
-	  
-	  /// Método que carga un sinograma desde un archivo interfile con la estimación de randomc para aplicar como corrección.
-	  /**  Este método habilita la corrección por randoms y carga un sinograma para ello.
-	  */
-	  virtual bool setRandomCorrectionProjection(string acfFilename) = 0;
-	  
-	  /// Método que carga un sinograma desde un archivo interfile con los factores de normalización.
-	  /**  Este método habilita la corrección por randoms y carga un sinograma para ello.
-	  */
-	  virtual bool setNormalizationFactorsProjection(string normFilename) = 0;
-	  
-	  /// Método que aplica las correcciones habilitadas según se hayan cargado los sinogramas de atenuación, randoms y/o scatter.
-	  virtual bool correctInputSinogram() = 0;
+	  virtual bool setAdditiveProjection(string acfFilename) = 0;
 	  
 	  /// Método que realiza la reconstrucción de las proyecciones. 
 	  virtual bool Reconstruct() {return false;};

@@ -14,10 +14,10 @@ Mlem::Mlem(Image* cInitialEstimate, string cPathSalida, string cOutputPrefix, in
   forwardprojector = cForwardprojector;
   backprojector = cBackprojector;
   // Las correciones por defecto deshabilitadas:
-  enableAttenuationCorrection = false;
-  enableRandomsCorrection = false;
-  enableScatterCorrection = false;
-  enableNormalization = false;
+  enableMultiplicativeTerm = false;
+  enableAdditiveTerm = false;
+  multiplicativeProjection = NULL;
+  additiveProjection = NULL;
   
   sizeReconImage = initialEstimate->getSize();
   reconstructionImage = new Image(sizeReconImage);
@@ -33,8 +33,7 @@ Mlem::Mlem(Image* cInitialEstimate, string cPathSalida, string cOutputPrefix, in
 
 Mlem::Mlem(string configFilename)
 {
-	/// Inicializo las variables con sus valores por default
-	
+  /// Inicializo las variables con sus valores por default
 }
 
 void Mlem::updateUpdateThreshold()
@@ -78,7 +77,7 @@ bool Mlem::setAttenuationImage(string attenImageFilename)
   
   // Ya tengo un mapa de atenuación que cumple con los requerimientos, ahora debo calcular la proyección
   // con los factores de corrección. Eso lo hago en cada Mlem con una sobrecarga.
-  enableAttenuationCorrection = true;
+  
   return true;
 }
 

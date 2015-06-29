@@ -14,86 +14,76 @@ MlemSinogram3d::MlemSinogram3d(string configFilename)
 }
 
 /// Método que carga los coeficientes de corrección de atenuación desde un archivo interfile para aplicar como corrección.
-bool MlemSinogram3d::setAcfProjection(string acfFilename)
+bool MlemSinogram3d::setMultiplicativeProjection(string multiplicativeFilename)
 {
-  // Los leo como cylindrical, total para la corrección lo único que importa es realizar la resta bin a bin:
-  attenuationCorrectionFactorsProjection = new Sinogram3DCylindricalPet((char*)acfFilename.c_str(), inputProjection->getRadioFov_mm(), inputProjection->getAxialFoV_mm(), inputProjection->getRadioFov_mm());
-  enableAttenuationCorrection = true;  
-  return enableAttenuationCorrection;
+  /*// Los leo como cylindrical, total para la corrección lo único que importa es realizar la resta bin a bin:
+  multiplicativeProjection = new Sinogram3DCylindricalPet((char*)acfFilename.c_str(), inputProjection->getRadioFov_mm(), inputProjection->getAxialFoV_mm(), inputProjection->getRadioFov_mm());
+  */
+  // Instead of create a new sinogram instantiating a new object, I copy from inputProject. This way, is independent of the type
+  // of derived class od sinogram3d it is being used.
+  multiplicativeProjection = inputProjection->Copy();
+  multiplicativeProjection->readFromInterfile((char*)multiplicativeFilename.c_str());
+  enableMultiplicativeTerm = true;
+  return enableMultiplicativeTerm;
 }
     
 /// Método que carga un sinograma desde un archivo interfile con la estimación de scatter para aplicar como corrección.
-bool MlemSinogram3d::setScatterCorrectionProjection(string scatterFilename)
+bool MlemSinogram3d::setAdditiveProjection(string additiveFilename)
 {
-  // Los leo como cylindrical, total para la corrección lo único que importa es realizar la resta bin a bin:
-  scatterCorrectionProjection = new Sinogram3DCylindricalPet((char*)scatterFilename.c_str(), inputProjection->getRadioFov_mm(), inputProjection->getAxialFoV_mm(), inputProjection->getRadioFov_mm());
-
-  enableScatterCorrection = true;
-  return enableScatterCorrection;
-}
-    
-/// Método que carga un sinograma desde un archivo interfile con la estimación de randomc para aplicar como corrección.
-bool MlemSinogram3d::setRandomCorrectionProjection(string randomsFilename)
-{
-  // Los leo como cylindrical, total para la corrección lo único que importa es realizar la resta bin a bin:
-  randomsCorrectionProjection = new Sinogram3DCylindricalPet((char*)randomsFilename.c_str(), inputProjection->getRadioFov_mm(), inputProjection->getAxialFoV_mm(), inputProjection->getRadioFov_mm());
-
-  enableRandomsCorrection = true;
-  return enableRandomsCorrection;
-}
-
-bool MlemSinogram3d::setNormalizationFactorsProjection(string normFilename)
-{
+  /*// Los leo como cylindrical, total para la corrección lo único que importa es realizar la resta bin a bin:
+  additiveProjection = new Sinogram3DCylindricalPet((char*)scatterFilename.c_str(), inputProjection->getRadioFov_mm(), inputProjection->getAxialFoV_mm(), inputProjection->getRadioFov_mm());
+  */
   // Instead of create a new sinogram instantiating a new object, I copy from inputProject. This way, is independent of the type
   // of derived class od sinogram3d it is being used.
-  normalizationCorrectionFactorsProjection = inputProjection->Copy();
-  normalizationCorrectionFactorsProjection->readFromInterfile((char*)normFilename.c_str());
-  enableNormalization = true;
-  return enableNormalization;
+  additiveProjection = inputProjection->Copy();
+  additiveProjection->readFromInterfile((char*)additiveFilename.c_str());
+  enableAdditiveTerm = true;
+  return enableAdditiveTerm;
 }
-
-/// Método que aplica las correcciones habilitadas según se hayan cargado los sinogramas de atenuación, randoms y/o scatter.
-bool MlemSinogram3d::correctInputSinogram()
-{
-  for(int i = 0; i < inputProjection->getNumSegments(); i++)
-  {
-    for(int j = 0; j < inputProjection->getSegment(i)->getNumSinograms(); j++)
-    {
-      for(int k = 0; k < inputProjection->getSegment(i)->getSinogram2D(j)->getNumProj(); k++)
-      {
-	for(int l = 0; l < inputProjection->getSegment(i)->getSinogram2D(j)->getNumR(); l++)
-	{
-	  if(enableScatterCorrection)
-	  {
-	    inputProjection->getSegment(i)->getSinogram2D(j)->setSinogramBin(k,l, inputProjection->getSegment(i)->getSinogram2D(j)->getSinogramBin(k,l)-
-	      scatterCorrectionProjection->getSegment(i)->getSinogram2D(j)->getSinogramBin(k,l));
-	  }
-	  if(enableRandomsCorrection)
-	  {
-	    inputProjection->getSegment(i)->getSinogram2D(j)->setSinogramBin(k,l, inputProjection->getSegment(i)->getSinogram2D(j)->getSinogramBin(k,l)-
-	      randomsCorrectionProjection->getSegment(i)->getSinogram2D(j)->getSinogramBin(k,l));
-	  }
-	  // Verifico que no quedo ningún bin negativo:
-	  if(inputProjection->getSegment(i)->getSinogram2D(j)->getSinogramBin(k,l) < 0)
-	  {
-	    inputProjection->getSegment(i)->getSinogram2D(j)->setSinogramBin(k,l,0);
-	  }
-	  
-	  // Por último, aplico la corrección por atenuación:
-	  if(enableAttenuationCorrection)
-	  {
-	    inputProjection->getSegment(i)->getSinogram2D(j)->setSinogramBin(k,l,inputProjection->getSegment(i)->getSinogram2D(j)->getSinogramBin(k,l)*
-	      attenuationCorrectionFactorsProjection->getSegment(i)->getSinogram2D(j)->getSinogramBin(k,l));
-	  }
-	}
-      }
-    }
-  }
-  /*char c_string[100];
-  sprintf(c_string, "%s_correctedSinogram", this->outputFilenamePrefix.c_str()); 
-  inputProjection->writeInterfile(c_string);*/
-  return true;
-}
+    
+// Ya no se usa precorrección de singrama sino que se incluye todo en la proyección.
+// /// Método que aplica las correcciones habilitadas según se hayan cargado los sinogramas de atenuación, randoms y/o scatter.
+// bool MlemSinogram3d::correctInputSinogram()
+// {
+//   for(int i = 0; i < inputProjection->getNumSegments(); i++)
+//   {
+//     for(int j = 0; j < inputProjection->getSegment(i)->getNumSinograms(); j++)
+//     {
+//       for(int k = 0; k < inputProjection->getSegment(i)->getSinogram2D(j)->getNumProj(); k++)
+//       {
+// 	for(int l = 0; l < inputProjection->getSegment(i)->getSinogram2D(j)->getNumR(); l++)
+// 	{
+// 	  if(enableScatterCorrection)
+// 	  {
+// 	    inputProjection->getSegment(i)->getSinogram2D(j)->setSinogramBin(k,l, inputProjection->getSegment(i)->getSinogram2D(j)->getSinogramBin(k,l)-
+// 	      scatterCorrectionProjection->getSegment(i)->getSinogram2D(j)->getSinogramBin(k,l));
+// 	  }
+// 	  if(enableRandomsCorrection)
+// 	  {
+// 	    inputProjection->getSegment(i)->getSinogram2D(j)->setSinogramBin(k,l, inputProjection->getSegment(i)->getSinogram2D(j)->getSinogramBin(k,l)-
+// 	      randomsCorrectionProjection->getSegment(i)->getSinogram2D(j)->getSinogramBin(k,l));
+// 	  }
+// 	  // Verifico que no quedo ningún bin negativo:
+// 	  if(inputProjection->getSegment(i)->getSinogram2D(j)->getSinogramBin(k,l) < 0)
+// 	  {
+// 	    inputProjection->getSegment(i)->getSinogram2D(j)->setSinogramBin(k,l,0);
+// 	  }
+// 	  
+// 	  // Por último, aplico la corrección por atenuación:
+// 	  if(enableAttenuationCorrection)
+// 	  {
+// 	    inputProjection->getSegment(i)->getSinogram2D(j)->setSinogramBin(k,l,inputProjection->getSegment(i)->getSinogram2D(j)->getSinogramBin(k,l)*
+// 	      attenuationCorrectionFactorsProjection->getSegment(i)->getSinogram2D(j)->getSinogramBin(k,l));
+// 	  }
+// 	}
+//       }
+//     }
+//   }
+//   /*char c_string[100];
+//   sprintf(c_string, "%s_correctedSinogram", this->outputFilenamePrefix.c_str()); 
+//   inputProjection->writeInterfile(c_string);*/
+//   return true;
+// }
     
 /// Método público que realiza la reconstrucción en base a los parámetros pasados al objeto Mlem instanciado
 bool MlemSinogram3d::Reconstruct()
@@ -201,9 +191,11 @@ bool MlemSinogram3d::Reconstruct()
     forwardprojector->Project(reconstructionImage, estimatedProjection);
     clock_t finalClockProjection = clock();
     printf("\tproj:%fsec", (float)(finalClockProjection-initialClockIteration)/(float)CLOCKS_PER_SEC);
-    /// Si hay normalización, la aplico luego de la proyección:
-    if(enableNormalization)
-      estimatedProjection->multiplyBinToBin(normalizationCorrectionFactorsProjection);
+    // El factor multiplicativo lo aplico solo en la sensitivity, por lo que el aditivo tiene que estar divido por el multiplicativo.
+//     if(enableMultiplicativeTerm)
+//       estimatedProjection->multiplyBinToBin(multiplicativeProjection);
+    if(enableAdditiveTerm)
+      estimatedProjection->addBinToBin(additiveProjection);
     // Si hay que guardar la proyección, lo hago acá porque después se modifica:
     if((saveIterationInterval != 0) && ((t%saveIterationInterval)==0) && saveIntermediateProjectionAndBackprojectedImage)
     {
@@ -221,9 +213,12 @@ bool MlemSinogram3d::Reconstruct()
     // backprojector->DivideAndBackproject(inputProjection, estimatedProjection, backprojectedImage);
     /// Divido input sinogram por el estimated:
     estimatedProjection->inverseDivideBinToBin(inputProjection);
-    /// Si hay normalización, la aplico luego de la proyección:
-    if(enableNormalization)
-      estimatedProjection->multiplyBinToBin(normalizationCorrectionFactorsProjection);
+    
+    // El factor multiplicativo lo aplico solo en la sensitivity, por lo que el aditivo tiene que estar divido por el multiplicativo.
+//     /// Si hay normalización, la aplico luego de la proyección:
+//     if(enableMultiplicativeTerm)
+//       estimatedProjection->multiplyBinToBin(multiplicativeProjection);
+    
     /// Retroproyecto
     backprojector->Backproject(estimatedProjection, backprojectedImage);
     
@@ -319,8 +314,8 @@ bool MlemSinogram3d::computeSensitivity(Image* outputImage)
   /// Creo un Sinograma ·D igual que el de entrada.
   Sinogram3D* backprojectSinogram3D; 
   /// Si no hay normalización lo lleno con un valor constante, de lo contrario bakcprojec normalizacion:
-  if (enableNormalization)
-    backprojectSinogram3D = normalizationCorrectionFactorsProjection->Copy();
+  if (enableMultiplicativeTerm)
+    backprojectSinogram3D = multiplicativeProjection->Copy();
   else
   {
     backprojectSinogram3D = inputProjection->Copy();

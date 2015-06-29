@@ -189,7 +189,7 @@ int main (int argc, char *argv[])
   string strForwardprojector;
   string strBackprojector;
   string attenMapFilename;
-  string acfFilename, estimatedRandomsFilename, estimatedScatterFilename, normFilename;
+  string multiplicativeFilename, additiveFilename;
   Projector* forwardprojector;
   Projector* backprojector;
   int saveIterationInterval;
@@ -354,11 +354,11 @@ int main (int argc, char *argv[])
     backprojector = (Projector*) new ArPetProjector();
   }
 
-  // Pido los singoramas de corrección si es que están disponibles:
-  if(getCorrectionSinogramNames(parameterFileName, "OSEM", &acfFilename, &estimatedRandomsFilename, &estimatedScatterFilename))
+  // Busco sinograma multiplicativo si se pasó alguno:
+  if(getMultiplicativeSinogramName(parameterFileName,  "MLEM",&multiplicativeFilename))
     return -1;
-  // Idem para normalización:
-  if(getNormalizationSinogramName(parameterFileName,  "OSEM",&normFilename))
+  // Mismo con el additivo:
+  if(getAdditiveSinogramName(parameterFileName,  "MLEM",&additiveFilename))
     return -1;
 	
   // Lectura de proyecciones y reconstrucción, depende del tipo de dato de entrada:
@@ -468,20 +468,11 @@ int main (int argc, char *argv[])
   if(saveIntermediateData)
     mlem->enableSaveIntermediates(saveIntermediateData);
   // Cargo los sinogramas de corrección:
-  if(acfFilename != "")
-    mlem->setAcfProjection(acfFilename);
-  if(estimatedRandomsFilename != "")
-    mlem->setRandomCorrectionProjection(estimatedRandomsFilename);
-  if(estimatedScatterFilename != "")
-    mlem->setScatterCorrectionProjection(estimatedScatterFilename);
-  // Y normalización:
-  if (normFilename != "")
-  {
-    mlem->setNormalizationFactorsProjection(normFilename);
-  }
-  // Ahora solo aplico las correcciones en cada iteración.
-//   // Aplico las correcciones:
-//   mlem->correctInputSinogram();
+  if(multiplicativeFilename != "")
+    mlem->setMultiplicativeProjection(multiplicativeFilename);
+  if(additiveFilename != "")
+    mlem->setAdditiveProjection(additiveFilename);
+
   // Reconstruyo.
   mlem->Reconstruct();
 //	mlem->reconstructionImage->writeInterfile(sprintf("%s_end", outputPrefix.c_str()));

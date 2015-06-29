@@ -192,7 +192,7 @@ int main (int argc, char *argv[])
   string strForwardprojector;
   string strBackprojector;
   string attenMapFilename;
-  string acfFilename, estimatedRandomsFilename, estimatedScatterFilename, normFilename;
+  string multiplicativeFilename, additiveFilename;
   Projector* forwardprojector;
   Projector* backprojector;
   int saveIterationInterval;
@@ -223,9 +223,9 @@ int main (int argc, char *argv[])
   //strcpy(parameterFileName, argv[1]);
   if(parameterFileName.compare(parameterFileName.length()-4, 4, ".par"))
   {
-	  // El archivo de parámetro no tiene la extensión .par.
-	  cout<<"El archivo de parámetros no tiene la extensión .par."<<endl;
-	  return -1;
+    // El archivo de parámetro no tiene la extensión .par.
+    cout<<"El archivo de parámetros no tiene la extensión .par."<<endl;
+    return -1;
   }
 
   // Leo cada uno de los campos del archivo de parámetros. Para esto utilizo la función parametersFile_readMultipleKeys
@@ -238,9 +238,9 @@ int main (int argc, char *argv[])
   strcpy(keyWords[4], "number of iterations"); 
   if((errorCode=parametersFile_readMultipleKeys((char*)parameterFileName.c_str(), (char*)"MLEM", (char**)keyWords, FIXED_KEYS, (char**)multipleReturnValue, errorMessage)) != 0)
   {
-	  // Hubo un error. Salgo del comando.
-	  cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
-	  return -1;
+    // Hubo un error. Salgo del comando.
+    cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
+    return -1;
   }
   inputType.assign(multipleReturnValue[0]);
   inputFilename.assign(multipleReturnValue[1]);
@@ -278,18 +278,18 @@ int main (int argc, char *argv[])
   // Es opcional, si está el mapa de atenuación se habilita:
   if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), (char*)"MLEM", (char*)"attenuation image filename", (char*)returnValue, (char*)errorMessage)) != 0)
   {
-	  // Hubo un error. Salgo del comando.
-	  // Si no encontró el keyoword, está bien porque era opcional, cualquier otro código de error
-	  // signfica que hubo un error.
-	  if(errorCode == PMF_KEY_NOT_FOUND)
-	  {
-	    // No está la keyword, como era opcional se carga con su valor por default.
-	  }
-	  else
-	  {
-	    cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
-	    return -1;
-	  }
+    // Hubo un error. Salgo del comando.
+    // Si no encontró el keyoword, está bien porque era opcional, cualquier otro código de error
+    // signfica que hubo un error.
+    if(errorCode == PMF_KEY_NOT_FOUND)
+    {
+      // No está la keyword, como era opcional se carga con su valor por default.
+    }
+    else
+    {
+      cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
+      return -1;
+    }
   }
   else
   {
@@ -353,12 +353,12 @@ int main (int argc, char *argv[])
   {
     backprojector = (Projector*) new ArPetProjector();
   }
-	
-  // Pido los singoramas de corrección si es que están disponibles:
-  if(getCorrectionSinogramNames(parameterFileName, "MLEM", &acfFilename, &estimatedRandomsFilename, &estimatedScatterFilename))
+  
+  // Busco sinograma multiplicativo si se pasó alguno:
+  if(getMultiplicativeSinogramName(parameterFileName,  "MLEM",&multiplicativeFilename))
     return -1;
-  // Idem para normalización:
-  if(getNormalizationSinogramName(parameterFileName,  "MLEM",&normFilename))
+  // Mismo con el additivo:
+  if(getAdditiveSinogramName(parameterFileName,  "MLEM",&additiveFilename))
     return -1;
   
   // Lectura de proyecciones y reconstrucción, depende del tipo de dato de entrada:
@@ -515,19 +515,11 @@ int main (int argc, char *argv[])
     mlem->enableSaveIntermediates(saveIntermediateData);
   // Verifico si hay correciones para realizar.
   // Cargo los sinogramas de corrección:
-  if(acfFilename != "")
-    mlem->setAcfProjection(acfFilename);
-  if(estimatedRandomsFilename != "")
-    mlem->setRandomCorrectionProjection(estimatedRandomsFilename);
-  if(estimatedScatterFilename != "")
-    mlem->setScatterCorrectionProjection(estimatedScatterFilename);
-  // Aplico las correciones:
-  mlem->correctInputSinogram();
-  // Y normalización:
-  if (normFilename != "")
-  {
-    mlem->setNormalizationFactorsProjection(normFilename);
-  }
+  if(multiplicativeFilename != "")
+    mlem->setMultiplicativeProjection(multiplicativeFilename);
+  if(additiveFilename != "")
+    mlem->setAdditiveProjection(additiveFilename);
+
   // Reconstruyo:
   mlem->Reconstruct();
 //	mlem->reconstructionImage->writeInterfile(sprintf("%s_end", outputPrefix.c_str()));

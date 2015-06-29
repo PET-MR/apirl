@@ -45,5 +45,6 @@ DLLEXPORT int getCylindricalScannerParameters(string mlemFilename, string cmd, f
 DLLEXPORT int getNumberOfSubsets(string mlemFilename, string cmd, float* numberOfSubsets);
 DLLEXPORT int getArPetParameters(string mlemFilename, string cmd, float* radiusFov_mm, float* zFov_mm, float* blindArea_mm, int* minDiffDetectors);
 DLLEXPORT int getCorrectionSinogramNames(string mlemFilename, string cmd, string* acfFilename, string* estimatedRandomsFilename, string* estimatedScatterFilename);
-DLLEXPORT int getNormalizationSinogramName(string mlemFilename, string cmd, string* normFilename);
+DLLEXPORT int getMultiplicativeSinogramName(string mlemFilename, string cmd, string* multiplicativeFilename);
+DLLEXPORT int getAdditiveSinogramName(string mlemFilename, string cmd, string* additiveFilename);
 #endif
