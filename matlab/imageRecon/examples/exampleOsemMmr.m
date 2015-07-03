@@ -8,7 +8,7 @@ clear all
 close all
 %% APIRL PATH
 apirlPath = '/home/mab15/workspace/apirl-code/trunk/';
-
+apirlPath = '/workspaces/Martin/KCL/apirl-code/trunk/';
 % Check what OS I am running on:
 if(strcmp(computer(), 'GLNXA64'))
     os = 'linux';
@@ -35,21 +35,22 @@ setenv('LD_LIBRARY_PATH', [getenv('LD_LIBRARY_PATH') sepEnvironment apirlPath pa
 % sinogramFilename = 'E:\workspace\KCL\Biograph_mMr\Mediciones\NEMA_IQ_20_02_2014\PET_ACQ_194_20150220154553-0uncomp.s';
 % normFilename = 'E:\workspace\KCL\Biograph_mMr\Mediciones\NEMA_IQ_20_02_2014\norm\Norm_20150210112413.n';
 % attMapBaseFilename = 'E:\workspace\KCL\Biograph_mMr\Mediciones\NEMA_IQ_20_02_2014\umap\PET_ACQ_194_20150220154553';
-sinogramFilename = '/home/mab15/workspace/KCL/Biograph_mMr/Mediciones/BRAIN_PETMR/SINOGRAMS/PET_ACQ_68_20150610155347-0uncomp.s.hdr';
-normFilename = '/home/mab15/workspace/KCL/Biograph_mMr/Mediciones/BRAIN_PETMR/SINOGRAMS/norm/Norm_20150609084317.n';
-attMapBaseFilename = '/home/mab15/workspace/KCL/Biograph_mMr/Mediciones/BRAIN_PETMR/SINOGRAMS/PET_ACQ_68_20150610155347';
+sinogramFilename = '/media/martin/My Book/BackupWorkspace/KCL/Biograph_mMr/Mediciones/BRAIN_PETMR/SINOGRAMS/PET_ACQ_68_20150610155347-0uncomp.s.hdr';
+normFilename = '/media/martin/My Book/BackupWorkspace/KCL/Biograph_mMr/Mediciones/BRAIN_PETMR/norm/Norm_20150609084317.n';
+attMapBaseFilename = '/media/martin/My Book/BackupWorkspace/KCL/Biograph_mMr/Mediciones/BRAIN_PETMR/SINOGRAMS/PET_ACQ_68_20150610155347';
 pixelSize_mm = [2.08625 2.08625 2.03125];
 %% OSEM
-outputPath = '/fast/BrainPhantom/cuosem/';
+outputPath = '/workspaces/Martin/KCL/Reconstructions/NEMA/osem_no_scatter_randoms/';
 numSubsets = 21;
 numIterations = 3;
-optUseGpu = 1;
-volume = OsemMmr(sinogramFilename, normFilename, attMapBaseFilename, outputPath, pixelSize_mm, numSubsets, numIterations, optUseGpu);
-%% OSEM WITH APIRL SINOGRAM AND REGISTERED ATTENUATION MAP
-outputPath = '/fast/NemaReconstruction/cuosem_aprildata/';
-sinogramFilename = '/fast/NemaReconstruction/cumlem/sinogram.h33';
-attMapBaseFilename = '/home/mab15/workspace/KCL/Biograph_mMr/Mediciones/NEMA_IQ_20_02_2014/umap/AttenMapCtManuallyRegistered.h33';
-numSubsets = 21;
-numIterations = 3;
-optUseGpu = 1;
-volume = OsemMmr(sinogramFilename, normFilename, attMapBaseFilename, outputPath, pixelSize_mm, numSubsets, numIterations, optUseGpu);
+optUseGpu = 0;
+span = 11;
+volume = OsemMmr(sinogramFilename, span, normFilename, attMapBaseFilename, 0, 0, outputPath, pixelSize_mm, numSubsets, numIterations, optUseGpu, '');
+% %% OSEM WITH APIRL SINOGRAM AND REGISTERED ATTENUATION MAP
+% outputPath = '/fast/NemaReconstruction/cuosem_aprildata/';
+% sinogramFilename = '/fast/NemaReconstruction/cumlem/sinogram.h33';
+% attMapBaseFilename = '/home/mab15/workspace/KCL/Biograph_mMr/Mediciones/NEMA_IQ_20_02_2014/umap/AttenMapCtManuallyRegistered.h33';
+% numSubsets = 21;
+% numIterations = 3;
+% optUseGpu = 1;
+% volume = OsemMmr(sinogramFilename, normFilename, attMapBaseFilename, outputPath, pixelSize_mm, numSubsets, numIterations, optUseGpu);

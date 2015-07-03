@@ -67,7 +67,7 @@ interfilewrite(initialEstimate, filenameInitialEstimate, pixelSize_mm);
 if isstr(normFilename)
     disp('Computing the normalization correction factors...');
     % ncf:
-    [overall_ncf_3d, scanner_time_invariant_ncf_3d, scanner_time_variant_ncf_3d, used_xtal_efficiencies, used_deadtimefactors, used_axial_factors] = ...
+    [overall_ncf_3d, scanner_time_invariant_ncf_3d, scanner_time_variant_ncf_3d, acquisition_dependant_ncf_3d, used_xtal_efficiencies, used_deadtimefactors, used_axial_factors] = ...
        create_norm_files_mmr(normFilename, [], [], [], [], structSizeSino3d.span);
     % invert for nf:
     overall_nf_3d = overall_ncf_3d;
@@ -206,7 +206,7 @@ if useGpu == 0
     outputFilenamePrefix = [outputPath 'reconImage'];
     filenameOsemConfig = [outputPath 'osem.par'];
     CreateOsemConfigFileForMmr(filenameOsemConfig, [sinogramFilename '.h33'], [filenameInitialEstimate '.h33'], outputFilenamePrefix, numIterations, [],...
-        numSubsets, saveInterval, saveIntermediate, [], [], [], [anfFilename '.h33']);
+        numSubsets, saveInterval, saveIntermediate, [anfFilename '.h33'], []);
     % Execute APIRL: 
     status = system(['OSEM ' filenameOsemConfig]) 
 else
