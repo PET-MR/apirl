@@ -14,9 +14,9 @@
 %  system.
 %
 %  Example:
-%   [image, xMap_mm, yMap_mm, zMap_mm] = ReadDicomImage('/data/BRAIN_PETMR/T1_fl2D_TRA/', '')
-%   [image, xMap_mm, yMap_mm, zMap_mm] = ReadDicomImage('/data/BRAIN_PETMR/T1_fl2D_TRA/', 'BRAIN_PETMR.MR.CDT_PLANT_SINGLE_BED_PETMR.0030')
-function [image, xMap_mm, yMap_mm, zMap_mm] = ReadDicomImage(path, baseFilename)
+%   [image, affineMatrix, xMap_mm, yMap_mm, zMap_mm] = ReadDicomImage('/data/BRAIN_PETMR/T1_fl2D_TRA/', '')
+%   [image, affineMatrix, xMap_mm, yMap_mm, zMap_mm] = ReadDicomImage('/data/BRAIN_PETMR/T1_fl2D_TRA/', 'BRAIN_PETMR.MR.CDT_PLANT_SINGLE_BED_PETMR.0030')
+function [image, affineMatrix, xMap_mm, yMap_mm, zMap_mm, dicomInfo] = ReadDicomImage(path, baseFilename)
 
 % Read info from the images:
 files = dir([path baseFilename '*']);
@@ -29,11 +29,28 @@ for i = 1 : numel(filesToRemove)
 end
 cellStruct(index) = [];
 files(index) = [];
-numSlices = numel(files); % It would be better to use dicomInfo.ImagesInAcquisition.
 
 % Map of pixel indexes:
 dicomInfo = dicominfo([path files(1).name]);
-[indexCol, indexRow] = meshgrid(double(0:dicomInfo.Height-1),double(0:dicomInfo.Width-1));
+if isfield(dicomInfo, 'ImagesInAcquisition')
+    numSlices = dicomInfo.ImagesInAcquisition;
+else
+    numSlices = numel(files); % It would be better to use dicomInfo.ImagesInAcquisition.
+end
+% Poistion of the top-left pixel of the first slice:
+posTopLeftPixel_1 = dicomInfo.ImagePositionPatient;
+% Pixel spacing:
+pixelSpacing_mm = [dicomInfo.PixelSpacing(1) dicomInfo.PixelSpacing(2) dicomInfo.SliceThickness];
+% We suppose that each slice has the same ImageOrientationPatient:
+dircosX = dicomInfo.ImageOrientationPatient(1:3);
+dircosY = dicomInfo.ImageOrientationPatient(4:6);
+% Check orthogonality:
+dotProd = dot(dircosX, dircosY);
+if(dotProd > 1e-5)
+    warning('The axes are not orthogonal in the dicom image.');
+end
+
+[indexCol, indexRow] = meshgrid(double(0:0:dicomInfo.Width-1),double(dicomInfo.Height-1));
 for i = 1 : numSlices
     dicomInfo = dicominfo([path files(i).name]);
     sliceCoordinates(i) = dicomInfo.SliceLocation;
@@ -47,3 +64,10 @@ for i = 1 : numSlices
     yMap_mm(:,:,i) = dicomInfo.ImagePositionPatient(2) + dicomInfo.ImageOrientationPatient(2) * dicomInfo.PixelSpacing(1) .* indexCol + dicomInfo.ImageOrientationPatient(5) * dicomInfo.PixelSpacing(2) .* indexRow; 
     zMap_mm(:,:,i) = dicomInfo.ImagePositionPatient(3) + dicomInfo.ImageOrientationPatient(3) * dicomInfo.PixelSpacing(1) .* indexCol + dicomInfo.ImageOrientationPatient(6) * dicomInfo.PixelSpacing(2) .* indexRow; 
 end
+% Poistion of the top-left pixel of the last slice:
+posTopLeftPixel_N = dicomInfo.ImagePositionPatient;
+% Dir z:
+dirZ = (posTopLeftPixel_N - posTopLeftPixel_1) / (numSlices-1);
+% Affine transformation matrix to got from image space to patient space:
+affineMatrix = [dircosX.*pixelSpacing_mm(1) dircosY.*pixelSpacing_mm(2) dirZ posTopLeftPixel_1; 0 0 0 1];
+%affineMatrix = [dircosX dircosY dirZ./(sliceCoordinates(2)-sliceCoordinates(1)) [0; 0; 0]; 0 0 0 1];
