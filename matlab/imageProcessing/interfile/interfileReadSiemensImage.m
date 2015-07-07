@@ -66,8 +66,15 @@ refImage = imref3d(size(image), [origin_mm(2)-pixelSize_mm(2) origin_mm(2)-pixel
 % system I overwrite it:
 % The dicom image for pet images contains this limits for a 344x344x127
 % image:
-XWorldLimits= [-356.8832 361.1168];
-YWorldLimits= [-359.8493 358.1507];
-ZWorldLimits= [-133.2885 124.7115];
+% XWorldLimits= [-356.8832 361.1168];
+% YWorldLimits= [-359.8493 358.1507];
+% ZWorldLimits= [-133.2885 124.7115];
+XWorldLimits= [origin_mm(2)-pixelSize_mm(2)/2 origin_mm(2)-pixelSize_mm(2)/2+pixelSize_mm(2)*size(image,2)];
+YWorldLimits= [origin_mm(1)-pixelSize_mm(1)/2 origin_mm(1)-pixelSize_mm(1)/2+pixelSize_mm(1)*size(image,1)];
+XWorldLimits= [-359 359];
+YWorldLimits= [-359-pixelSize_mm(1) 359-pixelSize_mm(1)];
+
+ZWorldLimits= [-258/2+pixelSize_mm(3) 258/2+pixelSize_mm(3)];
+image = flip(image,3);
 refImage = imref3d(size(image), XWorldLimits, YWorldLimits, ZWorldLimits);
 

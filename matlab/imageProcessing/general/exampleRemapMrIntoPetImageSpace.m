@@ -22,7 +22,7 @@ setenv('LD_LIBRARY_PATH', [getenv('LD_LIBRARY_PATH') sepEnvironment apirlPath pa
 pathMrDicom = '/media/martin/My Book/BackupWorkspace/KCL/Biograph_mMr/Mediciones/BRAIN_PETMR/T1_fl2D_TRA/';
 %pathMrDicom = '/media/martin/My Book/BRAIN_PETMR/Dixon_1/';
 %pathMrDicom = '/media/martin/My Book/BRAIN_PETMR/UTE/';
-pathMrDicom = '/media/martin/My Book/BackupWorkspace/KCL/Biograph_mMr/Mediciones/BRAIN_PETMR/PETMR_recons/AC_wDIXON_1/';
+pathMrDicom = '/media/martin/My Book/BackupWorkspace/KCL/Biograph_mMr/Mediciones/BRAIN_PETMR/PETMR_recons/AC_WDIXON_2/';
 baseDicomFilename = '';
 %pathDicom = '/media/martin/My Book/BackupWorkspace/KCL/Biograph_mMr/Mediciones/LineSources/Line_Source_recon/linesource/';
 
@@ -34,4 +34,6 @@ baseDicomFilename = '';
 %% INTERFILE
 interfileHeaderPet = '/media/martin/My Book/BackupWorkspace/KCL/Biograph_mMr/Mediciones/BRAIN_PETMR/SINOGRAMS/PET_ACQ_68_20150610155347_ima_AC_000_000.v.hdr';
 
-[mrRescaled, refMrRescaled, origin_mm] = RemapMrIntoPetImageSpace(interfileHeaderPet, pathMrDicom, baseDicomFilename, 1);
+[mrRescaled, petImage, refMrRescaled] = RemapMrIntoPetImageSpace(interfileHeaderPet, pathMrDicom, baseDicomFilename, 0);
+interfilewrite(mrRescaled, 'test');
+interfilewrite(petImage, 'test2');

@@ -95,7 +95,6 @@ if applyAffineTransform
     incZ = sign(posTopLeftPixel_N(3)-posTopLeftPixel_1(3));
     zLim = [posTopLeftPixel_1(3)-incZ.*sliceThickness/2 posTopLeftPixel_N(3)+incZ.*sliceThickness/2];
     inImageRef3d = imref3d(size(image), [min(xLim) max(xLim)] , [min(yLim) max(yLim)], [min(zLim) max(zLim)]);  % The limits needs to be ascending values, thats why we use min and max.
-    %B = flip(A,dim)
     % This is a more practical implementation
     [image imageRef3d] = imwarp(image, inImageRef3d, matlabAffine);
 else
