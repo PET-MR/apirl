@@ -70,11 +70,13 @@ refImage = imref3d(size(image), [origin_mm(2)-pixelSize_mm(2) origin_mm(2)-pixel
 % YWorldLimits= [-359.8493 358.1507];
 % ZWorldLimits= [-133.2885 124.7115];
 XWorldLimits= [origin_mm(2)-pixelSize_mm(2)/2 origin_mm(2)-pixelSize_mm(2)/2+pixelSize_mm(2)*size(image,2)];
+XWorldLimits= [origin_mm(2)-pixelSize_mm(2)/2 origin_mm(2)-pixelSize_mm(2)/2+pixelSize_mm(2)*size(image,2)];
 YWorldLimits= [origin_mm(1)-pixelSize_mm(1)/2 origin_mm(1)-pixelSize_mm(1)/2+pixelSize_mm(1)*size(image,1)];
-XWorldLimits= [-359 359];
+XWorldLimits= [-359+3/4*pixelSize_mm(2) 359+3/4*pixelSize_mm(2)];
 YWorldLimits= [-359-pixelSize_mm(1) 359-pixelSize_mm(1)];
 
-ZWorldLimits= [-258/2+pixelSize_mm(3) 258/2+pixelSize_mm(3)];
+ZWorldLimits= [-258/2+2*pixelSize_mm(3) 258/2+2*pixelSize_mm(3)];
+ZWorldLimits= [-258/2-pixelSize_mm(3)*9/4 258/2-pixelSize_mm(3)*9/4];
 image = flip(image,3);
 refImage = imref3d(size(image), XWorldLimits, YWorldLimits, ZWorldLimits);
 

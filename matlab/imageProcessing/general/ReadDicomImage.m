@@ -78,25 +78,31 @@ affineMatrix = [dircosX dircosY dirZ./sliceThickness posTopLeftPixel_1; 0 0 0 1]
 if applyAffineTransform
     % We can apply directly the affine transform, the problem is that
     % scales the current image to have each pixel of 1mm. This makes the
-    % images too big and is slower. We use an alternative transform, where
+    % images too big and is slower. We can use an alternative transform, where
     % only the rotation is applied. The scaling and offset is implemented
-    % through the imageref3d.
-%     % Affine transformation matrix to go from image space to patient space:
+    % through the imageref3d (see 2nd method), but it's not exactly the same.
+    % Affine transformation matrix to go from image space to patient space:
 %     affineMatrix = [dircosX.*pixelSpacing_mm(1) dircosY.*pixelSpacing_mm(2) dirZ posTopLeftPixel_1; 0 0 0 1];
 %     matlabAffine = affine3d(affineMatrix'); % Create an affine object for matlab (that affine matrix is transposed as expected by matlab).
 %     [image imageRef3d] = imwarp(image, matlabAffine); % Apply transform.
 
     affineMatrix = [dircosX dircosY dirZ./sliceThickness [0;0;0]; 0 0 0 1];   % Affine matrix without scaling and translation.
     matlabAffine = affine3d(affineMatrix'); % Create an affine object for matlab.
-    xLim = [posTopLeftPixel_1(1)-pixelSpacing_mm(1)/2 posTopLeftPixel_1(1)-pixelSpacing_mm(1)/2+pixelSpacing_mm(1)*size(image,1)];
-    yLim = [posTopLeftPixel_1(2)-pixelSpacing_mm(2)/2 posTopLeftPixel_1(2)-pixelSpacing_mm(2)/2+pixelSpacing_mm(2)*size(image,2)];
+    
+    xLim = [posTopLeftPixel_1(1)-pixelSpacing_mm(1)/2 posTopLeftPixel_1(1)-pixelSpacing_mm(1)/2+pixelSpacing_mm(1)*size(image,2)];
+    yLim = [posTopLeftPixel_1(2)-pixelSpacing_mm(2)/2 posTopLeftPixel_1(2)-pixelSpacing_mm(2)/2+pixelSpacing_mm(2)*size(image,1)];
     % The z axis is different, it can go from negative to positive or in
     % the opposite way:
     incZ = sign(posTopLeftPixel_N(3)-posTopLeftPixel_1(3));
     zLim = [posTopLeftPixel_1(3)-incZ.*sliceThickness/2 posTopLeftPixel_N(3)+incZ.*sliceThickness/2];
-    inImageRef3d = imref3d(size(image), [min(xLim) max(xLim)] , [min(yLim) max(yLim)], [min(zLim) max(zLim)]);  % The limits needs to be ascending values, thats why we use min and max.
+    inImageRef3d = imref3d(size(image), pixelSpacing_mm(1), pixelSpacing_mm(2), sliceThickness);  % The limits needs to be ascending values, thats why we use min and max.
     % This is a more practical implementation
     [image imageRef3d] = imwarp(image, inImageRef3d, matlabAffine);
+    % Add the displacemente to the reference:
+    imageRef3d.XWorldLimits = imageRef3d.XWorldLimits + posTopLeftPixel_1(1);
+    imageRef3d.YWorldLimits = imageRef3d.YWorldLimits + posTopLeftPixel_1(2);
+    imageRef3d.ZWorldLimits = imageRef3d.ZWorldLimits + posTopLeftPixel_1(3);
+    
 else
     imageRef3d = imref3d(size(image), 1, 1, 1);
 end
