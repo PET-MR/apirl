@@ -81,11 +81,14 @@ if applyAffineTransform
     % images too big and is slower. We can use an alternative transform, where
     % only the rotation is applied. The scaling and offset is implemented
     % through the imageref3d (see 2nd method), but it's not exactly the same.
+    
+    % 1ST OPTION
     % Affine transformation matrix to go from image space to patient space:
 %     affineMatrix = [dircosX.*pixelSpacing_mm(1) dircosY.*pixelSpacing_mm(2) dirZ posTopLeftPixel_1; 0 0 0 1];
 %     matlabAffine = affine3d(affineMatrix'); % Create an affine object for matlab (that affine matrix is transposed as expected by matlab).
 %     [image imageRef3d] = imwarp(image, matlabAffine); % Apply transform.
 
+%   2ND OPTION
     affineMatrix = [dircosX dircosY dirZ./sliceThickness [0;0;0]; 0 0 0 1];   % Affine matrix without scaling and translation.
     matlabAffine = affine3d(affineMatrix'); % Create an affine object for matlab.
     
