@@ -30,6 +30,26 @@ if(isempty(subsetIndex))
     subsetIndex = 0;
 end
 
+% Get info of the sinogram size to choose the type of sinogram:
+[info, structSizeSino] = getInfoFromInterfile(outputSample);
+if isfield(structSizeSino, 'sinogramsPerSegment')
+    if numel(structSizeSino.sinogramsPerSegment) == 1
+        if structSizeSino.numZ == 1
+            sinogramType = 'Sinogram2DinSiemensMmr';
+        else
+            sinogramType = 'Sinograms2DinSiemensMmr';
+        end
+    else
+        sinogramType = 'Sinogram3DSiemensMmr';
+    end
+else
+    if structSizeSino.numZ == 1
+        sinogramType = 'Sinogram2DinSiemensMmr';
+    else
+        sinogramType = 'Sinograms2DinSiemensMmr';
+    end
+end
+
 % Primero genero el archivo de encabezado.
 fid = fopen(configfilename, 'w');
 if(fid == -1)
@@ -38,7 +58,7 @@ end
 % Ahora debo ir escribiendo los campos. Algunos son fijos, y otros
 % dependerán de la imagen:
 fprintf(fid,'Projection Parameters :=\n');
-fprintf(fid,'output type := Sinogram3DSiemensMmr\n');
+fprintf(fid,'output type := %s\n', sinogramType);
 if useGpu == 0
     fprintf(fid,'projector := Siddon\n');
 else
