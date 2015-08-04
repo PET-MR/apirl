@@ -14,6 +14,17 @@
 
 function [info, structSizeSino] = getInfoFromInterfile(filename)
 
+if(strcmp(computer(), 'GLNXA64'))
+    os = 'linux';
+    pathBar = '/';
+elseif(strcmp(computer(), 'PCWIN') || strcmp(computer(), 'PCWIN64'))
+    os = 'windows';
+    pathBar = '\';
+else
+    disp('OS not compatible');
+    return;
+end
+
 info = [];
 % check header file extension
 if (isempty(filename) || ~ischar(filename))
@@ -23,6 +34,15 @@ end
 [fpath,name,ext] = fileparts(filename);
 if isempty(ext)
     filename = [filename '.hdr'];
+end
+% Como los interfile yo los manejo siempre con el h33 e i33 siempre en el
+% mismo path, pero que se puedan leer y crear desde otro path. Cuando el
+% nombre del interfile a leer tiene un path además del nombre, dicho path
+% también debo agregarselo al "data file name" que figura en el h33:
+relativePath = '';
+barras = strfind(filename, pathBar);
+if ~isempty(barras)
+    relativePath = filename(1 : barras(end));
 end
 
 % open file for parsing
@@ -209,6 +229,13 @@ end
 
 % close file
 fclose(fid);
+% Add the relative path to the binary filename, if there is no path in the
+% interfile:
+relativePath = '';
+barras = strfind(info.NameOfDataFile, pathBar);
+if isempty(barras)
+    info.NameOfDataFile = [relativePath info.NameOfDataFile];
+end
 
 % if ~isfield(info, 'SmsMiHeaderNameSpace')
 %     structSizeSino = [];
@@ -311,4 +338,8 @@ elseif isfield(info, 'MinimumRingDifferencePerSegment') % Apirl sinogram
     
     % Return the size of struct size sino, with only the avialable info:
     structSizeSino = getSizeSino3dStruct(info.MatrixSize1, info.MatrixSize2, info.NumberOfRings, 0, 0, info.MatrixSize3, info.MinimumRingDifferencePerSegment, info.MaximumRingDifferencePerSegment, abs(info.MinimumRingDifferencePerSegment(end)));
+elseif isfield(info, 'NumberOfProjections') % Apirl 2d sinogram
+    structSizeSino = getSizeSino2dStruct(info.MatrixSize1, info.MatrixSize2, info.NumberOfProjections, 0, 0);
+elseif isfield(info, 'NumberOfImagesWindow')
+    structSizeSino = getSizeSino2dStruct(info.MatrixSize1, info.MatrixSize2, info.NumberOfImagesWindow, 0, 0);
 end

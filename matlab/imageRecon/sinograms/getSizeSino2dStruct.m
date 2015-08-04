@@ -37,10 +37,10 @@
 %  la estructura en si.
 %
 %  Ejemplo:
-%   structSizeSino3D = getSizeSino3Dstruct(192, 192, 24, 300, 200)
+%   structSizeSino3D = getSizeSino2dStruct(192, 192, 24, 300, 200)
 
 
-function structSizeSino2D = getSizeSino2Dstruct(numR, numTheta, numZ, rFov, zFov)
+function structSizeSino2D = getSizeSino2dStruct(numR, numTheta, numZ, rFov, zFov)
 
 % Genero un vector con los valores de r:
 deltaR = (2*rFov) / numR;
