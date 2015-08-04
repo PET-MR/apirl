@@ -312,7 +312,7 @@ if (numel(correctScatter) == 1)
             outputFilenamePrefix = [outputPathScatter 'reconImage'];
             filenameOsemConfig = [outputPathScatter 'osem.par'];
             CreateOsemConfigFileForMmr(filenameOsemConfig, [sinogramFilename '.h33'], [filenameInitialEstimate '.h33'], outputFilenamePrefix, numIterations, [],...
-                numSubsets, saveInterval, saveIntermediate, [], [], [], [anfFilename '.h33']);
+                numSubsets, saveInterval, saveIntermediate, [anfFilename '.h33'], []);
             % Execute APIRL: 
             status = system(['OSEM ' filenameOsemConfig]) 
         else
@@ -322,7 +322,7 @@ if (numel(correctScatter) == 1)
             outputFilenamePrefix = [outputPathScatter 'reconImage'];
             filenameMlemConfig = [outputPathScatter 'cuosem.par'];
             CreateCuMlemConfigFileForMmr(filenameMlemConfig, [sinogramFilename '.h33'], [filenameInitialEstimate '.h33'], outputFilenamePrefix, numIterations, [],...
-                saveInterval, saveIntermediate, [], [], [], [anfFilename '.h33'], 0, 576, 576, 512, numSubsets);
+                saveInterval, saveIntermediate, [anfFilename '.h33'], [], 0, 576, 576, 512, numSubsets);
             % Execute APIRL: 
             status = system(['cuMLEM ' filenameMlemConfig]) 
         end
