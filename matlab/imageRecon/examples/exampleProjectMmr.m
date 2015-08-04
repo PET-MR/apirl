@@ -31,7 +31,7 @@ setenv('PATH', [getenv('PATH') sepEnvironment apirlPath pathBar 'build' pathBar 
 setenv('LD_LIBRARY_PATH', [getenv('LD_LIBRARY_PATH') sepEnvironment apirlPath pathBar 'build' pathBar 'bin']);
 %% READ IMAGE
 fullFilename = '/home/mab15/workspace/KCL/Biograph_mMr/Mediciones/NEMA_IQ_20_02_2014/umap/AttenMapCtManuallyRegistered.h33';
-fullFilename = '/media/martin/My Book/BackupWorkspace/KCL/Biograph_mMr/Mediciones/NEMA_IQ_20_02_2014/umap/AttenMapCtManuallyRegistered.h33';
+%fullFilename = '/media/martin/My Book/BackupWorkspace/KCL/Biograph_mMr/Mediciones/NEMA_IQ_20_02_2014/umap/AttenMapCtManuallyRegistered.h33';
 image = interfileRead(fullFilename); 
 infoVolumeSpan11 = interfileinfo(fullFilename); 
 pixelSize_mm = [infoVolumeSpan11.ScalingFactorMmPixel1 infoVolumeSpan11.ScalingFactorMmPixel2 infoVolumeSpan11.ScalingFactorMmPixel3];
@@ -74,14 +74,14 @@ pixelSize_mm = [infoVolumeSpan11.ScalingFactorMmPixel1 infoVolumeSpan11.ScalingF
 % indiceSino = 64;
 % imshow(sinogram(:,:,indiceSino), [0 max(max(sinogram(:,:,indiceSino)))]);
 %% PROJECT DIRECT SINOGRAMS
-fullFilename = '/workspaces/Martin/KCL/Biograph_mMr/Mediciones/BRAIN_PETMR/SINOGRAMS/PET_ACQ_61_20150610152515_ima_AC_000_000.v.hdr';
+fullFilename = '/home/mab15/workspace/KCL/Biograph_mMr/Mediciones/BRAIN_PETMR/SINOGRAMS/PET_ACQ_61_20150610152515_ima_AC_000_000.v.hdr';
 [image, refImage, bedPosition_mm, info]  = interfileReadSiemensImage(fullFilename); 
 pixelSize_mm = [refImage.PixelExtentInWorldY refImage.PixelExtentInWorldX refImage.PixelExtentInWorldZ];
 useGpu = 0;
 span = 1;
 
 %outputPath = 'E:\NemaReconstruction\testProjectCuda\';
-outputPath = '/home/martin/Project2D/';
+outputPath = '/fast/ProjectMulti2D/';
 [sinogram, structSizeSinogram] = ProjectMmr2d(image, pixelSize_mm, outputPath, [], [], useGpu);
 % Show one sinogram:
 showSlices(sinogram);
@@ -89,7 +89,7 @@ showSlices(sinogram);
 useGpu = 0;
 pixelSize_mm = [refImage.PixelExtentInWorldY refImage.PixelExtentInWorldX];
 %outputPath = 'E:\NemaReconstruction\testProjectCuda\';
-outputPath = '/home/martin/Project2D/';
+outputPath = '/fast/Project2D/';
 [sinogram, structSizeSinogram] = ProjectMmr2d(image(:,:,81), pixelSize_mm, outputPath, [], [], useGpu);
 % Show one sinogram:
 h = showSlices(sinogram);
