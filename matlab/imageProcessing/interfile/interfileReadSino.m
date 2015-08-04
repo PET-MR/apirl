@@ -25,7 +25,12 @@ elseif  strcmp(info.NumberFormat, 'signed integer')
             readingFormat = 'int32=>int32';
         end
 end
-numSinograms = sum(structSizeSino.sinogramsPerSegment);
+if isfield(info, 'sinogramsPerSegment')||isfield(info, 'ScanDataTypeDescription2')  % If is a siemens interfile or a 3d intefile sinogram.
+    numSinograms = sum(structSizeSino.sinogramsPerSegment);
+else
+    numSinograms = structSizeSino.numZ; % sinogram2d.
+end
+
 % Check if is an siemens sinogram (mmr):
 if isfield(info, 'ScanDataTypeDescription2')
     % Read raw data from uncomrpessed sinogram:
