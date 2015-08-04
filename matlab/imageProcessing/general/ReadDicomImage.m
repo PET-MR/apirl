@@ -68,12 +68,31 @@ for i = 1 : numSlices
 %     yMap_mm(:,:,i) = dicomInfo.ImagePositionPatient(2) + dicomInfo.ImageOrientationPatient(2) * dicomInfo.PixelSpacing(1) .* indexCol + dicomInfo.ImageOrientationPatient(5) * dicomInfo.PixelSpacing(2) .* indexRow; 
 %     zMap_mm(:,:,i) = dicomInfo.ImagePositionPatient(3) + dicomInfo.ImageOrientationPatient(3) * dicomInfo.PixelSpacing(1) .* indexCol + dicomInfo.ImageOrientationPatient(6) * dicomInfo.PixelSpacing(2) .* indexRow; 
 end
+
+sliceThickness = abs(sliceCoordinates(2)-sliceCoordinates(1));
+if ~issorted(sliceCoordinates)
+    warning('The slices are not sorted or there are some slices repeated.')
+end
+
+% % Code added because there are sequences with slices not ordered in the
+% % z coordinate.
+% if sliceThickness > 0
+%     % Thr slice increases in z coordinate:
+%     [sortedSliceCoordinates sortedIndexes] = sort(sliceCoordinates, 'ascend');
+% else
+%     [sortedSliceCoordinates sortedIndexes] = sort(sliceCoordinates, 'ascend');
+% end
+% % Get the Poistion of the top-left pixel of the last slice:
+% dicomInfo = dicominfo([path files(i).name]);
+% % Re-arrange the image in incresing z coordinate.
+%     image = image(:,:,sortedIndexes);
+
 % Poistion of the top-left pixel of the last slice:
 posTopLeftPixel_N = dicomInfo.ImagePositionPatient;
 % Dir z:
 dirZ = (posTopLeftPixel_N - posTopLeftPixel_1) / (numSlices-1);
 
-sliceThickness = abs(sliceCoordinates(2)-sliceCoordinates(1));
+    
 affineMatrix = [dircosX dircosY dirZ./sliceThickness posTopLeftPixel_1; 0 0 0 1];
 if applyAffineTransform
     % We can apply directly the affine transform, the problem is that
