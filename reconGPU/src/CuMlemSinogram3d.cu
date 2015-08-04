@@ -598,6 +598,8 @@ bool CuMlemSinogram3d::Reconstruct(TipoProyector tipoProy, int indexGpu)
   /// Voy generando mensajes con los archivos creados en el log de salida:
   int nPixels = reconstructionImage->getPixelCount();
   int nBins = estimatedProjection->getBinCount();
+  int nBinsSino2d = estimatedProjection->getSegment(0)->getSinogram2D(0)->getNumProj()*estimatedProjection->getSegment(0)->getSinogram2D(0)->getNumR();
+  
   for(unsigned int t = 0; t < this->numIterations; t++)
   {
     clock_t initialClockIteration = clock();
@@ -615,7 +617,12 @@ bool CuMlemSinogram3d::Reconstruct(TipoProyector tipoProy, int indexGpu)
 	forwardprojector->Project(d_reconstructionImage, d_estimatedProjection, d_ring1_mm, d_ring2_mm, reconstructionImage, (Sinogram3DCylindricalPet*)inputProjection, false);
 	break;
     }
+    // The additive term in the forward model (the multiplicative is only take into account in the sensitivity image,
+    // so the additive term need to be dividived by the multipicative factors previously):
+    if(enableAdditiveTerm)
+      addSinograms(d_estimatedProjection, d_additiveSinogram, nBinsSino2d, nBins);
     clock_t finalClockProjection = clock();
+    
     /// Guardo el likelihood (Siempre va una iteración atrás, ya que el likelihhod se calcula a partir de la proyección
     /// estimada, que es el primer paso del algoritmo). Se lo calculo al sinograma
     /// proyectado, respecto del de entrada.
@@ -743,10 +750,10 @@ bool CuMlemSinogram3d::updatePixelValue()
   return true;
 }
 
-bool CuMlemSinogram3d::addSinograms(float* d_inputOuputSino1, float* d_inputSino2, int numElements)
+bool CuMlemSinogram3d::addSinograms(float* d_inputOuputSino1, float* d_inputSino2, int numBinsPerSlice,  int numElements)
 {
   // Llamo al kernel que actualiza el pixel.
-  cuUpdatePixelValue<<<gridSizeProjector, blockSizeProjector>>>(d_inputOuputSino1, d_inputSino2, numElements);
+  cuAddVectors<<<gridSizeProjector, blockSizeProjector>>>(d_inputOuputSino1, d_inputSino2, numBinsPerSlice, numElements);
   cudaThreadSynchronize();
   return true;
 }
@@ -757,8 +764,8 @@ bool CuMlemSinogram3d::computeSensitivity(TipoProyector tipoProy)
   /// Creo un Sinograma ·D igual que el de entrada.
   Sinogram3D* constantSinogram3D;
   /// With normalization use the norm sinogram if not a constant sinogram:
-  if (enableNormalization)
-    constantSinogram3D = normalizationCorrectionFactorsProjection->Copy();
+  if (enableMultiplicativeTerm)
+    constantSinogram3D = multiplicativeProjection->Copy();
   else
   {
     constantSinogram3D = inputProjection->Copy();

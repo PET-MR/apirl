@@ -52,6 +52,7 @@
 #include <Sinograms2Din3DArPet.h>
 #include <Sinograms2DinCylindrical3Dpet.h>
 #include <Sinogram3DSiemensMmr.h>
+#include <Sinograms2DinSiemensMmr.h>
 #ifdef __USE_CUDA__
   #include <CuProjector.h>
   #include <CuProjectorInterface.h>
@@ -303,11 +304,25 @@ int main (int argc, char *argv[])
 	  Sinogram2D* outputProjection;
 	  if (numberOfSubsets != 0)
 	  {
-	    Sinogram2DinCylindrical3Dpet* fullProjection = new Sinogram2DinCylindrical3Dpet((char*)inputFilename.c_str(), rFov_mm, rScanner_mm);
+	    Sinogram2DinCylindrical3Dpet* fullProjection = new Sinogram2DinCylindrical3Dpet((char*)sampleProjection.c_str(), rFov_mm, rScanner_mm);
 	    outputProjection = new Sinogram2DinCylindrical3Dpet(fullProjection, subsetIndex, numberOfSubsets);
 	  }
 	  else
-	    outputProjection = new Sinogram2DinCylindrical3Dpet((char*)inputFilename.c_str(), rFov_mm, rScanner_mm);
+	    outputProjection = new Sinogram2DinCylindrical3Dpet((char*)sampleProjection.c_str(), rFov_mm, rScanner_mm);
+	  outputProjection->FillConstant(0);
+	  forwardprojector->Project(inputImage, outputProjection);
+	  outputProjection->writeInterfile(outputFilename);
+	}
+	else if(outputType.compare("Sinogram2DinSiemensMmr")==0)
+	{
+	  Sinogram2D* outputProjection;
+	  if (numberOfSubsets != 0)
+	  {
+	    Sinogram2DinSiemensMmr* fullProjection = new Sinogram2DinSiemensMmr((char*)inputFilename.c_str());
+	    outputProjection = new Sinogram2DinSiemensMmr(fullProjection, subsetIndex, numberOfSubsets);
+	  }
+	  else
+	    outputProjection = new Sinogram2DinSiemensMmr((char*)sampleProjection.c_str());
 	  outputProjection->FillConstant(0);
 	  forwardprojector->Project(inputImage, outputProjection);
 	  outputProjection->writeInterfile(outputFilename);
@@ -328,49 +343,59 @@ int main (int argc, char *argv[])
 	  Sinogram2D* outputProjection;
 	  if (numberOfSubsets != 0)
 	  {
-	    Sinogram2Din3DArPet* fullProjection = new Sinogram2Din3DArPet((char*)inputFilename.c_str(), rFov_mm);
+	    Sinogram2Din3DArPet* fullProjection = new Sinogram2Din3DArPet((char*)sampleProjection.c_str(), rFov_mm);
 	    outputProjection = new Sinogram2Din3DArPet(fullProjection, subsetIndex, numberOfSubsets);
 	  }
 	  else
-	    outputProjection = new Sinogram2Din3DArPet((char*)inputFilename.c_str(), rFov_mm);
+	    outputProjection = new Sinogram2Din3DArPet((char*)sampleProjection.c_str(), rFov_mm);
 	  outputProjection->FillConstant(0);
 	  forwardprojector->Project(inputImage, outputProjection);
 	  outputProjection->writeInterfile(outputFilename);
 	}
-	else if(outputType.compare("Sinograms2D")==0)
+	else if ((!outputType.compare("Sinograms2D")) || (!outputType.compare("Sinograms2DinSiemensMmr")) || (!outputType.compare("Sinograms2D")))
 	{
-	  // Sinogramas 2D genérico (para scanner cilíndrico).
-	  if(getCylindricalScannerParameters(parameterFileName, "Projection", &rFov_mm, &axialFov_mm, &rScanner_mm))
+	  Sinograms2DmultiSlice* outputProjection;
+	  if(outputType.compare("Sinograms2D")==0)
 	  {
-	    return -1;
+	    // Sinogramas 2D genérico (para scanner cilíndrico).
+	    if(getCylindricalScannerParameters(parameterFileName, "Projection", &rFov_mm, &axialFov_mm, &rScanner_mm))
+	    {
+	      return -1;
+	    }
+	    outputProjection = new Sinograms2DinCylindrical3Dpet((char*)sampleProjection.c_str(), rFov_mm, axialFov_mm, rScanner_mm); outputProjection->FillConstant(0);
 	  }
-	  Sinograms2DinCylindrical3Dpet* outputProjection = new Sinograms2DinCylindrical3Dpet((char*)sampleProjection.c_str(), rFov_mm, axialFov_mm, rScanner_mm); 
-
+	  else if(outputType.compare("Sinograms2DinSiemensMmr")==0)
+	  {
+	    // Sinogramas 2D para siemens mMR, todos los parámetros son fijos.
+	    outputProjection = new Sinograms2DinSiemensMmr((char*)sampleProjection.c_str());
+	  }
+	  else if(outputType.compare("Sinograms2Din3DArPet")==0)
+	  {
+	    // Sinogramas 2D del ArPet. Un sinograma por cada slice o anillo.
+	    // Leo el tamaño del FOV:
+	    float blindDistance_mm; int minDetDiff;
+	    if(getArPetParameters(parameterFileName, "Projection", &rFov_mm, &axialFov_mm, &blindDistance_mm, &minDetDiff))
+	    {
+	      return -1;
+	    }
+	    outputProjection = new Sinograms2Din3DArPet((char*)sampleProjection.c_str(), rFov_mm, axialFov_mm); 
+	    ((Sinograms2Din3DArPet*)outputProjection)->setLengthOfBlindArea(blindDistance_mm);
+	    ((Sinograms2Din3DArPet*)outputProjection)->setMinDiffDetectors(minDetDiff);    
+	  }
 	  outputProjection->FillConstant(0);
 	  float x_mm, y_mm, z_mm;
-	  // Recorro todos los slices y hago la proyección:
+	  if(outputProjection->getNumSinograms() != inputImage->getSize().nPixelsZ)
+	  {
+	    cout<<"Error: Projection of an image into a sinograms2D with different number of sinograms that slices." <<endl;
+	    exit(1);
+	  }
+	  // Recorro todos los sinogramas y hago la proyección. Fuerzo que la imagen tenga la msima cantidad
+	  // de slices que de sinogramas.
 	  for(int i = 0; i < outputProjection->getNumSinograms(); i++)
 	  {
 	    Sinogram2D* sino2d = outputProjection->getSinogram2D(i);
 	    sino2d->FillConstant(0);
-	    float axialValueSino_mm = outputProjection->getAxialValue(i);
-	    
-	    // Obtengo el slice con las coordenadas del sinograma:
-	    int j = 0; float distSliceToSino_mm;
-	    inputImage->getPixelGeomCoord(0, 0, 0, &x_mm, &y_mm, &z_mm);
-	    distSliceToSino_mm = abs(axialValueSino_mm - z_mm);
-	    for(j = 1; j < inputImage->getSize().nPixelsZ; j++)
-	    {
-	      inputImage->getPixelGeomCoord(0, 0, j, &x_mm, &y_mm, &z_mm);
-	      if (abs(axialValueSino_mm - z_mm)<distSliceToSino_mm)
-		distSliceToSino_mm = abs(axialValueSino_mm - z_mm);
-	      else
-	      {
-		j--;
-		break;	// Si la distancia dejó de achicarse llegué al mínimo en el anterior.
-	      }
-	    }
-	    Image* slice = inputImage->getSlice(j);
+	    Image* slice = inputImage->getSlice(i);
 	    forwardprojector->Project(slice, sino2d);
 	    // Copio el resultado del sino2d a al sinograma múltiple:
 	    for(int indexAng = 0; indexAng < outputProjection->getNumProj(); indexAng++)
@@ -380,60 +405,8 @@ int main (int argc, char *argv[])
 		outputProjection->getSinogram2D(i)->setSinogramBin(indexAng, indexR, sino2d->getSinogramBin(indexAng, indexR));
 	      }
 	    }
-	    free(slice);
 	  }
-	  outputProjection->writeInterfile(outputFilename);
-	}
-	else if(outputType.compare("Sinograms2Din3DArPet")==0)
-	{
-	  // Sinogramas 2D del ArPet. Un sinograma por cada slice o anillo.
-	  // Leo el tamaño del FOV:
-	  float blindDistance_mm; int minDetDiff;
-	  if(getArPetParameters(parameterFileName, "Projection", &rFov_mm, &axialFov_mm, &blindDistance_mm, &minDetDiff))
-	  {
-	    return -1;
-	  }
-	  Sinograms2Din3DArPet* outputProjection = new Sinograms2Din3DArPet((char*)sampleProjection.c_str(), rFov_mm, axialFov_mm); 
-	  outputProjection->setLengthOfBlindArea(blindDistance_mm);
-	  outputProjection->setMinDiffDetectors(minDetDiff);
-	  outputProjection->FillConstant(0);
-	  float x_mm, y_mm, z_mm;
-	  // Recorro todos los slices y hago la proyección:
-	  for(int i = 0; i < outputProjection->getNumSinograms(); i++)
-	  {
-	    Sinogram2D* sino2d = outputProjection->getSinogram2D(i);
-	    sino2d->FillConstant(0);
-	    float axialValueSino_mm = outputProjection->getAxialValue(i);
-	    
-	    // Obtengo el slice con las coordenadas del sinograma:
-	    int j = 0; float distSliceToSino_mm;
-	    inputImage->getPixelGeomCoord(0, 0, 0, &x_mm, &y_mm, &z_mm);
-	    distSliceToSino_mm = abs(axialValueSino_mm - z_mm);
-	    for(j = 1; j < inputImage->getSize().nPixelsZ; j++)
-	    {
-	      inputImage->getPixelGeomCoord(0, 0, j, &x_mm, &y_mm, &z_mm);
-	      if (abs(axialValueSino_mm - z_mm)<distSliceToSino_mm)
-		distSliceToSino_mm = abs(axialValueSino_mm - z_mm);
-	      else
-	      {
-		j--;
-		break;	// Si la distancia dejó de achicarse llegué al mínimo en el anterior.
-	      }
-	    }
-	    Image* slice = inputImage->getSlice(j);
-	    forwardprojector->Project(slice, sino2d);
-	    // Copio el resultado del sino2d a al sinograma múltiple:
-	    for(int indexAng = 0; indexAng < outputProjection->getNumProj(); indexAng++)
-	    {
-	      for(int indexR = 0; indexR < outputProjection->getNumR(); indexR++)
-	      {
-		outputProjection->getSinogram2D(i)->setSinogramBin(indexAng, indexR, sino2d->getSinogramBin(indexAng, indexR));
-	      }
-	    }
-	    free(slice);
-
-	  }
-	  outputProjection->writeInterfile(outputFilename);
+	  outputProjection->writeInterfile(outputFilename);	  
 	}
 	else if(outputType.compare("Sinogram3D")==0)
 	{

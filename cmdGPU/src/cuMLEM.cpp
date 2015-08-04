@@ -150,7 +150,7 @@ int main (int argc, char *argv[])
   string strForwardprojector;
   string strBackprojector;
   string attenMapFilename;
-  string acfFilename, estimatedRandomsFilename, estimatedScatterFilename, normFilename;
+  string multiplicativeFilename, additiveFilename;
   CuProjector* forwardprojector;
   CuProjector* backprojector;
   int saveIterationInterval;
@@ -330,11 +330,11 @@ int main (int argc, char *argv[])
     exit(1);
   }
   
-  // Pido los singoramas de corrección si es que están disponibles:
-  if(getCorrectionSinogramNames(parameterFileName, "MLEM", &acfFilename, &estimatedRandomsFilename, &estimatedScatterFilename))
+  // Busco sinograma multiplicativo si se pasó alguno:
+  if(getMultiplicativeSinogramName(parameterFileName,  "MLEM",&multiplicativeFilename))
     return -1;
-  // Idem para normalización:
-  if(getNormalizationSinogramName(parameterFileName,  "MLEM",&normFilename))
+  // Mismo con el additivo:
+  if(getAdditiveSinogramName(parameterFileName,  "MLEM",&additiveFilename))
     return -1;
   
   // If I get the number of subsets as parameters I need to call CuOsem... later instead of CuMlem...:
@@ -464,21 +464,13 @@ int main (int argc, char *argv[])
   // La habilitación de la data intermedia la debo hacer acá porque no está implementada en el constructor:
   if(saveIntermediateData)
     mlem->enableSaveIntermediates(saveIntermediateData);
-  // Verifico si hay correciones para realizar.
-  // Cargo los sinogramas de corrección:
-  if(acfFilename != "")
-    mlem->setAcfProjection(acfFilename);
-  if(estimatedRandomsFilename != "")
-    mlem->setRandomCorrectionProjection(estimatedRandomsFilename);
-  if(estimatedScatterFilename != "")
-    mlem->setScatterCorrectionProjection(estimatedScatterFilename);
-  // Aplico las correciones:
-  mlem->correctInputSinogram();
-  // Y normalización:
-  if (normFilename != "")
-  {
-    mlem->setNormalizationFactorsProjection(normFilename);
-  }
+
+  // Factor multiplicativo en el forward proyector:
+  if(multiplicativeFilename != "")
+    mlem->setMultiplicativeProjection(multiplicativeFilename);
+  // Factor aditivo en el proyector:
+  if(additiveFilename != "")
+    mlem->setAdditiveProjection(additiveFilename);
   // Reconstruyo:
   TipoProyector tipoProy;
   tipoProy = SIDDON_PROJ_TEXT_CYLINDRICAL_SCANNER;

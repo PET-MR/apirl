@@ -44,12 +44,12 @@ __global__ void cuGetLikelihoodValue (float* estimated_michelogram, float* measu
   }
 }
 
-__global__ void cuAddVectors (float* outputInput1, float* input2, int numElements)
+__global__ void cuAddVectors (float* outputInput1, float* input2, int numBinsPerSlice, int numElements)
 {
   int indexSino2D =  threadIdx.x + (blockIdx.x * blockDim.x);
-  if(indexSino2D>=numR*numProj)
+  if(indexSino2D>=numBinsPerSlice)
     return;
-  int indiceMichelogram = indexSino2D + blockIdx.y * (numProj * numR);
+  int indiceMichelogram = indexSino2D + blockIdx.y * (numBinsPerSlice);
   if(indiceMichelogram >= numElements)
     return;
   outputInput1[indiceMichelogram] = outputInput1[indiceMichelogram] + input2[indiceMichelogram];

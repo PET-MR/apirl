@@ -36,10 +36,10 @@ bool SiddonProjector::Backproject (Sinogram2D* InputSinogram, Image* outputImage
   int LengthList, i, j, l, indexPixel;
   float newValue = 0, geomFactor;
   // I only need to calculate the ForwardProjection of the bins were ara at least one event
-  //#pragma omp parallel private(i, j, l, LOR, P1, P2, MyWeightsList, geomFactor, LengthList, newValue, indexPixel) shared(InputSinogram,ptrPixels)
+  #pragma omp parallel private(i, j, l, LOR, P1, P2, MyWeightsList, geomFactor, LengthList, newValue, indexPixel) shared(InputSinogram,ptrPixels)
   {
     //MyWeightsList = (SiddonSegment**)malloc(sizeof(SiddonSegment*));
-    //#pragma omp for
+    #pragma omp for
     for(i = 0; i < InputSinogram->getNumProj(); i++)
     {
       for(j = 0; j < InputSinogram->getNumR(); j++)

@@ -274,7 +274,8 @@ bool CuOsemSinogram3d::Reconstruct(TipoProyector tipoProy, int indexGpu)
   Sinogram3D *inputSubset;
   estimatedProjection=inputProjection->getSubset(0,numSubsets);
   int nBins = estimatedProjection->getBinCount();	// The number of bins that we use in the projection and backrpojection is the one of the subset.
-    /// Inicializo el volumen a reconstruir con la imagen del initial estimate:
+  int nBinsSino2d = estimatedProjection->getNumProj() * estimatedProjection->getNumR();
+  /// Inicializo el volumen a reconstruir con la imagen del initial estimate:
   reconstructionImage = new Image(initialEstimate);
   float* ptrPixels = reconstructionImage->getPixelsPtr();
   /// Change the grid size of the kernel to the size of the subsets:
@@ -420,6 +421,11 @@ bool CuOsemSinogram3d::Reconstruct(TipoProyector tipoProy, int indexGpu)
 	  break;
       }
       clock_t finalClockProjection = clock();
+      
+      // The additive term in the forward model (the multiplicative is only take into account in the sensitivity image,
+      // so the additive term need to be dividived by the multipicative factors previously):
+      if(enableAdditiveTerm)
+	addSinograms(d_estimatedProjection, d_additiveSinogram, nBinsSino2d, nBins);
       
       /// Si quiero guardar la proyección intermedia, lo hago acá, porque luego en la backprojection se modifica para hacer el cociente entre entrada y estimada:
       if(saveIntermediateProjectionAndBackprojectedImage)
@@ -584,8 +590,8 @@ bool CuOsemSinogram3d::computeSensitivity(Image* outputImage, int indexSubset, T
   /// Creo un Sinograma ·D igual que el de entrada.
   Sinogram3D* constantSinogram3D;
   /// With normalization use the norm sinogram if not a constant sinogram:
-  if (enableNormalization)
-    constantSinogram3D = normalizationCorrectionFactorsProjection->getSubset(indexSubset, numSubsets);
+  if (enableMultiplicativeTerm)
+    constantSinogram3D = multiplicativeProjection->getSubset(indexSubset, numSubsets);
   else
   {
     constantSinogram3D = inputProjection->getSubset(indexSubset, numSubsets);

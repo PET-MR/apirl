@@ -362,7 +362,7 @@ float Siddon (Line2D LOR, Image* image, SiddonSegment** weightsList, int* length
   
   // Variables relacionadas con el parámetro alpha de la recta de la lor.
   float alpha_xy_1, alpha_xy_2;	// Valores de alpha para la intersección de la recta con el círculo del fov.
-  //float alpha_x_1, alpha_y_1, alpha_x_2, alpha_y_2; // Valores de alpha para el punto de salida y entrada al fov.
+  float alpha_x_1, alpha_y_1, alpha_x_2, alpha_y_2; // Valores de alpha para el punto de salida y entrada al fov.
   float alpha_x_min, alpha_y_min, alpha_x_max, alpha_y_max;	// Valores de alpha de ambos puntos por coordenada, pero ahora separados por menor y mayor.
   float alpha_min, alpha_max;	// Valores de alpha mínimo y máximo finales, o sea de entrada y salida al fov de la lor.
   // Valores de alpha para recorrer la lor:
@@ -394,33 +394,34 @@ float Siddon (Line2D LOR, Image* image, SiddonSegment** weightsList, int* length
   // a calcular como Siddon
   lengthList[0] = 0;
   
-  // Cálculo de intersección de la lor con un fov circular.
-  // Lo calculo como la intersección entre la recta y una circunferencia de radio rFov_mm. La ecuación a resolver es:
-  // (X0+alpha*Vx).^2+(Y0+alpha*Vy).^2=rFov_mm.^2
-  // alpha = (-2*(Vx+Vy)+sqrt(4*Vx^2*(1-c)+4*Vy^2*(1-c) + 8(Vx+Vy)))/(2*(Vx^2+Vy^2))
-  //float c = LOR.P0.X*LOR.P0.X + LOR.P0.Y*LOR.P0.Y - rFov_mm*rFov_mm;
-  float segundoTermino = sqrt(4*(LOR.Vx*LOR.Vx*(rFov_mm*rFov_mm-LOR.P0.Y*LOR.P0.Y)
-	  +LOR.Vy*LOR.Vy*(rFov_mm*rFov_mm-LOR.P0.X*LOR.P0.X)) + 8*LOR.Vx*LOR.P0.X*LOR.Vy*LOR.P0.Y);
-  // Obtengo los valores de alpha donde se intersecciona la recta con la circunferencia.
-  // Como la debería cruzar en dos puntos hay dos soluciones.
-  alpha_xy_1 = (-2*(LOR.Vx*LOR.P0.X+LOR.Vy*LOR.P0.Y) + segundoTermino)/(2*(LOR.Vx*LOR.Vx+LOR.Vy*LOR.Vy));
-  alpha_xy_2 = (-2*(LOR.Vx*LOR.P0.X+LOR.Vy*LOR.P0.Y) - segundoTermino)/(2*(LOR.Vx*LOR.Vx+LOR.Vy*LOR.Vy));
+  // Para FOV cilíndrico:
+//   // Cálculo de intersección de la lor con un fov circular.
+//   // Lo calculo como la intersección entre la recta y una circunferencia de radio rFov_mm. La ecuación a resolver es:
+//   // (X0+alpha*Vx).^2+(Y0+alpha*Vy).^2=rFov_mm.^2
+//   // alpha = (-2*(Vx+Vy)+sqrt(4*Vx^2*(1-c)+4*Vy^2*(1-c) + 8(Vx+Vy)))/(2*(Vx^2+Vy^2))
+//   //float c = LOR.P0.X*LOR.P0.X + LOR.P0.Y*LOR.P0.Y - rFov_mm*rFov_mm;
+//   float segundoTermino = sqrt(4*(LOR.Vx*LOR.Vx*(rFov_mm*rFov_mm-LOR.P0.Y*LOR.P0.Y)
+// 	  +LOR.Vy*LOR.Vy*(rFov_mm*rFov_mm-LOR.P0.X*LOR.P0.X)) + 8*LOR.Vx*LOR.P0.X*LOR.Vy*LOR.P0.Y);
+//   // Obtengo los valores de alpha donde se intersecciona la recta con la circunferencia.
+//   // Como la debería cruzar en dos puntos hay dos soluciones.
+//   alpha_xy_1 = (-2*(LOR.Vx*LOR.P0.X+LOR.Vy*LOR.P0.Y) + segundoTermino)/(2*(LOR.Vx*LOR.Vx+LOR.Vy*LOR.Vy));
+//   alpha_xy_2 = (-2*(LOR.Vx*LOR.P0.X+LOR.Vy*LOR.P0.Y) - segundoTermino)/(2*(LOR.Vx*LOR.Vx+LOR.Vy*LOR.Vy));
+//   
+//   // Ahora calculo los dos puntos (X,Y)
+//   // Para esta implementación no lo necesito, porque me interesa el índice de píxel de entrada y de salida
+//   // y no el punto exacto,ya que se considera el píxel entero en el brode del fov.
+//   /*xCirc_1_mm = LOR.P0.X + alpha_xy_1*LOR.Vx;
+//   xCirc_2_mm = LOR.P0.X + alpha_xy_2*LOR.Vx;
+//   yCirc_1_mm = LOR.P0.Y + alpha_xy_1*LOR.Vy;
+//   yCirc_2_mm = LOR.P0.Y + alpha_xy_2*LOR.Vy;*/
+//   
+//   // Valores de alpha de entrada y de salida. El de entrada es el menor, porque la lor
+//   // se recorre desde P0 a P1.
+//   alpha_min = min(alpha_xy_1, alpha_xy_2);
+//   alpha_max = max(alpha_xy_1, alpha_xy_2);
   
-  // Ahora calculo los dos puntos (X,Y)
-  // Para esta implementación no lo necesito, porque me interesa el índice de píxel de entrada y de salida
-  // y no el punto exacto,ya que se considera el píxel entero en el brode del fov.
-  /*xCirc_1_mm = LOR.P0.X + alpha_xy_1*LOR.Vx;
-  xCirc_2_mm = LOR.P0.X + alpha_xy_2*LOR.Vx;
-  yCirc_1_mm = LOR.P0.Y + alpha_xy_1*LOR.Vy;
-  yCirc_2_mm = LOR.P0.Y + alpha_xy_2*LOR.Vy;*/
   
-  // Valores de alpha de entrada y de salida. El de entrada es el menor, porque la lor
-  // se recorre desde P0 a P1.
-  alpha_min = min(alpha_xy_1, alpha_xy_2);
-  alpha_max = max(alpha_xy_1, alpha_xy_2);
-  
-  
-  /*// Para FOV cuadrado:
+  // Para FOV cuadrado:
   // Obtengo la intersección de la lor con las rectas x=-rFov_mm x=rFov_mm y=-rFov_mm y =rFov_mm
   // Para dichos valores verifico que la otra coordenada este dentro de los valores, y obtengo
   // los puntos de entrada y salida de la lor.	
@@ -430,25 +431,62 @@ float Siddon (Line2D LOR, Image* image, SiddonSegment** weightsList, int* length
   float maxValueY_mm = rFov_mm;
   
   // Calculates alpha values for the inferior planes (entry planes) of the FOV
-  alpha_x_1 = (minValueX_mm - LOR.P0.X) / LOR.Vx;
-  alpha_y_1 = (minValueY_mm - LOR.P0.Y) / LOR.Vy;
-  // Calculates alpha values for superior planes ( going out planes) of the fov
-  alpha_x_2 = (maxValueX_mm - LOR.P0.X) / LOR.Vx;	// ValuesX has one more element than pixels in X, thats we can use InputVolume->SizeX as index for the las element
-  alpha_y_2 = (maxValueY_mm - LOR.P0.Y) / LOR.Vy;
-
-  //alpha min
-  alpha_x_min = min(alpha_x_1, alpha_x_2);
-  //alpha_x_min = max((float)0, alpha_x_min);		// If alpha_min is negative, we forced it to zero
-  alpha_y_min = min(alpha_y_1, alpha_y_2);
-  //alpha_y_min = max((float)0, alpha_y_min);
-  alpha_min = max(alpha_x_min, alpha_y_min); // alpha_min is the maximum values
-						  // bewtween the two alpha values. Because this means that we our inside the FOV
+  // Calculates alpha values for the inferior planes (entry planes) of the FOV
+  if(LOR.Vx == 0) // Parallel to x axis
+  {
+    alpha_y_1 = (minValueY_mm - LOR.P0.Y) / LOR.Vy; 
+    alpha_y_2 = (maxValueY_mm - LOR.P0.Y) / LOR.Vy;
+    if(alpha_y_1 < alpha_y_2)
+    {
+      alpha_min = alpha_y_1;
+      alpha_max = alpha_y_2;
+    }
+    else
+    {
+      alpha_min = alpha_y_2;
+      alpha_max = alpha_y_1;
+    }
+  }
+  else if(LOR.Vy == 0) // Parallel to y axis.
+  {
+    alpha_x_1 = (minValueX_mm - LOR.P0.X) / LOR.Vx;
+    alpha_x_2 = (maxValueX_mm - LOR.P0.X) / LOR.Vx;
+    if(alpha_x_1 < alpha_x_2)
+    {
+      alpha_min = alpha_x_1;
+      alpha_max = alpha_x_2;
+    }
+    else
+    {
+      alpha_min = alpha_x_2;
+      alpha_max = alpha_x_1;
+    }
+  }
+  else
+  {
+    alpha_x_1 = (minValueX_mm - LOR.P0.X) / LOR.Vx;
+    alpha_y_1 = (minValueY_mm - LOR.P0.Y) / LOR.Vy;  
+    // Calculates alpha values for superior planes ( going out planes) of the fov
+    alpha_x_2 = (maxValueX_mm - LOR.P0.X) / LOR.Vx;	// ValuesX has one more element than pixels in X, thats we can use InputVolume->SizeX as index for the las element
+    alpha_y_2 = (maxValueY_mm - LOR.P0.Y) / LOR.Vy;
+    //alpha min
+    alpha_x_min = min(alpha_x_1, alpha_x_2);
+    alpha_y_min = min(alpha_y_1, alpha_y_2);
+    //alpha_y_min = max((float)0, alpha_y_min);
+    alpha_min = max(alpha_x_min, alpha_y_min); //
+    //alpha max
+    alpha_x_max = max(alpha_x_1, alpha_x_2);
+    alpha_y_max = max(alpha_y_1, alpha_y_2);
+    alpha_max = min(alpha_x_max, alpha_y_max);
+  }
   
-  //alpha max
-  alpha_x_max = max(alpha_x_1, alpha_x_2);
-  alpha_y_max = max(alpha_y_1, alpha_y_2);
-  alpha_max = min(alpha_x_max, alpha_y_max);
-  // Fin para Fov Cuadrado.*/
+  // if the radius of the scanner is less than the diagonal (alpha less than 0), the entry point should be P0
+  if ((alpha_min<0)||(alpha_min>1)) // I added (alpha_min>1), because for aprallel lors to an axis, both alphas can be positiver or negative.
+    alpha_min = 0;
+  // if the radius of the scanner is less than the diagonal (alpha less than 0), the entry point should be P0
+  if ((alpha_max>1)||(alpha_max<0)) 
+    alpha_max = 1;
+  // Fin para Fov Cuadrado.
   
 
   // Coordenadas dentro de la imagen de los dos puntos de entrada:
@@ -478,7 +516,7 @@ float Siddon (Line2D LOR, Image* image, SiddonSegment** weightsList, int* length
 	return 0;
   }
   // Cantidad de píxeles intersectados:
-  numIntersectedPixels = labs(i_max - i_min) + labs(j_max - j_min) + 1; // +0 in each dimension(for getting the amount of itnersections) -1 toget pixels> 3x1-1 = +2
+  numIntersectedPixels = labs(i_max - i_min) + labs(j_max - j_min); // +0 in each dimension(for getting the amount of itnersections) -1 toget pixels> 3x1-1 = +2
   
   // Memoria para el vector de segmentos de siddon:
   weightsList[0] = (SiddonSegment*) malloc((size_t)(sizeof(SiddonSegment)* numIntersectedPixels));
@@ -494,43 +532,43 @@ float Siddon (Line2D LOR, Image* image, SiddonSegment** weightsList, int* length
   else if(LOR.Vy < 0)
 	  j_incr = -1;
 
-  // Los alpha min y alpha max los tengo calcular para la entrada
-  // y salida al primer y último píxel en vez del punto de intersección del fov circular.
-  // Entonces a partir del i_min, i_max, j_min, j_max, y las direcciones de las lors, determino
-  // cuales serían los valores alpha para los límites de ese píxel si la lor siguiera (que pueden ser dos,
-  // límite en el borde x (fila) o borde y (col) del píxel. De los 4 segmentos del píxel, me quedan dos, porque
-  // se en que sentido avanza la lor por eso miro la pendiente para el calculo.).
-  // Luego con los dos valores de alpha_min y alpha_max, me quedo con el mayor y el menor respectivamente porque son
-  // los puntos más cercanos al punto de intersección con el fov circular. De esta forma obtengo el punto de la cara
-  // del píxel que se intersecta primero, y ese va a ser la entrada al fov considerando al píxel entero.
-  if (LOR.Vx>0)
-	alpha_x_min = ( -rFov_mm + i_min * sizeImage.sizePixelX_mm - LOR.P0.X ) / LOR.Vx;	//The formula is (i_min+i_incr) because que want the limit to the next change of pixel
-  else if (LOR.Vx<0)
-	alpha_x_min = ( -rFov_mm + (i_min+1) * sizeImage.sizePixelX_mm - LOR.P0.X ) / LOR.Vx;	// Limit to the left
-  if(LOR.Vy > 0)
-	alpha_y_min = ( -rFov_mm + j_min * sizeImage.sizePixelY_mm - LOR.P0.Y ) / LOR.Vy;
-  else if (LOR.Vy < 0)
-	alpha_y_min = ( -rFov_mm + (j_min+1) * sizeImage.sizePixelY_mm - LOR.P0.Y ) / LOR.Vy;
-  alpha_min = max(alpha_x_min, alpha_y_min);
-  if (LOR.Vx>0)
-	alpha_x_max = ( -rFov_mm + (i_max+1) * sizeImage.sizePixelX_mm - LOR.P0.X ) / LOR.Vx;	//The formula is (i_min+i_incr) because que want the limit to the next change of pixel
-  else if (LOR.Vx<0)
-	alpha_x_max = ( -rFov_mm + i_max * sizeImage.sizePixelX_mm - LOR.P0.X ) / LOR.Vx;	// Limit to the left
-  if(LOR.Vy > 0)
-	alpha_y_max = ( -rFov_mm + (j_max+1) * sizeImage.sizePixelY_mm - LOR.P0.Y ) / LOR.Vy;
-  else if (LOR.Vy < 0)
-	alpha_y_max = ( -rFov_mm + j_max * sizeImage.sizePixelY_mm - LOR.P0.Y ) / LOR.Vy;
-  alpha_max = min(alpha_x_max, alpha_y_max);
-  
-  // Largo de la los dentro del fov. También podría ir calculándolo sumando todos los segmentos.
-  // Si tengo en cuenta que para hacer este calculo tengo que hacer como 10 multiplicaciones
-  // y una raiz cuadrada, y de la otra forma serán cierta cantidad de sumas dependiendo el tamaño 
-  // de la imagen, pero en promedio pueden ser 100. No habría mucha diferencia entre hacerlo de una forma u otra.
-  // Puntos exactos de entrada y salida basados en los límtes del píxel:
-  x_1_mm = LOR.P0.X + alpha_min * LOR.Vx;
-  y_1_mm = LOR.P0.Y + alpha_min * LOR.Vy;
-  x_2_mm = LOR.P0.X + alpha_max * LOR.Vx;
-  y_2_mm = LOR.P0.Y + alpha_max * LOR.Vy;
+//   // Los alpha min y alpha max los tengo calcular para la entrada
+//   // y salida al primer y último píxel en vez del punto de intersección del fov circular.
+//   // Entonces a partir del i_min, i_max, j_min, j_max, y las direcciones de las lors, determino
+//   // cuales serían los valores alpha para los límites de ese píxel si la lor siguiera (que pueden ser dos,
+//   // límite en el borde x (fila) o borde y (col) del píxel. De los 4 segmentos del píxel, me quedan dos, porque
+//   // se en que sentido avanza la lor por eso miro la pendiente para el calculo.).
+//   // Luego con los dos valores de alpha_min y alpha_max, me quedo con el mayor y el menor respectivamente porque son
+//   // los puntos más cercanos al punto de intersección con el fov circular. De esta forma obtengo el punto de la cara
+//   // del píxel que se intersecta primero, y ese va a ser la entrada al fov considerando al píxel entero.
+//   if (LOR.Vx>0)
+// 	alpha_x_min = ( -rFov_mm + i_min * sizeImage.sizePixelX_mm - LOR.P0.X ) / LOR.Vx;	//The formula is (i_min+i_incr) because que want the limit to the next change of pixel
+//   else if (LOR.Vx<0)
+// 	alpha_x_min = ( -rFov_mm + (i_min+1) * sizeImage.sizePixelX_mm - LOR.P0.X ) / LOR.Vx;	// Limit to the left
+//   if(LOR.Vy > 0)
+// 	alpha_y_min = ( -rFov_mm + j_min * sizeImage.sizePixelY_mm - LOR.P0.Y ) / LOR.Vy;
+//   else if (LOR.Vy < 0)
+// 	alpha_y_min = ( -rFov_mm + (j_min+1) * sizeImage.sizePixelY_mm - LOR.P0.Y ) / LOR.Vy;
+//   alpha_min = max(alpha_x_min, alpha_y_min);
+//   if (LOR.Vx>0)
+// 	alpha_x_max = ( -rFov_mm + (i_max+1) * sizeImage.sizePixelX_mm - LOR.P0.X ) / LOR.Vx;	//The formula is (i_min+i_incr) because que want the limit to the next change of pixel
+//   else if (LOR.Vx<0)
+// 	alpha_x_max = ( -rFov_mm + i_max * sizeImage.sizePixelX_mm - LOR.P0.X ) / LOR.Vx;	// Limit to the left
+//   if(LOR.Vy > 0)
+// 	alpha_y_max = ( -rFov_mm + (j_max+1) * sizeImage.sizePixelY_mm - LOR.P0.Y ) / LOR.Vy;
+//   else if (LOR.Vy < 0)
+// 	alpha_y_max = ( -rFov_mm + j_max * sizeImage.sizePixelY_mm - LOR.P0.Y ) / LOR.Vy;
+//   alpha_max = min(alpha_x_max, alpha_y_max);
+//   
+//   // Largo de la los dentro del fov. También podría ir calculándolo sumando todos los segmentos.
+//   // Si tengo en cuenta que para hacer este calculo tengo que hacer como 10 multiplicaciones
+//   // y una raiz cuadrada, y de la otra forma serán cierta cantidad de sumas dependiendo el tamaño 
+//   // de la imagen, pero en promedio pueden ser 100. No habría mucha diferencia entre hacerlo de una forma u otra.
+//   // Puntos exactos de entrada y salida basados en los límtes del píxel:
+//   x_1_mm = LOR.P0.X + alpha_min * LOR.Vx;
+//   y_1_mm = LOR.P0.Y + alpha_min * LOR.Vy;
+//   x_2_mm = LOR.P0.X + alpha_max * LOR.Vx;
+//   y_2_mm = LOR.P0.Y + alpha_max * LOR.Vy;
   rayLengthInFov_mm = sqrt((x_2_mm-x_1_mm) * (x_2_mm-x_1_mm) + (y_2_mm-y_1_mm) * (y_2_mm-y_1_mm));
 
   
@@ -574,28 +612,28 @@ float Siddon (Line2D LOR, Image* image, SiddonSegment** weightsList, int* length
   // Recorro la lor y guardo los segmentos en la lista de salida.
   for(int m = 0; m < numIntersectedPixels; m++)
   {
-	if((alpha_x <= alpha_y))
-	{
-	  // Cruce por el plano x: avanzo en i.
-	  weightsList[0][m].IndexX = i;
-	  // El índice en Y crece igual que el x. La primera fila es la de abajo (antes era al revés).
-	  weightsList[0][m].IndexY = j;
-	  weightsList[0][m].Segment = (alpha_x - alpha_c) * rayLength_mm * factor;
-	  i += i_incr;
-	  alpha_c = alpha_x;
-	  alpha_x += alpha_x_u;
-	}
-	else
-	{
-	  // Cruce por el plano y: avanzo en j.
-	  weightsList[0][m].IndexX = i;
-	  // El índice en Y crece igual que el x. La primera fila es la de abajo (antes era al revés).
-	  weightsList[0][m].IndexY = j;
-	  weightsList[0][m].Segment = (alpha_y - alpha_c) * rayLength_mm * factor;
-	  j += j_incr;
-	  alpha_c = alpha_y;
-	  alpha_y += alpha_y_u;
-	}
+    if((alpha_x <= alpha_y))
+    {
+      // Cruce por el plano x: avanzo en i.
+      weightsList[0][m].IndexX = i;
+      // El índice en Y crece igual que el x. La primera fila es la de abajo (antes era al revés).
+      weightsList[0][m].IndexY = j;
+      weightsList[0][m].Segment = (alpha_x - alpha_c) * rayLength_mm * factor;
+      i += i_incr;
+      alpha_c = alpha_x;
+      alpha_x += alpha_x_u;
+    }
+    else
+    {
+      // Cruce por el plano y: avanzo en j.
+      weightsList[0][m].IndexX = i;
+      // El índice en Y crece igual que el x. La primera fila es la de abajo (antes era al revés).
+      weightsList[0][m].IndexY = j;
+      weightsList[0][m].Segment = (alpha_y - alpha_c) * rayLength_mm * factor;
+      j += j_incr;
+      alpha_c = alpha_y;
+      alpha_y += alpha_y_u;
+    }
   }
   lengthList[0] = numIntersectedPixels;
   

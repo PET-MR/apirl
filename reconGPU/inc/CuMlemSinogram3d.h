@@ -29,25 +29,25 @@ using namespace::std;
 
 // DLL export/import declaration: visibility of objects
 #ifndef LINK_STATIC
-	#ifdef WIN32               // Win32 build
-		#ifdef DLL_BUILD    // this applies to DLL building
-			#define DLLEXPORT __declspec(dllexport)
-		#else                   // this applies to DLL clients/users
-			#define DLLEXPORT __declspec(dllimport)
-		#endif
-		#define DLLLOCAL        // not explicitly export-marked objects are local by default on Win32
-	#else
-		#ifdef HAVE_GCCVISIBILITYPATCH   // GCC 4.x and patched GCC 3.4 under Linux
-			#define DLLEXPORT __attribute__ ((visibility("default")))
-			#define DLLLOCAL __attribute__ ((visibility("hidden")))
-		#else
-			#define DLLEXPORT
-			#define DLLLOCAL
-		#endif
-	#endif
+  #ifdef WIN32               // Win32 build
+    #ifdef DLL_BUILD    // this applies to DLL building
+      #define DLLEXPORT __declspec(dllexport)
+    #else                   // this applies to DLL clients/users
+      #define DLLEXPORT __declspec(dllimport)
+    #endif
+    #define DLLLOCAL        // not explicitly export-marked objects are local by default on Win32
+  #else
+    #ifdef HAVE_GCCVISIBILITYPATCH   // GCC 4.x and patched GCC 3.4 under Linux
+      #define DLLEXPORT __attribute__ ((visibility("default")))
+      #define DLLLOCAL __attribute__ ((visibility("hidden")))
+    #else
+      #define DLLEXPORT
+      #define DLLLOCAL
+    #endif
+  #endif
 #else                         // static linking
-	#define DLLEXPORT 
-	#define DLLLOCAL
+  #define DLLEXPORT 
+  #define DLLLOCAL
 #endif
 
 
@@ -187,9 +187,11 @@ class CuMlemSinogram3d : public MlemSinogram3d
     
     /// Suma dos sinogramas en memoria de GPU.
     /** Suma dos sinogramas en memoria de gpu y lo guarda en el primero de los parámetros.
-     * 
+     *  Los parámetros son los de vectores en memoria de gpu, la cantidad de total de elementos
+     * numElements y la cantidad de bins por slice o sinograma (numBinsPerSlice), que sirve para ver si los threads 
+     * por slice o sinograma2d son más que los elementos de la matriz.
      */
-    bool addSinograms(float* d_inputOuputSino1, float* d_inputSino2, int numElements);
+    bool addSinograms(float* d_inputOuputSino1, float* d_inputSino2, int numBinsPerSlice, int numElements);
     
     /// Obtiene el valor de likelihood actual en la reconstrucción.
     /** Estima el likelihood a nivel de gpu entre d_estimatedProjection y d_inputProjection.

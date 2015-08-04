@@ -49,6 +49,10 @@
 #include <Sinogram3DArPet.h>
 #include <Sinogram3DCylindricalPet.h>
 #include <Sinogram3DSiemensMmr.h>
+#include <Sinograms2DinSiemensMmr.h>
+#include <Sinograms2Din3DArPet.h>
+#include <Sinograms2DinCylindrical3Dpet.h>
+
 #ifdef __USE_CUDA__
   #include <CuProjector.h>
   #include <CuProjectorInterface.h>
@@ -273,9 +277,6 @@ int main (int argc, char *argv[])
 		return -1;
 	  }
 	}
-	
-	
-	
 	// Cargo la imagen de salida, y de ella obtengo 
 	// los tamaños de la imagen.
 	outputImage = new Image();
@@ -295,29 +296,29 @@ int main (int argc, char *argv[])
 	  // Debo leer el parámetro que tiene: "number_of_points_on_detector".
 	  if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), (char*)"Backproject", (char*)"number_of_points_on_detector", (char*)returnValue, (char*)errorMessage)) != 0)
 	  {
-		  // Hubo un error. Salgo del comando.
-		  if(errorCode == PMF_KEY_NOT_FOUND)
-		  {
-			// No se definió se utiliza el valor por default:
-			numPointsOnDetector = 1;
-		  }
-		  else
-		  {
-			cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
-			return -1;
-		  }
+	    // Hubo un error. Salgo del comando.
+	    if(errorCode == PMF_KEY_NOT_FOUND)
+	    {
+	      // No se definió se utiliza el valor por default:
+	      numPointsOnDetector = 1;
+	    }
+	    else
+	    {
+	      cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
+	      return -1;
+	    }
 	  }
 	  else
 	  {
-		numPointsOnDetector = atoi(returnValue);
+	    numPointsOnDetector = atoi(returnValue);
 	  }
 	  if(strBackprojector.compare("Siddon") == 0)
 	  {
-		backprojector = (Projector*)new SiddonProjector(numPointsOnDetector);
+	    backprojector = (Projector*)new SiddonProjector(numPointsOnDetector);
 	  }
 	  else
 	  {
-		backprojector = (Projector*)new SiddonProjectorWithAttenuation(numPointsOnDetector, attenuationImage);
+	    backprojector = (Projector*)new SiddonProjectorWithAttenuation(numPointsOnDetector, attenuationImage);
 	  }
 	}
 	else if((strBackprojector.compare("ConeOfResponse") == 0)||(strBackprojector.compare("ConeOfResponseWithAttenuation") == 0))
@@ -325,27 +326,27 @@ int main (int argc, char *argv[])
 	  // Debo leer el parámetro que tiene: "number_of_points_on_detector".
 	  if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), (char*)"Backproject", (char*)"number_of_points_on_detector", (char*)returnValue, (char*)errorMessage)) != 0)
 	  {
-		  // Hubo un error. Salgo del comando.
-		  if(errorCode == PMF_KEY_NOT_FOUND)
-		  {
-			cout<<"No se encontró el parámetro ""number_of_points_on_detector"", el cual es obligatorio "
-			"para el proyector ConeOfResponse."<<endl;
-			return -1;
-		  }
-		  else
-		  {
-			cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
-			return -1;
-		  }
+	    // Hubo un error. Salgo del comando.
+	    if(errorCode == PMF_KEY_NOT_FOUND)
+	    {
+	      cout<<"No se encontró el parámetro ""number_of_points_on_detector"", el cual es obligatorio "
+	      "para el proyector ConeOfResponse."<<endl;
+	      return -1;
+	    }
+	    else
+	    {
+	      cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
+	      return -1;
+	    }
 	  }
 	  int numPointsOnDetector = atoi((char*)returnValue);
 	  if(strBackprojector.compare("ConeOfResponse") == 0)
 	  {
-		backprojector = (Projector*)new ConeOfResponseProjector(numPointsOnDetector);
+	    backprojector = (Projector*)new ConeOfResponseProjector(numPointsOnDetector);
 	  }
 	  else
 	  {
-		backprojector = (Projector*)new ConeOfResponseProjectorWithAttenuation(numPointsOnDetector, attenuationImage);
+	    backprojector = (Projector*)new ConeOfResponseProjectorWithAttenuation(numPointsOnDetector, attenuationImage);
 	  }
 	}
 	else if(strBackprojector.compare("ConeOfResponseWithPenetration") == 0)
@@ -354,60 +355,60 @@ int main (int argc, char *argv[])
 	  // "number_of_points_on_collimator", "linear_attenuation_coeficient_cm".
 	  if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), (char*)"Backproject", (char*)"number_of_points_on_detector", (char*)returnValue, (char*)errorMessage)) != 0)
 	  {
-		  // Hubo un error. Salgo del comando.
-		  if(errorCode == PMF_KEY_NOT_FOUND)
-		  {
-			cout<<"No se encontró el parámetro ""number_of_points_on_detector"", el cual es obligatorio "
-			"para el proyector ConeOfResponseWithPenetration."<<endl;
-			return -1;
-		  }
-		  else
-		  {
-			cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
-			return -1;
-		  }
+	    // Hubo un error. Salgo del comando.
+	    if(errorCode == PMF_KEY_NOT_FOUND)
+	    {
+	      cout<<"No se encontró el parámetro ""number_of_points_on_detector"", el cual es obligatorio "
+	      "para el proyector ConeOfResponseWithPenetration."<<endl;
+	      return -1;
+	    }
+	    else
+	    {
+	      cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
+	      return -1;
+	    }
 	  }
 	  int numPointsOnDetector = atoi(returnValue);
 	  if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), (char*)"Backproject", (char*)"number_of_points_on_collimator", (char*)returnValue, (char*)errorMessage)) != 0)
 	  {
-		  // Hubo un error. Salgo del comando.
-		  if(errorCode == PMF_KEY_NOT_FOUND)
-		  {
-			cout<<"No se encontró el parámetro ""number_of_points_on_collimator"", el cual es obligatorio "
-			"para el proyector ConeOfResponseWithPenetration."<<endl;
-			return -1;
-		  }
-		  else
-		  {
-			cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
-			return -1;
-		  }
+	    // Hubo un error. Salgo del comando.
+	    if(errorCode == PMF_KEY_NOT_FOUND)
+	    {
+	      cout<<"No se encontró el parámetro ""number_of_points_on_collimator"", el cual es obligatorio "
+	      "para el proyector ConeOfResponseWithPenetration."<<endl;
+	      return -1;
+	    }
+	    else
+	    {
+	      cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
+	      return -1;
+	    }
 	  }
 	  int numPointsOnCollimator = atoi(returnValue);
 	  
 	  if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), (char*)"Backproject", (char*)"linear_attenuation_coeficient_cm", (char*)returnValue, (char*)errorMessage)) != 0)
 	  {
-		  // Hubo un error. Salgo del comando.
-		  if(errorCode == PMF_KEY_NOT_FOUND)
-		  {
-			cout<<"No se encontró el parámetro ""linear_attenuation_coeficient_cm"", el cual es obligatorio "
-			"para el proyector ConeOfResponseWithPenetration."<<endl;
-			return -1;
-		  }
-		  else
-		  {
-			cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
-			return -1;
-		  }
+	    // Hubo un error. Salgo del comando.
+	    if(errorCode == PMF_KEY_NOT_FOUND)
+	    {
+	      cout<<"No se encontró el parámetro ""linear_attenuation_coeficient_cm"", el cual es obligatorio "
+	      "para el proyector ConeOfResponseWithPenetration."<<endl;
+	      return -1;
+	    }
+	    else
+	    {
+	      cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
+	      return -1;
+	    }
 	  }
 	  float attenuationCoef_cm = atof(returnValue);
 	  if(strBackprojector.compare("ConeOfResponseWithPenetration") == 0)
 	  {
-		backprojector = (Projector*)new ConeOfResponseWithPenetrationProjector(numPointsOnDetector, numPointsOnCollimator, attenuationCoef_cm);
+	    backprojector = (Projector*)new ConeOfResponseWithPenetrationProjector(numPointsOnDetector, numPointsOnCollimator, attenuationCoef_cm);
 	  }
 	  else
 	  {
-		backprojector = (Projector*)new ConeOfResponseWithPenetrationProjectorWithAttenuation(numPointsOnDetector, numPointsOnCollimator, attenuationCoef_cm, attenuationImage);
+	    backprojector = (Projector*)new ConeOfResponseWithPenetrationProjectorWithAttenuation(numPointsOnDetector, numPointsOnCollimator, attenuationCoef_cm, attenuationImage);
 	  }
 	}
 	#ifdef __USE_CUDA__
@@ -454,101 +455,138 @@ int main (int argc, char *argv[])
 	  // "diameter_of_fov (in mm)"
 	  if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), (char*)"Backproject", (char*)"diameter_of_fov (in mm)", (char*)returnValue, (char*)errorMessage)) != 0)
 	  {
-		  // Hubo un error. Salgo del comando.
-		  if(errorCode == PMF_KEY_NOT_FOUND)
-		  {
-			cout<<"No se encontró el parámetro ""diameter_of_fov (in mm)"", el cual es obligatorio "
-			"para el tipo de dato Sinogram2Dtgs."<<endl;
-			return -1;
-		  }
-		  else
-		  {
-			cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
-			return -1;
-		  }
+	    // Hubo un error. Salgo del comando.
+	    if(errorCode == PMF_KEY_NOT_FOUND)
+	    {
+	      cout<<"No se encontró el parámetro ""diameter_of_fov (in mm)"", el cual es obligatorio "
+	      "para el tipo de dato Sinogram2Dtgs."<<endl;
+	      return -1;
+	    }
+	    else
+	    {
+	      cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
+	      return -1;
+	    }
 	  }
 	  diameterFov_mm = atoi(returnValue);
 	  
 	  // "distance_cristal_to_center_of_fov (in mm)"
 	  if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), (char*)"Backproject", (char*)"distance_cristal_to_center_of_fov (in mm)", (char*)returnValue, (char*)errorMessage)) != 0)
 	  {
-		  // Hubo un error. Salgo del comando.
-		  if(errorCode == PMF_KEY_NOT_FOUND)
-		  {
-			cout<<"No se encontró el parámetro ""distance_cristal_to_center_of_fov (in mm)"", el cual es obligatorio "
-			"para el tipo de dato Sinogram2Dtgs."<<endl;
-			return -1;
-		  }
-		  else
-		  {
-			cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
-			return -1;
-		  }
+	    // Hubo un error. Salgo del comando.
+	    if(errorCode == PMF_KEY_NOT_FOUND)
+	    {
+	      cout<<"No se encontró el parámetro ""distance_cristal_to_center_of_fov (in mm)"", el cual es obligatorio "
+	      "para el tipo de dato Sinogram2Dtgs."<<endl;
+	      return -1;
+	    }
+	    else
+	    {
+	      cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
+	      return -1;
+	    }
 	  }
 	  distCrystalToCenterFov = atoi(returnValue);
 	  
 	  // "length_of_colimator (in mm)"
 	  if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), (char*)"Backproject", (char*)"length_of_colimator (in mm)", (char*)returnValue, (char*)errorMessage)) != 0)
 	  {
-		  // Hubo un error. Salgo del comando.
-		  if(errorCode == PMF_KEY_NOT_FOUND)
-		  {
-			cout<<"No se encontró el parámetro ""length_of_colimator (in mm)"", el cual es obligatorio "
-			"para el tipo de dato Sinogram2Dtgs."<<endl;
-			return -1;
-		  }
-		  else
-		  {
-			cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
-			return -1;
-		  }
+	    // Hubo un error. Salgo del comando.
+	    if(errorCode == PMF_KEY_NOT_FOUND)
+	    {
+	      cout<<"No se encontró el parámetro ""length_of_colimator (in mm)"", el cual es obligatorio "
+	      "para el tipo de dato Sinogram2Dtgs."<<endl;
+	      return -1;
+	    }
+	    else
+	    {
+	      cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
+	      return -1;
+	    }
 	  }
 	  lengthColimator_mm = atoi((char*)returnValue);
 	  
 	  // "diameter_of_colimator (in mm)"
 	  if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), (char*)"Backproject", (char*)"diameter_of_colimator (in mm)", (char*)returnValue, (char*)errorMessage)) != 0)
 	  {
-		  // Hubo un error. Salgo del comando.
-		  if(errorCode == PMF_KEY_NOT_FOUND)
-		  {
-			cout<<"No se encontró el parámetro ""diameter_of_colimator (in mm)"", el cual es obligatorio "
-			"para el tipo de dato Sinogram2Dtgs."<<endl;
-			return -1;
-		  }
-		  else
-		  {
-			cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
-			return -1;
-		  }
+	    // Hubo un error. Salgo del comando.
+	    if(errorCode == PMF_KEY_NOT_FOUND)
+	    {
+	      cout<<"No se encontró el parámetro ""diameter_of_colimator (in mm)"", el cual es obligatorio "
+	      "para el tipo de dato Sinogram2Dtgs."<<endl;
+	      return -1;
+	    }
+	    else
+	    {
+	      cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
+	      return -1;
+	    }
 	  }
 	  widthCollimator_mm = atoi((char*)returnValue);
 	  
 	  // "diameter_of_colimator (in mm)"
 	  if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), (char*)"Backproject", (char*)"diameter_of_hole_colimator (in mm)", (char*)returnValue, (char*)errorMessage)) != 0)
 	  {
-		  // Hubo un error. Salgo del comando.
-		  if(errorCode == PMF_KEY_NOT_FOUND)
-		  {
-			cout<<"No se encontró el parámetro ""diameter_of_hole_colimator (in mm)"", el cual es obligatorio "
-			"para el tipo de dato Sinogram2Dtgs."<<endl;
-			return -1;
-		  }
-		  else
-		  {
-			cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
-			return -1;
-		  }
+	    // Hubo un error. Salgo del comando.
+	    if(errorCode == PMF_KEY_NOT_FOUND)
+	    {
+	      cout<<"No se encontró el parámetro ""diameter_of_hole_colimator (in mm)"", el cual es obligatorio "
+	      "para el tipo de dato Sinogram2Dtgs."<<endl;
+	      return -1;
+	    }
+	    else
+	    {
+	      cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
+	      return -1;
+	    }
 	  }
 	  widthHoleCollimator_mm = atoi(returnValue);
 	}
 	// Sección solo valída para sinogram2Dtgs
-	if(inputType.compare("Sinogram2Dtgs")==0)
+	if(inputType.compare("Sinogram2D")==0)
+	{
+	  // Sinograma 2D de tipo genérico, este no tine ningún parámetro estra. Simplemente
+	  // se lee la imagen del FOV.
+	  // Leo el tamaño del FOV:
+	  rFov_mm = 0;
+	  if(getCylindricalScannerParameters(parameterFileName, "Backproject", &rFov_mm, &axialFov_mm, &rScanner_mm))
+	  {
+	    if(rFov_mm == 0)
+	    {
+	      cout<<"Error al leer el tamaño del Fov." <<endl;
+	      return -1;
+	    }
+	  }
+	  Sinogram2D* inputProjection;
+	  if (numberOfSubsets != 0)
+	  {
+	    Sinogram2DinCylindrical3Dpet* fullProjection = new Sinogram2DinCylindrical3Dpet((char*)inputFilename.c_str(), rFov_mm, rScanner_mm);
+	    inputProjection = new Sinogram2DinCylindrical3Dpet(fullProjection, subsetIndex, numberOfSubsets);
+	  }
+	  else
+	    inputProjection = new Sinogram2DinCylindrical3Dpet((char*)inputFilename.c_str(), rFov_mm, rScanner_mm);
+	  backprojector->Backproject(inputProjection, outputImage);
+	  inputProjection->writeInterfile(outputFilename);
+	}
+	else if(inputType.compare("Sinogram2DinSiemensMmr")==0)
+	{
+	  Sinogram2D* inputProjection;
+	  if (numberOfSubsets != 0)
+	  {
+	    Sinogram2DinSiemensMmr* fullProjection = new Sinogram2DinSiemensMmr((char*)inputFilename.c_str());
+	    inputProjection = new Sinogram2DinSiemensMmr(fullProjection, subsetIndex, numberOfSubsets);
+	  }
+	  else
+	    inputProjection = new Sinogram2DinSiemensMmr((char*)inputFilename.c_str());
+	  backprojector->Backproject(inputProjection, outputImage);
+	}
+	else if(inputType.compare("Sinogram2Dtgs")==0)
 	{
 	  Sinogram2Dtgs* inputProjection = new Sinogram2Dtgs();
 	  if(!inputProjection->readFromInterfile(inputFilename))
 	  {
-		cout<<"Error al leer Sinogram2Dtgs en formato interfile." << endl;
-		return -1;
+	    cout<<"Error al leer Sinogram2Dtgs en formato interfile." << endl;
+	    return -1;
 	  }
 	  /// Ahora seteo los paramétros geométricos del sinograma:
 	  inputProjection->setGeometricParameters(diameterFov_mm/2, distCrystalToCenterFov, lengthColimator_mm, widthCollimator_mm,  widthHoleCollimator_mm);
@@ -562,32 +600,84 @@ int main (int argc, char *argv[])
 	  // "diameter_of_colimator (in mm)"
 	  if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), (char*)"Backproject", (char*)"width_of_segment (in mm)", (char*)returnValue, (char*)errorMessage)) != 0)
 	  {
-		  // Hubo un error. Salgo del comando.
-		  if(errorCode == PMF_KEY_NOT_FOUND)
-		  {
-			cout<<"No se encontró el parámetro ""width_of_segment (in mm)"", el cual es obligatorio "
-			"para el tipo de dato Sinogram2DtgsInSegment."<<endl;
-			return -1;
-		  }
-		  else
-		  {
-			cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
-			return -1;
-		  }
+	    // Hubo un error. Salgo del comando.
+	    if(errorCode == PMF_KEY_NOT_FOUND)
+	    {
+	      cout<<"No se encontró el parámetro ""width_of_segment (in mm)"", el cual es obligatorio "
+	      "para el tipo de dato Sinogram2DtgsInSegment."<<endl;
+	      return -1;
+	    }
+	    else
+	    {
+	      cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
+	      return -1;
+	    }
 	  }
 	  float widthSegment_mm = atoi(returnValue);
 	  
 	  Sinogram2DtgsInSegment* inputProjection = new Sinogram2DtgsInSegment();
 	  if(!inputProjection->readFromInterfile(inputFilename))
 	  {
-		cout<<"Error al leer Sinogram2DtgsInSegment en formato interfile." << endl;
-		return -1;
+	    cout<<"Error al leer Sinogram2DtgsInSegment en formato interfile." << endl;
+	    return -1;
 	  }
 	  /// Ahora seteo los paramétros geométricos del sinograma:
 	  inputProjection->setGeometricParameters(diameterFov_mm/2, distCrystalToCenterFov, lengthColimator_mm, widthCollimator_mm,  widthHoleCollimator_mm, widthSegment_mm);
-	  
 	  backprojector->Backproject(inputProjection, outputImage);
-	  
+	}
+	else if ((!inputType.compare("Sinograms2D")) || (!inputType.compare("Sinograms2DinSiemensMmr")) || (!inputType.compare("Sinograms2D")))
+	{
+	  Sinograms2DmultiSlice* inputProjection;
+	  if(inputType.compare("Sinograms2D")==0)
+	  {
+	    // Sinogramas 2D genérico (para scanner cilíndrico).
+	    if(getCylindricalScannerParameters(parameterFileName, "Backproject", &rFov_mm, &axialFov_mm, &rScanner_mm))
+	    {
+	      return -1;
+	    }
+	    inputProjection = new Sinograms2DinCylindrical3Dpet((char*)inputFilename.c_str(), rFov_mm, axialFov_mm, rScanner_mm); 
+	  }
+	  else if(inputType.compare("Sinograms2DinSiemensMmr")==0)
+	  {
+	    // Sinogramas 2D para siemens mMR, todos los parámetros son fijos.
+	    inputProjection = new Sinograms2DinSiemensMmr((char*)inputFilename.c_str());
+	  }
+	  else if(inputType.compare("Sinograms2Din3DArPet")==0)
+	  {
+	    // Sinogramas 2D del ArPet. Un sinograma por cada slice o anillo.
+	    // Leo el tamaño del FOV:
+	    float blindDistance_mm; int minDetDiff;
+	    if(getArPetParameters(parameterFileName, "Projection", &rFov_mm, &axialFov_mm, &blindDistance_mm, &minDetDiff))
+	    {
+	      return -1;
+	    }
+	    inputProjection = new Sinograms2Din3DArPet((char*)inputFilename.c_str(), rFov_mm, axialFov_mm); 
+	    ((Sinograms2Din3DArPet*)inputProjection)->setLengthOfBlindArea(blindDistance_mm);
+	    ((Sinograms2Din3DArPet*)inputProjection)->setMinDiffDetectors(minDetDiff);    
+	  }
+	  float x_mm, y_mm, z_mm;
+	  if(inputProjection->getNumSinograms() != outputImage->getSize().nPixelsZ)
+	  {
+	    cout<<"Warning: Backproject of sinograms2D with different number of sinograms that slices in the output image. Ignoring the number of slices." <<endl;
+	    SizeImage size;
+	    size = outputImage->getSize();
+	    size.nPixelsZ = inputProjection->getNumSinograms();
+	    size.sizePixelZ_mm = abs(inputProjection->getAxialValue(2)-inputProjection->getAxialValue(1));
+	    delete outputImage;
+	    Image* newImage = new Image(size);
+	  }
+	  // Recorro todos los sinogramas y hago la proyección. Fuerzo que la imagen tenga la msima cantidad
+	  // de slices que de sinogramas.
+	  Image* slice = outputImage->getSlice(0);
+	  for(int i = 0; i < inputProjection->getNumSinograms(); i++)
+	  {
+	    Sinogram2D* sino2d = inputProjection->getSinogram2D(i);
+	    slice->fillConstant(0);	// Set zeros in the output slice.
+	    backprojector->Backproject(sino2d, slice);
+	    // Copio el resultado del slice a la imagen:
+	    outputImage->setSlice(i, slice);
+	  }	  
+	  free(slice);
 	}
 	else if(inputType.compare("Sinogram3D")==0)
 	{

@@ -58,15 +58,18 @@ using namespace::std;
 class DLLEXPORT Sinograms2DinCylindrical3Dpet : public Sinograms2DmultiSlice
 {
   private:
-    // Elementos que no me interesa contar en las clases derivadas.
-    /** Radio del scanner en mm. */
-    float rScanner_mm;
-    /** Sinogramas 2D que forman parte del segmento. 
-	Es un vector de punteros a objetos Sinogram2DinCylindrical3Dpet.
-    */
-    Sinogram2DinCylindrical3Dpet** sinograms2D;	// Array con los sinogramas 2D.
+	// Elementos que no me interesa contar en las clases derivadas.
+    
     
   protected:
+	/** Radio del scanner en mm. */
+	float rScanner_mm;
+    
+	/** Sinogramas 2D que forman parte del segmento. 
+	  Es un vector de punteros a objetos Sinogram2DinCylindrical3Dpet.
+	*/
+	Sinogram2DinCylindrical3Dpet** sinograms2D;	// Array con los sinogramas 2D.
+	
 	/** Método virtual que inicializa los sinogramas 2d. */
 	void initSinograms();
 	/** Método que asigna la propiedad rScanner a cada uno  de los sinogramas 2d del array sinograms2d. */
