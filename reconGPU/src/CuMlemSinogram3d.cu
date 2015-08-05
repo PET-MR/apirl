@@ -220,6 +220,8 @@ bool CuMlemSinogram3d::InitGpuMemory(TipoProyector tipoProy)
   checkCudaErrors(cudaMalloc((void**) &d_backprojectedImage, sizeof(float)*numPixels));
   checkCudaErrors(cudaMalloc((void**) &d_inputProjection, sizeof(float)*numBins));
   checkCudaErrors(cudaMalloc((void**) &d_estimatedProjection, sizeof(float)*numBins));
+  if(enableAdditiveTerm)
+    checkCudaErrors(cudaMalloc((void**) &d_additiveSinogram, sizeof(float)*numBins));
   checkCudaErrors(cudaMalloc((void**) &d_ring1, sizeof(int)*numSinograms));
   checkCudaErrors(cudaMalloc((void**) &d_ring2, sizeof(int)*numSinograms));
   // Por ahora tengo las dos, d_ring1 me da el índice de anillo, y d_ring1_mm me da directamente la coordenada axial.
@@ -235,6 +237,9 @@ bool CuMlemSinogram3d::InitGpuMemory(TipoProyector tipoProy)
   checkCudaErrors(cudaMemset(d_backprojectedImage, 0,sizeof(float)*numPixels));
   // Copio el sinograma de entrada, llamo a una función porque tengo que ir recorriendo todos los sinogramas:
   CopySinogram3dHostToGpu(d_inputProjection, inputProjection);	// Es una copia de los mismos sinogramas. O sea en cpu y gpu ocupan el mismo espacio.
+  // Lo mismo para el aditivo:
+   if(enableAdditiveTerm)
+    CopySinogram3dHostToGpu(d_additiveSinogram, additiveProjection);
   // Pongo en cero el sinograma de proyección:
   checkCudaErrors(cudaMemset(d_estimatedProjection, 0,sizeof(float)*numBins));
   

@@ -58,6 +58,8 @@ bool CuOsemSinogram3d::InitGpuMemory(TipoProyector tipoProy)
   checkCudaErrors(cudaMalloc((void**) &d_backprojectedImage, sizeof(float)*numPixels));
   // Para la proyección estimada siempre va a ser del tamaño del subset.
   checkCudaErrors(cudaMalloc((void**) &d_estimatedProjection, sizeof(float)*numBinsSubset));
+  if(enableAdditiveTerm)
+    checkCudaErrors(cudaMalloc((void**) &d_additiveSinogram, sizeof(float)*numBinsSubset));
   checkCudaErrors(cudaMalloc((void**) &d_ring1, sizeof(float)*inputProjection->getNumSinograms()));
   checkCudaErrors(cudaMalloc((void**) &d_ring2, sizeof(float)*inputProjection->getNumSinograms()));
   // Para la proyección de entrada pido memoria, pero en caso de altar se podría sacar. Solo lo uso para 
@@ -425,7 +427,10 @@ bool CuOsemSinogram3d::Reconstruct(TipoProyector tipoProy, int indexGpu)
       // The additive term in the forward model (the multiplicative is only take into account in the sensitivity image,
       // so the additive term need to be dividived by the multipicative factors previously):
       if(enableAdditiveTerm)
+      {
+	CopySinogram3dHostToGpu(d_additiveSinogram, additiveProjection->getSubset(s, numSubsets)); //copy the additive subset.
 	addSinograms(d_estimatedProjection, d_additiveSinogram, nBinsSino2d, nBins);
+      }
       
       /// Si quiero guardar la proyección intermedia, lo hago acá, porque luego en la backprojection se modifica para hacer el cociente entre entrada y estimada:
       if(saveIntermediateProjectionAndBackprojectedImage)

@@ -163,12 +163,6 @@ if numel(size(correctRandoms)) == numel(size(sinograms))
     if size(correctRandoms) == size(sinograms)
         % The input is the random estimate:
         randoms = correctRandoms;
-        % Precorrect the input sinogram because cuosem stil doesn't include the
-        % additive sinogram:
-        sinograms_rand_scat_subtracted = sinograms - randoms;
-        sinograms_rand_scat_subtracted(sinograms_rand_scat_subtracted < 0) = 0;
-        % Rewrite input singoram:
-        interfileWriteSino(single(sinograms_rand_scat_subtracted), sinogramFilename, structSizeSino3d);
     end
 else
     % If not, we expect a 1 to estimate randoms or a 0 to not cprrect for
@@ -176,28 +170,22 @@ else
     if(correctRandoms)
         % Stir computes randoms that are already normalized:
         [randoms, structSizeSino] = estimateRandomsWithStir(delayedSinograms, structSizeSino3dSpan1, overall_ncf_3d, structSizeSino3d, [outputPath pathBar 'stirRandoms' pathBar]);
-        % Precorrect the input sinogram because cuosem stil doesn't include the
-        % additive sinogram:
-        sinograms_rand_scat_subtracted = sinograms - randoms;
-        sinograms_rand_scat_subtracted(sinograms_rand_scat_subtracted < 0) = 0;
-        % Rewrite input singoram:
-        interfileWriteSino(single(sinograms_rand_scat_subtracted), sinogramFilename, structSizeSino3d);
     end
 end
 %% SCATTER CORRECTION
 % Check if we hve the scatter estimate as a parameter. If not we compute it
 % at the end:
+scatter = zeros(size(sinograms));
 if numel(size(correctScatter)) == numel(size(sinograms))
     if size(correctScatter) == size(sinograms)
         scatter = correctScatter;
-        % Precorrect the input sinogram because cuosem stil doesn't include the
-        % additive sinogram:
-        sinograms_rand_scat_subtracted = sinograms_rand_scat_subtracted - scatter;
-        sinograms_rand_scat_subtracted(sinograms_rand_scat_subtracted < 0) = 0;
-        % Rewrite input singoram:
-        interfileWriteSino(single(sinograms_rand_scat_subtracted), sinogramFilename, structSizeSino3d);
     end
 end
+%% ADDITIVE SINOGRAM
+additive = (randoms .* overall_ncf_3d  + scatter).* acfsSinogram; % (randoms +scatter.*norm)./(attenFactors*nprmFactrs)
+% write additive singoram:
+additiveFilename = [outputPath 'additive'];
+interfileWriteSino(single(additive), additiveFilename, structSizeSino3d);
 %% GENERATE MLEM RECONSTRUCTION FILES FOR APIRL
 if useGpu == 0
     disp('Osem reconstruction...');
@@ -206,7 +194,7 @@ if useGpu == 0
     outputFilenamePrefix = [outputPath 'reconImage'];
     filenameOsemConfig = [outputPath 'osem.par'];
     CreateOsemConfigFileForMmr(filenameOsemConfig, [sinogramFilename '.h33'], [filenameInitialEstimate '.h33'], outputFilenamePrefix, numIterations, [],...
-        numSubsets, saveInterval, saveIntermediate, [anfFilename '.h33'], []);
+        numSubsets, saveInterval, saveIntermediate, [anfFilename '.h33'], [additiveFilename '.h33']);
     % Execute APIRL: 
     status = system(['OSEM ' filenameOsemConfig]) 
 else
@@ -216,7 +204,7 @@ else
     outputFilenamePrefix = [outputPath 'reconImage'];
     filenameMlemConfig = [outputPath 'cuosem.par'];
     CreateCuMlemConfigFileForMmr(filenameMlemConfig, [sinogramFilename '.h33'], [filenameInitialEstimate '.h33'], outputFilenamePrefix, numIterations, [],...
-        saveInterval, saveIntermediate, [anfFilename '.h33'], [], 0, 576, 576, 512, numSubsets);
+        saveInterval, saveIntermediate, [anfFilename '.h33'], [additiveFilename '.h33'], 0, 576, 576, 512, numSubsets);
     % Execute APIRL: 
     status = system(['cuMLEM ' filenameMlemConfig]) 
 end
@@ -264,11 +252,13 @@ if (numel(correctScatter) == 1)
         if ~isdir(outputPathScatter)
             mkdir(outputPathScatter);
         end
-        sinograms_rand_scat_subtracted = sinograms  - randoms - normScatter;
-        sinograms_rand_scat_subtracted(sinograms_rand_scat_subtracted<0) = 0;
-        % Rewrite input singoram:
-        sinogramFilename = [outputPathScatter pathBar 'sinogram'];
-        interfileWriteSino(single(sinograms_rand_scat_subtracted), sinogramFilename, structSizeSino3d);
+        
+        % New dditive sinogram:
+        additive = (randoms .* overall_ncf_3d  + scatter_1).* acfsSinogram; % (randoms +scatter.*norm)./(attenFactors*nprmFactrs)
+        % write additive singoram:
+        additiveFilename = [outputPath 'additive'];
+        interfileWriteSino(single(additive), additiveFilename, structSizeSino3d);
+
         if useGpu == 0
             disp('Osem reconstruction...');
             saveInterval = 1;
@@ -276,7 +266,7 @@ if (numel(correctScatter) == 1)
             outputFilenamePrefix = [outputPathScatter 'reconImage'];
             filenameOsemConfig = [outputPathScatter 'osem.par'];
             CreateOsemConfigFileForMmr(filenameOsemConfig, [sinogramFilename '.h33'], [filenameInitialEstimate '.h33'], outputFilenamePrefix, numIterations, [],...
-                numSubsets, saveInterval, saveIntermediate, [], [], [], [anfFilename '.h33']);
+                numSubsets, saveInterval, saveIntermediate, [anfFilename '.h33'], [additiveFilename '.h33']);
             % Execute APIRL: 
             status = system(['OSEM ' filenameOsemConfig]) 
         else
@@ -286,7 +276,7 @@ if (numel(correctScatter) == 1)
             outputFilenamePrefix = [outputPathScatter 'reconImage'];
             filenameMlemConfig = [outputPathScatter 'cuosem.par'];
             CreateCuMlemConfigFileForMmr(filenameMlemConfig, [sinogramFilename '.h33'], [filenameInitialEstimate '.h33'], outputFilenamePrefix, numIterations, [],...
-                saveInterval, saveIntermediate, [anfFilename '.h33'], [], 0, 576, 576, 512, numSubsets);
+                saveInterval, saveIntermediate, [anfFilename '.h33'], [additiveFilename '.h33'], 0, 576, 576, 512, numSubsets);
             % Execute APIRL: 
             status = system(['cuMLEM ' filenameMlemConfig]) 
         end
@@ -322,12 +312,12 @@ if (numel(correctScatter) == 1)
         plot([profileSinogram profileRandoms profileNormScatter (profileRandoms+profileNormScatter)]);
         legend('Sinogram', 'Randoms', 'Scatter', 'Randoms+Scatter');
         
-        % Reconstruct again with the scatter:
-        sinograms_rand_scat_subtracted = sinograms  - randoms - scatter .* overall_nf_3d;
-        sinograms_rand_scat_subtracted(sinograms_rand_scat_subtracted<0) = 0;
-        % Rewrite input singoram:
-        sinogramFilename = [outputPathScatter pathBar 'sinogram'];
-        interfileWriteSino(single(sinograms_rand_scat_subtracted), sinogramFilename, structSizeSino3d);
+        % New dditive sinogram:
+        additive = (randoms .* overall_ncf_3d  + scatter_1).* acfsSinogram; % (randoms +scatter.*norm)./(attenFactors*nprmFactrs)
+        % write additive singoram:
+        additiveFilename = [outputPath 'additive'];
+        interfileWriteSino(single(additive), additiveFilename, structSizeSino3d);
+        
         if useGpu == 0
             disp('Osem reconstruction...');
             saveInterval = 1;
@@ -335,7 +325,7 @@ if (numel(correctScatter) == 1)
             outputFilenamePrefix = [outputPathScatter 'reconImage'];
             filenameOsemConfig = [outputPathScatter 'osem.par'];
             CreateOsemConfigFileForMmr(filenameOsemConfig, [sinogramFilename '.h33'], [filenameInitialEstimate '.h33'], outputFilenamePrefix, numIterations, [],...
-                numSubsets, saveInterval, saveIntermediate, [anfFilename '.h33'], []);
+                numSubsets, saveInterval, saveIntermediate, [anfFilename '.h33'], [additiveFilename '.h33']);
             % Execute APIRL: 
             status = system(['OSEM ' filenameOsemConfig]) 
         else
@@ -344,8 +334,8 @@ if (numel(correctScatter) == 1)
             saveIntermediate = 0;
             outputFilenamePrefix = [outputPathScatter 'reconImage'];
             filenameMlemConfig = [outputPathScatter 'cuosem.par'];
-            CreateCuMlemConfigFileForMmr(filenameMlemConfig, [sinogramFilename '.h33'], [filenameInitialEstimate '.h33'], outputFilenamePrefix, numIterations, [],...
-                saveInterval, saveIntermediate, [anfFilename '.h33'], [], 0, 576, 576, 512, numSubsets);
+            CreateCuMlemConfigFileForMmr(filenameMlemConfig, [sinogramFilename '.h33'], [filenameInitialEstimate '.h33'], outputFilenamePrefix, numIterations, [additiveFilename ],...
+                saveInterval, saveIntermediate, [anfFilename '.h33'], [additiveFilename '.h33'], 0, 576, 576, 512, numSubsets);
             % Execute APIRL: 
             status = system(['cuMLEM ' filenameMlemConfig]) 
         end
