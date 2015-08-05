@@ -35,7 +35,7 @@ if(isempty(subsetIndex))
 end
 
 % Get info of the sinogram size to choose the type of sinogram:
-[info, structSizeSino] = getInfoFromInterfile(outputSample);
+[info, structSizeSino] = getInfoFromInterfile(inputFile);
 if isfield(structSizeSino, 'sinogramsPerSegment')
     if numel(structSizeSino.sinogramsPerSegment) == 1
         if structSizeSino.numZ == 1

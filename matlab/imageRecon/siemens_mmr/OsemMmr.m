@@ -216,7 +216,7 @@ else
     outputFilenamePrefix = [outputPath 'reconImage'];
     filenameMlemConfig = [outputPath 'cuosem.par'];
     CreateCuMlemConfigFileForMmr(filenameMlemConfig, [sinogramFilename '.h33'], [filenameInitialEstimate '.h33'], outputFilenamePrefix, numIterations, [],...
-        saveInterval, saveIntermediate, [], [], [], [anfFilename '.h33'], 0, 576, 576, 512, numSubsets);
+        saveInterval, saveIntermediate, [anfFilename '.h33'], [], 0, 576, 576, 512, numSubsets);
     % Execute APIRL: 
     status = system(['cuMLEM ' filenameMlemConfig]) 
 end
@@ -255,6 +255,8 @@ if (numel(correctScatter) == 1)
         profileRandoms = sum(randoms(:,126,:),3);
         profileNormScatter = sum(normScatter(:,126,:),3);
         figure;
+        subplot(1,3,1);
+        title('Scatter Iteration 1');
         plot([profileSinogram profileRandoms profileNormScatter (profileRandoms+profileNormScatter)]);
         legend('Sinogram', 'Randoms', 'Scatter', 'Randoms+Scatter');
 
@@ -284,7 +286,7 @@ if (numel(correctScatter) == 1)
             outputFilenamePrefix = [outputPathScatter 'reconImage'];
             filenameMlemConfig = [outputPathScatter 'cuosem.par'];
             CreateCuMlemConfigFileForMmr(filenameMlemConfig, [sinogramFilename '.h33'], [filenameInitialEstimate '.h33'], outputFilenamePrefix, numIterations, [],...
-                saveInterval, saveIntermediate, [], [], [], [anfFilename '.h33'], 0, 576, 576, 512, numSubsets);
+                saveInterval, saveIntermediate, [anfFilename '.h33'], [], 0, 576, 576, 512, numSubsets);
             % Execute APIRL: 
             status = system(['cuMLEM ' filenameMlemConfig]) 
         end
@@ -292,13 +294,34 @@ if (numel(correctScatter) == 1)
 
         [scatter_2, structSizeSino, mask] = estimateScatterWithStir(volume, attenMap, pixelSize_mm, sinograms, randoms, overall_ncf_3d, acfsOnlyHuman, structSizeSino3d, outputPathScatter, stirScriptsPath, thresholdForTail);
         interfileWriteSino(single(scatter_2), [outputPathScatter 'scatter'], structSizeSino3d);
-
+        % Normalize the scatter:
+        normScatter = scatter_2 .* overall_nf_3d;
+        % Plot profiles to test:
+        profileSinogram = sum(sinograms(:,126,:),3);
+        profileRandoms = sum(randoms(:,126,:),3);
+        profileNormScatter = sum(normScatter(:,126,:),3);
+        subplot(1,3,2);
+        title('Scatter Iteration 2');
+        plot([profileSinogram profileRandoms profileNormScatter (profileRandoms+profileNormScatter)]);
+        legend('Sinogram', 'Randoms', 'Scatter', 'Randoms+Scatter');
+        
         outputPathScatter = [outputPath pathBar 'ScatterFinal' pathBar];
         if ~isdir(outputPathScatter)
             mkdir(outputPathScatter);
         end
         scatter = (scatter_1+scatter_2)./2;
         interfileWriteSino(single(scatter), [outputPathScatter 'scatter'], structSizeSino3d);
+        % Normalize the scatter:
+        normScatter = scatter .* overall_nf_3d;
+        % Plot profiles to test:
+        profileSinogram = sum(sinograms(:,126,:),3);
+        profileRandoms = sum(randoms(:,126,:),3);
+        profileNormScatter = sum(normScatter(:,126,:),3);
+        subplot(1,3,3);
+        title('Final Scatter');
+        plot([profileSinogram profileRandoms profileNormScatter (profileRandoms+profileNormScatter)]);
+        legend('Sinogram', 'Randoms', 'Scatter', 'Randoms+Scatter');
+        
         % Reconstruct again with the scatter:
         sinograms_rand_scat_subtracted = sinograms  - randoms - scatter .* overall_nf_3d;
         sinograms_rand_scat_subtracted(sinograms_rand_scat_subtracted<0) = 0;

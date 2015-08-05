@@ -3,7 +3,7 @@
 %  Autor: Martín Belzunce. Kings College London.
 %  Fecha de Creación: 10/02/2015
 %  *********************************************************************
-%  function [info, structSizeSino]  = getInfoFromInterfile(filename)
+%  function [info, structSizeSino]  = getInfoFromSiemensIntf(filename)
 % 
 %  This function reads the header of an interfile sinograms and gets some
 %  useful information from it. Such as the filename of the raw data, the
@@ -12,18 +12,7 @@
 % Optionally it also returns an structure with the size of the sinogram.
 
 
-function [info, structSizeSino] = getInfoFromInterfile(filename)
-
-if(strcmp(computer(), 'GLNXA64'))
-    os = 'linux';
-    pathBar = '/';
-elseif(strcmp(computer(), 'PCWIN') || strcmp(computer(), 'PCWIN64'))
-    os = 'windows';
-    pathBar = '\';
-else
-    disp('OS not compatible');
-    return;
-end
+function [info, structSizeSino] = getInfoFromSiemensIntf(filename)
 
 info = [];
 % check header file extension
@@ -34,15 +23,6 @@ end
 [fpath,name,ext] = fileparts(filename);
 if isempty(ext)
     filename = [filename '.hdr'];
-end
-% Como los interfile yo los manejo siempre con el h33 e i33 siempre en el
-% mismo path, pero que se puedan leer y crear desde otro path. Cuando el
-% nombre del interfile a leer tiene un path además del nombre, dicho path
-% también debo agregarselo al "data file name" que figura en el h33:
-relativePath = '';
-barras = strfind(filename, pathBar);
-if ~isempty(barras)
-    relativePath = filename(1 : barras(end));
 end
 
 % open file for parsing
@@ -229,116 +209,55 @@ end
 
 % close file
 fclose(fid);
-% Add the relative path to the binary filename, if there is no path in the
-% interfile:
-barras = strfind(info.NameOfDataFile, pathBar);
-if isempty(barras)
-    info.NameOfDataFile = [relativePath info.NameOfDataFile];
+
+if ~isfield(info, 'SmsMiHeaderNameSpace')
+    structSizeSino = [];
+    return;
 end
-
-% if ~isfield(info, 'SmsMiHeaderNameSpace')
-%     structSizeSino = [];
-%     return;
-% end
     
-if isfield(info, 'SmsMiHeaderNameSpace')
-    % Siemens interfiles:
-    % Post processing, some fields are processed to get them in a more useful
-    % format. This changes if its an image or a sinogram
-    if strcmp(info.SmsMiHeaderNameSpace, 'sinogram subheader')
-        % Sinograms specific parameters:
-        if (isfield(info, 'NumberOfBuckets'))
-            numBuckets = info.NumberOfBuckets;
-            singlesPerBucket = zeros(1, numBuckets);
-        else
-            perror('The number of bucket was not found.');
-        end
-        for i = 1 : numBuckets
-            field = sprintf('BucketSinglesRate%d',i);
-            if (isfield(info, field))
-                singlesPerBucket(i) = info.(field);
-            else
-                perror(sprintf('The singles per bucket for the bucket number %d was not found.', i));
-            end
-            % After processing it I remove the field, because I will put just an
-            % array:
-            info = rmfield(info, field);
-        end
-        info.SinglesPerBucket = singlesPerBucket;
-
-        % Process the segment table. Take out spaces and {}:
-        charsToRemove = ['{','}',' '];
-        for i = 1 : numel(charsToRemove)
-            pos = find(info.SegmentTable == charsToRemove(i));
-            info.SegmentTable(pos) = [];
-        end
-        % Separate by , and convert to number array
-        cellStrNum = strsplit(info.SegmentTable,',');
-        % Replace SegmentTable field for a numeric array:
-        info.SegmentTable = zeros(1,numel(cellStrNum));
-        if numel(cellStrNum) ~=  info.NumberOfSegments
-            perror('The number of segments is different than the number of elements in the segment table.');
-        end
-        for i = 1 : numel(cellStrNum)
-            info.SegmentTable(i) = str2num(cellStrNum{i});
-        end
-
-        % Get sino struct:
-        rFov_mm = (info.MatrixSize1 * info.ScaleFactorMmPixel1) / 2;
-        zFov_mm = (info.ScaleFactorMmPixel3 * (2*info.NumberOfRings+1));
-        structSizeSino = getSizeSino3dFromSpan(info.MatrixSize1, info.MatrixSize2, info.NumberOfRings, rFov_mm, zFov_mm, info.AxialCompression, info.MaximumRingDifference);
+    
+% Post processing, some fields are processed to get them in a more useful
+% format. This changes if its an image or a sinogram
+if strcmp(info.SmsMiHeaderNameSpace, 'sinogram subheader')
+    % Sinograms specific parameters:
+    if (isfield(info, 'NumberOfBuckets'))
+        numBuckets = info.NumberOfBuckets;
+        singlesPerBucket = zeros(1, numBuckets);
     else
-        % Siemens image:
-        structSizeSino = [];
+        perror('The number of bucket was not found.');
     end
-elseif isfield(info, 'MinimumRingDifferencePerSegment') % Apirl sinogram
+    for i = 1 : numBuckets
+        field = sprintf('BucketSinglesRate%d',i);
+        if (isfield(info, field))
+            singlesPerBucket(i) = info.(field);
+        else
+            perror(sprintf('The singles per bucket for the bucket number %d was not found.', i));
+        end
+        % After processing it I remove the field, because I will put just an
+        % array:
+        info = rmfield(info, field);
+    end
+    info.SinglesPerBucket = singlesPerBucket;
+
     % Process the segment table. Take out spaces and {}:
     charsToRemove = ['{','}',' '];
     for i = 1 : numel(charsToRemove)
-        pos = find(info.MatrixSize3 == charsToRemove(i));
-        info.MatrixSize3(pos) = [];
-        
-        pos = find(info.MinimumRingDifferencePerSegment == charsToRemove(i));
-        info.MinimumRingDifferencePerSegment(pos) = [];
-        
-        pos = find(info.MaximumRingDifferencePerSegment == charsToRemove(i));
-        info.MaximumRingDifferencePerSegment(pos) = [];
+        pos = find(info.SegmentTable == charsToRemove(i));
+        info.SegmentTable(pos) = [];
     end
     % Separate by , and convert to number array
-    cellStrNum = strsplit(info.MatrixSize3,',');
+    cellStrNum = strsplit(info.SegmentTable,',');
     % Replace SegmentTable field for a numeric array:
-    info.MatrixSize3 = zeros(1,numel(cellStrNum));
-    for i = 1 : numel(cellStrNum)
-        info.MatrixSize3(i) = str2num(cellStrNum{i});
-    end
-    info.NumberOfSegments = numel(info.MatrixSize3);
-    
-    % Separate by , and convert to number array
-    cellStrNum = strsplit(info.MinimumRingDifferencePerSegment,',');
+    info.SegmentTable = zeros(1,numel(cellStrNum));
     if numel(cellStrNum) ~=  info.NumberOfSegments
-        perror('The number of MinimumRingDifferencePerSegment is different than the number of segments in MatrixSize3.');
+        perror('The number of segments is different than the number of elements in the segment table.');
     end
-    % Replace SegmentTable field for a numeric array:
-    info.MinimumRingDifferencePerSegment = zeros(1,numel(cellStrNum));
     for i = 1 : numel(cellStrNum)
-        info.MinimumRingDifferencePerSegment(i) = str2num(cellStrNum{i});
+        info.SegmentTable(i) = str2num(cellStrNum{i});
     end
-    
-    % Separate by , and convert to number array
-    cellStrNum = strsplit(info.MaximumRingDifferencePerSegment,',');
-    if numel(cellStrNum) ~=  info.NumberOfSegments
-        perror('The number of MaximumRingDifferencePerSegment is different than the number of segments in MatrixSize3.');
-    end
-    % Replace SegmentTable field for a numeric array:
-    info.MaximumRingDifferencePerSegment = zeros(1,numel(cellStrNum));
-    for i = 1 : numel(cellStrNum)
-        info.MaximumRingDifferencePerSegment(i) = str2num(cellStrNum{i});
-    end
-    
-    % Return the size of struct size sino, with only the avialable info:
-    structSizeSino = getSizeSino3dStruct(info.MatrixSize1, info.MatrixSize2, info.NumberOfRings, 0, 0, info.MatrixSize3, info.MinimumRingDifferencePerSegment, info.MaximumRingDifferencePerSegment, abs(info.MinimumRingDifferencePerSegment(end)));
-elseif isfield(info, 'NumberOfProjections') % Apirl 2d sinogram
-    structSizeSino = getSizeSino2dStruct(info.MatrixSize1, info.MatrixSize2, info.NumberOfProjections, 0, 0);
-elseif isfield(info, 'NumberOfImagesWindow')
-    structSizeSino = getSizeSino2dStruct(info.MatrixSize1, info.MatrixSize2, info.NumberOfImagesWindow, 0, 0);
+
+    % Get sino struct:
+    rFov_mm = (info.MatrixSize1 * info.ScaleFactorMmPixel1) / 2;
+    zFov_mm = (info.ScaleFactorMmPixel3 * (2*info.NumberOfRings+1));
+    structSizeSino = getSizeSino3dFromSpan(info.MatrixSize1, info.MatrixSize2, info.NumberOfRings, rFov_mm, zFov_mm, info.AxialCompression, info.MaximumRingDifference);
 end

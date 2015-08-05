@@ -355,10 +355,10 @@ int main (int argc, char *argv[])
   }
 
   // Busco sinograma multiplicativo si se pasó alguno:
-  if(getMultiplicativeSinogramName(parameterFileName,  "MLEM",&multiplicativeFilename))
+  if(getMultiplicativeSinogramName(parameterFileName,  "OSEM",&multiplicativeFilename))
     return -1;
   // Mismo con el additivo:
-  if(getAdditiveSinogramName(parameterFileName,  "MLEM",&additiveFilename))
+  if(getAdditiveSinogramName(parameterFileName,  "OSEM",&additiveFilename))
     return -1;
 	
   // Lectura de proyecciones y reconstrucción, depende del tipo de dato de entrada:

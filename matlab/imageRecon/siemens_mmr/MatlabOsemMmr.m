@@ -31,7 +31,7 @@
 % Examples:
 %   [volume randoms scatter] = MatlabOsemMmr(sinogramFilename, span, normFilename, attMapBaseFilename, correctRandoms, correctScatter, outputPath, pixelSize_mm, numSubsets, numIterations, saveInterval, useGpu, stirMatlabPath)
 
-function [volume randoms scatter] = MatlabOsemMmr(sinogramInputFilename, span, normFilename, attMapBaseFilename, correctRandoms, correctScatter, outputPath, pixelSize_mm, numSubsets, numIterations, saveInterval, useGpu, stirMatlabPath)
+function [volume, randoms, scatter] = MatlabOsemMmr(sinogramInputFilename, span, normFilename, attMapBaseFilename, correctRandoms, correctScatter, outputPath, pixelSize_mm, numSubsets, numIterations, saveInterval, useGpu, stirMatlabPath)
 
 if ~isdir(outputPath)
     mkdir(outputPath);
@@ -182,19 +182,20 @@ else
         [randoms, structSizeSino] = estimateRandomsWithStir(delayedSinograms, structSizeSino3dSpan1, overall_ncf_3d, structSizeSino3d, [outputPath pathBar 'stirRandoms' pathBar]);
         interfileWriteSino(single(randoms), [outputPath 'randoms'], structSizeSino3d);
         
-        [detector1SystemMatrix, detector2SystemMatrix] = createDetectorSystemMatrix3d(span, 1);
-        sinoRandomsFromSinglesPerBucket = createRandomsFromSinglesPerBucket(sinogramInputFilename);
-        useOfDetectorsInDelayed = detector1SystemMatrix'*double(delayedSinograms(:)) + detector2SystemMatrix'*double(delayedSinograms(:));
-        useOfDetectorsInRandomsFromBucket = detector1SystemMatrix'*double(sinoRandomsFromSinglesPerBucket(:)) + detector2SystemMatrix'*double(sinoRandomsFromSinglesPerBucket(:));
-        crystalEff = zeros(size(useOfDetectorsInDelayed));
-        crystalEff(useOfDetectorsInRandomsFromBucket~=0) = useOfDetectorsInDelayed(useOfDetectorsInRandomsFromBucket~=0) ./ useOfDetectorsInRandomsFromBucket(useOfDetectorsInRandomsFromBucket~=0);
-        crystalEff = crystalEff ./ mean(crystalEff~=0);
-        crystalEff = reshape(crystalEff, [504 64]);
-        [overall_ncf_3d, scanner_time_invariant_ncf_3d, scanner_time_variant_ncf_3d, acquisition_dependant_ncf_3d, used_xtal_efficiencies, used_deadtimefactors, used_axial_factors] = ...
-            create_norm_files_mmr(normFilename, [], crystalEff, [], [], structSizeSino3d.span);
-        randoms_2 = zeros(size(sinoRandomsFromSinglesPerBucket));
-        randoms_2(scanner_time_variant_ncf_3d~=0) = sinoRandomsFromSinglesPerBucket(scanner_time_variant_ncf_3d~=0) ./ scanner_time_variant_ncf_3d(scanner_time_variant_ncf_3d~=0);
-        interfileWriteSino(single(randoms_2), [outputPath 'randoms_2'], structSizeSino3d);
+        % My method to get the randoms:
+%         [detector1SystemMatrix, detector2SystemMatrix] = createDetectorSystemMatrix3d(span, 1);
+%         sinoRandomsFromSinglesPerBucket = createRandomsFromSinglesPerBucket(sinogramInputFilename);
+%         useOfDetectorsInDelayed = detector1SystemMatrix'*double(delayedSinograms(:)) + detector2SystemMatrix'*double(delayedSinograms(:));
+%         useOfDetectorsInRandomsFromBucket = detector1SystemMatrix'*double(sinoRandomsFromSinglesPerBucket(:)) + detector2SystemMatrix'*double(sinoRandomsFromSinglesPerBucket(:));
+%         crystalEff = zeros(size(useOfDetectorsInDelayed));
+%         crystalEff(useOfDetectorsInRandomsFromBucket~=0) = useOfDetectorsInDelayed(useOfDetectorsInRandomsFromBucket~=0) ./ useOfDetectorsInRandomsFromBucket(useOfDetectorsInRandomsFromBucket~=0);
+%         crystalEff = crystalEff ./ mean(crystalEff~=0);
+%         crystalEff = reshape(crystalEff, [504 64]);
+%         [overall_ncf_3d, scanner_time_invariant_ncf_3d, scanner_time_variant_ncf_3d, acquisition_dependant_ncf_3d, used_xtal_efficiencies, used_deadtimefactors, used_axial_factors] = ...
+%             create_norm_files_mmr(normFilename, [], crystalEff, [], [], structSizeSino3d.span);
+%         randoms_2 = zeros(size(sinoRandomsFromSinglesPerBucket));
+%         randoms_2(scanner_time_variant_ncf_3d~=0) = sinoRandomsFromSinglesPerBucket(scanner_time_variant_ncf_3d~=0) ./ scanner_time_variant_ncf_3d(scanner_time_variant_ncf_3d~=0);
+%         interfileWriteSino(single(randoms_2), [outputPath 'randoms_2'], structSizeSino3d);
     else
         randoms = zeros(size(sinograms));
     end
@@ -327,6 +328,17 @@ for iterScatter = 1 : numItersScatter
             end
             scatter = scatter ./ iterScatter;
             interfileWriteSino(single(scatter), [outputPath pathBar sprintf('scatterEstimate_iter%d', iterScatter)], structSizeSino);
+            
+            % Normalize the scatter:
+            normScatter = scatter .* overall_nf_3d;
+            % Plot profiles to test:
+            profileSinogram = sum(sinograms(:,126,:),3);
+            profileRandoms = sum(randoms(:,126,:),3);
+            profileNormScatter = sum(normScatter(:,126,:),3);
+            subplot(1,numItersScatter, iterScatter);
+            title(sprintf('Scatter Iter %d', iterScatter));
+            plot([profileSinogram profileRandoms profileNormScatter (profileRandoms+profileNormScatter)]);
+            legend('Sinogram', 'Randoms', 'Scatter', 'Randoms+Scatter');
         end
     end
 end

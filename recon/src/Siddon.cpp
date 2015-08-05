@@ -217,7 +217,7 @@ float Siddon (Line3D LOR, Image* image, SiddonSegment** weightsList, int* length
 //   }
   
   // Cantidad de píxeles intersectados:
-  numIntersectedPixels = labs(i_max - i_min) + labs(j_max - j_min) + labs(k_max - k_min) + 2; // +0 in each dimension(for getting the amount of itnersections) -1 toget pixels> 3x1-1 = +2
+  numIntersectedPixels = labs(i_max - i_min) + labs(j_max - j_min) + labs(k_max - k_min) + 0; // +0 in each dimension(for getting the amount of itnersections) -1 toget pixels> 3x1-1 = +2
 
   weightsList[0] = (SiddonSegment*) malloc((size_t)(sizeof(SiddonSegment)* numIntersectedPixels));
   
