@@ -31,10 +31,16 @@ end
 pixelSize_mm = [info.ScaleFactorMmPixel2 info.ScaleFactorMmPixel1 info.ScaleFactorMmPixel3];    % ScaleFactorMmPixel1 is for the x axes: columns.
 % Get the size of the image:
 imageSize_pixels = [info.MatrixSize2 info.MatrixSize1 info.MatrixSize3];
-% Origin:
-fieldsImage_str = strsplit(info.ImageInfo1(2:end-1), ',');
-fieldsImage = str2double(fieldsImage_str);
-origin_mm = [fieldsImage(4) fieldsImage(3) fieldsImage(2)];
+
+if isfield(info, 'ImageInfo1')
+    % Origin:
+    fieldsImage_str = strsplit(info.ImageInfo1(2:end-1), ',');
+    fieldsImage = str2double(fieldsImage_str);
+    origin_mm = [fieldsImage(4) fieldsImage(3) fieldsImage(2)];
+else
+    % Image centred:
+    origin_mm = [-pixelSize_mm(2)*imageSize_pixels(2)/2 -pixelSize_mm(3)*imageSize_pixels(3)/2 -pixelSize_mm(3)*imageSize_pixels(3)/2];
+end
 % Initial bed position:
 bedPosition_mm = info.StartHorizontalBedPositionMm;
 
@@ -77,9 +83,9 @@ YWorldLimits= [-359-pixelSize_mm(1) 359-pixelSize_mm(1)];
 
 ZWorldLimits= [-258/2+2*pixelSize_mm(3) 258/2+2*pixelSize_mm(3)];
 ZWorldLimits= [-258/2-pixelSize_mm(3)*9/4 258/2-pixelSize_mm(3)*9/4];
-XWorldLimits= [-356.8832 -356.8832+pixelSize_mm(2)*imageSize_pixels(2)];
+XWorldLimits= [-356.8832 -356.8832+pixelSize_mm(2)*imageSize_pixels(2)];    % Emprical value from dicom image of the siemens mmr
 YWorldLimits= [-359.8493 -359.8493+pixelSize_mm(1)*imageSize_pixels(1)];
 ZWorldLimits= [-133.2885 -133.2885+pixelSize_mm(3)*imageSize_pixels(3)];
-image = flip(image,3);
+%image = flip(image,3); % Needs to be checked
 refImage = imref3d(size(image), XWorldLimits, YWorldLimits, ZWorldLimits);
 
