@@ -20,6 +20,16 @@ normFiles = dir([normPath '*.n']);
 for i = 1 : numel(normFiles)
     componentFactors{i}  = readmMrComponentBasedNormalization([normPath normFiles(i).name], 0);
 end
+% Get the date of each date:
+for i = 1 : numel(normFiles)
+    datenumber(i) = datenum(normFiles(i).date);
+end
+% Sort it:
+[datenumber_ordered, indexes] = sort(datenumber);
+daysFromFirst = datenumber_ordered - datenumber_ordered(1);
+for i = 1 : numel(normFiles)
+    componentFactorsOrdered{i} =  componentFactors{indexes(i)};
+end
 
 %% GENERATE THE STRUCT OF A SINO3D SPAN 11
 % In that structure I have the amount of sinograms axially compressed per
@@ -74,50 +84,54 @@ while i <= numFiles
 end;
 
 %% STATS OF THE AXIAL COMPONENTS
+factorFromSpan = 1./structSizeSino3dSpan11.numSinosMashed;
+% Normalize to the mean:
+factorFromSpan = factorFromSpan ./ mean(factorFromSpan);
+% Axial components
 allComponents = zeros(numel(normFiles), numel(componentFactors{1}{4}));
-for i = 1 : numel(normFiles)
-    allComponents(i,:) = [componentFactors{i}{4}]';
-end;
-% Std:
-devMain = std(allComponents);
-% plot:
-figure;plot(devMain);
-title('Standard Deviation of Main Axial Factors Component');
-ylabel('Factor Standard Deviation');
-xlabel('Number of Sinogram');
-
 allOtherComponents = zeros(numel(normFiles), numel(componentFactors{1}{8}));
 for i = 1 : numel(normFiles)
+    allComponents(i,:) = [componentFactors{i}{4}]';
     allOtherComponents(i,:) = [componentFactors{i}{8}]';
 end;
-% Std:
+indexSinos = 1 : numel(allComponents(1,:));
+meanMain = mean(allComponents);
+devMain = std(allComponents);
+meanOther = mean(allOtherComponents);
 devOther = std(allOtherComponents);
+%% PLOT SOME STATS FOR PUBLICATION IN TECHNICAL NOTE
+graphsPath = '/home/mab15/workspace/KCL/Publications/svn/impact_crystal_efficiencies_2015/';
 % plot:
-figure;plot(devOther);
-title('Standard Deviation of Other Axial Factors Component');
-ylabel('Factor Standard Deviation');
-xlabel('Number of Sinogram');
+figure;
+set(gcf, 'Position', [50 50 1600 1000]);
+subplot(2,1,1);
+plot(indexSinos, meanMain, indexSinos, meanOther, 'LineWidth', 2);
+legend('Mean Main Axial Factors', 'Mean Other Axial Factors', 'Location','NorthWest');
+title('a) Mean Value of Axial Factors');
+ylabel('Factor', 'FontSize', 16, 'FontWeight', 'bold');
+xlabel('i_{z}', 'FontSize', 16, 'FontWeight', 'bold');
+ticklabels = get(gca, 'XtickLabel');
+set(gca, 'XtickLabel', ticklabels, 'FontSize',16);
+ticklabels = get(gca, 'YtickLabel');
+set(gca, 'YtickLabel', ticklabels, 'FontSize',16);
 
-allComposedComponents = zeros(numel(normFiles), numel(componentFactors{1}{8}));
-for i = 1 : numel(normFiles)
-    allComposedComponents(i,:) = [componentFactors{i}{8}]' .* [componentFactors{i}{4}]';
-end;
-% Std:
-devBoth = std(allComposedComponents);
-% plot:
-figure;plot(devBoth);
-title('Standard Deviation of Both Axial Factors Component');
-ylabel('Factor Standard Deviation');
-xlabel('Number of Sinogram');
 
-% Normalized to the media:
-meanBoth = mean(allComposedComponents);
-normDevBoth = devBoth ./ meanBoth;
 % plot:
-figure;plot(normDevBoth);
-title('Normalized Standard Deviation of Both Axial Factors Component');
-ylabel('Factor Standard Deviation');
-xlabel('Number of Sinogram');
+subplot(2,1,2);
+plot(indexSinos, devMain./meanMain, indexSinos, devOther./meanOther, 'LineWidth', 2);
+legend('StdDev/Mean Main Axial Factors', 'StdDev/Mean Other Axial Factors', 'Location','NorthWest');
+title('b) Normalized StdDev of Axial Factors');
+ylabel('Factor', 'FontSize', 16, 'FontWeight', 'bold');
+xlabel('i_{z}', 'FontSize', 16, 'FontWeight', 'bold');
+ticklabels = get(gca, 'XtickLabel');
+set(gca, 'XtickLabel', ticklabels, 'FontSize',16);
+ticklabels = get(gca, 'YtickLabel');
+set(gca, 'YtickLabel', ticklabels, 'FontSize',16);
+% Save for publication:
+set(gcf,'PaperPositionMode','auto');    % Para que lo guarde en el tamaño modificado.
+fullFilename = [graphsPath 'figure3a_3b'];
+saveas(gca, [fullFilename], 'tif');
+saveas(gca, [fullFilename], 'epsc');
 %% COMPARE WITH NUM SINOS
 factorFromSpan = 1./structSizeSino3dSpan11.numSinosMashed;
 % Normalize to the mean:

@@ -119,7 +119,7 @@ if applyAffineTransform
 %     matlabAffine = affine3d(affineMatrix'); % Create an affine object for matlab (that affine matrix is transposed as expected by matlab).
 %     [image imageRef3d] = imwarp(image, matlabAffine); % Apply transform.
 
-%   2ND OPTION
+% %   2ND OPTION
     affineMatrix = [dircosX dircosY dirZ./sliceThickness [0;0;0]; 0 0 0 1];   % Affine matrix without scaling and translation.
     matlabAffine = affine3d(affineMatrix'); % Create an affine object for matlab.
     
@@ -134,12 +134,25 @@ if applyAffineTransform
     [image imageRef3d] = imwarp(image, inImageRef3d, matlabAffine);
     % Add the displacemente to the reference:
     imageRef3d.XWorldLimits = imageRef3d.XWorldLimits + posTopLeftPixel_1(1);
-    imageRef3d.YWorldLimits = imageRef3d.YWorldLimits + posTopLeftPixel_1(2);
+    % If dirZ negative I need to add the pos of the N slice (because matlab
+    % min and max limits are not relted with first and last colum):
+    % if max(dircosY) > 0
+        imageRef3d.YWorldLimits = imageRef3d.YWorldLimits + posTopLeftPixel_1(2);
+    %else
+    %    imageRef3d.YWorldLimits = imageRef3d.YWorldLimits - posTopLeftPixel_N(2);
+    %end
     imageRef3d.ZWorldLimits = imageRef3d.ZWorldLimits + posTopLeftPixel_1(3);
+    
+    % In the image, the first slices are the top in geometric coordinates, so,
+    % if dirZ > 0, I need to invert the slices:
+    if max(dirZ) > 0    % Use max because it can have serveral component if the image is rotated coronally:
+        image(:,:,1:end) = image(:,:,end:-1:1);
+    end
     
 else
     imageRef3d = imref3d(size(image), 1, 1, 1);
 end
+
 % Affine transformation matrix to go from image space to patient space. I
 % overwrite the affineMatrix used before because this is the correct
 % affineMatrix:

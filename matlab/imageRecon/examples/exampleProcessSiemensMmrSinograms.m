@@ -12,23 +12,23 @@
 clear all 
 close all
 %% PATHS FOR EXTERNAL FUNCTIONS AND RESULTS
-addpath('/workspaces/Martin/KCL/Biograph_mMr/mmr');
-apirlPath = '/workspaces/Martin/PET/apirl-code/trunk/';
+addpath('/home/mab15/workspace/KCL/Biograph_mMr/mmr');
+apirlPath = '/home/mab15/workspace/apirl-code/trunk/';
 addpath(genpath([apirlPath '/matlab']));
-setenv('PATH', [getenv('PATH') ':/workspaces/Martin/PET/apirl-code/trunk/build/debug/bin']);
-setenv('LD_LIBRARY_PATH', [getenv('LD_LIBRARY_PATH') ':/workspaces/Martin/PET/apirl-code/trunk/build/debug/bin']);
+setenv('PATH', [getenv('PATH') ':/home/mab15/workspace/apirl-code/trunk/build/debug/bin']);
+setenv('LD_LIBRARY_PATH', [getenv('LD_LIBRARY_PATH') ':/home/mab15/workspace/apirl-code/trunk/build/debug/bin']);
 outputPath = '/workspaces/Martin/KCL/Biograph_mMr/mmr/5hr_ge68/';
 %setenv('LD_LIBRARY_PATH', [getenv('LD_LIBRARY_PATH') ':/usr/lib/x86_64-linux-gnu/']);
 %% READING THE SINOGRAMS
 % Read the sinograms:
 %filenameUncompressedMmr = '/workspaces/Martin/KCL/Biograph_mMr/mmr/test.s';
 %outFilenameIntfSinograms = '/workspaces/Martin/KCL/Biograph_mMr/mmr/testIntf';
-filenameUncompressedMmr = '/workspaces/Martin/KCL/Biograph_mMr/mmr/5hr_ge68/cylinder_5hours.s';
-outFilenameIntfSinograms = '/workspaces/Martin/KCL/Biograph_mMr/mmr/5hr_ge68/cylinder_5hoursIntf';
+filenameUncompressedMmr = '/home/mab15/workspace/KCL/Biograph_mMr/mmr/5hr_ge68/cylinder_5hours.s';
+outFilenameIntfSinograms = '/home/mab15/workspace/KCL/Biograph_mMr/mmr/5hr_ge68/cylinder_5hoursIntf';
 [sinogram, delayedSinogram, structSizeSino3d] = getIntfSinogramsFromUncompressedMmr(filenameUncompressedMmr, outFilenameIntfSinograms);
 
 % Read the normalization factors:
-filenameRawData = '/workspaces/Martin/KCL/Biograph_mMr/mmr/Norm_20141008101010.n';
+filenameRawData = '/home/mab15/workspace/KCL/Biograph_mMr/mmr/Norm_20141008101010.n';
 [componentFactors, componentLabels]  = readmMrComponentBasedNormalization(filenameRawData, 1);
 %% CREATE SINOGRAMS3D SPAN 11
 % Create sinogram span 11:

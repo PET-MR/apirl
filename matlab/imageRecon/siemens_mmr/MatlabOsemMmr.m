@@ -97,38 +97,16 @@ if ~strcmp(attMapBaseFilename, '')
     if ~strcmp(attMapBaseFilename(end-3:end),'.h33')
         disp('Computing the attenuation correction factors from mMR mu maps...');
         % Read the attenuation map and compute the acfs.
-        headerInfo = getInfoFromInterfile([attMapBaseFilename '_umap_human_00.v.hdr']);
-        headerInfo = getInfoFromInterfile([attMapBaseFilename '_umap_hardware_00.v.hdr']);
-        imageSizeAtten_pixels = [headerInfo.MatrixSize1 headerInfo.MatrixSize2 headerInfo.MatrixSize3];
-        imageSizeAtten_mm = [headerInfo.ScaleFactorMmPixel1 headerInfo.ScaleFactorMmPixel2 headerInfo.ScaleFactorMmPixel3];
-        filenameAttenMap_human = [attMapBaseFilename '_umap_human_00.v'];
-        filenameAttenMap_hardware = [attMapBaseFilename '_umap_hardware_00.v'];
-        % Human:
-        fid = fopen(filenameAttenMap_human, 'r');
-        if fid == -1
-            ferror(fid);
-        end
-        attenMap_human = fread(fid, imageSizeAtten_pixels(1)*imageSizeAtten_pixels(2)*imageSizeAtten_pixels(3), 'single');
-        attenMap_human = reshape(attenMap_human, imageSizeAtten_pixels);
-        % Then interchange rows and cols, x and y: 
-        attenMap_human = permute(attenMap_human, [2 1 3]);
-        fclose(fid);
-        % The mumap of the phantom it has problems in the spheres, I force all the
-        % pixels inside the phantom to the same value:
-
-        % Hardware:
-        fid = fopen(filenameAttenMap_hardware, 'r');
-        if fid == -1
-            ferror(fid);
-        end
-        attenMap_hardware = fread(fid, imageSizeAtten_pixels(1)*imageSizeAtten_pixels(2)*imageSizeAtten_pixels(3), 'single');
-        attenMap_hardware = reshape(attenMap_hardware, imageSizeAtten_pixels);
-        % Then interchange rows and cols, x and y: 
-        attenMap_hardware = permute(attenMap_hardware, [2 1 3]);
-        fclose(fid);
-
+        [attenMap_human, refAttenMapHum, bedPosition_mm, info]  = interfileReadSiemensImage([attMapBaseFilename '_umap_human_00.v.hdr']);
+        [attenMap_hardware, refAttenMapHard, bedPosition_mm, info]  = interfileReadSiemensImage([attMapBaseFilename '_umap_hardware_00.v.hdr']);
+        imageSizeAtten_mm = [refAttenMapHum.PixelExtentInWorldY refAttenMapHum.PixelExtentInWorldX refAttenMapHum.PixelExtentInWorldZ];
         % Compose both images:
         attenMap = attenMap_hardware + attenMap_human;
+        % I need to translate because siemens uses an slightly displaced
+        % center (taken from dicom images, the first pixel is -359.8493 ,-356.8832 
+        displacement_mm = [-1.5 -imageSizeAtten_mm(2)*size(attenMap_human,1)/2+356.8832 0];
+        [attenMap, Rtranslated] = imtranslate(attenMap, refAttenMapHum, displacement_mm,'OutputView','same');
+        
     else
         disp('Computing the attenuation correction factors from post processed APIRL mu maps...');
         attenMap_human = interfileRead(attMapBaseFilename);
@@ -136,6 +114,8 @@ if ~strcmp(attMapBaseFilename, '')
         infoAtten = interfileinfo(attMapBaseFilename); 
         imageSizeAtten_mm = [infoAtten.ScalingFactorMmPixel1 infoAtten.ScalingFactorMmPixel2 infoAtten.ScalingFactorMmPixel3];
     end
+    
+    
 
     % Create ACFs of a computed phatoms with the linear attenuation
     % coefficients:
@@ -152,6 +132,7 @@ if ~strcmp(attMapBaseFilename, '')
     fclose(fid);
 else
     acfFilename = '';
+    acfsSinogram = ones(size(sinograms));
 end
 %% RANDOM ESTIMATE
 % If the edlayed sinograms are available and stir is availables, use it, if

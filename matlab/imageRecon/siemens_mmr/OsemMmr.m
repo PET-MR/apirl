@@ -125,6 +125,7 @@ if ~strcmp(attMapBaseFilename, '')
     fclose(fid);
 else
     acfFilename = '';
+    acfsSinogram = ones(size(sinograms));
 end
 %% GENERATE AND SAVE ATTENUATION AND NORMALIZATION FACTORS AND CORECCTION FACTORS
 disp('Generating the ANF sinogram...');

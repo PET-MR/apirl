@@ -149,6 +149,7 @@ if ~strcmp(attMapBaseFilename, '')
     fclose(fid);
 else
     acfFilename = '';
+    acfsSinogram = ones(size(sinograms));
 end
 %% RANDOM ESTIMATE
 % If the edlayed sinograms are available and stir is availables, use it, if
