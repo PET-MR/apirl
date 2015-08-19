@@ -168,7 +168,7 @@ if isempty(my_axial_factors)
         axialFactors = axialFactors ./ mean(axialFactors);
         % Apply sinogram normaliztion (in this case it is not necessary, but fo
         %r other spans it is:
-        axialFactors = axialFactors'.*structSizeSino3d.numSinosMashed'; % All ones!
+        axialFactors = axialFactors.*structSizeSino3d.numSinosMashed'; % All ones!
     else
         axialFactors = structSizeSino3d.numSinosMashed';
     end

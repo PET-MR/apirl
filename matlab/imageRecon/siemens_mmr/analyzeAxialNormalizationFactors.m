@@ -144,3 +144,11 @@ legend('Axial Factor from CBN', 'Span 11 Factors');
 ylabel('Factor');
 xlabel('Number of Sinogram');
 set(gcf, 'position', [1 25 1920 1069]);
+%% NORMALIZATION FACTORS FOR SPAN 11
+disp('Computing the normalization correction factors...');
+% ncf:
+[overall_ncf_3d, scanner_time_invariant_ncf_3d, scanner_time_variant_ncf_3d, acquisition_dependant_ncf_3d, used_xtal_efficiencies, used_deadtimefactors, used_axial_factors] = ...
+   create_norm_files_mmr([normPath normFiles(20).name], [], [], [], [], 11);
+% invert for nf:
+overall_nf_3d = overall_ncf_3d;
+overall_nf_3d(overall_ncf_3d ~= 0) = 1./overall_nf_3d(overall_ncf_3d ~= 0);
