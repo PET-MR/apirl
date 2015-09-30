@@ -75,6 +75,51 @@ zValues_mm = -(zFov/2 - deltaZ/2) : deltaZ : (zFov/2 - deltaZ/2);
 numSegments = numel(sinogramsPerSegment);
 % The span, I get it from the ring difference from the first segment:
 span = (maxRingDiff(1) - minRingDiff(1))+1;
+
+% Ahora determino la cantidad de sinogramas por segmentos, recorriendo cada
+% segmento:
+sinogramsPerSegmentAux = zeros(1,numSegments);
+
+numRings = numZ;
+numSinosMashed = [];
+for segment = 1 : numSegments
+    % Por cada segmento, voy generando los sinogramas correspondientes y
+    % contándolos, debería coincidir con los sinogramas para ese segmento: 
+    numSinosThisSegment = 0;
+    % Recorro todos los z1 para ir rellenando
+    for z1 = 1 : (numRings*2)
+        numSinosZ1inSegment = 0;   % Cantidad de sinogramas para z1 en este segmento
+        % Recorro completamente z2 desde y me quedo con los que están entre
+        % minRingDiff y maxRingDiff. Se podría hacer sin recorrer todo el
+        % sinograma pero se complica un poco.
+        z1_aux = z1;    % z1_aux la uso para recorrer.
+        for z2 = 1 : numRings
+            % Ahora voy avanzando en los sinogramas correspondientes,
+            % disminuyendo z1 y aumentnado z2 hasta que la diferencia entre
+            % anillos llegue a maxRingDiff.
+            if ((z1_aux-z2)<=maxRingDiff(segment))&&((z1_aux-z2)>=minRingDiff(segment))
+                % Me asguro que esté dentro del tamaño del michelograma:
+                if(z1_aux>0)&&(z2>0)&&(z1_aux<=numRings)&&(z2<=numRings)
+                    numSinosZ1inSegment = numSinosZ1inSegment + 1;
+                end
+            end
+            % Pase esta combinación de (z1,z2), paso a la próxima:
+            z1_aux = z1_aux - 1;
+        end
+        if(numSinosZ1inSegment>0)
+            numSinosMashed = [numSinosMashed numSinosZ1inSegment];
+            numSinosThisSegment = numSinosThisSegment + 1;
+        end
+    end 
+    % Guardo la cantidad de segmentos:
+    sinogramsPerSegmentAux(segment) = numSinosThisSegment;
+end
+
+if sinogramsPerSegmentAux ~= sinogramsPerSegment
+    error('The sinograms per segment parameter dos not match with the other parameters.');
+end
+
 structSizeSino3D = struct('numTheta', numTheta, 'numR', numR, 'numZ', numZ, 'numSegments', numSegments, 'rFov_mm', rFov,...
     'zFov_mm', zFov, 'rValues_mm', rValues_mm, 'thetaValues_deg', thetaValues_deg, ...
     'zValues_mm', zValues_mm, 'sinogramsPerSegment', sinogramsPerSegment,'minRingDiff', minRingDiff, 'maxRingDiff', maxRingDiff, 'maxAbsRingDiff', maxAbsRingDiff, 'span', span);
+structSizeSino3D.numSinosMashed = numSinosMashed;

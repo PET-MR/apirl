@@ -111,18 +111,15 @@ bool CuOsemSinogram3d::InitGpuMemory(TipoProyector tipoProy)
   // Por un lado tengo los valores de coordenadas posibles de r, theta y z. Los mismos se copian a memoria constante de GPU (ver vectores globales al inicio de este archivo.
   // Los theta values los tengo que cargar por cada subset.
   // checkCudaErrors(cudaMemcpyToSymbol(d_thetaValues_deg, inputProjection->getAngPtr(), sizeof(float)*inputProjection->getNumProj()));
-  float* auxPointer;
   int auxInt;
-  auxPointer = inputProjection->getSegment(0)->getSinogram2D(0)->getRPtr();
-  auxInt = sizeof(float)*inputProjection->getNumR();
-  checkCudaErrors(cudaMemcpyToSymbol(d_RValues_mm, auxPointer, auxInt));
+  checkCudaErrors(cudaMemcpyToSymbol(d_RValues_mm, inputProjection->getSegment(0)->getSinogram2D(0)->getRPtr(), sizeof(float)*inputProjection->getNumR()));
   checkCudaErrors(cudaMemcpyToSymbol(d_AxialValues_mm, inputProjection->getAxialPtr(), sizeof(float)*inputProjection->getNumRings()));
   SizeImage size =  reconstructionImage->getSize();
   checkCudaErrors(cudaMemcpyToSymbol(d_imageSize, &size, sizeof(reconstructionImage->getSize())));
   float aux;
-  aux = inputProjection->getRadioFov_mm();
+  aux = reconstructionImage->getFovRadio();
   checkCudaErrors(cudaMemcpyToSymbol(d_RadioFov_mm, &aux, sizeof(inputProjection->getRadioFov_mm())));
-  aux = inputProjection->getAxialFoV_mm();
+  aux = reconstructionImage->getFovHeight();
   checkCudaErrors(cudaMemcpyToSymbol(d_AxialFov_mm, &aux, sizeof(inputProjection->getAxialFoV_mm())));
 
   auxInt = size.nPixelsX * size.nPixelsY;
@@ -188,9 +185,9 @@ bool CuOsemSinogram3d::InitGpuMemory(TipoProyector tipoProy)
   // set texture parameters
   texImage.normalized = false;                      // access with normalized texture coordinates
   texImage.filterMode = cudaFilterModeLinear;      // linear interpolation
-  texImage.addressMode[0] = cudaAddressModeClamp;   // wrap texture coordinates
-  texImage.addressMode[1] = cudaAddressModeClamp;
-  texImage.addressMode[2] = cudaAddressModeClamp;
+  texImage.addressMode[0] = cudaAddressModeBorder;   // wrap texture coordinates
+  texImage.addressMode[1] = cudaAddressModeBorder;
+  texImage.addressMode[2] = cudaAddressModeBorder;
   // The image is in a texture memory:  cudaChannelFormatDesc floatTex;
   checkCudaErrors(cudaMalloc3DArray(&d_imageArray, &floatTex, extentImageSize));
   // bind array to 3D texture
@@ -226,6 +223,10 @@ void CuOsemSinogram3d::updateGridSizeForSubsetSinogram()
   // Update the number of bins:
   int numBinsSino2Subset = inputProjection->getNumProj() * inputProjection->getNumR()/numSubsets;
   checkCudaErrors(cudaMemcpyToSymbol(d_numBinsSino2d, &numBinsSino2Subset, sizeof(int)));
+  
+  #ifdef __DEBUG__
+  printf("Block size for Subset Sinogram: %dx%dx%d. Grid Size: %dx%dx%d. Bins per subset: %d.\n",  blockSizeBackprojector.x,  blockSizeBackprojector.y,  blockSizeBackprojector.z, numBlocksX, numBlocksY, numBlocksZ, numBinsSino2Subset);
+  #endif
 }
 
 /// Actualiza los tamaños para los subsets.
@@ -254,6 +255,12 @@ void CuOsemSinogram3d::updateGridSizeForWholeSinogram()
 bool CuOsemSinogram3d::InitSubsetConstants(int indexSubset)
 {
   checkCudaErrors(cudaMemcpyToSymbol(d_thetaValues_deg, h_subsetsAngles[indexSubset], sizeof(float)*numProj));
+  #ifdef __DEBUG__
+  printf("Angles for subset: %d.\n", indexSubset);
+  for(int i=0; i<numProj; i++)
+    printf("%f\t",  h_subsetsAngles[indexSubset][i]);
+  printf("\n");
+  #endif
   // Update grid size for subset:
   updateGridSizeForSubsetSinogram();
   return true;

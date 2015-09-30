@@ -263,14 +263,14 @@ for iterScatter = 1 : numItersScatter
 
             disp(sprintf('Iteration %d...', iter));
             % 2.a) Create working directory:
-            if rem(iter,saveInterval) == 0
-                iterationPath = [outputPath pathBar sprintf('Iteration%d', iter) pathBar];
-                if ~isdir(iterationPath) 
+            if rem((iter-1)*numSubsets+s,saveInterval) == 0
+                iterationPath = [outputPath pathBar sprintf('Subiteration%d', (iter-1)*numSubsets+s) pathBar];
+                if ~isdir(iterationPath)
                     mkdir(iterationPath);
                 end
             else
                 iterationPath = [outputPath 'temp' pathBar];
-                if ~isdir(iterationPath) 
+                if ~isdir(iterationPath)
                     mkdir(iterationPath);
                 end
             end

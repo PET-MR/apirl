@@ -4,5 +4,5 @@
 #Para release el APIRL
 #export LD_LIBRARY_PATH=LD_LIBRARY_PATH:/usr/local/APIRL/bin
 
-export LD_LIBRARY_PATH=$HOME/workspace/apirl-code/trunk/build/debug/bin/:/usr/local/cuda/lib64/:$LD_LIBRARY_PATH
-export PATH=$PATH:$HOME/workspace/apirl-code/trunk/build/debug/bin/:/usr/local/cuda/bin/
+export LD_LIBRARY_PATH=$APIRL_PATH/build/debug/bin/:/usr/local/cuda/lib64/:$LD_LIBRARY_PATH
+export PATH=$PATH:$APIRL_PATH/build/debug/bin/:/usr/local/cuda/bin/

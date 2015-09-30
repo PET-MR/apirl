@@ -26,7 +26,7 @@
 % Examples:
 %   [volume randoms scatter] = OsemMmr(sinogramFilename, span, normFilename, attMapBaseFilename, 1, 1, outputPath, pixelSize_mm, numSubsets, numIterations, useGpu, stirMatlabPath)
 %   [volume randoms scatter] = OsemMmr(sinogramFilename, span, normFilename, attMapBaseFilename, 'randoms.h33', 'scatter.h33', outputPath, pixelSize_mm, numSubsets, numIterations, useGpu, stirMatlabPath)
-function [volume randoms scatter] = OsemMmr(sinogramFilename, span, normFilename, attMapBaseFilename, correctRandoms, correctScatter, outputPath, pixelSize_mm, numSubsets, numIterations, useGpu, stirMatlabPath)
+function [volume randoms scatter] = OsemMmr(sinogramFilename, span, normFilename, attMapBaseFilename, correctRandoms, correctScatter, outputPath, pixelSize_mm, numSubsets, numIterations, saveInterval, useGpu, stirMatlabPath, removeTempFiles)
 
 mkdir(outputPath);
 % Check what OS I am running on:
@@ -42,8 +42,8 @@ else
 end
 
 % Check if we have received pixel size:
-if nargin ~= 12
-    error('Wrong number of parameters: volume = OsemMmr(sinogramFilename, span, normFilename, attMapBaseFilename, correctRandoms, correctScatter, outputPath, pixelSize_mm, numSubsets, numIterations, useGpu, stirMatlabPath)');
+if nargin ~= 14
+    error('Wrong number of parameters: [volume randoms scatter] = OsemMmr(sinogramFilename, span, normFilename, attMapBaseFilename, correctRandoms, correctScatter, outputPath, pixelSize_mm, numSubsets, numIterations, saveInterval, useGpu, stirMatlabPath, removeTempFiles)');
 end
 
 imageSize_mm = [600 600 257.96875];
@@ -52,8 +52,13 @@ imageSize_pixels = ceil(imageSize_mm./pixelSize_mm);
 disp('Read input sinogram...');
 % Read the sinograms:
 [sinograms, delayedSinograms, structSizeSino3dSpan1] = interfileReadSino(sinogramFilename);
-% Convert to span:
-[sinograms, structSizeSino3d] = convertSinogramToSpan(sinograms, structSizeSino3dSpan1, span);
+if structSizeSino3dSpan1.span == 1
+    % Convert to span:
+    [sinograms, structSizeSino3d] = convertSinogramToSpan(sinograms, structSizeSino3dSpan1, span);  
+else
+    structSizeSino3d = structSizeSino3dSpan1;
+    warning('The span parameter will be ignored because the input sinogram is not span 1.');
+end
 sinogramFilename = [outputPath pathBar 'sinogram'];
 % Write the input sinogram:
 interfileWriteSino(single(sinograms), sinogramFilename, structSizeSino3d);
@@ -73,15 +78,20 @@ if isstr(normFilename)
     overall_nf_3d = overall_ncf_3d;
     overall_nf_3d(overall_ncf_3d ~= 0) = 1./overall_nf_3d(overall_ncf_3d ~= 0);
 else
-    if size(normFilename) ~= size(sinogramSpan1)
-        error('The size of the normalization correction factors is incorrect.')
+    if ~isempty(normFilename)   % if empty no norm is used, if not used the matrix in normFilename proving is of the same size of the sinogram.
+        if size(normFilename) ~= size(sinograms)
+            error('The size of the normalization correction factors is incorrect.')
+        end
+        disp('Using the normalization correction factors received as a parameter...');
+        overall_ncf_3d = normFilename;
+        clear normFilename;
+        % invert for nf:
+        overall_nf_3d = overall_ncf_3d;
+        overall_nf_3d(overall_ncf_3d ~= 0) = 1./overall_nf_3d(overall_ncf_3d ~= 0);
+    else
+        overall_ncf_3d = ones(size(sinograms));
+        overall_nf_3d = overall_ncf_3d;
     end
-    disp('Using the normalization correction factors received as a parameter...');
-    overall_ncf_3d = normFilename;
-    clear normFilename;
-    % invert for nf:
-    overall_nf_3d = overall_ncf_3d;
-    overall_nf_3d(overall_ncf_3d ~= 0) = 1./overall_nf_3d(overall_ncf_3d ~= 0);
 end
    
 %% ATTENUATION MAP
@@ -106,9 +116,7 @@ if ~strcmp(attMapBaseFilename, '')
         attenMap = attenMap_human;
         infoAtten = interfileinfo(attMapBaseFilename); 
         imageSizeAtten_mm = [infoAtten.ScalingFactorMmPixel1 infoAtten.ScalingFactorMmPixel2 infoAtten.ScalingFactorMmPixel3];
-    end
-    
-    
+    end   
 
     % Create ACFs of a computed phatoms with the linear attenuation
     % coefficients:
@@ -172,7 +180,6 @@ interfileWriteSino(single(additive), additiveFilename, structSizeSino3d);
 %% GENERATE MLEM RECONSTRUCTION FILES FOR APIRL
 if useGpu == 0
     disp('Osem reconstruction...');
-    saveInterval = 1;
     saveIntermediate = 0;
     outputFilenamePrefix = [outputPath 'reconImage'];
     filenameOsemConfig = [outputPath 'osem.par'];
@@ -182,7 +189,6 @@ if useGpu == 0
     status = system(['OSEM ' filenameOsemConfig]) 
 else
     disp('cuOsem reconstruction...');
-    saveInterval = 10;
     saveIntermediate = 0;
     outputFilenamePrefix = [outputPath 'reconImage'];
     filenameMlemConfig = [outputPath 'cuosem.par'];
@@ -239,12 +245,11 @@ if (numel(correctScatter) == 1)
         % New dditive sinogram:
         additive = (randoms .* overall_ncf_3d  + scatter_1).* acfsSinogram; % (randoms +scatter.*norm)./(attenFactors*nprmFactrs)
         % write additive singoram:
-        additiveFilename = [outputPath 'additive'];
+        additiveFilename = [outputPathScatter 'additive'];
         interfileWriteSino(single(additive), additiveFilename, structSizeSino3d);
 
         if useGpu == 0
             disp('Osem reconstruction...');
-            saveInterval = 1;
             saveIntermediate = 0;
             outputFilenamePrefix = [outputPathScatter 'reconImage'];
             filenameOsemConfig = [outputPathScatter 'osem.par'];
@@ -254,7 +259,6 @@ if (numel(correctScatter) == 1)
             status = system(['OSEM ' filenameOsemConfig]) 
         else
             disp('cuOsem reconstruction...');
-            saveInterval = 10;
             saveIntermediate = 0;
             outputFilenamePrefix = [outputPathScatter 'reconImage'];
             filenameMlemConfig = [outputPathScatter 'cuosem.par'];
@@ -296,14 +300,13 @@ if (numel(correctScatter) == 1)
         legend('Sinogram', 'Randoms', 'Scatter', 'Randoms+Scatter');
         
         % New dditive sinogram:
-        additive = (randoms .* overall_ncf_3d  + scatter_1).* acfsSinogram; % (randoms +scatter.*norm)./(attenFactors*nprmFactrs)
+        additive = (randoms .* overall_ncf_3d  + scatter).* acfsSinogram; % (randoms +scatter.*norm)./(attenFactors*nprmFactrs)
         % write additive singoram:
-        additiveFilename = [outputPath 'additive'];
+        additiveFilename = [outputPathScatter 'additive'];
         interfileWriteSino(single(additive), additiveFilename, structSizeSino3d);
         
         if useGpu == 0
             disp('Osem reconstruction...');
-            saveInterval = 1;
             saveIntermediate = 0;
             outputFilenamePrefix = [outputPathScatter 'reconImage'];
             filenameOsemConfig = [outputPathScatter 'osem.par'];
@@ -313,11 +316,10 @@ if (numel(correctScatter) == 1)
             status = system(['OSEM ' filenameOsemConfig]) 
         else
             disp('cuOsem reconstruction...');
-            saveInterval = 10;
             saveIntermediate = 0;
             outputFilenamePrefix = [outputPathScatter 'reconImage'];
             filenameMlemConfig = [outputPathScatter 'cuosem.par'];
-            CreateCuMlemConfigFileForMmr(filenameMlemConfig, [sinogramFilename '.h33'], [filenameInitialEstimate '.h33'], outputFilenamePrefix, numIterations, [additiveFilename ],...
+            CreateCuMlemConfigFileForMmr(filenameMlemConfig, [sinogramFilename '.h33'], [filenameInitialEstimate '.h33'], outputFilenamePrefix, numIterations, [],...
                 saveInterval, saveIntermediate, [anfFilename '.h33'], [additiveFilename '.h33'], 0, 576, 576, 512, numSubsets);
             % Execute APIRL: 
             status = system(['cuMLEM ' filenameMlemConfig]) 

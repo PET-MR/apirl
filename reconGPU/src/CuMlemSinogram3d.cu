@@ -338,9 +338,9 @@ bool CuMlemSinogram3d::InitGpuMemory(TipoProyector tipoProy)
   // set texture parameters
   texImage.normalized = false;                      // access with normalized texture coordinates
   texImage.filterMode = cudaFilterModeLinear;      // linear interpolation
-  texImage.addressMode[0] = cudaAddressModeClamp;   // wrap texture coordinates
-  texImage.addressMode[1] = cudaAddressModeClamp;
-  texImage.addressMode[2] = cudaAddressModeClamp;
+  texImage.addressMode[0] = cudaAddressModeBorder;   // wrap texture coordinates
+  texImage.addressMode[1] = cudaAddressModeBorder;
+  texImage.addressMode[2] = cudaAddressModeBorder;
   // The image is in a texture memory:  cudaChannelFormatDesc floatTex;
   checkCudaErrors(cudaMalloc3DArray(&d_imageArray, &floatTex, extentImageSize));
   // bind array to 3D texture

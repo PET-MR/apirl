@@ -78,15 +78,15 @@ for i = 1 : numel(slicesAprocesar)
     desvioNormBackground(i) = desvioBackground(i) ./ meanFondo(i);
 
     % Si genere los gráficos guardo la imagen:
-    if mostrarResultadosParciales && (i == round(numel(slicesAprocesar)/2))
-        figure(h2);
-        colormap(hot);
-        set(gcf, 'Position', [100 100 1600 1000]);
-        set(gcf,'PaperPositionMode','auto');    % Para que lo guarde en el tamaño modificado.
-        saveas(gcf, 'ROIsCylinderPhantom', 'fig');
-        export_fig(['ROIsCylinderPhantom_exp_fig.png'])
-        saveas(gca, 'ROIsCylinderPhantom', 'epsc');
-    end
+%     if mostrarResultadosParciales && (i == round(numel(slicesAprocesar)/2))
+%         figure(h2);
+%         colormap(hot);
+%         set(gcf, 'Position', [100 100 1600 1000]);
+%         set(gcf,'PaperPositionMode','auto');    % Para que lo guarde en el tamaño modificado.
+%         saveas(gcf, 'ROIsCylinderPhantom', 'fig');
+%         export_fig(['ROIsCylinderPhantom_exp_fig.png'])
+%         saveas(gca, 'ROIsCylinderPhantom', 'epsc');
+%     end
     % Cierro ventanas de visualización para que no se vayan acumulando:
     if mostrarResultadosParciales
         close(h2);

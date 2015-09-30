@@ -153,7 +153,6 @@ __device__ void cuSiddonWithTextures (float4* LOR, float4* P0, float* image, flo
     alpha_y_max = max(alpha_y_1, alpha_y_2);
     alpha_max = min(alpha_x_max, alpha_y_max);
   }
-    
   
   // if the radius of the scanner is less than the diagonal (alpha less than 0), the entry point should be P0
   if ((alpha_min<0)||(alpha_min>1)) // I added (alpha_min>1), because for aprallel lors to an axis, both alphas can be positiver or negative.
@@ -172,6 +171,7 @@ __device__ void cuSiddonWithTextures (float4* LOR, float4* P0, float* image, flo
   y_2_mm = P0->y + LOR->y * alpha_max;
   z_2_mm = P0->z + LOR->z * alpha_max;
   
+    
   //rayLengthInFov_mm = sqrt((x_2_mm-x_1_mm) * (x_2_mm-x_1_mm) + (y_2_mm-y_1_mm) * (y_2_mm-y_1_mm) + (z_2_mm-z_1_mm) * (z_2_mm-z_1_mm));
 
   // Distancia total de la LOR. Es la distancia entre los puntos P0 y P1, habitualmente, esos son
@@ -271,7 +271,6 @@ __device__ void cuSiddonWithTextures (float4* LOR, float4* P0, float* image, flo
   i = i_min;
   j = j_min;
   k = k_min;
-
   // Recorro la lor y guardo los segmentos en la lista de salida.
   float siddonWeight = 0, result = 0, aux = 0;
   for(int m = 0; m < numIntersectedPixels; m++)

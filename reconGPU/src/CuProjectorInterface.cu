@@ -285,9 +285,9 @@ bool CuProjectorInterface::InitGpuMemory(Sinogram3D* sinogram, Image* image, Tip
       // set texture parameters
       texImage.normalized = false;                      // access with normalized texture coordinates
       texImage.filterMode = cudaFilterModeLinear;      // linear interpolation
-      texImage.addressMode[0] = cudaAddressModeClamp;   // wrap texture coordinates
-      texImage.addressMode[1] = cudaAddressModeClamp;
-      texImage.addressMode[2] = cudaAddressModeClamp;
+      texImage.addressMode[0] = cudaAddressModeBorder;   // set to zerto the borders.
+      texImage.addressMode[1] = cudaAddressModeBorder;
+      texImage.addressMode[2] = cudaAddressModeBorder;
       // bind array to 3D texture
       checkCudaErrors(cudaBindTextureToArray(texImage, d_imageArray, floatTex));
       break;

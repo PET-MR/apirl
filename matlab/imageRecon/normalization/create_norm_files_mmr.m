@@ -66,6 +66,7 @@ end
 % Size of mMr Sinogram's
 numTheta = 252; numR = 344; numRings = 64; maxAbsRingDiff = 60; rFov_mm = 594/2; zFov_mm = 258;
 structSizeSino3d = getSizeSino3dFromSpan(numR, numTheta, numRings, rFov_mm, zFov_mm, span_choice, maxAbsRingDiff);
+structSizeSino3d_span1 = getSizeSino3dFromSpan(numR, numTheta, numRings, rFov_mm, zFov_mm, 1, maxAbsRingDiff);
 % Total number of singorams per 3d sinogram:
 numSinograms = sum(structSizeSino3d.sinogramsPerSegment);
 % Parameters of the buckets:
@@ -118,11 +119,19 @@ crystalInterfFactor = single(componentFactors{2});
 crystalInterfFactor = repmat(crystalInterfFactor', 1, structSizeSino3d.numTheta/size(crystalInterfFactor,1));
 % c) Axial factors:
 if isempty(my_axial_factors)
-    if span_choice == 11
+    axialFactors = zeros(sum(structSizeSino3d.sinogramsPerSegment),1);
+    if span_choice == 0
         axialFactors = structSizeSino3d.numSinosMashed'.* (1./(componentFactors{4}.*componentFactors{8}));
-    elseif span_choice == 1
+    else
         % Generate axial factors from a block profile saved before:
         gainPerPixelInBlock = load('axialGainPerPixelInBlock.mat');
+        % Check if the sensitivity profle is available:
+        if exist('sensitivityPerSegment.mat') ~= 0
+            sensitivityPerSegment = load('sensitivityPerSegment.mat');
+            sensitivityPerSegment = sensitivityPerSegment.sensitivityPerSegment;
+        else
+            sensitivityPerSegment = ones(structSizeSino3d_span1.numSegments,1);
+        end
         if(isstruct(gainPerPixelInBlock))
             gainPerPixelInBlock = gainPerPixelInBlock.gainPerPixelInBlock;
         end
@@ -149,7 +158,7 @@ if isempty(my_axial_factors)
                             % Get the index of detector inside a block:
                             pixelInBlock1 = rem(z1_aux-1, numberOfAxialCrystalsPerBlock);
                             pixelInBlock2 = rem(z2-1, numberOfAxialCrystalsPerBlock);
-                            axialFactors(indiceSino) = (gainPerPixelInBlock(pixelInBlock1+1) * gainPerPixelInBlock(pixelInBlock2+1));
+                            axialFactors(indiceSino) = axialFactors(indiceSino) + (gainPerPixelInBlock(pixelInBlock1+1) * gainPerPixelInBlock(pixelInBlock2+1));
                         end
                     end
                     % Pase esta combinación de (z1,z2), paso a la próxima:
@@ -164,13 +173,28 @@ if isempty(my_axial_factors)
                 end
             end    
         end
-        % Normalize to ones:
-        axialFactors = axialFactors ./ mean(axialFactors);
+        %% Normalize to ones:
+        %axialFactors = axialFactors ./ mean(axialFactors);
+        
+        %% Sensitivity factors:
+        sensitivityFactors = zeros(structSizeSino3d.numSegments,1);
+        for segment = 1 : structSizeSino3d.numSegments
+            indices = (structSizeSino3d_span1.minRingDiff>=structSizeSino3d.minRingDiff(segment))&(structSizeSino3d_span1.minRingDiff<=structSizeSino3d.maxRingDiff(segment));
+            meanValuePerSegment(segment) = sum(sensitivityPerSegment(indices));
+        end
+        indiceInicioSino = 1;
+        for segment = 1 : numel(structSizeSino3d.sinogramsPerSegment)
+            indiceFinSino = indiceInicioSino + structSizeSino3d.sinogramsPerSegment(segment) - 1;
+            sensitivityFactors(indiceInicioSino:indiceFinSino) = meanValuePerSegment(segment);
+            indiceInicioSino = indiceFinSino + 1;
+        end
+        sensitivityFactors = sensitivityFactors ./ mean(sensitivityFactors);
+        
         % Apply sinogram normaliztion (in this case it is not necessary, but fo
         %r other spans it is:
-        axialFactors = axialFactors.*structSizeSino3d.numSinosMashed'; % All ones!
-    else
-        axialFactors = structSizeSino3d.numSinosMashed';
+        %axialFactors = axialFactors.*structSizeSino3d.numSinosMashed'; % All ones!
+        
+        axialFactors= axialFactors.*sensitivityFactors;
     end
 else
     axialFactors = my_axial_factors;
@@ -253,6 +277,10 @@ if ~isempty(singles_rates_per_bucket)
         end    
     end
 end
+
+% Add gaps to time invariant:
+gaps = scanner_time_variant_ncf_3d ~= 0;
+scanner_time_invariant_ncf_3d = scanner_time_invariant_ncf_3d.*gaps;
 
 % 6) Overall factor:
 overall_ncf_3d = scanner_time_invariant_ncf_3d .* scanner_time_variant_ncf_3d;

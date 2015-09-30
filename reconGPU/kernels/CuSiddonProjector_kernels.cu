@@ -42,6 +42,9 @@ __global__ void cuSiddonProjection (float* volume, float* michelogram, float *d_
   LOR.x = P2.x - P1.x;
   LOR.y = P2.y - P1.y;
   LOR.z = P2.z - P1.z;
+  //if((blockIdx.y == 0)&&(iR==110)&&(iProj==0))
+  //  printf("Points: %f,%f,%f\t%f,%f,%f\t bin value:%f\n", P1.x, P1.y, P1.z, P2.x, P2.y, P2.z, michelogram[iBin]);
+  
   cuSiddonWithTextures (&LOR, &P1, volume, michelogram, iBin);
 }
 

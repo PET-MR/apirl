@@ -92,6 +92,7 @@ threshold = 0.5;
 [c, r, n] = ind2sub([size(crystalEff,1), size(crystalEff,2), size(crystalEff,3)],find((crystalEff < (1-threshold)) | (crystalEff > (1+threshold))));
 crystalEffFiltered = crystalEff;
 crystalEffFiltered(:,:,n) = [];
+normFiles(n) = [];
 daysFromFirst(n) = [];
 % Recompute standard deviations:
 % Global variations in a normalization file:
@@ -105,9 +106,9 @@ for i = 1 : size(crystalEffFiltered,3)
     medianGlobal(i) = median(vector);
     minGlobal(i) = min(min(crystalEffFiltered(:,:,i)));
     maxGlobal(i) = max(max(crystalEffFiltered(:,:,i)));
-    
 end
 mean(devGlobal)
+
 %% PLOT SOME STATS FOR PUBLICATION IN TECHNICAL NOTE
 graphsPath = '/home/mab15/workspace/KCL/Publications/svn/impact_crystal_efficiencies_2015/';
 figure;
@@ -117,14 +118,19 @@ set(gcf, 'Position', [50 50 1600 1000]);
 plot(daysFromFirst, medianGlobal, '-x', daysFromFirst, minGlobal, '-s', daysFromFirst, maxGlobal, '-d', ...
     daysFromFirst, permute(crystalEffFiltered(200,48,:), [3 1 2]), '-^','LineWidth', 2, 'MarkerSize',12);
 xlim([min(daysFromFirst) max(daysFromFirst)]);
-legend('Mean \pm StdDev', 'Median', 'Maximum', 'Minimum', 'Crystal 200 in Ring 48', 'Location','NorthWest');
-title('Crystal Efficiencies on Time', 'FontSize', 16, 'FontWeight', 'bold');
-xlabel('Days', 'FontSize', 16, 'FontWeight', 'bold');
-ylabel('Crystal Efficiencies', 'FontSize', 16, 'FontWeight', 'bold');
-ticklabels = get(gca, 'XtickLabel');
-set(gca, 'XtickLabel', ticklabels, 'FontSize',16);
-ticklabels = get(gca, 'YtickLabel');
-set(gca, 'YtickLabel', ticklabels, 'FontSize',16);
+hl = legend('Mean \pm StdDev', 'Median', 'Minimum', 'Maximum', 'Crystal 200 in Ring 48', 'Location','NorthWest');
+set(hl, 'FontSize', 18);
+%title('Crystal Efficiencies on Time', 'FontSize', 16, 'FontWeight', 'bold');
+xlabel('Days', 'FontSize', 18, 'FontWeight', 'bold');
+ylabel('Crystal Efficiencies', 'FontSize', 18, 'FontWeight', 'bold');
+ticklabels = set(gca, 'XtickLabel');
+set(gca, 'XtickLabel', ticklabels,  'FontSize',18);
+% To avoid the resizing:
+ticks = get(gca, 'Xtick');
+for t = 1 : numel(ticks)
+    ticklabels{t} = num2str(ticks(t));
+end
+set(gca, 'XtickLabel', ticklabels);
 % Save for publication:
 set(gcf,'PaperPositionMode','auto');    % Para que lo guarde en el tamaño modificado.
 fullFilename = [graphsPath 'figure2'];
@@ -148,10 +154,10 @@ set(gca, 'XtickLabel', ticklabels, 'FontSize',16);
 ticklabels = get(gca, 'YtickLabel');
 set(gca, 'YtickLabel', ticklabels, 'FontSize',16);
 % Save for publication:
-set(gcf,'PaperPositionMode','auto');    % Para que lo guarde en el tamaño modificado.
-fullFilename = [graphsPath 'figure2a'];
-saveas(gca, [fullFilename], 'tif');
-saveas(gca, [fullFilename], 'epsc');
+% set(gcf,'PaperPositionMode','auto');    % Para que lo guarde en el tamaño modificado.
+% fullFilename = [graphsPath 'figure2a'];
+% saveas(gca, [fullFilename], 'tif');
+% saveas(gca, [fullFilename], 'epsc');
 %% HISTOGRAMS
 [minDev, minIndex] = min(devGlobal);
 [maxDev, maxIndex] = max(devGlobal);
@@ -165,17 +171,26 @@ medianCrystals = crystalEffFiltered(:,:,indMedian);
 [countsMedian, valoresMedian] = hist(medianCrystals(:),0.8:0.01:1.20);
 figure;
 plot(valoresMin, countsMin, valoresMax, countsMax, valoresMedian, countsMedian, 'LineWidth', 3, 'MarkerSize',12);
-ylabel('Counts', 'FontSize', 16, 'FontWeight', 'bold');
-xlabel('Crystal Efficiencies', 'FontSize', 16, 'FontWeight', 'bold');
-title('Crystal Efficiencies Distributions', 'FontSize', 16, 'FontWeight', 'bold');
+xlim([0.85 1.15]);
+ylabel('Counts', 'FontSize', 18, 'FontWeight', 'bold');
+xlabel('Crystal Efficiencies', 'FontSize', 18, 'FontWeight', 'bold');
+%title('Crystal Efficiencies Distributions', 'FontSize', 18, 'FontWeight', 'bold');
 set(gcf, 'Position', [50 50 1600 1000]);
-legend('Minimum StdDev', 'Maximum StdDev', 'Median StdDev', 'Location','NorthWest');
-ticklabels = get(gca, 'XtickLabel');
-set(gca, 'XtickLabel', ticklabels, 'FontSize',16);
-ticklabels = get(gca, 'YtickLabel');
-set(gca, 'YtickLabel', ticklabels, 'FontSize',16);
+hl = legend('Minimum StdDev', 'Maximum StdDev', 'Median StdDev', 'Location','NorthWest');
+set(hl, 'FontSize', 18);
+ticklabels = set(gca, 'XtickLabel');
+set(gca, 'XtickLabel', ticklabels,  'FontSize',18);
+% To avoid the resizing:
+ticks = get(gca, 'Xtick');
+for t = 1 : numel(ticks)
+    ticklabels{t} = num2str(ticks(t));
+end
+set(gca, 'XtickLabel', ticklabels);
 % Save for publication:
 set(gcf,'PaperPositionMode','auto');    % Para que lo guarde en el tamaño modificado.
 fullFilename = [graphsPath 'figure3'];
 saveas(gca, [fullFilename], 'tif');
 saveas(gca, [fullFilename], 'epsc');
+
+disp('File of the maximum dev std:')
+fprintf('%s\n', normFiles(maxIndex).name);

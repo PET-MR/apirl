@@ -12,19 +12,19 @@ const float Sinogram3DSiemensMmr::radioScanner_mm = 656.0f/2.0f;
 const float Sinogram3DSiemensMmr::radioFov_mm = 594.0f/2.0f;
 
 /** Largo axial del FOV en mm. */
-const float Sinogram3DSiemensMmr::axialFov_mm = 258.0f;
+const float Sinogram3DSiemensMmr::axialFov_mm = 257.96875f;
 
 /// Size of each pixel element.
 const float Sinogram3DSiemensMmr::crystalElementSize_mm = 4.0891f;
 
 /// Width of each rings.
-const float Sinogram3DSiemensMmr::widthRings_mm = 4.0312f; //axialFov_mm / numRings;
+const float Sinogram3DSiemensMmr::widthRings_mm = 4.030761719f; //axialFov_mm / numRings;
 
 Sinogram3DSiemensMmr::Sinogram3DSiemensMmr(int numProj, int numR, int numRings, float radioFov_mm, float axialFov_mm, float radioScanner_mm, 
 					   int numSegments, int* numSinogramsPerSegment, int* minRingDiffPerSegment, int* maxRingDiffPerSegment):Sinogram3DCylindricalPet(
 					   numProj, numR, numRings, radioFov_mm, axialFov_mm, radioScanner_mm, numSegments, numSinogramsPerSegment, minRingDiffPerSegment, maxRingDiffPerSegment)
 {
-  
+  this->inicializarSegmentos();
 }
 
 

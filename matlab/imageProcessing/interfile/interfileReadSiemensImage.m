@@ -3,7 +3,7 @@
 %  Autor: Martín Belzunce. Kings College London.
 %  Fecha de Creación: 10/02/2015
 %  *********************************************************************
-%  function [image, pixelSize_mm, origin_mm, bedPosition_mm, info] = interfileReadSiemensImage(headerFilename)
+%  function [image, refImage, bedPosition_mm, info] = interfileReadSiemensImage(headerFilename)
 %
 %  This function reads the an image in the siemens interfile format. It
 %  returns the image,  a 3-D spatial referencing object (imref3d) that

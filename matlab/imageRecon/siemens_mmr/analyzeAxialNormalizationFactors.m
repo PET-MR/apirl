@@ -134,13 +134,18 @@ saveas(gca, [fullFilename], 'tif');
 saveas(gca, [fullFilename], 'epsc');
 %% COMPARE WITH NUM SINOS
 factorFromSpan = 1./structSizeSino3dSpan11.numSinosMashed;
-% Normalize to the mean:
-factorFromSpan = factorFromSpan ./ mean(factorFromSpan);
+% The sinogram factors doesn't need to be normalized:
+factorFromSpan = factorFromSpan;% ./ mean(factorFromSpan);%meanMain.%meanOther
+% mean axial factors:
+meanAxialFactorsSpan11 =1./( meanMain.*meanOther.*factorFromSpan);
+meanAxialCorrectionFactorsSpan11 = meanMain.*meanOther.*factorFromSpan;
+save('/home/mab15/workspace/apirl-code/trunk/matlab/imageRecon/normalization/meanAxialCorrectionFactorsSpan11', 'meanAxialCorrectionFactorsSpan11');
+save('/home/mab15/workspace/apirl-code/trunk/matlab/imageRecon/normalization/meanAxialFactorsSpan11', 'meanAxialFactorsSpan11');
 % Plot and compare with one normalization file:
 figure;
-plot([componentFactors{1}{4} factorFromSpan'], 'LineWidth', 2);
+plot([meanAxialFactorsSpan11; 1./structSizeSino3dSpan11.numSinosMashed]', 'LineWidth', 2);
 title('Comparison of Influence of Span and the Axial Factor'); 
-legend('Axial Factor from CBN', 'Span 11 Factors');
+legend('Mean Axial Factor from CBN', 'Span 11 Factors');
 ylabel('Factor');
 xlabel('Number of Sinogram');
 set(gcf, 'position', [1 25 1920 1069]);

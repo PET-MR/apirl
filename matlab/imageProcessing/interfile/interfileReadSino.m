@@ -25,7 +25,7 @@ elseif  strcmp(info.NumberFormat, 'signed integer')
             readingFormat = 'int32=>int32';
         end
 end
-if isfield(info, 'sinogramsPerSegment')||isfield(info, 'ScanDataTypeDescription2')  % If is a siemens interfile or a 3d intefile sinogram.
+if isfield(info, 'MinimumRingDifferencePerSegment')||isfield(info, 'ScanDataTypeDescription2')  % If is a siemens interfile or a 3d intefile sinogram.
     numSinograms = sum(structSizeSino.sinogramsPerSegment);
 else
     numSinograms = structSizeSino.numZ; % sinogram2d.

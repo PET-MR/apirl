@@ -72,6 +72,18 @@ Sinogram2DinSiemensMmr::Sinogram2DinSiemensMmr(const Sinogram2DinSiemensMmr* src
 
 Sinogram2DinSiemensMmr::Sinogram2DinSiemensMmr(const Sinogram2DinSiemensMmr* srcSinogram2D, int indexSubset, int numSubsets):Sinogram2DinCylindrical3Dpet((Sinogram2DinCylindrical3Dpet*) srcSinogram2D, indexSubset, numSubsets)
 {
+  float lr;
+  radioScanner_mm = 328;
+  radioFov_mm = 297;
+  // Initialization
+  for(int j = 0; j < numR; j++)
+  {
+    // ptrRvalues initialization is necesary just one time
+    // 1) Get the length on the cylindrical surface for each bin (from x=0 to the center of the crystal element):
+    lr = (binSize_mm/2 + binSize_mm*(j-(float)(numR/2)));
+    // 2) Now I get the x coordinate for that r.
+    ptrRvalues_mm[j] = radioScanner_mm * cos(M_PI / 2 - (lr/(radioScanner_mm)));
+  }
 }
 
 bool Sinogram2DinSiemensMmr::getFovLimits(Line2D lor, Point2D* limitPoint1, Point2D* limitPoint2)

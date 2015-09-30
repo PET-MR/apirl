@@ -171,6 +171,12 @@ __device__ void CuSiddon (float4* LOR, float4* P0, float* Input, float* Result, 
   y_2_mm = P0->y + LOR->y * alpha_max;
   z_2_mm = P0->z + LOR->z * alpha_max;
   
+  // To debug the axial coordinates:
+  #ifdef __DEBUG__
+    if ((blockIdx.x == 0) && (threadIdx.x == 0))
+      printf("i_z:%d z1:%f z2:%f\n", threadIdx.x, z_1_mm, z_2_mm);
+  #endif
+  
   rayLengthInFov_mm = sqrt((x_2_mm-x_1_mm) * (x_2_mm-x_1_mm) + (y_2_mm-y_1_mm) * (y_2_mm-y_1_mm) + (z_2_mm-z_1_mm) * (z_2_mm-z_1_mm));
 
   // Distancia total de la LOR. Es la distancia entre los puntos P0 y P1, habitualmente, esos son
