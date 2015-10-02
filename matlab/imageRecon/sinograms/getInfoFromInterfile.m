@@ -339,6 +339,9 @@ elseif isfield(info, 'MinimumRingDifferencePerSegment') % Apirl sinogram
     structSizeSino = getSizeSino3dStruct(info.MatrixSize1, info.MatrixSize2, info.NumberOfRings, 0, 0, info.MatrixSize3, info.MinimumRingDifferencePerSegment, info.MaximumRingDifferencePerSegment, abs(info.MinimumRingDifferencePerSegment(end)));
 elseif isfield(info, 'NumberOfProjections') % Apirl 2d sinogram
     structSizeSino = getSizeSino2dStruct(info.MatrixSize1, info.MatrixSize2, info.NumberOfProjections, 0, 0);
-elseif isfield(info, 'NumberOfImagesWindow')
-    structSizeSino = getSizeSino2dStruct(info.MatrixSize1, info.MatrixSize2, info.NumberOfImagesWindow, 0, 0);
+%elseif isfield(info, 'NumberOfImagesWindow')
+%    structSizeSino = getSizeSino2dStruct(info.MatrixSize1, info.MatrixSize2, info.NumberOfImagesWindow, 0, 0);
+else
+    % Is an image:
+    structSizeSino = imref3d([info.MatrixSize2 info.MatrixSize1 info.MatrixSize3], info.ScalingFactorMmPixel2, info.ScalingFactorMmPixel1, info.ScalingFactorMmPixel3);
 end

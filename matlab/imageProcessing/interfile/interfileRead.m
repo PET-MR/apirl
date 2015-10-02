@@ -1,4 +1,4 @@
-function X = interfileread (varargin)
+function [X refImage] = interfileread (varargin)
 %INTERFILEREAD Read images in Interfile 3.3 format.
 %   A = INTERFILEREAD(FILENAME) reads the images in the first energy window
 %   of FILENAME into A, where A is an M-by-N array for a single image and
@@ -50,7 +50,7 @@ if ~isempty(barras)
     relativePath = filename(1 : barras(end));
 end
 
-info = interfileinfo(filename);
+[info refImage] = getInfoFromInterfile(filename);
 params = get_params(info);
 if (window > params.num_windows)
     err_id = 'Images:interfileread:invalidInput';

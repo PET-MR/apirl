@@ -37,7 +37,7 @@ end
 % Get info of the sinogram size to choose the type of sinogram:
 [info, structSizeSino] = getInfoFromInterfile(inputFile);
 if isfield(structSizeSino, 'sinogramsPerSegment')
-    if numel(structSizeSino.sinogramsPerSegment) == 1
+    if numel(structSizeSino.sinogramsPerSegment) == 1 & ~isfield(structSizeSino, 'span')    % If its span a field a 3d sinogram with axial compression of 121 (1 segment)
         if structSizeSino.numZ == 1
             sinogramType = 'Sinogram2DinSiemensMmr';
         else
