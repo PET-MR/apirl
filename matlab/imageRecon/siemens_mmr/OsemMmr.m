@@ -24,9 +24,9 @@
 %  The span used in the reconstruction is received as a parameter.
 %
 % Examples:
-%   [volume randoms scatter] = OsemMmr(sinogramFilename, span, normFilename, attMapBaseFilename, 1, 1, outputPath, pixelSize_mm, numSubsets, numIterations, useGpu, stirMatlabPath)
-%   [volume randoms scatter] = OsemMmr(sinogramFilename, span, normFilename, attMapBaseFilename, 'randoms.h33', 'scatter.h33', outputPath, pixelSize_mm, numSubsets, numIterations, useGpu, stirMatlabPath)
-function [volume randoms scatter] = OsemMmr(sinogramFilename, span, normFilename, attMapBaseFilename, correctRandoms, correctScatter, outputPath, pixelSize_mm, numSubsets, numIterations, saveInterval, useGpu, stirMatlabPath, removeTempFiles)
+%   [volume overall_ncf_3d acfsSinogram randoms scatter] = OsemMmr(sinogramFilename, span, normFilename, attMapBaseFilename, 1, 1, outputPath, pixelSize_mm, numSubsets, numIterations, useGpu, stirMatlabPath)
+%   [volume overall_ncf_3d acfsSinogram randoms scatter] = OsemMmr(sinogramFilename, span, normFilename, attMapBaseFilename, 'randoms.h33', 'scatter.h33', outputPath, pixelSize_mm, numSubsets, numIterations, useGpu, stirMatlabPath)
+function [volume overall_ncf_3d acfsSinogram randoms scatter] = OsemMmr(sinogramFilename, span, normFilename, attMapBaseFilename, correctRandoms, correctScatter, outputPath, pixelSize_mm, numSubsets, numIterations, saveInterval, useGpu, stirMatlabPath, removeTempFiles)
 
 mkdir(outputPath);
 % Check what OS I am running on:
@@ -51,13 +51,22 @@ imageSize_pixels = ceil(imageSize_mm./pixelSize_mm);
 %% READING THE SINOGRAMS
 disp('Read input sinogram...');
 % Read the sinograms:
-[sinograms, delayedSinograms, structSizeSino3dSpan1] = interfileReadSino(sinogramFilename);
-if structSizeSino3dSpan1.span == 1
-    % Convert to span:
-    [sinograms, structSizeSino3d] = convertSinogramToSpan(sinograms, structSizeSino3dSpan1, span);  
+if isstr(sinogramFilename)
+    [sinograms, delayedSinograms, structSizeSino3dSpan1] = interfileReadSino(sinogramFilename);
+    if structSizeSino3dSpan1.span == 1
+        % Convert to span:
+        [sinograms, structSizeSino3d] = convertSinogramToSpan(sinograms, structSizeSino3dSpan1, span);  
+    else
+        structSizeSino3d = structSizeSino3dSpan1;
+        warning('The span parameter will be ignored because the input sinogram is not span 1.');
+    end
 else
-    structSizeSino3d = structSizeSino3dSpan1;
-    warning('The span parameter will be ignored because the input sinogram is not span 1.');
+    % binary sinogram (span-1?):
+    if size(sinogramFilename) == [344 252 4084]
+        structSizeSino3d = getSizeSino3dFromSpan(344, 252, 64, ...
+            296, 256, 1, 60);
+        sinograms = sinogramFilename;
+    end
 end
 sinogramFilename = [outputPath pathBar 'sinogram'];
 % Write the input sinogram:
@@ -95,7 +104,7 @@ else
 end
    
 %% ATTENUATION MAP
-if ~strcmp(attMapBaseFilename, '')
+if isstr(attMapBaseFilename)
     % Check if its attenuation from siemens or a post processed image:
     if ~strcmp(attMapBaseFilename(end-3:end),'.h33')
         disp('Computing the attenuation correction factors from mMR mu maps...');
@@ -132,6 +141,7 @@ if ~strcmp(attMapBaseFilename, '')
     % Close the file:
     fclose(fid);
 else
+    %if ~isempty(normFilename)
     acfFilename = '';
     acfsSinogram = ones(size(sinograms));
 end
@@ -200,7 +210,13 @@ end
 %% READ RESULTS
 % Read interfile reconstructed image:
 volume = interfileRead([outputFilenamePrefix '_final.h33']);
-
+%% REMOVE TEMPORARY FILES
+if removeTempFiles
+    delete([outputPath '*sensitivity*']);
+    delete([outputPath 'acfs*']);
+    delete([outputPath 'additive*']);
+    delete([outputPath 'NF*']);
+end
 %% IF NEEDS TO CORRECT SCATTER, ESTIMATE IT AFTER RECONSTRUCTION:
 if (numel(correctScatter) == 1) 
     if (correctScatter == 1)
@@ -225,6 +241,16 @@ if (numel(correctScatter) == 1)
 
         % Reconstruct again with the scatter:
         interfileWriteSino(single(scatter_1), [outputPathScatter 'scatter'], structSizeSino3d);
+        % Remove files:
+        if removeTempFiles
+            delete([outputPath 'acfs*']);
+            delete([outputPathScatter 'tail*']);
+            delete([outputPathScatter 'acfs*']);
+            delete([outputPathScatter 'emission*']);
+            delete([outputPathScatter 'scatter.s']);
+            delete([outputPathScatter 'scatter.hs']);
+        end
+        
         % Normalize the scatter:
         normScatter = scatter_1 .* overall_nf_3d;
         % Plot profiles to test:
@@ -268,7 +294,17 @@ if (numel(correctScatter) == 1)
             status = system(['cuMLEM ' filenameMlemConfig]) 
         end
         volume = interfileRead([outputFilenamePrefix '_final.h33']);
-
+        % Remove files:
+        if removeTempFiles
+            delete([outputPathScatter 'tail*']);
+            delete([outputPathScatter 'acfs*']);
+            delete([outputPathScatter 'emission*']);
+            delete([outputPathScatter 'scatter.s']);
+            delete([outputPathScatter 'scatter.hs']);
+            delete([outputPathScatter '*sensitivity*']);
+            delete([outputPathScatter 'additive*']);
+        end
+        
         [scatter_2, structSizeSino, mask] = estimateScatterWithStir(volume, attenMap, pixelSize_mm, sinograms, randoms, overall_ncf_3d, acfsOnlyHuman, structSizeSino3d, outputPathScatter, stirScriptsPath, thresholdForTail);
         interfileWriteSino(single(scatter_2), [outputPathScatter 'scatter'], structSizeSino3d);
         % Normalize the scatter:
@@ -326,4 +362,15 @@ if (numel(correctScatter) == 1)
         end
         volume = interfileRead([outputFilenamePrefix '_final.h33']);
     end
+end
+if removeTempFiles
+    delete([outputPathScatter 'tail*']);
+    delete([outputPathScatter 'acfs*']);
+    delete([outputPathScatter 'emission*']);
+    delete([outputPathScatter 'scatter.s']);
+    delete([outputPathScatter 'scatter.hs']);
+    delete([outputPathScatter '*sensitivity*']);
+    delete([outputPathScatter 'additive*']);
+    delete([outputPath 'sinogram*']);
+    delete([outputPath 'ANF*']);
 end

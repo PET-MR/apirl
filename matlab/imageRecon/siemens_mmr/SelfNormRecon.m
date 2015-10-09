@@ -135,34 +135,7 @@ if ~strcmp(attMapBaseFilename, '')
 else
     acfFilename = '';
 end
-%% GENERATE AND SAVE ATTENUATION AND NORMALIZATION FACTORS AND CORECCTION FACTORS FOR SPAN11 SINOGRAMS FOR APIRL
-disp('Generating the ANF sinogram...');
-% Save:
-outputSinogramName = [outputPath '/NF'];
-interfileWriteSino(single(overall_nf_3d), outputSinogramName, structSizeSino3d);
 
-% Compose with acfs:
-atteNormFactors = overall_nf_3d;
-atteNormFactors(acfsSinogram ~= 0) = overall_nf_3d(acfsSinogram ~= 0) ./acfsSinogram(acfsSinogram ~= 0);
-anfFilename = [outputPath '/ANF'];
-interfileWriteSino(single(atteNormFactors), anfFilename, structSizeSino3d);
-clear atteNormFactors;
-%clear normFactorsSpan11;
-%% RECONSTRUCT TO GET SCATTER AND RANDOMS
-optUseGpu = 1;
-if exist(randomsFilename, 'file') == 0
-    disp('Estimating Randoms Estimate...');
-    % Stir computes randoms that are already normalized:
-    [randoms, structSizeSino] = estimateRandomsWithStir(delayedSinograms, structSizeSino3dSpan1, overall_ncf_3d, structSizeSino3d, [outputPath pathBar 'stirRandoms' pathBar]);
-else
-    [randoms structSizeSino] = interfileReadSino(randomsFilename);
-end
-if exist(scatterFilename, 'file') == 0
-    disp('Estimating Scatter Estimate...');
-    [volume randoms scatter] = OsemMmr(siemensSinogramFilename, span, normFilename, attMapBaseFilename, 1, 1, [outputPath pathBar 'InitialReconstruction' pathBar], pixelSize_mm, numOsemSubsets, numOsemIterations, optUseGpu, stirMatlabPath);
-else
-    [scatter structSizeSino] = interfileReadSino(scatterFilename);
-end
 %% SELF NORMALIZING ALGORITHM
 
 % Initialize crystal efficiencies:
@@ -170,70 +143,38 @@ numDetectorsPerRing = 504;
 numRings = 64;
 numDetectors = numDetectorsPerRing*numRings;
 crystalEfficiencies = ones(numDetectorsPerRing, numRings); % Initialize the crystal efficiencies with ones.
-
+scatter = 1;
+randoms = 1;
+saveInterval = 1;
+useGpu = 1;
+removeTempFiles = 1;
 disp('########## STARTING ITERATIVE ALGORITHM ##########');
 % Iterative process:
 for iteration = 1 : numXtalIterations
+    outputPathIter = [outputPath sprintf('Iteration_%d/', iteration)];
     disp(sprintf('Iteration No %d', iteration));
     disp(sprintf('Compute NCF in iteration %d', iteration));
     % 1) Compute normalization factors with the crystal efficiencies:
     [overall_ncf_3d, scanner_time_invariant_ncf_3d, scanner_time_variant_ncf_3d, acquisition_dependant_ncf_3d, crystalEfficiencies, used_deadtimefactors, used_axial_factors] = ...
         create_norm_files_mmr(normFilename, [], crystalEfficiencies, [], [], structSizeSino3d.span);  % Recompute normalization factors with the crystal efficiencies.
-    save([outputPath sprintf('crystalEfficiencies_iter%d', iteration)], 'crystalEfficiencies'); % Save crystal eff.
-    crystalEffCorrFactorsFilename = [outputPath sprintf('CrystalEffCorrFactors_iter%d', iteration)]; % Save crystal correction factors.
-    % invert for nf:
-    overall_nf_3d = overall_ncf_3d;
-    overall_nf_3d(overall_ncf_3d ~= 0) = 1./overall_nf_3d(overall_ncf_3d ~= 0);
-    % now generate anf:
-    atteNormFactors = overall_nf_3d;
-    atteNormFactors(acfsSinogram ~= 0) = overall_nf_3d(acfsSinogram ~= 0) ./acfsSinogram(acfsSinogram ~= 0);
-    anfFilename = [outputPath sprintf('ANF_iter%d', iteration)];
-    interfileWriteSino(single(atteNormFactors), anfFilename, structSizeSino3d);
+    save([outputPathIter sprintf('crystalEfficiencies_iter%d', iteration)], 'crystalEfficiencies'); % Save crystal eff.
+    crystalEffCorrFactorsFilename = [outputPathIter sprintf('CrystalEffCorrFactors_iter%d', iteration)]; % Save crystal correction factors.
 
-    % 2) Reconstruct with 1 iteration:
-    % Precorrect input sinogram with randoms and scatter:
-    sinogram_precorrected = sinogram - randoms - scatter .* overall_nf_3d;
-    sinogram_precorrected(sinogram_precorrected < 0) = 0;
-    interfileWriteSino(sinogram_precorrected, sinogramFilename, structSizeSino3d);
-    
-    disp('Osem reconstruction...');
-    if useGpu == 0
-        disp('Osem reconstruction...');
-        saveInterval = 10;
-        saveIntermediate = 0;
-        outputFilenamePrefix = [outputPath sprintf('reconImage_iter%d',iteration)];
-        filenameOsemConfig = [outputPath sprintf('osem_iter%d.par', iteration)];
-        CreateOsemConfigFileForMmr(filenameOsemConfig, [sinogramFilename '.h33'], [filenameInitialEstimate '.h33'], outputFilenamePrefix, numOsemIterations, [],...
-            numOsemSubsets, saveInterval, saveIntermediate, [], [], [], [anfFilename '.h33']);
-        % Execute APIRL: 
-        status = system(['OSEM ' filenameOsemConfig]) 
-    else
-        disp('cuOsem reconstruction...');
-        saveInterval = 10;
-        saveIntermediate = 0;
-        outputFilenamePrefix = [outputPath sprintf('reconImage_iter%d',iteration)];
-        filenameMlemConfig = [outputPath sprintf('cuosem_iter%d.par', iteration)];
-        CreateCuMlemConfigFileForMmr(filenameMlemConfig, [sinogramFilename '.h33'], [filenameInitialEstimate '.h33'], outputFilenamePrefix, numOsemIterations, [],...
-            saveInterval, saveIntermediate, [], [], [], [anfFilename '.h33'], 0, 576, 576, 512, numOsemSubsets);
-        % Execute APIRL: 
-        status = system(['cuMLEM ' filenameMlemConfig]) 
-    end
-    % Show image:
-    reconImageFilename = [outputFilenamePrefix '_final.h33'];
-    reconVolume = interfileRead(reconImageFilename);
+    [volume overall_ncf_3d acfsSinogram randoms scatter] = OsemMmr(siemensSinogramFilename, span, overall_ncf_3d, attMapBaseFilename, randoms, scatter, outputPathIter, pixelSize_mm, numOsemSubsets, numOsemIterations, saveInterval, useGpu, stirMatlabPath, removeTempFiles);
+
     % Show slices:
     figure;
-    imshow(reconVolume(:,:,81)./max(max(reconVolume(:,:,81))));
+    imshow(volume(:,:,81)./max(max(volume(:,:,81))));
     title(sprintf('Reconstructed Image in Iteration %d', iteration));
 
     % 3) Project the reconstructed image:
-    [projectedImage, structSizeSinogram] = ProjectMmr(reconVolume, pixelSize_mm, [outputPath pathBar sprintf('iter_%d',iteration)], structSizeSino3d.span, 0,0, useGpu);
+    [projectedImage, structSizeSinogram] = ProjectMmr(volume, pixelSize_mm, [outputPathIter pathBar sprintf('iter_%d',iteration)], structSizeSino3d.span, 0,0, useGpu);
 
     % 4) Ratio between sinogram and projected:
     % Apply normalization and attenuation without crystal efficiencies:
     projectedImage_nf = projectedImage;
     projectedImage_nf = projectedImage_nf .*atteNormFactors + randoms + scatter .* overall_nf_3d;
-    interfileWriteSino(projectedImage_nf, [outputPath pathBar sprintf('iter_%d',iteration) pathBar 'ProjectedSino_Corrected'], structSizeSinogram);
+    interfileWriteSino(projectedImage_nf, [outputPathIter pathBar sprintf('iter_%d',iteration) pathBar 'ProjectedSino_Corrected'], structSizeSinogram);
     % 5) Estimate crystal efficiencies:    
     % Other method:
     useOfDetectorsInSinogram = detector1SystemMatrix'*double(sinogram(:)) + detector2SystemMatrix'*double(sinogram(:));
