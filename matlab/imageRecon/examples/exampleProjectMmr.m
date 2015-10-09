@@ -42,30 +42,30 @@ pixelSize_mm = [infoVolumeSpan11.ScalingFactorMmPixel1 infoVolumeSpan11.ScalingF
 % figure;
 % indiceSino = 1000;
 % imshow(sinogram(:,:,indiceSino), [0 max(max(sinogram(:,:,indiceSino)))]);
-%% PROJECT GPU SPAN 1
-useGpu = 1;
-span = 1;
-%outputPath = 'E:\NemaReconstruction\testProjectCuda\';
-outputPath = '/fast/NemaReconstruction/ProjectCuda/';
-tic
-[sinogram, structSizeSinogram] = ProjectMmr(image, pixelSize_mm, outputPath, span, [], [], useGpu);
-toc
-% Show one sinogram:
-figure;
-indiceSino = 1000;
-imshow(sinogram(:,:,indiceSino), [0 max(max(sinogram(:,:,indiceSino)))]);
-%% PROJECT SUBSET GPU SPAN 1
-numberOfSubsets = 21;
-subsetIndex = 5;
-% outputPath = 'E:\NemaReconstruction\testProjectCudaSubset\';
-outputPath = '/fast/NemaReconstruction/ProjectCudaSubset/';
-tic
-[sinogram, structSizeSinogram] = ProjectMmr(image, pixelSize_mm, outputPath, span, numberOfSubsets, subsetIndex, useGpu);
-toc
-% Show one sinogram:
-figure;
-indiceSino = 1000;
-imshow(sinogram(:,:,indiceSino), [0 max(max(sinogram(:,:,indiceSino)))]);
+% %% PROJECT GPU SPAN 1
+% useGpu = 1;
+% span = 1;
+% %outputPath = 'E:\NemaReconstruction\testProjectCuda\';
+% outputPath = '/fast/NemaReconstruction/ProjectCuda/';
+% tic
+% [sinogram, structSizeSinogram] = ProjectMmr(image, pixelSize_mm, outputPath, span, [], [], useGpu);
+% toc
+% % Show one sinogram:
+% figure;
+% indiceSino = 1000;
+% imshow(sinogram(:,:,indiceSino), [0 max(max(sinogram(:,:,indiceSino)))]);
+% %% PROJECT SUBSET GPU SPAN 1
+% numberOfSubsets = 21;
+% subsetIndex = 5;
+% % outputPath = 'E:\NemaReconstruction\testProjectCudaSubset\';
+% outputPath = '/fast/NemaReconstruction/ProjectCudaSubset/';
+% tic
+% [sinogram, structSizeSinogram] = ProjectMmr(image, pixelSize_mm, outputPath, span, numberOfSubsets, subsetIndex, useGpu);
+% toc
+% % Show one sinogram:
+% figure;
+% indiceSino = 1000;
+% imshow(sinogram(:,:,indiceSino), [0 max(max(sinogram(:,:,indiceSino)))]);
 %% PROJECT SUBSET GPU SPAN 11
 % span = 11;
 % numberOfSubsets = 21;
@@ -77,23 +77,23 @@ imshow(sinogram(:,:,indiceSino), [0 max(max(sinogram(:,:,indiceSino)))]);
 % figure;
 % indiceSino = 64;
 % imshow(sinogram(:,:,indiceSino), [0 max(max(sinogram(:,:,indiceSino)))]);
-%% PROJECT DIRECT SINOGRAMS
-% fullFilename = '/home/mab15/workspace/KCL/Biograph_mMr/Mediciones/BRAIN_PETMR/SINOGRAMS/PET_ACQ_61_20150610152515_ima_AC_000_000.v.hdr';
-% [image, refImage, bedPosition_mm, info]  = interfileReadSiemensImage(fullFilename); 
-% pixelSize_mm = [refImage.PixelExtentInWorldY refImage.PixelExtentInWorldX refImage.PixelExtentInWorldZ];
-% useGpu = 0;
-% span = 1;
-% 
-% %outputPath = 'E:\NemaReconstruction\testProjectCuda\';
-% outputPath = '/fast/ProjectMulti2D/';
-% [sinogram, structSizeSinogram] = ProjectMmr2d(image, pixelSize_mm, outputPath, [], [], useGpu);
-% % Show one sinogram:
-% showSlices(sinogram);
-%% PROJECT DIRECT SINOGRAMS
-% useGpu = 0;
-% pixelSize_mm = [refImage.PixelExtentInWorldY refImage.PixelExtentInWorldX];
-% %outputPath = 'E:\NemaReconstruction\testProjectCuda\';
-% outputPath = '/fast/Project2D/';
-% [sinogram, structSizeSinogram] = ProjectMmr2d(image(:,:,81), pixelSize_mm, outputPath, [], [], useGpu);
-% % Show one sinogram:
-% h = showSlices(sinogram);
+% PROJECT DIRECT SINOGRAMS
+fullFilename = '/home/mab15/workspace/KCL/Biograph_mMr/Mediciones/BRAIN_PETMR/SINOGRAMS/PET_ACQ_61_20150610152515_ima_AC_000_000.v.hdr';
+[image, refImage, bedPosition_mm, info]  = interfileReadSiemensImage(fullFilename); 
+pixelSize_mm = [refImage.PixelExtentInWorldY refImage.PixelExtentInWorldX refImage.PixelExtentInWorldZ];
+useGpu = 0;
+span = 1;
+
+%outputPath = 'E:\NemaReconstruction\testProjectCuda\';
+outputPath = '/fast/ProjectMulti2D/';
+[sinogram, structSizeSinogram] = ProjectMmr2d(image, pixelSize_mm, outputPath, [], [], useGpu);
+% Show one sinogram:
+showSlices(sinogram);
+% PROJECT DIRECT SINOGRAMS
+useGpu = 0;
+pixelSize_mm = [refImage.PixelExtentInWorldY refImage.PixelExtentInWorldX];
+%outputPath = 'E:\NemaReconstruction\testProjectCuda\';
+outputPath = '/fast/Project2D/';
+[sinogram, structSizeSinogram] = ProjectMmr2d(image(:,:,81), pixelSize_mm, outputPath, [], [], useGpu);
+% Show one sinogram:
+h = showSlices(sinogram);

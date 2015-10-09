@@ -484,6 +484,7 @@ bool Sinogram2D::writeInterfile(string headerFilename)
   // Por ahora el único tipo de dato del sinograma es float:
   fileStream << "!number format := short float" << eol;
   fileStream << "!number of bytes per pixel := " << sizeof(float) << eol;
+  fileStream << "!number of projections := 1" << eol;
   /* Por ahora no lo pongo al scaling factor, porque si no coincide con el de generación de datos me caga.
   fileStream << "scaling factor (mm/pixel) [1] := " << (this->getRValue(1)-this->getRValue(0)) << eol;
   fileStream << "scaling factor (deg/pixel) [2] := " << (this->getAngValue(1)-this->getAngValue(0)) << eol;

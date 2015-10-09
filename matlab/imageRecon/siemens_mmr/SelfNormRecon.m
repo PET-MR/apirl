@@ -152,6 +152,9 @@ disp('########## STARTING ITERATIVE ALGORITHM ##########');
 % Iterative process:
 for iteration = 1 : numXtalIterations
     outputPathIter = [outputPath sprintf('Iteration_%d/', iteration)];
+    if ~isdir(outputPathIter)
+        mkdir(outputPathIter)
+    end
     disp(sprintf('Iteration No %d', iteration));
     disp(sprintf('Compute NCF in iteration %d', iteration));
     % 1) Compute normalization factors with the crystal efficiencies:

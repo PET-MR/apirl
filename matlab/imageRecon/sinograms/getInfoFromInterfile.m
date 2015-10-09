@@ -343,5 +343,10 @@ elseif isfield(info, 'NumberOfProjections') % Apirl 2d sinogram
 %    structSizeSino = getSizeSino2dStruct(info.MatrixSize1, info.MatrixSize2, info.NumberOfImagesWindow, 0, 0);
 else
     % Is an image:
-    structSizeSino = imref3d([info.MatrixSize2 info.MatrixSize1 info.MatrixSize3], info.ScalingFactorMmPixel2, info.ScalingFactorMmPixel1, info.ScalingFactorMmPixel3);
+    if isfield(info, 'MatrixSize3')
+        % 3d image:
+        structSizeSino = imref3d([info.MatrixSize2 info.MatrixSize1 info.MatrixSize3], info.ScalingFactorMmPixel2, info.ScalingFactorMmPixel1, info.ScalingFactorMmPixel3);
+    else
+        structSizeSino = imref2d([info.MatrixSize2 info.MatrixSize1], info.ScalingFactorMmPixel2, info.ScalingFactorMmPixel1);
+    end
 end
