@@ -17,6 +17,9 @@ const float Sinogram3DSiemensMmr::axialFov_mm = 257.96875f;
 /// Size of each pixel element.
 const float Sinogram3DSiemensMmr::crystalElementSize_mm = 4.0891f;
 
+/// Depth or length og each crystal.
+const float Sinogram3DSiemensMmr::crystalElementLength_mm = 20;
+
 /// Width of each rings.
 const float Sinogram3DSiemensMmr::widthRings_mm = 4.030761719f; //axialFov_mm / numRings;
 

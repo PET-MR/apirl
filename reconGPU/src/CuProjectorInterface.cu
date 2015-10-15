@@ -201,7 +201,8 @@ bool CuProjectorInterface::InitGpuMemory(Sinogram3D* sinogram, Image* image, Tip
   checkCudaErrors(cudaMemcpyToSymbol(d_RadioFov_mm, &aux, sizeof(float)));
   aux = image->getFovHeight(); // Esto podría ser del sinograma.
   checkCudaErrors(cudaMemcpyToSymbol(d_AxialFov_mm, &aux, sizeof(float)));
-
+  
+  
   // Para el sinograma 3d tengo que cada sino 2d puede representar varios sinogramas asociados a distintas combinaciones de anillos.
   // En la versión con CPU proceso todas las LORs, ahora solo voy a considerar la del medio, que sería la ventaja de reducir el volumen de LORs.
   // Entonces genero un array con las coordenadas de anillos de cada sinograma.
@@ -227,7 +228,25 @@ bool CuProjectorInterface::InitGpuMemory(Sinogram3D* sinogram, Image* image, Tip
       iSino++;
     }
   }
-
+  
+    // Check the coordinates in debug mode:
+#ifdef __DEBUG__
+  printf("Theta angles:\t");
+  for(int i = 0; i < sinogram->getNumProj(); i++)
+    printf("%f\t", sinogram->getSegment(0)->getSinogram2D(0)->getAngValue(i));
+  printf("\n");
+  printf("Radial distances:\t");
+  for(int i = 0; i < sinogram->getNumR(); i++)
+    printf("%f\t", sinogram->getSegment(0)->getSinogram2D(0)->getRValue(i));
+  printf("\n");
+  printf("Ring 1 positions per sinogram:\t");
+  for(int i = 0; i < numSinograms; i++)
+    printf("%f\t", d_ring1_mm[i]);
+  printf("\n");
+  printf("Ring 2 positions per sinogram:\t");
+  for(int i = 0; i < numSinograms; i++)
+    printf("%f\t", d_ring2_mm[i]);
+#endif
 
   // Copio los índices de anillos a memoris de GPU:
   checkCudaErrors(cudaMemcpy(d_ring1, auxRings1, sizeof(int)*numSinograms, cudaMemcpyHostToDevice));
@@ -251,21 +270,22 @@ bool CuProjectorInterface::InitGpuMemory(Sinogram3D* sinogram, Image* image, Tip
   switch(tipoProy)
   {
     case SIDDON_CYLINDRICAL_SCANNER:
-      aux = ((Sinogram3DCylindricalPet*)sinogram)->getRadioScanner_mm();
+      aux = ((Sinogram3DCylindricalPet*)sinogram)->getEffectiveRadioScanner_mm();
       checkCudaErrors(cudaMemcpyToSymbol(d_RadioScanner_mm, &aux, sizeof(float)));
       //checkCudaErrors(cudaMemcpy(&d_RadioScanner_mm, &aux, sizeof(aux), cudaMemcpyHostToDevice));
       break;
     case SIDDON_BACKPROJ_SURF_CYLINDRICAL_SCANNER:
-      aux = ((Sinogram3DCylindricalPet*)sinogram)->getRadioScanner_mm();
+      aux = ((Sinogram3DCylindricalPet*)sinogram)->getEffectiveRadioScanner_mm();
       checkCudaErrors(cudaMemcpyToSymbol(d_RadioScanner_mm, &aux, sizeof(float)));
       //checkCudaErrors(cudaMemcpy(&d_RadioScanner_mm, &aux, sizeof(aux), cudaMemcpyHostToDevice));
       break;
     case SIDDON_PROJ_TEXT_CYLINDRICAL_SCANNER:
-      aux = ((Sinogram3DCylindricalPet*)sinogram)->getRadioScanner_mm();
+      aux = ((Sinogram3DCylindricalPet*)sinogram)->getEffectiveRadioScanner_mm();
       checkCudaErrors(cudaMemcpyToSymbol(d_RadioScanner_mm, &aux, sizeof(float)));
       //checkCudaErrors(cudaMemcpy(&d_RadioScanner_mm, &aux, sizeof(aux), cudaMemcpyHostToDevice));
       break;
   }
+  printf("Radio scanner: %f", ((Sinogram3DCylindricalPet*)sinogram)->getEffectiveRadioScanner_mm());
   // Memorias especiales:
   cudaChannelFormatDesc floatTex = cudaCreateChannelDesc<float>();
   const cudaExtent extentImageSize = make_cudaExtent(image->getSize().nPixelsX, image->getSize().nPixelsY, image->getSize().nPixelsZ);

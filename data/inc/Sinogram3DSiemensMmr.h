@@ -80,6 +80,9 @@ class DLLEXPORT Sinogram3DSiemensMmr : public Sinogram3DCylindricalPet
 	/// Size of each pixel element.
 	static const float crystalElementSize_mm;
 	
+	/** Length of the crystal element. */
+	static const float crystalElementLength_mm;
+	
 	/// Size of num rings.
 	static const int numRings = 64;
 
@@ -139,6 +142,9 @@ class DLLEXPORT Sinogram3DSiemensMmr : public Sinogram3DCylindricalPet
 	/** It copies all the bins values from srcSinogram3D into this value.
 	 */
 	int CopyAllBinsFrom(Sinogram3D* srcSinogram3D);
+	
+	/** Method that returns the effective radio scanner (takes into account the depth of interction). */
+	  virtual float getEffectiveRadioScanner_mm(){ return radioScanner_mm + crystalElementLength_mm/2;};
 };
 
 

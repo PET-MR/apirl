@@ -24,7 +24,7 @@ bool CuSiddonProjector::InitGpuMemory(Sinogram3DCylindricalPet* inputSinogram)
 //   checkCudaErrors(cudaMemcpyToSymbol(cuda_threads_per_block_update_pixel, &(blockSizeImageUpdate.x), sizeof(unsigned int)));
 //   checkCudaErrors(cudaMemcpyToSymbol(cuda_nr_splitter, &NR_Splitter, sizeof(unsigned int)));
 //   checkCudaErrors(cudaMemcpyToSymbol(cuda_rows_splitter, &rowSplitter, sizeof(unsigned int)));
-  float aux = inputSinogram->getRadioScanner_mm();
+  float aux = inputSinogram->getEffectiveRadioScanner_mm();
   checkCudaErrors(cudaMemcpyToSymbol(d_RadioScanner_mm, &aux, sizeof(inputSinogram->getRadioScanner_mm())));
   return true;
 }

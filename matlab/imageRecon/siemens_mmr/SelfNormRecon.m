@@ -135,7 +135,10 @@ if ~strcmp(attMapBaseFilename, '')
 else
     acfFilename = '';
 end
-
+%% CREATE MULTIPLICATIVE FACTORS
+% Compose with acfs:
+atteNormFactors = overall_nf_3d;
+atteNormFactors(acfsSinogram ~= 0) = overall_nf_3d(acfsSinogram ~= 0) ./acfsSinogram(acfsSinogram ~= 0);
 %% SELF NORMALIZING ALGORITHM
 
 % Initialize crystal efficiencies:
@@ -143,6 +146,8 @@ numDetectorsPerRing = 504;
 numRings = 64;
 numDetectors = numDetectorsPerRing*numRings;
 crystalEfficiencies = ones(numDetectorsPerRing, numRings); % Initialize the crystal efficiencies with ones.
+crystalEfficiencies = 2.* rand(size(original_xtal_efficiencies));
+crystalEfficiencies(original_xtal_efficiencies == 0) = 0;
 scatter = 1;
 randoms = 1;
 saveInterval = 1;
@@ -171,17 +176,32 @@ for iteration = 1 : numXtalIterations
     title(sprintf('Reconstructed Image in Iteration %d', iteration));
 
     % 3) Project the reconstructed image:
-    [projectedImage, structSizeSinogram] = ProjectMmr(volume, pixelSize_mm, [outputPathIter pathBar sprintf('iter_%d',iteration)], structSizeSino3d.span, 0,0, useGpu);
+    % Mask to remove odd pixels in the border:
+    mask = volume > 0;
+    mask = imerode(mask, strel('disk',7));
+    volume = volume .* mask;
+    [projectedImage, structSizeSinogram] = ProjectMmr(volume, pixelSize_mm, [outputPathIter pathBar sprintf('iter_%d/',iteration)], structSizeSino3d.span, 0,0, useGpu);
 
     % 4) Ratio between sinogram and projected:
     % Apply normalization and attenuation without crystal efficiencies:
     projectedImage_nf = projectedImage;
     projectedImage_nf = projectedImage_nf .*atteNormFactors + randoms + scatter .* overall_nf_3d;
-    interfileWriteSino(projectedImage_nf, [outputPathIter pathBar sprintf('iter_%d',iteration) pathBar 'ProjectedSino_Corrected'], structSizeSinogram);
+    interfileWriteSino(projectedImage_nf, [outputPathIter pathBar sprintf('iter_%d/',iteration) pathBar 'ProjectedSino_Corrected'], structSizeSinogram);
     % 5) Estimate crystal efficiencies:    
     % Other method:
-    useOfDetectorsInSinogram = detector1SystemMatrix'*double(sinogram(:)) + detector2SystemMatrix'*double(sinogram(:));
-    useOfDetectorsInProjection = detector1SystemMatrix'*double(projectedImage_nf(:)) + detector2SystemMatrix'*double(projectedImage_nf(:));
+%     %a) Without mask:
+%     useOfDetectorsInSinogram = detector1SystemMatrix'*double(sinogram(:)) + detector2SystemMatrix'*double(sinogram(:));
+%     useOfDetectorsInProjection = detector1SystemMatrix'*double(projectedImage_nf(:)) + detector2SystemMatrix'*double(projectedImage_nf(:));
+    % b) With mask:
+    mask = volume > 0;
+    mask = imerode(mask, strel('disk',7));
+    meanVolume = mean(mean(mean(volume>0)));
+    maskVolume = volume > meanVolume*0.7;
+    [projectedMask, structSizeSinogram] = ProjectMmr(mask.*maskVolume, pixelSize_mm, [outputPathIter pathBar sprintf('iter_%d/mask/',iteration)], structSizeSino3d.span, 0,0, useGpu);
+    projMask = projectedMask>0;
+    useOfDetectorsInSinogram = detector1SystemMatrix'*double(sinogram(:).*projMask(:)) + detector2SystemMatrix'*double(sinogram(:).*projMask(:));
+    useOfDetectorsInProjection = detector1SystemMatrix'*double(projectedImage_nf(:).*projMask(:)) + detector2SystemMatrix'*double(projectedImage_nf(:).*projMask(:));
+
     % Ratio of use of detectors:
     crystalEfficienciesCorrection = zeros(size(useOfDetectorsInProjection));
     crystalEfficienciesCorrection(useOfDetectorsInProjection~=0) = useOfDetectorsInSinogram(useOfDetectorsInProjection~=0)./useOfDetectorsInProjection(useOfDetectorsInProjection~=0);
@@ -192,7 +212,9 @@ for iteration = 1 : numXtalIterations
     crystalEfficienciesCorrection(crystalEfficienciesCorrection~=0) = crystalEfficienciesCorrection(crystalEfficienciesCorrection~=0)./mean(crystalEfficienciesCorrection(crystalEfficienciesCorrection~=0));
     
     save([outputPath sprintf('crystalEfficienciesCorrection_iter%d', iteration)], 'crystalEfficienciesCorrection', '-v7.3' ); % Save crystal eff.
-    crystalEfficienciesVector = crystalEfficiencies(:) .* crystalEfficienciesCorrection;
+    % Is not a multiplicative factor, is the solution instead:
+    %crystalEfficienciesVector = crystalEfficiencies(:) .* crystalEfficienciesCorrection;
+    crystalEfficienciesVector = crystalEfficienciesCorrection;
     % 6) Save and compare qith the current crystal efficiencies:
     figure;
     plot(1:numDetectors, original_xtal_efficiencies(:), 1:numDetectors, crystalEfficienciesVector, 1:numDetectors, crystalEfficienciesCorrection);

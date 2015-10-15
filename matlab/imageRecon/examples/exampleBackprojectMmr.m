@@ -64,7 +64,7 @@ sinogram = interfileReadSino(sinogramFilename);
 imageSize_pixels = [344 344];
 pixelSize_mm = [2.08625 2.08625];
 outputPath = '/fast/BackprojectMulti2D/';
-[image, pixelSize_mm] = BackprojectMmr2d(sinogram, imageSize_pixels, pixelSize_mm, outputPath, [], [], 0);
+[image, pixelSize_mm] = BackprojectMmr2d(sinogram, imageSize_pixels, pixelSize_mm, outputPath, [], [], 1);
 showSlices(image);
 
 %% BACKPROJECT 2D
@@ -73,5 +73,5 @@ sinogram = interfileReadSino(sinogramFilename);
 imageSize_pixels = [344 344];
 pixelSize_mm = [2.08625 2.08625];
 outputPath = '/fast/Backproject2D/';
-[image, pixelSize_mm] = BackprojectMmr2d(sinogram, imageSize_pixels, pixelSize_mm, outputPath, [], [], 0);
+[image, pixelSize_mm] = BackprojectMmr2d(sinogram, imageSize_pixels, pixelSize_mm, outputPath, [], [], 1);
 showSlices(image);

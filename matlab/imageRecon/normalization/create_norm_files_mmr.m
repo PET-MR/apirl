@@ -65,7 +65,12 @@ end
 % selected span:
 % Size of mMr Sinogram's
 numTheta = 252; numR = 344; numRings = 64; maxAbsRingDiff = 60; rFov_mm = 594/2; zFov_mm = 258;
-structSizeSino3d = getSizeSino3dFromSpan(numR, numTheta, numRings, rFov_mm, zFov_mm, span_choice, maxAbsRingDiff);
+if isempty(span_choice)
+    % If empty the default span 11.
+    structSizeSino3d = getSizeSino3dFromSpan(numR, numTheta, numRings, rFov_mm, zFov_mm, 11, maxAbsRingDiff);
+else
+    structSizeSino3d = getSizeSino3dFromSpan(numR, numTheta, numRings, rFov_mm, zFov_mm, span_choice, maxAbsRingDiff);
+end
 structSizeSino3d_span1 = getSizeSino3dFromSpan(numR, numTheta, numRings, rFov_mm, zFov_mm, 1, maxAbsRingDiff);
 % Total number of singorams per 3d sinogram:
 numSinograms = sum(structSizeSino3d.sinogramsPerSegment);
@@ -120,7 +125,7 @@ crystalInterfFactor = repmat(crystalInterfFactor', 1, structSizeSino3d.numTheta/
 % c) Axial factors:
 if isempty(my_axial_factors)
     axialFactors = zeros(sum(structSizeSino3d.sinogramsPerSegment),1);
-    if span_choice == 0
+    if isempty(span_choice)
         axialFactors = structSizeSino3d.numSinosMashed'.* (1./(componentFactors{4}.*componentFactors{8}));
     else
         % Generate axial factors from a block profile saved before:

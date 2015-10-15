@@ -114,9 +114,9 @@ __global__ void cuSiddonBackprojection(float* d_inputSinogram, float* d_outputIm
 /// El ángulo de GetPointsFromLOR debe estar en radianes.
 __device__ void CUDA_GetPointsFromLOR (float PhiAngle, float r, float Z1, float Z2, float cudaRscanner, float4* P1, float4* P2)
 {
-  float auxValue = sqrtf(cudaRscanner * cudaRscanner - r * r);
   float sinValue, cosValue;
   sincosf(PhiAngle*DEG_TO_RAD, &sinValue, &cosValue);
+  float auxValue = sqrtf(cudaRscanner * cudaRscanner - r * r);
   P1->x = r * cosValue + sinValue * auxValue;
   P1->y = r * sinValue - cosValue * auxValue;
   P1->z = Z1;

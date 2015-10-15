@@ -63,9 +63,14 @@ class DLLEXPORT Sinogram2DinSiemensMmr : public Sinogram2DinCylindrical3Dpet
 	  /// Size of each crystal element.
 	  static const float crystalElementSize_mm;
 	  
+	  /** Length of the crystal element. */
+	static const float crystalElementLength_mm;
+	
 	  /// Size of each sinogram's bin.
 	  /// It's the size of crystal elemnt divided two (half angles are stored in a different bin). crystalElementSize_mm/2
 	  static const float binSize_mm;
+	  
+	  
 
 	public:
 	  /// Constructor para cargar los datos de sinogramas a partir del encabezado interfile de un Sinogram2D.
@@ -92,6 +97,9 @@ class DLLEXPORT Sinogram2DinSiemensMmr : public Sinogram2DinCylindrical3Dpet
 	  */
 	  Sinogram2D* Copy(){ Sinogram2DinSiemensMmr* sino2dcopy = new Sinogram2DinSiemensMmr(this); return (Sinogram2D*)sino2dcopy;};	
 	  
+	  /** Returns the effective radio scanner, taking into account the depth of interacion.
+	   */
+	  virtual float getEffectiveRadioScanner_mm(){ return (radioScanner_mm + crystalElementLength_mm/2);};
 	  /** Método que obtiene los dos puntos límites, de entrada y salida, de una lor que cruza el field of view.
 	      El mismo dependerá del tipo de fov del sinograma. Por default es circular, pero
 	      puede ser cuadrado o de otra geometría en clases derivadas.

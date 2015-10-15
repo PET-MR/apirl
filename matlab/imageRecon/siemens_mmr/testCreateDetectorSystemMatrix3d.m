@@ -118,7 +118,19 @@ for detInsideRing = detectorsInsideRing
     sinoDet1 = reshape(sinoDet1, [numR numTheta sum(structSizeSino3d.sinogramsPerSegment)]);
     sinoDet2 = detector2SystemMatrix*double(crystals);
     sinoDet2 = reshape(sinoDet2, [numR numTheta sum(structSizeSino3d.sinogramsPerSegment)]);
-    figure;
+    imshow(sinoDet1(:,:,indRing)');
+    % Save for publication:
+    fullFilename = [outputPath sprintf('DirectSino_Det1_%d_%d', detInsideRing, indRing)];
+    frame = getframe(gca);
+    imwrite(frame.cdata, [fullFilename '.png']);
+    
+    imshow(sinoDet2(:,:,indRing)');
+    % Save for publication:
+    fullFilename = [outputPath sprintf('DirectSino_Det2_%d_%d', detInsideRing, indRing)];
+    frame = getframe(gca);
+    imwrite(frame.cdata, [fullFilename '.png']);
+
+        figure;
     subplot(1,2,1);
     imshow(sinoDet1(:,:,indRing)');
     title(sprintf('Detector 1: %d in ring %d', detInsideRing, indRing));

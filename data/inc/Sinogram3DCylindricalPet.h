@@ -162,6 +162,9 @@ class DLLEXPORT Sinogram3DCylindricalPet : public Sinogram3D
 	*/
 	float getRadioScanner_mm(){ return radioScanner_mm;};
 	
+	/** Method that returns the effective radio scanner (takes into account the depth of interction). */
+	virtual float getEffectiveRadioScanner_mm(){ return radioScanner_mm;};
+	
 	bool ReadInterfileDiscoverySTE(char* fileDataPath);
 	
 };

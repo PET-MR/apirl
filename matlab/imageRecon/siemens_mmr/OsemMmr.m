@@ -363,14 +363,19 @@ if (numel(correctScatter) == 1)
         volume = interfileRead([outputFilenamePrefix '_final.h33']);
     end
 end
+
 if removeTempFiles
-    delete([outputPathScatter 'tail*']);
-    delete([outputPathScatter 'acfs*']);
-    delete([outputPathScatter 'emission*']);
-    delete([outputPathScatter 'scatter.s']);
-    delete([outputPathScatter 'scatter.hs']);
-    delete([outputPathScatter '*sensitivity*']);
-    delete([outputPathScatter 'additive*']);
+    if (numel(correctScatter) == 1) 
+        if (correctScatter == 1)
+            delete([outputPathScatter 'acfs*']);
+            delete([outputPathScatter 'emission*']);
+            delete([outputPathScatter 'scatter.s']);
+            delete([outputPathScatter 'scatter.hs']);
+            delete([outputPathScatter '*sensitivity*']);
+            delete([outputPathScatter 'additive*']);
+            delete([outputPathScatter 'tail*']);
+        end
+    end
     delete([outputPath 'sinogram*']);
     delete([outputPath 'ANF*']);
 end

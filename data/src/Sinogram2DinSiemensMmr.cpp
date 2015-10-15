@@ -17,20 +17,23 @@
 const float Sinogram2DinSiemensMmr::crystalElementSize_mm = 4.0891f;
 /// Size of each sinogram's bin.
 const float Sinogram2DinSiemensMmr::binSize_mm = 4.0891f/2.0f;
+/// Depth or length og each crystal.
+const float Sinogram2DinSiemensMmr::crystalElementLength_mm = 20;
 
 Sinogram2DinSiemensMmr::Sinogram2DinSiemensMmr(char* fileHeaderPath): Sinogram2DinCylindrical3Dpet(fileHeaderPath, 297, 328)
 {
-  radioScanner_mm = 328;
+  radioScanner_mm = 338;
   radioFov_mm = 297;
 }
 
 Sinogram2DinSiemensMmr::Sinogram2DinSiemensMmr(unsigned int nProj, unsigned int nR):Sinogram2DinCylindrical3Dpet(nProj, nR, 297, 328)
 {
   float lr;
-  radioScanner_mm = 328;
+  radioScanner_mm = 338;
   radioFov_mm = 297;
   numR = nR;
   numProj = nProj;
+
   // Initialization
   float PhiIncrement = (float)maxAng_deg / numProj;
   // The r value is non linear in the sinogram, because each bin represent one detector element and
@@ -46,9 +49,9 @@ Sinogram2DinSiemensMmr::Sinogram2DinSiemensMmr(unsigned int nProj, unsigned int 
       {
 	// ptrRvalues initialization is necesary just one time
 	// 1) Get the length on the cylindrical surface for each bin (from x=0 to the center of the crystal element):
-	lr = (binSize_mm/2 + binSize_mm*(j-(float)(numR/2)));
+	lr = (binSize_mm/2 + binSize_mm*(j-1-(float)(numR/2)));
 	// 2) Now I get the x coordinate for that r.
-	ptrRvalues_mm[j] = radioScanner_mm * cos(M_PI / 2 - (lr/(radioScanner_mm)));
+	ptrRvalues_mm[j] = (radioScanner_mm + crystalElementLength_mm*0.3* cos(lr/radioScanner_mm)) * sin(lr/(radioScanner_mm));
 // 	#ifdef __DEBUG__
 // 	  printf("\t%f", ptrRvalues_mm[j]);
 // 	#endif
@@ -72,17 +75,26 @@ Sinogram2DinSiemensMmr::Sinogram2DinSiemensMmr(const Sinogram2DinSiemensMmr* src
 
 Sinogram2DinSiemensMmr::Sinogram2DinSiemensMmr(const Sinogram2DinSiemensMmr* srcSinogram2D, int indexSubset, int numSubsets):Sinogram2DinCylindrical3Dpet((Sinogram2DinCylindrical3Dpet*) srcSinogram2D, indexSubset, numSubsets)
 {
-  float lr;
-  radioScanner_mm = 328;
+  float lr; 
+  radioScanner_mm = 338;
   radioFov_mm = 297;
-  // Initialization
+  // Initialization of the values, that differ slightly from the cylindrical pet:
+  float PhiIncrement = (float)maxAng_deg / numProj;
+  for(int i = 0; i < numProj; i ++)
+  {
+    // Initialization of Phi Values
+    ptrAngValues_deg[i] = i * PhiIncrement;	// Modification now goes from 0, phiincrement, ...180-phiincrement.
+    //ptrAngValues_deg[i] = PhiIncrement/2 + i * PhiIncrement;
+  }
+    // The r value is non linear in the sinogram, because each bin represent one detector element and
+  // with the curve of the cylindrical scanner the distance r to the center axis increases with the cos of the bin.
   for(int j = 0; j < numR; j++)
   {
     // ptrRvalues initialization is necesary just one time
     // 1) Get the length on the cylindrical surface for each bin (from x=0 to the center of the crystal element):
-    lr = (binSize_mm/2 + binSize_mm*(j-(float)(numR/2)));
+    lr = (binSize_mm/2 + binSize_mm*(j-1-(float)(numR/2)));
     // 2) Now I get the x coordinate for that r.
-    ptrRvalues_mm[j] = radioScanner_mm * cos(M_PI / 2 - (lr/(radioScanner_mm)));
+    ptrRvalues_mm[j] = (radioScanner_mm + crystalElementLength_mm *0.3* cos(lr/radioScanner_mm)) * sin(lr/radioScanner_mm);
   }
 }
 
@@ -122,7 +134,7 @@ bool Sinogram2DinSiemensMmr::getPointsFromLor(int indexProj, int indexR, int ind
 {
   float r = this->getRValue(indexR);
   float rad_PhiAngle = this->getAngValue(indexProj) * DEG_TO_RAD;
-  float auxValue = sqrt(this->radioScanner_mm * this->radioScanner_mm - r * r);
+  float auxValue = sqrt(radioScanner_mm * radioScanner_mm - r * r);
   *geomFactor = 1;
   p1->X = r * cos(rad_PhiAngle) + sin(rad_PhiAngle) * auxValue;
   p1->Y = r * sin(rad_PhiAngle) - cos(rad_PhiAngle) * auxValue;
@@ -138,7 +150,7 @@ bool Sinogram2DinSiemensMmr::getPointsFromLor (int indexAng, int indexR, Point2D
 {
   float r = this->getRValue(indexR);
   float rad_PhiAngle = this->getAngValue(indexAng) * DEG_TO_RAD;
-  float auxValue = sqrt(this->radioScanner_mm * this->radioScanner_mm - r * r);
+  float auxValue = sqrt(radioScanner_mm * radioScanner_mm - r * r);
   if(r > radioFov_mm)
   {
     // El r no puede ser mayor que el rfov:
@@ -156,7 +168,7 @@ bool Sinogram2DinSiemensMmr::getPointsFromLor (int indexAng, int indexR, Point2D
   float r = this->getRValue(indexR);
   float rad_PhiAngle = this->getAngValue(indexAng) * DEG_TO_RAD;
   // RadioFov se usa si no se tiene geometrías, en el cylindricalpet se debe utilizar el radioscanner:
-  float auxValue = sqrt(this->radioScanner_mm * this->radioScanner_mm - r * r);
+  float auxValue = sqrt(radioScanner_mm * radioScanner_mm - r * r);
   *geom = 1;
   if(r > radioFov_mm)
   {
