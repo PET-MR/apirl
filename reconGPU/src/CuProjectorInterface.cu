@@ -241,11 +241,11 @@ bool CuProjectorInterface::InitGpuMemory(Sinogram3D* sinogram, Image* image, Tip
   printf("\n");
   printf("Ring 1 positions per sinogram:\t");
   for(int i = 0; i < numSinograms; i++)
-    printf("%f\t", d_ring1_mm[i]);
+    printf("%f\t", auxRings1_mm[i]);
   printf("\n");
   printf("Ring 2 positions per sinogram:\t");
   for(int i = 0; i < numSinograms; i++)
-    printf("%f\t", d_ring2_mm[i]);
+    printf("%f\t", auxRings1_mm[i]);
 #endif
 
   // Copio los índices de anillos a memoris de GPU:
@@ -285,7 +285,7 @@ bool CuProjectorInterface::InitGpuMemory(Sinogram3D* sinogram, Image* image, Tip
       //checkCudaErrors(cudaMemcpy(&d_RadioScanner_mm, &aux, sizeof(aux), cudaMemcpyHostToDevice));
       break;
   }
-  printf("Radio scanner: %f", ((Sinogram3DCylindricalPet*)sinogram)->getEffectiveRadioScanner_mm());
+
   // Memorias especiales:
   cudaChannelFormatDesc floatTex = cudaCreateChannelDesc<float>();
   const cudaExtent extentImageSize = make_cudaExtent(image->getSize().nPixelsX, image->getSize().nPixelsY, image->getSize().nPixelsZ);

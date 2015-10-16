@@ -180,10 +180,10 @@ fprintf(fid,'!number of bytes per pixel := %d\n', numBytesPerPixel);
 % (x,y):
 if(nargin==3)
     if(numel(sizePixel)==3)||(numel(sizePixel)==2)
-        fprintf(fid,'scaling factor (mm/pixel) [1] := %f\n', sizePixel(1));
-        fprintf(fid,'scaling factor (mm/pixel) [2] := %f\n', sizePixel(2));
+        fprintf(fid,'scaling factor (mm/pixel) [1] := %.6f\n', sizePixel(1));
+        fprintf(fid,'scaling factor (mm/pixel) [2] := %.6f\n', sizePixel(2));
         if(numel(sizePixel)==3)
-            fprintf(fid,'scaling factor (mm/pixel) [3] := %f\n', sizePixel(3));
+            fprintf(fid,'scaling factor (mm/pixel) [3] := %.6f\n', sizePixel(3));
         end
     else
         disp('Error: el tamaño del pixel debe pasarse en un vector con 3 elementos.');

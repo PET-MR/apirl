@@ -64,8 +64,11 @@ class DLLEXPORT Sinogram2DinSiemensMmr : public Sinogram2DinCylindrical3Dpet
 	  static const float crystalElementSize_mm;
 	  
 	  /** Length of the crystal element. */
-	static const float crystalElementLength_mm;
+	  static const float crystalElementLength_mm;
 	
+	  /// Mean depth of interaction:
+	  static const float meanDOI_mm;
+
 	  /// Size of each sinogram's bin.
 	  /// It's the size of crystal elemnt divided two (half angles are stored in a different bin). crystalElementSize_mm/2
 	  static const float binSize_mm;

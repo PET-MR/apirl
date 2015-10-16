@@ -83,6 +83,9 @@ class DLLEXPORT Sinogram3DSiemensMmr : public Sinogram3DCylindricalPet
 	/** Length of the crystal element. */
 	static const float crystalElementLength_mm;
 	
+	/// Mean depth of interaction:
+	static const float meanDOI_mm;
+	
 	/// Size of num rings.
 	static const int numRings = 64;
 

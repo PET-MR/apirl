@@ -19,17 +19,19 @@ const float Sinogram2DinSiemensMmr::crystalElementSize_mm = 4.0891f;
 const float Sinogram2DinSiemensMmr::binSize_mm = 4.0891f/2.0f;
 /// Depth or length og each crystal.
 const float Sinogram2DinSiemensMmr::crystalElementLength_mm = 20;
+/// Mean depth of interaction:
+const float Sinogram2DinSiemensMmr::meanDOI_mm = 9.6;
 
 Sinogram2DinSiemensMmr::Sinogram2DinSiemensMmr(char* fileHeaderPath): Sinogram2DinCylindrical3Dpet(fileHeaderPath, 297, 328)
 {
-  radioScanner_mm = 338;
+  radioScanner_mm = 328;
   radioFov_mm = 297;
 }
 
 Sinogram2DinSiemensMmr::Sinogram2DinSiemensMmr(unsigned int nProj, unsigned int nR):Sinogram2DinCylindrical3Dpet(nProj, nR, 297, 328)
 {
   float lr;
-  radioScanner_mm = 338;
+  radioScanner_mm = 328;
   radioFov_mm = 297;
   numR = nR;
   numProj = nProj;
@@ -49,9 +51,9 @@ Sinogram2DinSiemensMmr::Sinogram2DinSiemensMmr(unsigned int nProj, unsigned int 
       {
 	// ptrRvalues initialization is necesary just one time
 	// 1) Get the length on the cylindrical surface for each bin (from x=0 to the center of the crystal element):
-	lr = (binSize_mm/2 + binSize_mm*(j-1-(float)(numR/2)));
+	lr = (binSize_mm/2 + binSize_mm*(j-(float)(numR/2)));
 	// 2) Now I get the x coordinate for that r.
-	ptrRvalues_mm[j] = (radioScanner_mm + crystalElementLength_mm*0.3* cos(lr/radioScanner_mm)) * sin(lr/(radioScanner_mm));
+	ptrRvalues_mm[j] = (radioScanner_mm + meanDOI_mm* cos(lr/radioScanner_mm)) * sin(lr/(radioScanner_mm));
 // 	#ifdef __DEBUG__
 // 	  printf("\t%f", ptrRvalues_mm[j]);
 // 	#endif
@@ -76,7 +78,7 @@ Sinogram2DinSiemensMmr::Sinogram2DinSiemensMmr(const Sinogram2DinSiemensMmr* src
 Sinogram2DinSiemensMmr::Sinogram2DinSiemensMmr(const Sinogram2DinSiemensMmr* srcSinogram2D, int indexSubset, int numSubsets):Sinogram2DinCylindrical3Dpet((Sinogram2DinCylindrical3Dpet*) srcSinogram2D, indexSubset, numSubsets)
 {
   float lr; 
-  radioScanner_mm = 338;
+  radioScanner_mm = 328;
   radioFov_mm = 297;
   // Initialization of the values, that differ slightly from the cylindrical pet:
   float PhiIncrement = (float)maxAng_deg / numProj;
@@ -92,9 +94,9 @@ Sinogram2DinSiemensMmr::Sinogram2DinSiemensMmr(const Sinogram2DinSiemensMmr* src
   {
     // ptrRvalues initialization is necesary just one time
     // 1) Get the length on the cylindrical surface for each bin (from x=0 to the center of the crystal element):
-    lr = (binSize_mm/2 + binSize_mm*(j-1-(float)(numR/2)));
+    lr = (binSize_mm/2 + binSize_mm*(j-(float)(numR/2)));
     // 2) Now I get the x coordinate for that r.
-    ptrRvalues_mm[j] = (radioScanner_mm + crystalElementLength_mm *0.3* cos(lr/radioScanner_mm)) * sin(lr/radioScanner_mm);
+    ptrRvalues_mm[j] = (radioScanner_mm + meanDOI_mm* cos(lr/radioScanner_mm)) * sin(lr/radioScanner_mm);
   }
 }
 

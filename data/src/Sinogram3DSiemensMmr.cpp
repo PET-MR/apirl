@@ -11,32 +11,49 @@ const float Sinogram3DSiemensMmr::radioScanner_mm = 656.0f/2.0f;
 /** Radio del FOV en mm. */
 const float Sinogram3DSiemensMmr::radioFov_mm = 594.0f/2.0f;
 
-/** Largo axial del FOV en mm. */
-const float Sinogram3DSiemensMmr::axialFov_mm = 257.96875f;
-
 /// Size of each pixel element.
 const float Sinogram3DSiemensMmr::crystalElementSize_mm = 4.0891f;
 
 /// Depth or length og each crystal.
 const float Sinogram3DSiemensMmr::crystalElementLength_mm = 20;
 
+/// Mean depth of interaction:
+const float Sinogram3DSiemensMmr::meanDOI_mm = 9.6f;
+
 /// Width of each rings.
-const float Sinogram3DSiemensMmr::widthRings_mm = 4.030761719f; //axialFov_mm / numRings;
+const float Sinogram3DSiemensMmr::widthRings_mm = 4.0571289f; //axialFov_mm / numRings;
+
+/** Largo axial del FOV en mm. */
+const float Sinogram3DSiemensMmr::axialFov_mm = 259.65625f; /// widthRings_mm*numRings
 
 Sinogram3DSiemensMmr::Sinogram3DSiemensMmr(int numProj, int numR, int numRings, float radioFov_mm, float axialFov_mm, float radioScanner_mm, 
 					   int numSegments, int* numSinogramsPerSegment, int* minRingDiffPerSegment, int* maxRingDiffPerSegment):Sinogram3DCylindricalPet(
 					   numProj, numR, numRings, radioFov_mm, axialFov_mm, radioScanner_mm, numSegments, numSinogramsPerSegment, minRingDiffPerSegment, maxRingDiffPerSegment)
 {
-  this->inicializarSegmentos();
+  // Redefine the axial values to the specific crystal size:
+  if (ptrAxialvalues_mm == NULL)
+    ptrAxialvalues_mm = (float*) malloc(sizeof(float)*numRings);
+
+  for(int i = 0; i < numRings; i++)
+  {
+    ptrAxialvalues_mm[i] = widthRings_mm/2 + widthRings_mm*i;
+  }
+
 }
 
 
 Sinogram3DSiemensMmr::Sinogram3DSiemensMmr(char* fileHeaderPath):Sinogram3DCylindricalPet(this->radioFov_mm, this->axialFov_mm, this->radioScanner_mm)
 {
-  if(readFromInterfile(fileHeaderPath, this->radioScanner_mm))
+  if(!readFromInterfile(fileHeaderPath, this->radioScanner_mm))
   {
+    cout << "Error reading the sinogram in interfile format." << endl;
     return;
   }
+  // Redefine axial values:
+  /*for(int i = 0; i < numRings; i++)
+  {
+    ptrAxialvalues_mm[i] = widthRings_mm/2 + widthRings_mm*i;
+  }*/
 }
 
 /// Constructor para copia desde otro objeto sinograma3d
