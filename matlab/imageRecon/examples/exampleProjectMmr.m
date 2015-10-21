@@ -54,7 +54,7 @@ figure;
 indiceSino = 1000;
 imshow(sinogram(:,:,indiceSino), [0 max(max(sinogram(:,:,indiceSino)))]);
 %% PROJECT GPU SPAN 11
-useGpu = 0;
+useGpu = 1;
 span = 11;
 outputPath = '/home/mab15/workspace/KCL/Aboflazl/Martin/sino_e7tools/psf/apirl_span11/';
 tic

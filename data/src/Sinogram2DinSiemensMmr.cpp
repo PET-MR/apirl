@@ -136,7 +136,9 @@ bool Sinogram2DinSiemensMmr::getPointsFromLor(int indexProj, int indexR, int ind
 {
   float r = this->getRValue(indexR);
   float rad_PhiAngle = this->getAngValue(indexProj) * DEG_TO_RAD;
-  float auxValue = sqrt(radioScanner_mm * radioScanner_mm - r * r);
+  float lr = (binSize_mm/2 + binSize_mm*(indexR-(float)(numR/2)));
+  float effRadioScanner_mm = (radioScanner_mm + meanDOI_mm* cos(lr/radioScanner_mm));
+  float auxValue = sqrt(effRadioScanner_mm * effRadioScanner_mm - r * r);
   *geomFactor = 1;
   p1->X = r * cos(rad_PhiAngle) + sin(rad_PhiAngle) * auxValue;
   p1->Y = r * sin(rad_PhiAngle) - cos(rad_PhiAngle) * auxValue;
@@ -152,7 +154,9 @@ bool Sinogram2DinSiemensMmr::getPointsFromLor (int indexAng, int indexR, Point2D
 {
   float r = this->getRValue(indexR);
   float rad_PhiAngle = this->getAngValue(indexAng) * DEG_TO_RAD;
-  float auxValue = sqrt(radioScanner_mm * radioScanner_mm - r * r);
+  float lr = (binSize_mm/2 + binSize_mm*(indexR-(float)(numR/2)));
+  float effRadioScanner_mm = (radioScanner_mm + meanDOI_mm* cos(lr/radioScanner_mm));
+  float auxValue = sqrt(effRadioScanner_mm * effRadioScanner_mm - r * r);
   if(r > radioFov_mm)
   {
     // El r no puede ser mayor que el rfov:

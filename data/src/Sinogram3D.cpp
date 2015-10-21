@@ -357,8 +357,8 @@ bool Sinogram3D::readFromInterfile(string headerFilename, float radioScanner_mm)
   float zIncrement = (float)axialFov_mm/numRings;
   for(int i = 0; i < numRings; i ++)
   {
-	  // Initialization of Z Values
-	  ptrAxialvalues_mm[i] = zIncrement/2 + i * zIncrement;
+    // Initialization of Z Values
+    ptrAxialvalues_mm[i] = zIncrement/2 + i * zIncrement;
   }
   
   inicializarSegmentos();
@@ -385,6 +385,9 @@ bool Sinogram3D::readFromInterfile(string headerFilename, float radioScanner_mm)
   // Reservo un bloque de memoria donde voy guardando cada sinograma que leo:
   float* rawSino = (float*) malloc(sizeof(float)*numProj*numR);
   // z1 y z2 van de 0 a numRings-1.
+  #ifdef __DEBUG__
+    printf("\n############# Reading sinogram 3d ###############\n"); 
+  #endif
   for(int i = 0; i<numSegments; i++)
   {
     int numSinosThisSegment = 0;
@@ -399,27 +402,29 @@ bool Sinogram3D::readFromInterfile(string headerFilename, float radioScanner_mm)
       int z1_aux = z1;
       for(int z2 = 0; z2 < numRings; z2++)
       {
-		// Ahora voy avanzando en los sinogramas correspondientes,
-		// disminuyendo z1 y aumentnado z2 hasta que la diferencia entre
-		// anillos llegue a maxRingDiff.
-		if (((z1_aux-z2)<=maxRingDiffPerSegment[i])&&((z1_aux-z2)>=minRingDiffPerSegment[i]))
-		{
-			// Me asguro que esté dentro del tamaño del michelograma:
-			if ((z1_aux>=0)&&(z2>=0)&&(z1_aux<numRings)&&(z2<numRings))
-			{
-			//Agrego el sinograma a la lista de anillos:
-			listaRing1[numSinosZ1inSegment] = z1_aux;
-			listaRing2[numSinosZ1inSegment] = z2;
-			// También las coordenadas axiales:
-			listaZ1_mm[numSinosZ1inSegment] = ptrAxialvalues_mm[z1_aux];
-			listaZ2_mm[numSinosZ1inSegment] = ptrAxialvalues_mm[z2];
-			// Incremento:
-			numSinosZ1inSegment = numSinosZ1inSegment + 1;
-	      
-			}
-		}
-		// Pase esta combinación de (z1,z2), paso a la próxima:
-		z1_aux = z1_aux - 1;
+	// Ahora voy avanzando en los sinogramas correspondientes,
+	// disminuyendo z1 y aumentnado z2 hasta que la diferencia entre
+	// anillos llegue a maxRingDiff.
+	if (((z1_aux-z2)<=maxRingDiffPerSegment[i])&&((z1_aux-z2)>=minRingDiffPerSegment[i]))
+	{
+	  // Me asguro que esté dentro del tamaño del michelograma:
+	  if ((z1_aux>=0)&&(z2>=0)&&(z1_aux<numRings)&&(z2<numRings))
+	  {
+	    //Agrego el sinograma a la lista de anillos:
+	    listaRing1[numSinosZ1inSegment] = z1_aux;
+	    listaRing2[numSinosZ1inSegment] = z2;
+	    // También las coordenadas axiales:
+	    listaZ1_mm[numSinosZ1inSegment] = ptrAxialvalues_mm[z1_aux];
+	    listaZ2_mm[numSinosZ1inSegment] = ptrAxialvalues_mm[z2];
+// 	    #ifdef __DEBUG__
+// 	      printf("i_z in segm: %d. i_z in sino: %d. R1: %d. R2: %d. Z1: %f. Z2: %f.\n", numSinosThisSegment, numSinosZ1inSegment, z1_aux, z2, ptrAxialvalues_mm[z1_aux], ptrAxialvalues_mm[z2]); 
+// 	    #endif
+	    // Incremento:
+	    numSinosZ1inSegment = numSinosZ1inSegment + 1;
+	  }
+	}
+	// Pase esta combinación de (z1,z2), paso a la próxima:
+	z1_aux = z1_aux - 1;
       }
       if(numSinosZ1inSegment>0)
       {

@@ -75,6 +75,7 @@ void SegmentInSiemensMmr::initSinogramsFromSegment(Segment* srcSegment)
     sinograms2D[i] = (Sinogram2DinCylindrical3Dpet*) new Sinogram2DinSiemensMmr((Sinogram2DinSiemensMmr*)srcSegment->getSinogram2D(i));
   }
 }
+
 // Asigna un sinograma dentro de la lista del segmento:
 bool SegmentInSiemensMmr::setSinogram2D(Sinogram2DinSiemensMmr* sinogram2D, int indexInSegment)
 {

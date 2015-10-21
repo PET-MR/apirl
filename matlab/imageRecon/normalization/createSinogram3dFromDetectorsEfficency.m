@@ -33,7 +33,7 @@ end
 % This would be to include the gaps. It starts in the first position and
 % repeats for each block. [gap 8 crystal elements gap 8 crystal
 % elements...]. The same order is repeated in each ring.
-efficenciesPerDetector(1:9:end,:) = 0;
+efficenciesPerDetector(9:9:end,:) = 0;
 % Offset. La proyeccion empieza en
 % Histogram of amount of times has been used each detector:
 detectorIds = 1 : numDetectors;
@@ -46,8 +46,8 @@ histRingsUsed = zeros(1, numRings);
 theta = [0:structSizeSino3d.numTheta-1]'; % The index of thetas goes from 0 to numTheta-1 (in stir)
 r = (-structSizeSino3d.numR/2):(-structSizeSino3d.numR/2+structSizeSino3d.numR-1);
 [THETA, R] = meshgrid(theta,r);
-mapaDet1Ids = rem((THETA + floor(R/2) + numDetectors), numDetectors) + 1;   % The +1 is added in matlab version respect than c version, because here we have 1-base indexes.
-mapaDet2Ids = rem((THETA - floor((R+1)/2) + numDetectors/2), numDetectors) + 1; % The +1 is added in matlab version respect than c version, because here we have 1-base indexes.
+mapaDet1Ids = rem((THETA + floor((R)/2) + numDetectors-1), numDetectors) + 1;   % The +1 is added in matlab version respect than c version, because here we have 1-base indexes.
+mapaDet2Ids = rem((THETA - floor((R+1)/2) + numDetectors/2 -1), numDetectors) + 1; % The +1 is added in matlab version respect than c version, because here we have 1-base indexes.
 histDetIds = hist([mapaDet1Ids(:); mapaDet2Ids(:)], detectorIds);
 
 % Now we start going through each possible sinogram, then get the rings of

@@ -207,7 +207,6 @@ __device__ void CuSiddon (float4* LOR, float4* P0, float* Input, float* Result, 
   int nPixelsXY = (d_imageSize.nPixelsX * d_imageSize.nPixelsY);
   int indicePixel;
 
-
   // Esta verificación y corrección la saco, porque a veces por error de redondeo puede quedar en el píxel -1 o en sizePixel
   #ifdef __DEBUG__
     // Verifico que los índices de i y j dieron dentro de la imagen, sino es que que estoy fuera del fov.

@@ -239,13 +239,10 @@ bool CuProjectorInterface::InitGpuMemory(Sinogram3D* sinogram, Image* image, Tip
   for(int i = 0; i < sinogram->getNumR(); i++)
     printf("%f\t", sinogram->getSegment(0)->getSinogram2D(0)->getRValue(i));
   printf("\n");
-  printf("Ring 1 positions per sinogram:\t");
+  printf("Ring positions per sinogram:\n");
   for(int i = 0; i < numSinograms; i++)
-    printf("%f\t", auxRings1_mm[i]);
+    printf("%d %f %f\n", i, auxRings1_mm[i], auxRings2_mm[i]);
   printf("\n");
-  printf("Ring 2 positions per sinogram:\t");
-  for(int i = 0; i < numSinograms; i++)
-    printf("%f\t", auxRings1_mm[i]);
 #endif
 
   // Copio los índices de anillos a memoris de GPU:

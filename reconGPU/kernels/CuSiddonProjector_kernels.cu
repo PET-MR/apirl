@@ -116,7 +116,7 @@ __device__ void CUDA_GetPointsFromLOR (float PhiAngle, float r, float Z1, float 
 {
   float sinValue, cosValue;
   sincosf(PhiAngle*DEG_TO_RAD, &sinValue, &cosValue);
-  float auxValue = sqrtf(cudaRscanner * cudaRscanner - r * r);
+  float auxValue = sqrtf((cudaRscanner) * (cudaRscanner) - r * r);
   P1->x = r * cosValue + sinValue * auxValue;
   P1->y = r * sinValue - cosValue * auxValue;
   P1->z = Z1;

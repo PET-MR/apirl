@@ -25,5 +25,5 @@ numDetectors = 504;
 theta = [0:structSizeSino3d.numTheta-1]'; % The index of thetas goes from 0 to numTheta-1 (in stir)
 r = (-structSizeSino3d.numR/2):(-structSizeSino3d.numR/2+structSizeSino3d.numR-1);
 [THETA, R] = meshgrid(theta,r);
-mapaDet1Ids = rem((THETA + floor(R/2) + numDetectors), numDetectors) + 1;   % The +1 is added in matlab version respect than c version, because here we have 1-base indexes.
-mapaDet2Ids = rem((THETA - floor((R+1)/2) + numDetectors/2), numDetectors) + 1; % The +1 is added in matlab version respect than c version, because here we have 1-base indexes.
+mapaDet1Ids = rem((THETA + floor(R/2) + numDetectors -1), numDetectors) + 1;   % The +1 is added in matlab version respect than c version, because here we have 1-base indexes.
+mapaDet2Ids = rem((THETA - floor((R+1)/2) + numDetectors/2 -1), numDetectors) + 1; % The +1 is added in matlab version respect than c version, because here we have 1-base indexes.

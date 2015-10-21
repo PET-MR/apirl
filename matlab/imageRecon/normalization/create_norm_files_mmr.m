@@ -84,6 +84,7 @@ numberOfBucketsInRing = numberOfBuckets / (numberofTransverseBlocksPerRing);
 numberOfBlocksInBucketRing = numberOfBuckets / (numberofTransverseBlocksPerRing*numberOfAxialBlocksPerBucket);
 numberOfTransverseCrystalsPerBlock = 9; % includes the gap
 numberOfAxialCrystalsPerBlock = 8;
+numberOfAxialCrystalsPerBucket = numberOfAxialCrystalsPerBlock*numberOfAxialBlocksPerBucket;
 % Generate the sinograms:
 overall_ncf_3d = zeros(numR, numTheta, numSinograms, 'single');
 scanner_time_invariant_ncf_3d = zeros(numR, numTheta, numSinograms, 'single');
@@ -95,12 +96,12 @@ if isempty(my_selection_of_xtal_efficiencies)
     % Use the crystal efficencies of the .n file:
     used_xtal_efficiencies = componentFactors{3};
     % Include the gaps:
-    used_xtal_efficiencies(1:9:end,:) = 0;
+    used_xtal_efficiencies(9:9:end,:) = 0;
 else
     % Use the crystal efficencies received in the parameter file:
     used_xtal_efficiencies = my_selection_of_xtal_efficiencies;
     % Include the gaps:
-    used_xtal_efficiencies(1:9:end,:) = 0;
+    used_xtal_efficiencies(9:9:end,:) = 0;
 end
 
 if isempty(my_choice_of_deadtimefactors)
@@ -126,7 +127,7 @@ crystalInterfFactor = repmat(crystalInterfFactor', 1, structSizeSino3d.numTheta/
 if isempty(my_axial_factors)
     axialFactors = zeros(sum(structSizeSino3d.sinogramsPerSegment),1);
     if isempty(span_choice)
-        axialFactors = structSizeSino3d.numSinosMashed'.* (1./(componentFactors{4}.*componentFactors{8}));
+        axialFactors = structSizeSino3d.numSinosMashed'.* (1./(componentFactors{4}));    % e7 tools does not use the other component factors.*componentFactors{8}));
     else
         % Generate axial factors from a block profile saved before:
         gainPerPixelInBlock = load('axialGainPerPixelInBlock.mat');
@@ -214,81 +215,104 @@ for i = 1 : sum(structSizeSino3d.sinogramsPerSegment)
 end
 
 % 5) We generate the scan_dependent_ncf_3d, that is compound by the
-% dead-time and crystal-efficencies.
+% dead-time and crystal-efficencies. We do it in span 1, and then after
+% including the dead time we compress to the wanted span.
 % a) Crystal efficencies. A sinogram is generated from the crystal
 % efficencies:
-scanner_time_variant_ncf_3d = createSinogram3dFromDetectorsEfficency(used_xtal_efficiencies, structSizeSino3d, 0);
+scanner_time_variant_ncf_3d = createSinogram3dFromDetectorsEfficency(used_xtal_efficiencies, structSizeSino3d_span1, 0);
 % the ncf is 1/efficency:
 nonzeros = scanner_time_variant_ncf_3d ~= 0;
 scanner_time_variant_ncf_3d(nonzeros) = 1./ scanner_time_variant_ncf_3d(nonzeros);
 
 % 6) Generate acquisition_dependant_ncf_3d (sinogram)
+% The acquisition dependent factors can be only separated for span-1.
+% Because infacts, it converts into a only one factor per detector:
+% bin(d1,d2) = ef_d1*dt_d1*ef_d2*dt_d2.
+% And then i need to do the axial compression.
+
 % a) Get dead-time:
 if ~isempty(singles_rates_per_bucket)
+    %% GET PARALYZING AND NON PARALYZING DEAD TIME
+    parDeadTime = componentFactors{5};
+    nonParDeadTime = componentFactors{6};
     % Get the single rate per ring:
     singles_rates_per_ring = singles_rates_per_bucket / (numberOfAxialBlocksPerBucket*numberOfAxialCrystalsPerBlock);
     % Compute dead time factors, is equivalent to an efficency factor.
     % Thus, a factor for each crystal unit is computed, and then both
     % factors are multiplied.
     % Detector Ids:
-    [mapDet1Ids, mapDet2Ids] = createMmrDetectorsIdInSinogram();
+    [map2dDet1Ids, map2dDet2Ids] = createMmrDetectorsIdInSinogram();
     % BucketId:
-    mapBucket1Ids = ceil(mapDet1Ids/(numberOfTransverseBlocksPerBucket*numberOfTransverseCrystalsPerBlock));
-    mapBucket2Ids = ceil(mapDet2Ids/(numberOfTransverseBlocksPerBucket*numberOfTransverseCrystalsPerBlock));
-    % Now we start going through each possible sinogram, then get the rings of
-    % each sinogram and get the crystal efficency for that ring in det1 and the
-    % crystal effiencies for the sencdo ring with det2. When there is axial
-    % compression the efficency is computed as an average of each of them. For
-    % example an sinogram compressed from two different axial position:
-    % det1(ring1_a)*det2(ring2_a)+det1(ring1_b)*det2(ring2_b)
+    map2dBucket1Ids = ceil(map2dDet1Ids/(numberOfTransverseBlocksPerBucket*numberOfTransverseCrystalsPerBlock));
+    map2dBucket2Ids = ceil(map2dDet2Ids/(numberOfTransverseBlocksPerBucket*numberOfTransverseCrystalsPerBlock));
+    % Replicate for 3d map:
     indiceSino = 1; % indice del sinogram 3D.
-    for segment = 1 : structSizeSino3d.numSegments
+    for segment = 1 : structSizeSino3d_span1.numSegments
         % Por cada segmento, voy generando los sinogramas correspondientes y
         % contándolos, debería coincidir con los sinogramas para ese segmento: 
         numSinosThisSegment = 0;
         % Recorro todos los z1 para ir rellenando
-        for z1 = 1 : (structSizeSino3d.numZ*2)
+        for z1 = 1 : (structSizeSino3d_span1.numZ*2)
             numSinosZ1inSegment = 0;   % Cantidad de sinogramas para z1 en este segmento
             % Recorro completamente z2 desde y me quedo con los que están entre
             % minRingDiff y maxRingDiff. Se podría hacer sin recorrer todo el
             % sinograma pero se complica un poco.
             z1_aux = z1;    % z1_aux la uso para recorrer.
-            for z2 = 1 : structSizeSino3d.numZ
+            for z2 = 1 : structSizeSino3d_span1.numZ
                 % Ahora voy avanzando en los sinogramas correspondientes,
                 % disminuyendo z1 y aumentnado z2 hasta que la diferencia entre
                 % anillos llegue a maxRingDiff.
-                if ((z1_aux-z2)<=structSizeSino3d.maxRingDiff(segment))&&((z1_aux-z2)>=structSizeSino3d.minRingDiff(segment))
+                if ((z1_aux-z2)<=structSizeSino3d_span1.maxRingDiff(segment))&&((z1_aux-z2)>=structSizeSino3d_span1.minRingDiff(segment))
                     % Me asguro que esté dentro del tamaño del michelograma:
-                    if(z1_aux>0)&&(z2>0)&&(z1_aux<=structSizeSino3d.numZ)&&(z2<=structSizeSino3d.numZ)
+                    if(z1_aux>0)&&(z2>0)&&(z1_aux<=structSizeSino3d_span1.numZ)&&(z2<=structSizeSino3d_span1.numZ)
                         numSinosZ1inSegment = numSinosZ1inSegment + 1;
-                        % Get the singles rate for each ring:
-                        axialBucket1 = ceil(z1_aux / (numberOfAxialBlocksPerBucket*numberOfAxialCrystalsPerBlock));
-                        axialBucket2 = ceil(z2 / (numberOfAxialBlocksPerBucket*numberOfAxialCrystalsPerBlock));
-                        bucketsId1 = mapBucket1Ids + (axialBucket1-1)*numberOfBucketsInRing;
-                        bucketsId2 = mapBucket2Ids + (axialBucket2-1)*numberOfBucketsInRing;
-                        acquisition_dependant_ncf_3d(:,:,indiceSino) = acquisition_dependant_ncf_3d(:,:,indiceSino) + singles_rates_per_bucket(bucketsId1) .* singles_rates_per_bucket(bucketsId2);
+                        % Get the detector id for the sinograms. The 2d id I
+                        % need to add the offset of the ring:
+                        map3dBucket1Ids(:,:,indiceSino) = map2dBucket1Ids + floor((z1_aux-1)/numberOfAxialCrystalsPerBucket) *numberOfBucketsInRing;
+                        map3dBucket2Ids(:,:,indiceSino) = map2dBucket2Ids + floor((z2-1)/numberOfAxialCrystalsPerBucket)*numberOfBucketsInRing;
                     end
                 end
                 % Pase esta combinación de (z1,z2), paso a la próxima:
                 z1_aux = z1_aux - 1;
             end
             if(numSinosZ1inSegment>0)
-                % I average the efficencies dividing by the number of axial
-                % combinations used for this sino:
-                %acquisition_dependant_ncf_3d(:,:,indiceSino) = acquisition_dependant_ncf_3d(:,:,indiceSino) / numSinosZ1inSegment;
                 numSinosThisSegment = numSinosThisSegment + 1;
                 indiceSino = indiceSino + 1;
             end
         end    
     end
+
+    % Get the dead time for each detector and then multipliy to get the one
+    % for the bin.
+    deadTimeFactorsD1 = (1 + parDeadTime(1)*singles_rates_per_bucket(map3dBucket1Ids)/2 - nonParDeadTime(1).*singles_rates_per_bucket(map3dBucket1Ids).*singles_rates_per_bucket(map3dBucket1Ids)/4);
+    deadTimeFactorsD2 = (1 + parDeadTime(1)*singles_rates_per_bucket(map3dBucket2Ids)/2 - nonParDeadTime(1).*singles_rates_per_bucket(map3dBucket2Ids).*singles_rates_per_bucket(map3dBucket2Ids)/4);
+    acquisition_dependant_ncf_3d = 1./(deadTimeFactorsD1 .* deadTimeFactorsD2);
+else
+    acquisition_dependant_ncf_3d = ones(size(scanner_time_variant_ncf_3d));
 end
 
+% 7) Overall factor:
+% First compress scanner_time_variant_ncf_3d*acquisition_dependant_ncf_3d
+% to the span we want to use:
+[mixedTimeInvAcqDep_compressed, structSizeSino3d_span11] = convertSinogramToSpan(scanner_time_variant_ncf_3d.*acquisition_dependant_ncf_3d, structSizeSino3d_span1, structSizeSino3d.span);
+% Just to have an approximation:
+[scanner_time_variant_ncf_3d, structSizeSino3d_span11] = convertSinogramToSpan(scanner_time_variant_ncf_3d, structSizeSino3d_span1, structSizeSino3d.span);
+[acquisition_dependant_ncf_3d, structSizeSino3d_span11] = convertSinogramToSpan(acquisition_dependant_ncf_3d, structSizeSino3d_span1, structSizeSino3d.span);
+% Normalize to the number of sino mashed (because that is taken into
+% account in the axial factors):
+% Generate scanner time invariant:
+for i = 1 : sum(structSizeSino3d.sinogramsPerSegment)
+    % Normalize
+    mixedTimeInvAcqDep_compressed(:,:,i) = mixedTimeInvAcqDep_compressed(:,:,i) ./ structSizeSino3d.numSinosMashed(i);
+    scanner_time_variant_ncf_3d(:,:,i) = scanner_time_variant_ncf_3d(:,:,i) ./ structSizeSino3d.numSinosMashed(i);
+    acquisition_dependant_ncf_3d(:,:,i) = acquisition_dependant_ncf_3d(:,:,i) ./ structSizeSino3d.numSinosMashed(i);
+end
 % Add gaps to time invariant:
 gaps = scanner_time_variant_ncf_3d ~= 0;
 scanner_time_invariant_ncf_3d = scanner_time_invariant_ncf_3d.*gaps;
 
-% 6) Overall factor:
-overall_ncf_3d = scanner_time_invariant_ncf_3d .* scanner_time_variant_ncf_3d;
+
+overall_ncf_3d = scanner_time_invariant_ncf_3d .* mixedTimeInvAcqDep_compressed;
 
 used_axial_factors = axialFactors;
 
