@@ -99,15 +99,21 @@ else
     tipo = 'sinogram3D';
 end
 
-% Check the structure with the sinogram:
-if (structSizeSino.numR ~= size(sinogram,1)) || (structSizeSino.numTheta ~= size(sinogram,2))
-    error('interfilewritesino: the size of the sinogram does not match the structure with its size.');
-end
-if strcmp(tipo,'sinogram2D') && (structSizeSino.numZ ~= size(sinogram,3))
-    error('interfilewritesino: the size of the sinogram does not match the structure with its size.');
-end
-if strcmp(tipo,'sinogram3D') && (sum(structSizeSino.sinogramsPerSegment) ~= size(sinogram,3))
-    error('interfilewritesino: the size of the sinogram does not match the structure with its size.');
+if isempty(sinogram)
+    % If empty its because we want to write an empty sinogram, just to read
+    % the header:
+    warning('Writing empty binary file.');
+else
+    % Check the structure with the sinogram:
+    if (structSizeSino.numR ~= size(sinogram,1)) || (structSizeSino.numTheta ~= size(sinogram,2))
+        error('interfilewritesino: the size of the sinogram does not match the structure with its size.');
+    end
+    if strcmp(tipo,'sinogram2D') && (structSizeSino.numZ ~= size(sinogram,3))
+        error('interfilewritesino: the size of the sinogram does not match the structure with its size.');
+    end
+    if strcmp(tipo,'sinogram3D') && (sum(structSizeSino.sinogramsPerSegment) ~= size(sinogram,3))
+        error('interfilewritesino: the size of the sinogram does not match the structure with its size.');
+    end
 end
 % Primero genero el archivo de encabezado.
 fid = fopen(filenameHeader, 'w');
@@ -332,7 +338,7 @@ fclose(fid);
 % Ahora tengo que escribir el archivo binario de la imagen:
 fid = fopen(filenameSino, 'wb');
 if(fid == -1)
-    fprintf('No se pudo crear el archivo %s.', filenameImage);
+    fprintf('No se pudo crear el archivo %s.', filenameSino);
 end
 fwrite(fid, sinogram, structDato.class);
 fclose(fid);

@@ -63,13 +63,18 @@ interfilewrite(single(image), filenameImage, pixelSize_mm);
 
 % constant sinogram:
 sinogramFilename = [outputPath 'inputSinogram'];
-interfileWriteSino(single(sinogram), sinogramFilename, structSizeSino3d);
+% I replace writing a real sinogram for an empty sinogram to save space and
+% time:
+interfileWriteSino(sinogram, sinogramFilename, structSizeSino3d);
 
 % Generate backprojected image:
 filenameBackprojectionConfig = [outputPath 'backprojectSinogram.par'];
 backprojectionFilename = [outputPath 'backprojectedImage'];
 CreateBackprojectConfigFileForMmr(filenameBackprojectionConfig, [sinogramFilename '.h33'], [filenameImage '.h33'], backprojectionFilename, numberOfSubsets, subsetIndex, useGpu);
 status = system(['backproject ' filenameBackprojectionConfig])
+
+% Remove the input sinogram:
+delete([sinogramFilename '.*']);
 
 % Read the image:
 image = interfileRead([backprojectionFilename '.h33']);

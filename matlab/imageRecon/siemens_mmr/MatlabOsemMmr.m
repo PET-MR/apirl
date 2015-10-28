@@ -104,8 +104,8 @@ if ~strcmp(attMapBaseFilename, '')
         attenMap = attenMap_hardware + attenMap_human;
         % I need to translate because siemens uses an slightly displaced
         % center (taken from dicom images, the first pixel is -359.8493 ,-356.8832 
-        displacement_mm = [-1.5 -imageSizeAtten_mm(2)*size(attenMap_human,1)/2+356.8832 0];
-        [attenMap, Rtranslated] = imtranslate(attenMap, refAttenMapHum, displacement_mm,'OutputView','same');
+%         displacement_mm = [-1.5 -imageSizeAtten_mm(2)*size(attenMap_human,1)/2+356.8832 0];
+%         [attenMap, Rtranslated] = imtranslate(attenMap, refAttenMapHum, displacement_mm,'OutputView','same');
         
     else
         disp('Computing the attenuation correction factors from post processed APIRL mu maps...');

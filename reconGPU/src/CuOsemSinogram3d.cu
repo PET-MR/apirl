@@ -588,7 +588,18 @@ float CuOsemSinogram3d::getLikelihoodValue(TipoProyector tipoProy)
       forwardprojector->Project(d_reconstructionImage, d_auxProjection, d_ring1_mm, d_ring2_mm, reconstructionImage, (Sinogram3DCylindricalPet*)inputProjection, false);
       break;
   }
-  
+  if(saveIntermediateProjectionAndBackprojectedImage)
+  {
+    Sinogram3D* estimatedProjection = inputProjection->Copy();
+    string outputFilename;
+    char c_string[200];
+    CopySinogram3dGpuToHost(estimatedProjection, d_auxProjection);
+    sprintf(c_string, "%s_projection_likelihood", outputFilenamePrefix.c_str()); /// La extensión se le agrega en write interfile.
+    outputFilename.assign(c_string);
+    estimatedProjection->writeInterfile((char*)outputFilename.c_str());
+    delete estimatedProjection;
+  }
+      
   cuGetLikelihoodValue<<<gridSizeProjector, blockSizeProjector>>>(d_auxProjection, d_inputProjection, d_likelihood, inputProjection->getNumR(), inputProjection->getNumProj(), inputProjection->getNumRings(), inputProjection->getNumSinograms());
   /// Sincronización de todos los threads.
   cudaThreadSynchronize();

@@ -158,6 +158,17 @@ Sinogram3D* Sinogram3DSiemensMmr::getSubset(int indexSubset, int numSubsets)
     }
   }
   memcpy(sino3dSubset->getAngPtr(), subsetProjAngles, sizeof(float)*numProjSubset);
+    // Copy the R values: 
+  for(int i = 0; i < this->getNumSegments(); i++)
+  {
+    for(int j = 0; j < this->getSegment(i)->getNumSinograms(); j++)
+    {
+      // Copy the R values, because in the sino3d are arc corrected but in the subset not yet:
+      memcpy(sino3dSubset->getSegment(i)->getSinogram2D(j)->getRPtr(), this->getSegment(i)->getSinogram2D(j)->getRPtr(), sizeof(float)*this->getSegment(i)->getSinogram2D(j)->getNumR());
+    } 
+  }
+  // Segemntation fault next line: i didnt  malloc memory in sinogram3d?
+  //memcpy(sino3dSubset->getRPtr(), this->getRPtr(), sizeof(float)*this->getNumR());
   return (Sinogram3D*)sino3dSubset;
 }
 

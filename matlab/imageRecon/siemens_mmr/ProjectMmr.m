@@ -47,10 +47,10 @@ end
 % Size of mMr Sinogram's
 numTheta = 252; numR = 344; numRings = 64; maxAbsRingDiff = 60; rFov_mm = 594/2; zFov_mm = 258; 
 structSizeSino3d = getSizeSino3dFromSpan(numR, numTheta, numRings, rFov_mm, zFov_mm, span, maxAbsRingDiff);
-% constant sinogram:
-sinogram = ones(numR, numTheta, sum(structSizeSino3d.sinogramsPerSegment), 'single');
+% empty sinogram:
+% sinogram = ones(numR, numTheta, sum(structSizeSino3d.sinogramsPerSegment), 'single');
 sinogramSampleFilename = [outputPath 'sinogramSample'];
-interfileWriteSino(sinogram, sinogramSampleFilename, structSizeSino3d);
+interfileWriteSino([], sinogramSampleFilename, structSizeSino3d);
 
 % Write image in interfile:
 filenameImage = [outputPath 'inputImage'];

@@ -47,7 +47,7 @@ else
 end
 
 % Check if we have received pixel size:
-if nargin == 12
+if nargin ~= 12
     error('Wrong number of parameters: volume = MatlabMlemMmr(sinogramInputFilename, span, normFilename, attMapBaseFilename, correctRandoms, correctScatter, outputPath, pixelSize_mm, numIterations, saveInterval, useGpu, stirMatlabPath)');
 end
 imageSize_mm = [600 600 257.96875];

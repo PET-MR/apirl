@@ -31,8 +31,12 @@ setenv('PATH', [getenv('PATH') sepEnvironment apirlPath pathBar 'build' pathBar 
 setenv('LD_LIBRARY_PATH', [getenv('LD_LIBRARY_PATH') sepEnvironment apirlPath pathBar 'build' pathBar 'bin']);
 %% READ IMAGE
 fullFilename = '/home/mab15/workspace/KCL/Aboflazl/Martin/sino_e7tools/psf/nema.v.hdr';
-%fullFilename = '/media/martin/My Book/BackupWorkspace/KCL/Biograph_mMr/Mediciones/NEMA_IQ_20_02_2014/umap/AttenMapCtManuallyRegistered.h33';
 [image, refImage, bedPosition_mm, info]  = interfileReadSiemensImage(fullFilename); 
+fullFilename = '/media/mab15/DATA/Reconstructions/LineSource_2015_03_13/span1/reconImage_final.h33';
+[image, refImage] = interfileRead (fullFilename);
+%fullFilename = '/media/martin/My Book/BackupWorkspace/KCL/Biograph_mMr/Mediciones/NEMA_IQ_20_02_2014/umap/AttenMapCtManuallyRegistered.h33';
+
+
 pixelSize_mm = [refImage.PixelExtentInWorldY refImage.PixelExtentInWorldX refImage.PixelExtentInWorldZ];
 % %% PROJECT CPU
 % outputPath = 'E:\NemaReconstruction\testProject\';
@@ -44,8 +48,8 @@ pixelSize_mm = [refImage.PixelExtentInWorldY refImage.PixelExtentInWorldX refIma
 %% PROJECT GPU SPAN 1
 useGpu = 1;
 span = 1;
-%outputPath = 'E:\NemaReconstruction\testProjectCuda\';
-outputPath = '/home/mab15/workspace/KCL/Aboflazl/Martin/sino_e7tools/psf/apirl_span1/';
+outputPath = '/fast/LineSource_2015_03_13/exampleProject/';
+%outputPath = '/home/mab15/workspace/KCL/Aboflazl/Martin/sino_e7tools/psf/apirl_span1/';
 tic
 [sinogram, structSizeSinogram] = ProjectMmr(image, pixelSize_mm, outputPath, span, [], [], useGpu);
 toc
@@ -53,41 +57,49 @@ toc
 figure;
 indiceSino = 1000;
 imshow(sinogram(:,:,indiceSino), [0 max(max(sinogram(:,:,indiceSino)))]);
-%% PROJECT GPU SPAN 11
-useGpu = 1;
-span = 11;
-outputPath = '/home/mab15/workspace/KCL/Aboflazl/Martin/sino_e7tools/psf/apirl_span11/';
-tic
-[sinogram, structSizeSinogram] = ProjectMmr(image, pixelSize_mm, outputPath, span, [], [], useGpu);
-toc
-% Show one sinogram:
-figure;
-indiceSino = 250;
-imshow(sinogram(:,:,indiceSino), [0 max(max(sinogram(:,:,indiceSino)))]);
-
-% %% PROJECT SUBSET GPU SPAN 1
-% numberOfSubsets = 21;
-% subsetIndex = 5;
-% % outputPath = 'E:\NemaReconstruction\testProjectCudaSubset\';
-% outputPath = '/fast/NemaReconstruction/ProjectCudaSubset/';
+% %% PROJECT GPU SPAN 11
+% useGpu = 1;
+% span = 11;
+% outputPath = '/home/mab15/workspace/KCL/Aboflazl/Martin/sino_e7tools/psf/apirl_span11/';
 % tic
-% [sinogram, structSizeSinogram] = ProjectMmr(image, pixelSize_mm, outputPath, span, numberOfSubsets, subsetIndex, useGpu);
+% [sinogram, structSizeSinogram] = ProjectMmr(image, pixelSize_mm, outputPath, span, [], [], useGpu);
 % toc
 % % Show one sinogram:
 % figure;
-% indiceSino = 1000;
+% indiceSino = 250;
 % imshow(sinogram(:,:,indiceSino), [0 max(max(sinogram(:,:,indiceSino)))]);
-% %% PROJECT SUBSET GPU SPAN 11
-% span = 11;
-% numberOfSubsets = 21;
-% subsetIndex = 5;
-% % outputPath = 'E:\NemaReconstruction\testProjectCudaSubset\';
-% outputPath = '/fast/NemaReconstruction/ProjectCudaSubset/';
-% [sinogram, structSizeSinogram] = ProjectMmr(image, pixelSize_mm, outputPath, span, numberOfSubsets, subsetIndex, useGpu);
-% % Show one sinogram:
-% figure;
-% indiceSino = 64;
-% imshow(sinogram(:,:,indiceSino), [0 max(max(sinogram(:,:,indiceSino)))]);
+
+%% PROJECT SUBSET GPU SPAN 1
+numberOfSubsets = 21;
+subsetIndex = 1;
+% outputPath = 'E:\NemaReconstruction\testProjectCudaSubset\';
+outputPath = '/fast/LineSource_2015_03_13/ProjectCudaSubset/';
+tic
+[sinogram, structSizeSinogram] = ProjectMmr(image, pixelSize_mm, outputPath, span, numberOfSubsets, subsetIndex, useGpu);
+toc
+% Show one sinogram:
+figure;
+indiceSino = 1000;
+imshow(sinogram(:,:,indiceSino), [0 max(max(sinogram(:,:,indiceSino)))]);
+%% PROJECT ALL SUBSET GPU SPAN 1
+span = 1;
+numberOfSubsets = 21;
+sinogramAllSubsets = zeros(size(sinogram));
+figure;
+indiceSino = 1000;
+for subsetIndex = 1 : numberOfSubsets
+    % outputPath = 'E:\NemaReconstruction\testProjectCudaSubset\';
+    outputPath = sprintf('/fast/LineSource_2015_03_13/ProjectCudaSubset_%d/', subsetIndex);
+    [sinogram, structSizeSinogram] = ProjectMmr(image, pixelSize_mm, outputPath, span, numberOfSubsets, subsetIndex, useGpu);
+    sinogramAllSubsets = sinogramAllSubsets + sinogram;
+end
+% Show one sinogram:
+figure;
+indiceSino = 1000;
+imshow(sinogramAllSubsets(:,:,indiceSino), [0 max(max(sinogramAllSubsets(:,:,indiceSino)))]);
+outputPath = '/fast/LineSource_2015_03_13/ProjectCudaSubset_SummSubsets/';
+% Write the input sinogram:
+interfileWriteSino(single(sinogramAllSubsets), [outputPath 'SumSinogram'], structSizeSinogram);
 
 % % PROJECT DIRECT SINOGRAMS
 % useGpu = 0;

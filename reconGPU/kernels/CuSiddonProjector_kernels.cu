@@ -119,10 +119,10 @@ __device__ void CUDA_GetPointsFromLOR (float PhiAngle, float r, float Z1, float 
   float auxValue = sqrtf((cudaRscanner) * (cudaRscanner) - r * r);
   P1->x = r * cosValue + sinValue * auxValue;
   P1->y = r * sinValue - cosValue * auxValue;
-  P1->z = Z1;
+  P1->z = Z1 - 6/(cudaRscanner+20) * (Z2-Z1);	// Tested, it best better with e7 tools.
   P2->x = r * cosValue - sinValue * auxValue;
   P2->y = r * sinValue + cosValue * auxValue;
-  P2->z = Z2;
+  P2->z = Z2 - 6/(cudaRscanner+20) * (Z1-Z2);
 }
 
 #endif

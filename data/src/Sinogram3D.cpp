@@ -428,21 +428,27 @@ bool Sinogram3D::readFromInterfile(string headerFilename, float radioScanner_mm)
       }
       if(numSinosZ1inSegment>0)
       {
-		// Si entré acá significa que hay combinaciones de anillos para este sinograma. Lo leo del i33 y lo cargo:
-		// Leo un sinograma del i33 y lo asigno al sinograma del segmento correspondiente:
-		int numBytes = (int)fread(rawSino, sizeof(float), numProj*numR, fp);
-		if (numBytes != (numProj*numR))
-		{
-			cout << "Falló la lectura de los datos del sinograma3d, puede que no coincida la cantidad de bytes a leer con los del archivo .i33" << endl;
-			return false;
-		}
-		float* ptrSino = this->getSegment(i)->getSinogram2D(numSinosThisSegment)->getSinogramPtr();
-		this->getSegment(i)->getSinogram2D(numSinosThisSegment)->setMultipleRingConfig(numSinosZ1inSegment, listaRing1, listaRing2, listaZ1_mm, listaZ2_mm);
-		memcpy(ptrSino, rawSino, sizeof(float) * numProj * numR);
-
-		// Cuenta la cantidad de segmentos para verificar que se cumpla:
-		numSinosThisSegment = numSinosThisSegment + 1;
-		indiceSino = indiceSino + 1;
+	// Si entré acá significa que hay combinaciones de anillos para este sinograma. Lo leo del i33 y lo cargo:
+	// Leo un sinograma del i33 y lo asigno al sinograma del segmento correspondiente:
+	int numBytes = (int)fread(rawSino, sizeof(float), numProj*numR, fp);
+	float* ptrSino = this->getSegment(i)->getSinogram2D(numSinosThisSegment)->getSinogramPtr();
+	this->getSegment(i)->getSinogram2D(numSinosThisSegment)->setMultipleRingConfig(numSinosZ1inSegment, listaRing1, listaRing2, listaZ1_mm, listaZ2_mm);
+	// Numbytes == 0, means that reads only the header, so its an empty sinogram.
+	if(numBytes != 0)
+	{
+	  if (numBytes != (numProj*numR))
+	  {
+	    cout << "Falló la lectura de los datos del sinograma3d, puede que no coincida la cantidad de bytes a leer con los del archivo .i33" << endl;
+	    return false;
+	  }
+	  memcpy(ptrSino, rawSino, sizeof(float) * numProj * numR);
+	}
+	else
+	  memset(ptrSino, 0, sizeof(float) * numProj * numR);
+	
+	// Cuenta la cantidad de segmentos para verificar que se cumpla:
+	numSinosThisSegment = numSinosThisSegment + 1;
+	indiceSino = indiceSino + 1;
       }
     }
     if(numSinosThisSegment != numSinogramsPerSegment[i])

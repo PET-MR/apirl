@@ -189,7 +189,6 @@ Sinogram3D* Sinogram3DCylindricalPet::getSubset(int indexSubset, int numSubsets)
       memcpy(sino3dSubset->getSegment(i)->getSinogram2D(j)->getAngPtr(), ptrAngValues_deg, sizeof(float)*numProjSubset);
     }
   }
-  
   return (Sinogram3D*)sino3dSubset;
 }
 

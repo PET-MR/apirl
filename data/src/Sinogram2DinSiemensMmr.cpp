@@ -52,6 +52,7 @@ Sinogram2DinSiemensMmr::Sinogram2DinSiemensMmr(unsigned int nProj, unsigned int 
 	// ptrRvalues initialization is necesary just one time
 	// 1) Get the length on the cylindrical surface for each bin (from x=0 to the center of the crystal element):
 	lr = (binSize_mm/2 + binSize_mm*(j-(float)(numR/2)));
+	//lr = (binSize_mm/4 + binSize_mm*(j-(float)(numR/2))); // PAreciera andar un poco mejor esta.
 	// 2) Now I get the x coordinate for that r.
 	ptrRvalues_mm[j] = (radioScanner_mm + meanDOI_mm* cos(lr/radioScanner_mm)) * sin(lr/(radioScanner_mm));
 // 	#ifdef __DEBUG__
@@ -144,8 +145,8 @@ bool Sinogram2DinSiemensMmr::getPointsFromLor(int indexProj, int indexR, int ind
   p1->Y = r * sin(rad_PhiAngle) - cos(rad_PhiAngle) * auxValue;
   p2->X = r * cos(rad_PhiAngle) - sin(rad_PhiAngle) * auxValue;
   p2->Y = r * sin(rad_PhiAngle) + cos(rad_PhiAngle) * auxValue;
-  p1->Z = ptrListZ1_mm[indexRingConfig];
-  p2->Z = ptrListZ2_mm[indexRingConfig];
+  p1->Z = ptrListZ1_mm[indexRingConfig] - meanDOI_mm/(effRadioScanner_mm) * (ptrListZ2_mm[indexRingConfig]-ptrListZ1_mm[indexRingConfig]);
+  p2->Z = ptrListZ2_mm[indexRingConfig] - meanDOI_mm/(effRadioScanner_mm) * (ptrListZ1_mm[indexRingConfig]-ptrListZ2_mm[indexRingConfig]);
   return true;
 }
   
