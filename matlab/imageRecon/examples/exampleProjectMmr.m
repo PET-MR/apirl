@@ -38,6 +38,9 @@ fullFilename = '/media/mab15/DATA/Reconstructions/LineSource_2015_03_13/span1/re
 
 
 pixelSize_mm = [refImage.PixelExtentInWorldY refImage.PixelExtentInWorldX refImage.PixelExtentInWorldZ];
+
+% Defrise phantom:
+[image refImage] = CreateDefrisePhantom(size(image), pixelSize_mm);
 % %% PROJECT CPU
 % outputPath = 'E:\NemaReconstruction\testProject\';
 % [sinogram, structSizeSinogram] = ProjectMmrSpan1(image, pixelSize_mm, outputPath, 0);
@@ -48,7 +51,7 @@ pixelSize_mm = [refImage.PixelExtentInWorldY refImage.PixelExtentInWorldX refIma
 %% PROJECT GPU SPAN 1
 useGpu = 1;
 span = 1;
-outputPath = '/fast/LineSource_2015_03_13/exampleProject/';
+outputPath = '/fast/Defrise/exampleProject/';
 %outputPath = '/home/mab15/workspace/KCL/Aboflazl/Martin/sino_e7tools/psf/apirl_span1/';
 tic
 [sinogram, structSizeSinogram] = ProjectMmr(image, pixelSize_mm, outputPath, span, [], [], useGpu);
@@ -73,7 +76,7 @@ imshow(sinogram(:,:,indiceSino), [0 max(max(sinogram(:,:,indiceSino)))]);
 numberOfSubsets = 21;
 subsetIndex = 1;
 % outputPath = 'E:\NemaReconstruction\testProjectCudaSubset\';
-outputPath = '/fast/LineSource_2015_03_13/ProjectCudaSubset/';
+outputPath = '/fast/Defrise/ProjectCudaSubset/';
 tic
 [sinogram, structSizeSinogram] = ProjectMmr(image, pixelSize_mm, outputPath, span, numberOfSubsets, subsetIndex, useGpu);
 toc
@@ -89,7 +92,7 @@ figure;
 indiceSino = 1000;
 for subsetIndex = 1 : numberOfSubsets
     % outputPath = 'E:\NemaReconstruction\testProjectCudaSubset\';
-    outputPath = sprintf('/fast/LineSource_2015_03_13/ProjectCudaSubset_%d/', subsetIndex);
+    outputPath = sprintf('/fast/Defrise/ProjectCudaSubset_%d/', subsetIndex);
     [sinogram, structSizeSinogram] = ProjectMmr(image, pixelSize_mm, outputPath, span, numberOfSubsets, subsetIndex, useGpu);
     sinogramAllSubsets = sinogramAllSubsets + sinogram;
 end
@@ -97,7 +100,7 @@ end
 figure;
 indiceSino = 1000;
 imshow(sinogramAllSubsets(:,:,indiceSino), [0 max(max(sinogramAllSubsets(:,:,indiceSino)))]);
-outputPath = '/fast/LineSource_2015_03_13/ProjectCudaSubset_SummSubsets/';
+outputPath = '/fast/Defrise/ProjectCudaSubset_SummSubsets/';
 % Write the input sinogram:
 interfileWriteSino(single(sinogramAllSubsets), [outputPath 'SumSinogram'], structSizeSinogram);
 

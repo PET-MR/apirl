@@ -65,7 +65,7 @@ interfilewrite(single(image), filenameImage, pixelSize_mm);
 sinogramFilename = [outputPath 'inputSinogram'];
 % I replace writing a real sinogram for an empty sinogram to save space and
 % time:
-interfileWriteSino(sinogram, sinogramFilename, structSizeSino3d);
+interfileWriteSino(single(sinogram), sinogramFilename, structSizeSino3d);
 
 % Generate backprojected image:
 filenameBackprojectionConfig = [outputPath 'backprojectSinogram.par'];

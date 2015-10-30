@@ -158,7 +158,7 @@ Sinogram3D* Sinogram3DSiemensMmr::getSubset(int indexSubset, int numSubsets)
     }
   }
   memcpy(sino3dSubset->getAngPtr(), subsetProjAngles, sizeof(float)*numProjSubset);
-    // Copy the R values: 
+  // Copy the R values: 
   for(int i = 0; i < this->getNumSegments(); i++)
   {
     for(int j = 0; j < this->getSegment(i)->getNumSinograms(); j++)

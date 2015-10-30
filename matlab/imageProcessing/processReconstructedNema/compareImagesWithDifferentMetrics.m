@@ -18,14 +18,14 @@ mkdir(outputPath);
 %% LOAD IMAGES
 % Read interfile reconstructed image:
 % Span 11 APIRL:
-span11Path = '/home/mab15/workspace/KCL/Biograph_mMr/Mediciones/NEMA_IQ_20_02_2014/Reconstruction/span11/';
-filename = 'Nema_Osem21_HR_final.h33';
+span11Path = '/media/mab15/DATA/Reconstructions/NEMA_IQ_20_02_2014/cuosem_ct_without_randoms_and_scatter_span11/';
+filename = 'reconImage_final.h33';
 reconVolumeSpan11 = interfileRead([span11Path filename]);
 infoVolumeSpan11 = interfileinfo([span11Path filename]);
 
 % Span 1 APIRL:
-span1Path = '/home/mab15/workspace/KCL/Biograph_mMr/Mediciones/NEMA_IQ_20_02_2014/Reconstruction/span1/';
-filename = 'Nema_Osem21_HR_final.h33';
+span1Path = '/media/mab15/DATA/Reconstructions/NEMA_IQ_20_02_2014/cuosem_ct_without_randoms_and_scatter_span1/';
+filename = 'reconImage_final.h33';
 reconVolumeSpan1 = interfileRead([span1Path filename]);
 infoVolumeSpan1 = interfileinfo([span1Path filename]);
 
@@ -104,9 +104,9 @@ ylabel('Mean/Std');
 centralSlice = 81;
 sizePixel_mm = [infoVolumeSpan11.ScalingFactorMmPixel1 infoVolumeSpan11.ScalingFactorMmPixel2 infoVolumeSpan11.ScalingFactorMmPixel3];
 center_mm = [2 2];
-[contrastRecoverySpan11, desvioBackgroundSpan11, desvioNormBackgroundSpan11, meanLungRoiSpan11, relativeLungErrorSpan11] = procImagesQualityPhantomColdSpheres(reconVolumeSpan11, sizePixel_mm, center_mm, centralSlice, 1);
-[contrastRecoverySpan1, desvioBackgroundSpan1, desvioNormBackgroundSpan1, meanLungRoiSpan1, relativeLungErrorSpan1] = procImagesQualityPhantomColdSpheres(reconVolumeSpan1, sizePixel_mm, center_mm, centralSlice, 1);
-[contrastRecoveryStir, desvioBackgroundStir, desvioNormBackgroundStir, meanLungRoiStir, relativeLungErrorStir, radioEsferas_mm, centers_pixels] = procImagesQualityPhantomColdSpheres(reconVolumeStir, sizePixel_mm, center_mm, centralSlice, 1);
+[contrastRecoverySpan11, desvioBackgroundSpan11, desvioNormBackgroundSpan11, radioEsferas_mm, centro_pixels] = procImagesQualityPhantomColdSpheresWithoutSC(reconVolumeSpan11, sizePixel_mm, center_mm, centralSlice, 1);
+[contrastRecoverySpan1, desvioBackgroundSpan1, desvioNormBackgroundSpan1, radioEsferas_mm, centro_pixels] = procImagesQualityPhantomColdSpheresWithoutSC(reconVolumeSpan1, sizePixel_mm, center_mm, centralSlice, 1);
+[contrastRecoveryStir, desvioBackgroundStir, desvioNormBackgroundStir, radioEsferas_mm, centro_pixels] = procImagesQualityPhantomColdSpheresWithoutSC(reconVolumeStir, sizePixel_mm, center_mm, centralSlice, 1);
 figure;
 set(gcf, 'Name', 'Recovery Contrast');
 set(gcf, 'Position', [50 50 1600 1200]);
