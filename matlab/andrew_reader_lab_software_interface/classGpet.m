@@ -423,6 +423,55 @@ classdef classGpet < handle
             objGpet.image_size.matrixSize = refImage.ImageSize;
             objGpet.image_size.voxelSize_mm = [refImage.PixelExtentInWorldY refImage.PixelExtentInWorldX refImage.PixelExtentInWorldZ];
         end
+        
+        function n=NCF(varargin)
+            objGpet = varargin{1};
+            if ~strcmpi(objGpet.scanner,'mMR')
+                error('NCFs are only available for mMR scanner.');
+            end
+            if nargin == 1
+                % Default normalization file:
+                [overall_ncf_3d, scanner_time_invariant_ncf_3d, scanner_time_variant_ncf_3d, acquisition_dependant_ncf_3d, used_xtal_efficiencies, used_deadtimefactors, used_axial_factors] = ...
+                    create_norm_files_mmr([], [], [], [], [], objGpet.sinogram_size.span);
+                n = overall_ncf_3d;
+            elseif nargin == 2
+                % Read it from file:
+                [overall_ncf_3d, scanner_time_invariant_ncf_3d, scanner_time_variant_ncf_3d, acquisition_dependant_ncf_3d, used_xtal_efficiencies, used_deadtimefactors, used_axial_factors] = ...
+                    create_norm_files_mmr(varargin{2}, [], [], [], [], objGpet.sinogram_size.span);
+                n = overall_ncf_3d;
+            end
+        end
+        
+        function gf3d = Gauss3DFilter (data, image_size, fwhm)
+            %  fwhm: convolution kernel size in cm
+
+            if fwhm==0
+                gf3d = data;
+                return
+            end
+            vox3dsz = image_size.voxelSize;
+
+            gsigmm=fwhm/sqrt(2^3*log(2));
+            matsz=ceil(2*fwhm./vox3dsz);
+            for i=1:size(matsz,2)
+                if isequal(mod(matsz(i),2),0), matsz(i)=matsz(i)+1; end
+            end
+            padSize = (matsz-1)/2;
+            bound=padSize.*vox3dsz;
+            [x,y,z] = meshgrid(-bound(2):vox3dsz(2):bound(2), -bound(1):vox3dsz(1):bound(1), -bound(3):vox3dsz(3):bound(3));
+            h = exp(-(x.*x + y.*y + z.*z)/(2*gsigmm*gsigmm));
+            h = h/sum(h(:));
+            numDims = length(padSize);
+            idx = cell(numDims,1);
+            for k = 1:numDims
+              M = size(data,k);
+              onesVector = ones(1,padSize(k));
+              idx{k} = [onesVector 1:M M*onesVector];
+            end
+            b = data(idx{:});
+
+            gf3d = convn(b,h, 'valid');
+        end
     end
 end
 

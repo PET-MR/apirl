@@ -54,7 +54,7 @@ for i = 1:PET.nIter
     
     drawnow, imagesc(x), axis image, colormap gray
 end
-%%
+%
 % CHANGING SUBSET CONFIGURATION
 PET.set_subsets(5);
 x = PET.ones;
@@ -99,6 +99,9 @@ PET = classGpet();
 % Change the image sie, to the one of the phantom:
 init_image_properties(PET, refImage);
 
+% EXAMPLE NCFS
+NCF = PET.NCF;
+% Simulate sinogram
 y = PET.P(g_truth);
 counts = 1e8/sum(y(:));
 
