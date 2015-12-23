@@ -50,6 +50,8 @@ coordZpet = (-pixelSize_mm(3)*imageSize_pixels(3)/2 + pixelSize_mm(3)/2) : pixel
 % Interpolate the ct image to the mr coordinates:
 phantom_rescaled = interp3(Xphantom,Yphantom,Zphantom,phantom,Xpet,Ypet,Zpet); 
 phantom_rescaled(isnan(phantom_rescaled)) = 0;
+% I am having problems with the first slices, patch them:
+phantom_rescaled(:,:,1:5) = 0;
 %% CREATE ATTENUATION MAP
 % brainweb material id:
 % 0=Background, 1=CSF, 2=Gray Matter, 3=White Matter, 4=Fat, 5=Muscle, 6=Muscle/Skin, 7=Skull, 8=vessels, 9=around fat, 10 =dura matter, 11=bone marrow
