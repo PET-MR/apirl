@@ -23,7 +23,7 @@
 %
 % Examples:
 %   volume = MlemMmr(sinogramFilename, normFilename, attMapBaseFilename, outputPath, pixelSize_mm, numInputIterations, optUseGpu)
-function volume = MlemMmr(sinogramFilename, normFilename, attMapBaseFilename, outputPath, pixelSize_mm, numInputIterations, optUseGpu)
+function [volume overall_ncf_3d acfsSinogram randoms scatter] = MlemMmr(sinogramFilename, span, normFilename, attMapBaseFilename, correctRandoms, correctScatter, outputPath, pixelSize_mm, numIterations, saveInterval, useGpu, stirMatlabPath, removeTempFiles)
 
 mkdir(outputPath);
 % Check what OS I am running on:
@@ -37,33 +37,34 @@ else
     disp('OS not compatible');
     return;
 end
-
 % Check if we have received pixel size:
-numSubsets = 21;
-numIterations = 3;
-if nargin < 5
-    % Default pixel size:
-    pixelSize_mm = [2.08625 2.08625 2.03125];
-    imageSize_pixels = [286 286 127]; 
-    imageSize_mm = pixelSize_mm.*imageSize_pixels;
-    useGpu = 0;
-else
-    imageSize_mm = [600 600 257];
-    imageSize_pixels = ceil(imageSize_mm./pixelSize_mm);
-    if nargin == 7
-        numIterations = numInputIterations;
-        useGpu = optUseGpu;
-    else
-        error('Wrong number of parameters: volume = OsemMmrSpan1(sinogramFilename, normFilename, attMapBaseFilename, outputPath, [2.08625 2.08625 2.03125], 60)');
-        return;
-    end
+if nargin ~= 13
+    [volume overall_ncf_3d acfsSinogram randoms scatter] = MlemMmr(sinogramFilename, span, normFilename, attMapBaseFilename, correctRandoms, correctScatter, outputPath, pixelSize_mm, numIterations, saveInterval, useGpu, stirMatlabPath, removeTempFiles)
 end
 
+imageSize_mm = [600 600 257.96875];
+imageSize_pixels = ceil(imageSize_mm./pixelSize_mm);
 
 %% READING THE SINOGRAMS
 disp('Read input sinogram...');
 % Read the sinograms:
-[sinograms, delayedSinograms, structSizeSino3d] = interfileReadSino(sinogramFilename);
+if isstr(sinogramFilename)
+    [sinograms, delayedSinograms, structSizeSino3dSpan1] = interfileReadSino(sinogramFilename);
+    if structSizeSino3dSpan1.span == 1
+        % Convert to span:
+        [sinograms, structSizeSino3d] = convertSinogramToSpan(sinograms, structSizeSino3dSpan1, span);  
+    else
+        structSizeSino3d = structSizeSino3dSpan1;
+        warning('The span parameter will be ignored because the input sinogram is not span 1.');
+    end
+else
+    % binary sinogram (span-1?):
+    if size(sinogramFilename) == [344 252 4084]
+        structSizeSino3d = getSizeSino3dFromSpan(344, 252, 64, ...
+            296, 256, 1, 60);
+        sinograms = sinogramFilename;
+    end
+end
 sinogramFilename = [outputPath pathBar 'sinogram'];
 % Write the input sinogram:
 interfileWriteSino(single(sinograms), sinogramFilename, structSizeSino3d);
@@ -74,63 +75,61 @@ initialEstimate = ones(imageSize_pixels, 'single');
 filenameInitialEstimate = [outputPath pathBar 'initialEstimate'];
 interfilewrite(initialEstimate, filenameInitialEstimate, pixelSize_mm);
 %% NORMALIZATION FACTORS
-disp('Computing the normalization correction factors...');
-% ncf:
-if ~isempty(normFilename)
+if isstr(normFilename)
+    disp('Computing the normalization correction factors...');
+    % ncf:
     [overall_ncf_3d, scanner_time_invariant_ncf_3d, scanner_time_variant_ncf_3d, acquisition_dependant_ncf_3d, used_xtal_efficiencies, used_deadtimefactors, used_axial_factors] = ...
        create_norm_files_mmr(normFilename, [], [], [], [], structSizeSino3d.span);
     % invert for nf:
     overall_nf_3d = overall_ncf_3d;
     overall_nf_3d(overall_ncf_3d ~= 0) = 1./overall_nf_3d(overall_ncf_3d ~= 0);
 else
-    overall_ncf_3d = ones(size(sinogramSpan1));
-    overall_nf_3d = overall_ncf_3d;
+    if ~isempty(normFilename)   % if empty no norm is used, if not used the matrix in normFilename proving is of the same size of the sinogram.
+        if size(normFilename) ~= size(sinograms)
+            error('The size of the normalization correction factors is incorrect.')
+        end
+        disp('Using the normalization correction factors received as a parameter...');
+        overall_ncf_3d = normFilename;
+        clear normFilename;
+        % invert for nf:
+        overall_nf_3d = overall_ncf_3d;
+        overall_nf_3d(overall_ncf_3d ~= 0) = 1./overall_nf_3d(overall_ncf_3d ~= 0);
+    else
+        overall_ncf_3d = ones(size(sinograms));
+        overall_nf_3d = overall_ncf_3d;
+    end
 end
+   
 %% ATTENUATION MAP
-if ~strcmp(attMapBaseFilename, '')
+if isstr(attMapBaseFilename)
     % Check if its attenuation from siemens or a post processed image:
     if ~strcmp(attMapBaseFilename(end-3:end),'.h33')
         disp('Computing the attenuation correction factors from mMR mu maps...');
         % Read the attenuation map and compute the acfs.
-        headerInfo = getInfoFromInterfile([attMapBaseFilename '_umap_human_00.v.hdr']);
-        headerInfo = getInfoFromInterfile([attMapBaseFilename '_umap_hardware_00.v.hdr']);
-        imageSizeAtten_pixels = [headerInfo.MatrixSize1 headerInfo.MatrixSize2 headerInfo.MatrixSize3];
-        imageSizeAtten_mm = [headerInfo.ScaleFactorMmPixel1 headerInfo.ScaleFactorMmPixel2 headerInfo.ScaleFactorMmPixel3];
-        filenameAttenMap_human = [attMapBaseFilename '_umap_human_00.v'];
-        filenameAttenMap_hardware = [attMapBaseFilename '_umap_hardware_00.v'];
-        % Human:
-        fid = fopen(filenameAttenMap_human, 'r');
-        if fid == -1
-            ferror(fid);
+        % Check if we have the extended version for the mumaps:
+        if exist([attMapBaseFilename '_umap_human_ext_000_000_00.v.hdr'])
+            attMapHumanFilename = [attMapBaseFilename '_umap_human_ext_000_000_00.v.hdr'];
+        else
+            attMapHumanFilename = [attMapBaseFilename '_umap_human_00.v.hdr'];
         end
-        attenMap_human = fread(fid, imageSizeAtten_pixels(1)*imageSizeAtten_pixels(2)*imageSizeAtten_pixels(3), 'single');
-        attenMap_human = reshape(attenMap_human, imageSizeAtten_pixels);
-        % Then interchange rows and cols, x and y: 
-        attenMap_human = permute(attenMap_human, [2 1 3]);
-        fclose(fid);
-        % The mumap of the phantom it has problems in the spheres, I force all the
-        % pixels inside the phantom to the same value:
-
-        % Hardware:
-        fid = fopen(filenameAttenMap_hardware, 'r');
-        if fid == -1
-            ferror(fid);
-        end
-        attenMap_hardware = fread(fid, imageSizeAtten_pixels(1)*imageSizeAtten_pixels(2)*imageSizeAtten_pixels(3), 'single');
-        attenMap_hardware = reshape(attenMap_hardware, imageSizeAtten_pixels);
-        % Then interchange rows and cols, x and y: 
-        attenMap_hardware = permute(attenMap_hardware, [2 1 3]);
-        fclose(fid);
-
+        [attenMap_human, refAttenMapHum, bedPosition_mm, info]  = interfileReadSiemensImage(attMapHumanFilename);
+        [attenMap_hardware, refAttenMapHard, bedPosition_mm, info]  = interfileReadSiemensImage([attMapBaseFilename '_umap_hardware_00.v.hdr']);
+        imageSizeAtten_mm = [refAttenMapHum.PixelExtentInWorldY refAttenMapHum.PixelExtentInWorldX refAttenMapHum.PixelExtentInWorldZ];
         % Compose both images:
         attenMap = attenMap_hardware + attenMap_human;
+        % I need to translate because siemens uses an slightly displaced
+        % center (taken from dicom images, the first pixel is -359.8493 ,-356.8832 
+        displacement_mm = [-1.5 -imageSizeAtten_mm(2)*size(attenMap_human,1)/2+356.8832 0];
+        [attenMap, Rtranslated] = imtranslate(attenMap, refAttenMapHum, displacement_mm,'OutputView','same');
+        
     else
         disp('Computing the attenuation correction factors from post processed APIRL mu maps...');
-        attenMap = interfileRead(attMapBaseFilename);
+        attenMap_human = interfileRead(attMapBaseFilename);
+        attenMap = attenMap_human;
         infoAtten = interfileinfo(attMapBaseFilename); 
         imageSizeAtten_mm = [infoAtten.ScalingFactorMmPixel1 infoAtten.ScalingFactorMmPixel2 infoAtten.ScalingFactorMmPixel3];
-    end
-    
+    end   
+
     % Create ACFs of a computed phatoms with the linear attenuation
     % coefficients:
     acfFilename = ['acfsSinogram'];
@@ -145,9 +144,11 @@ if ~strcmp(attMapBaseFilename, '')
     % Close the file:
     fclose(fid);
 else
+    %if ~isempty(normFilename)
     acfFilename = '';
+    acfsSinogram = ones(size(sinograms));
 end
-%% GENERATE AND SAVE ATTENUATION AND NORMALIZATION FACTORS AND CORECCTION FACTORS FOR SPAN11 SINOGRAMS FOR APIRL
+%% GENERATE AND SAVE ATTENUATION AND NORMALIZATION FACTORS AND CORECCTION FACTORS
 disp('Generating the ANF sinogram...');
 % Save:
 outputSinogramName = [outputPath 'NF'];
@@ -160,29 +161,227 @@ anfFilename = [outputPath 'ANF'];
 interfileWriteSino(single(atteNormFactors), anfFilename, structSizeSino3d);
 clear atteNormFactors;
 %clear normFactorsSpan11;
+%% RANDOMS CORRECTION
+randoms = zeros(size(sinograms));
+if numel(size(correctRandoms)) == numel(size(sinograms))
+%     if size(correctRandoms) == size(sinograms)
+%         % The input is the random estimate:
+%         randoms = correctRandoms;
+%     end
+    [randoms, structSizeSino] = estimateRandomsWithStir(correctRandoms, structSizeSino3dSpan1, overall_ncf_3d, structSizeSino3d, [outputPath pathBar 'stirRandoms' pathBar]);
+else
+    % If not, we expect a 1 to estimate randoms or a 0 to not cprrect for
+    % them:
+    if(correctRandoms)
+        % Stir computes randoms that are already normalized:
+        [randoms, structSizeSino] = estimateRandomsWithStir(delayedSinograms, structSizeSino3dSpan1, overall_ncf_3d, structSizeSino3d, [outputPath pathBar 'stirRandoms' pathBar]);
+    end
+end
+%% SCATTER CORRECTION
+% Check if we hve the scatter estimate as a parameter. If not we compute it
+% at the end:
+scatter = zeros(size(sinograms));
+if numel(size(correctScatter)) == numel(size(sinograms))
+    if size(correctScatter) == size(sinograms)
+        scatter = correctScatter;
+    end
+end
+%% ADDITIVE SINOGRAM
+additive = (randoms .* overall_ncf_3d  + scatter).* acfsSinogram; % (randoms +scatter.*norm)./(attenFactors*nprmFactrs)
+% write additive singoram:
+additiveFilename = [outputPath 'additive'];
+interfileWriteSino(single(additive), additiveFilename, structSizeSino3d);
 %% GENERATE MLEM RECONSTRUCTION FILES FOR APIRL
 if useGpu == 0
     disp('Mlem reconstruction...');
-    saveInterval = 1;
     saveIntermediate = 0;
     outputFilenamePrefix = [outputPath 'reconImage'];
     filenameMlemConfig = [outputPath 'mlem.par'];
     CreateMlemConfigFileForMmr(filenameMlemConfig, [sinogramFilename '.h33'], [filenameInitialEstimate '.h33'], outputFilenamePrefix, numIterations, [],...
-        saveInterval, saveIntermediate, [], [], [], [anfFilename '.h33']);
+        saveInterval, saveIntermediate, [anfFilename '.h33'], [additiveFilename '.h33']);
     % Execute APIRL: 
     status = system(['MLEM ' filenameMlemConfig]) 
+
 else
+    
     disp('cuMlem reconstruction...');
-    saveInterval = 10;
     saveIntermediate = 0;
     outputFilenamePrefix = [outputPath 'reconImage'];
     filenameMlemConfig = [outputPath 'cumlem.par'];
     CreateCuMlemConfigFileForMmr(filenameMlemConfig, [sinogramFilename '.h33'], [filenameInitialEstimate '.h33'], outputFilenamePrefix, numIterations, [],...
-        saveInterval, saveIntermediate, [], [], [], [anfFilename '.h33'], 0, 576, 576, 512);
+        saveInterval, saveIntermediate, [anfFilename '.h33'], [additiveFilename '.h33'], 0, 576, 576, 512);
     % Execute APIRL: 
-    status = system(['cuMLEM ' filenameMlemConfig]) 
+    status = system(['cuMLEM ' filenameMlemConfig])
 end
-
 %% READ RESULTS
 % Read interfile reconstructed image:
 volume = interfileRead([outputFilenamePrefix '_final.h33']);
+%% REMOVE TEMPORARY FILES
+if removeTempFiles
+    delete([outputPath '*sensitivity*']);
+    delete([outputPath 'acfs*']);
+    delete([outputPath 'additive*']);
+    delete([outputPath 'NF*']);
+end
+%% IF NEEDS TO CORRECT SCATTER, ESTIMATE IT AFTER RECONSTRUCTION:
+if (numel(correctScatter) == 1) 
+    if (correctScatter == 1)
+        thresholdForTail = 1.01;
+        stirScriptsPath = [stirMatlabPath pathBar 'scripts'];
+        % The scatter needs the image but also the acf to scale, and in the case of
+        % the mr is better if this acf include the human?
+        if ~strcmp(attMapBaseFilename(end-3:end),'.h33')
+            acfFilename = 'acfsOnlyHuman';
+            acfsOnlyHuman = createACFsFromImage(attenMap_human, imageSizeAtten_mm, outputPath, acfFilename, sinogramFilename, structSizeSino3d, 0, useGpu);
+            acfFilename = [outputPath acfFilename];
+        else
+            acfsOnlyHuman = acfsSinogram;
+        end
+
+        % The emission sinogram needs to be normalized and corrected for randoms:
+        outputPathScatter = [outputPath pathBar 'Scatter1' pathBar];
+        if ~isdir(outputPathScatter)
+            mkdir(outputPathScatter);
+        end
+        [scatter_1, structSizeSino, mask] = estimateScatterWithStir(volume, attenMap, pixelSize_mm, sinograms, randoms, overall_ncf_3d, acfsOnlyHuman, structSizeSino3d, outputPathScatter, stirScriptsPath, thresholdForTail);
+
+        % Reconstruct again with the scatter:
+        interfileWriteSino(single(scatter_1), [outputPathScatter 'scatter'], structSizeSino3d);
+        % Remove files:
+        if removeTempFiles
+            delete([outputPath 'acfs*']);
+            delete([outputPathScatter 'tail*']);
+            delete([outputPathScatter 'acfs*']);
+            delete([outputPathScatter 'emission*']);
+            delete([outputPathScatter 'scatter.s']);
+            delete([outputPathScatter 'scatter.hs']);
+        end
+        
+        % Normalize the scatter:
+        normScatter = scatter_1 .* overall_nf_3d;
+        % Plot profiles to test:
+        profileSinogram = sum(sinograms(:,126,:),3);
+        profileRandoms = sum(randoms(:,126,:),3);
+        profileNormScatter = sum(normScatter(:,126,:),3);
+        figure;
+        subplot(1,3,1);
+        title('Scatter Iteration 1');
+        plot([profileSinogram profileRandoms profileNormScatter (profileRandoms+profileNormScatter)]);
+        legend('Sinogram', 'Randoms', 'Scatter', 'Randoms+Scatter');
+
+        outputPathScatter = [outputPath pathBar 'Scatter2' pathBar];
+        if ~isdir(outputPathScatter)
+            mkdir(outputPathScatter);
+        end
+        
+        % New dditive sinogram:
+        additive = (randoms .* overall_ncf_3d  + scatter_1).* acfsSinogram; % (randoms +scatter.*norm)./(attenFactors*nprmFactrs)
+        % write additive singoram:
+        additiveFilename = [outputPathScatter 'additive'];
+        interfileWriteSino(single(additive), additiveFilename, structSizeSino3d);
+
+        if useGpu == 0
+            disp('Mlem reconstruction...');
+            saveIntermediate = 0;
+            outputFilenamePrefix = [outputPathScatter 'reconImage'];
+            filenameMlemConfig = [outputPathScatter 'mlem.par'];
+            CreateMlemConfigFileForMmr(filenameMlemConfig, [sinogramFilename '.h33'], [filenameInitialEstimate '.h33'], outputFilenamePrefix, numIterations, [],...
+                saveInterval, saveIntermediate, [anfFilename '.h33'], [additiveFilename '.h33']);
+            % Execute APIRL: 
+            status = system(['OSEM ' filenameMlemConfig]) 
+        else
+            disp('cuMlem reconstruction...');
+            saveIntermediate = 0;
+            outputFilenamePrefix = [outputPathScatter 'reconImage'];
+            filenameMlemConfig = [outputPathScatter 'cuosem.par'];
+            CreateCuMlemConfigFileForMmr(filenameMlemConfig, [sinogramFilename '.h33'], [filenameInitialEstimate '.h33'], outputFilenamePrefix, numIterations, [],...
+                saveInterval, saveIntermediate, [anfFilename '.h33'], [additiveFilename '.h33'], 0, 576, 576, 512);
+            % Execute APIRL: 
+            status = system(['cuMLEM ' filenameMlemConfig]) 
+        end
+        volume = interfileRead([outputFilenamePrefix '_final.h33']);
+        % Remove files:
+        if removeTempFiles
+            delete([outputPathScatter 'tail*']);
+            delete([outputPathScatter 'acfs*']);
+            delete([outputPathScatter 'emission*']);
+            delete([outputPathScatter 'scatter.s']);
+            delete([outputPathScatter 'scatter.hs']);
+            delete([outputPathScatter '*sensitivity*']);
+            delete([outputPathScatter 'additive*']);
+        end
+        
+        [scatter_2, structSizeSino, mask] = estimateScatterWithStir(volume, attenMap, pixelSize_mm, sinograms, randoms, overall_ncf_3d, acfsOnlyHuman, structSizeSino3d, outputPathScatter, stirScriptsPath, thresholdForTail);
+        interfileWriteSino(single(scatter_2), [outputPathScatter 'scatter'], structSizeSino3d);
+        % Normalize the scatter:
+        normScatter = scatter_2 .* overall_nf_3d;
+        % Plot profiles to test:
+        profileSinogram = sum(sinograms(:,126,:),3);
+        profileRandoms = sum(randoms(:,126,:),3);
+        profileNormScatter = sum(normScatter(:,126,:),3);
+        subplot(1,3,2);
+        title('Scatter Iteration 2');
+        plot([profileSinogram profileRandoms profileNormScatter (profileRandoms+profileNormScatter)]);
+        legend('Sinogram', 'Randoms', 'Scatter', 'Randoms+Scatter');
+        
+        outputPathScatter = [outputPath pathBar 'ScatterFinal' pathBar];
+        if ~isdir(outputPathScatter)
+            mkdir(outputPathScatter);
+        end
+        scatter = (scatter_1+scatter_2)./2;
+        interfileWriteSino(single(scatter), [outputPathScatter 'scatter'], structSizeSino3d);
+        % Normalize the scatter:
+        normScatter = scatter .* overall_nf_3d;
+        % Plot profiles to test:
+        profileSinogram = sum(sinograms(:,126,:),3);
+        profileRandoms = sum(randoms(:,126,:),3);
+        profileNormScatter = sum(normScatter(:,126,:),3);
+        subplot(1,3,3);
+        title('Final Scatter');
+        plot([profileSinogram profileRandoms profileNormScatter (profileRandoms+profileNormScatter)]);
+        legend('Sinogram', 'Randoms', 'Scatter', 'Randoms+Scatter');
+        
+        % New dditive sinogram:
+        additive = (randoms .* overall_ncf_3d  + scatter).* acfsSinogram; % (randoms +scatter.*norm)./(attenFactors*nprmFactrs)
+        % write additive singoram:
+        additiveFilename = [outputPathScatter 'additive'];
+        interfileWriteSino(single(additive), additiveFilename, structSizeSino3d);
+        
+        if useGpu == 0
+            disp('Mlem reconstruction...');
+            saveIntermediate = 0;
+            outputFilenamePrefix = [outputPathScatter 'reconImage'];
+            filenameMlemConfig = [outputPathScatter 'mlem.par'];
+            CreateOsemConfigFileForMmr(filenameMlemConfig, [sinogramFilename '.h33'], [filenameInitialEstimate '.h33'], outputFilenamePrefix, numIterations, [],...
+                saveInterval, saveIntermediate, [anfFilename '.h33'], [additiveFilename '.h33']);
+            % Execute APIRL: 
+            status = system(['MLEM ' filenameMlemConfig]) 
+        else
+            disp('cuMlem reconstruction...');
+            saveIntermediate = 0;
+            outputFilenamePrefix = [outputPathScatter 'reconImage'];
+            filenameMlemConfig = [outputPathScatter 'cuomlem.par'];
+            CreateCuMlemConfigFileForMmr(filenameMlemConfig, [sinogramFilename '.h33'], [filenameInitialEstimate '.h33'], outputFilenamePrefix, numIterations, [],...
+                saveInterval, saveIntermediate, [anfFilename '.h33'], [additiveFilename '.h33'], 0, 576, 576, 512);
+            % Execute APIRL: 
+            status = system(['cuMLEM ' filenameMlemConfig]) 
+        end
+        volume = interfileRead([outputFilenamePrefix '_final.h33']);
+    end
+end
+
+if removeTempFiles
+    if (numel(correctScatter) == 1) 
+        if (correctScatter == 1)
+            delete([outputPathScatter 'acfs*']);
+            delete([outputPathScatter 'emission*']);
+            delete([outputPathScatter 'scatter.s']);
+            delete([outputPathScatter 'scatter.hs']);
+            delete([outputPathScatter '*sensitivity*']);
+            delete([outputPathScatter 'additive*']);
+            delete([outputPathScatter 'tail*']);
+        end
+    end
+    delete([outputPath 'sinogram*']);
+    delete([outputPath 'ANF*']);
+end

@@ -43,20 +43,20 @@ normFile = '/home/mab15/workspace/KCL/Biograph_mMr/Mediciones/BRAIN_PETMR/norm/N
 componentFactors = readmMrComponentBasedNormalization(normFile, 0);
 crystalEff = componentFactors{3};
 % This would be to include the gaps:
-crystalEff(1:9:end,:) = 0;
+crystalEff(9:9:end,:) = 0;
 % Transform in it in a vector:
 crystalEffAllRings = crystalEff(:);
 
 %% SYSTEM MATRIX FOR SPAN1 SINOGRAMS
 numTheta = 252; numR = 344; numRings = 64; maxAbsRingDiff = 60; rFov_mm = 594/2; zFov_mm = 258; span = 1;
 structSizeSino3d = getSizeSino3dFromSpan(numR, numTheta, numRings, rFov_mm, zFov_mm, span, maxAbsRingDiff);
-% [detector1SystemMatrix, detector2SystemMatrix] = createDetectorSystemMatrix3d(1, 0);
-% save('/home/mab15/workspace/KCL/xtal_efficiencies/AnalyzeCrystalEfficienciesImpact/detector1SystemMatrixSpan1.mat', 'detector1SystemMatrix', '-v7.3')
-% save('/home/mab15/workspace/KCL/xtal_efficiencies/AnalyzeCrystalEfficienciesImpact/detector2SystemMatrixSpan1.mat', 'detector2SystemMatrix', '-v7.3')
-detector1SystemMatrix = load('/home/mab15/workspace/KCL/xtal_efficiencies/AnalyzeCrystalEfficienciesImpact/detector1SystemMatrixSpan1.mat');
-detector1SystemMatrix = detector1SystemMatrix.detector1SystemMatrix;
-detector2SystemMatrix = load('/home/mab15/workspace/KCL/xtal_efficiencies/AnalyzeCrystalEfficienciesImpact/detector2SystemMatrixSpan1.mat');
-detector2SystemMatrix = detector2SystemMatrix.detector2SystemMatrix;
+[detector1SystemMatrix, detector2SystemMatrix] = createDetectorSystemMatrix3d(1, 0);
+save('/home/mab15/workspace/KCL/xtal_efficiencies/AnalyzeCrystalEfficienciesImpact/detector1SystemMatrixSpan1.mat', 'detector1SystemMatrix', '-v7.3')
+save('/home/mab15/workspace/KCL/xtal_efficiencies/AnalyzeCrystalEfficienciesImpact/detector2SystemMatrixSpan1.mat', 'detector2SystemMatrix', '-v7.3')
+% detector1SystemMatrix = load('/home/mab15/workspace/KCL/xtal_efficiencies/AnalyzeCrystalEfficienciesImpact/detector1SystemMatrixSpan1.mat');
+% detector1SystemMatrix = detector1SystemMatrix.detector1SystemMatrix;
+% detector2SystemMatrix = load('/home/mab15/workspace/KCL/xtal_efficiencies/AnalyzeCrystalEfficienciesImpact/detector2SystemMatrixSpan1.mat');
+% detector2SystemMatrix = detector2SystemMatrix.detector2SystemMatrix;
 % Generate sinograms with system matrix:
 sinoEfficienciesSystemMatrix = (detector1SystemMatrix * double(crystalEffAllRings)) .* (detector2SystemMatrix * double(crystalEffAllRings));
 sinoEfficienciesSystemMatrix = reshape(sinoEfficienciesSystemMatrix, [numR numTheta sum(structSizeSino3d.sinogramsPerSegment)]);

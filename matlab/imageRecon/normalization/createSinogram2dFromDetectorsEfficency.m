@@ -43,7 +43,7 @@ numDetectors = numel(efficenciesPerDetector);
 % minDiff between detectors:
 minDiffDetectors = (numDetectors - structSizeSino2d.numR) / 2;
 % This would be to include the gaps:
-efficenciesPerDetector(1:9:end) = 0;
+%efficenciesPerDetector(9:9:end) = 0;
 % Offset. La proyeccion empieza en
 % Histogram of amount of times has been used each detector:
 detectorIds = 1 : numDetectors;

@@ -8,12 +8,12 @@ clear all
 close all
 
 %% GET THE NORM FACTORS TO GET EFFINCENCIES
-normFile = '/home/mab15/workspace/STIR/KCL/STIR_mMR_KCL/IM/NORM.n';
+normFile = '/home/mab15/workspace/KCL/Biograph_mMr/Normalization/NormFiles/Norm_20150130133645.n';
 componentFactors = readmMrComponentBasedNormalization(normFile, 0);
 crystalEff = componentFactors{3};
 crystalEffRing1 = crystalEff(:,1);
 % This would be to include the gaps:
-crystalEffRing1(1:9:end) = 0;
+% crystalEffRing1(9:9:end) = 0;
 %%
 % Size of mMr Sinogram's
 numTheta = 252; numR = 344; numRings = 64; maxAbsRingDiff = 60; rFov_mm = 594/2; zFov_mm = 258; span = 1;
@@ -38,7 +38,7 @@ end
 sinoEfficienciesSystemMatrix = (detector1SystemMatrix * crystalEffRing1) .* (detector2SystemMatrix * crystalEffRing1);
 sinoEfficienciesSystemMatrix = reshape(sinoEfficienciesSystemMatrix, numR, numTheta);
 % Generate with function:
-sinoEfficencies = createSinogram2dFromDetectorsEfficency(crystalEffRing1, structSizeSino3d, 1, 0);
+sinoEfficencies = createSinogram2dFromDetectorsEfficency(crystalEffRing1, structSizeSino3d, 2, 0);
 
 numDiff = sum(sum(sinoEfficienciesSystemMatrix ~= sinoEfficencies));
 

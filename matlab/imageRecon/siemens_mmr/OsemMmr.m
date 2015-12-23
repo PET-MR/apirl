@@ -109,7 +109,13 @@ if isstr(attMapBaseFilename)
     if ~strcmp(attMapBaseFilename(end-3:end),'.h33')
         disp('Computing the attenuation correction factors from mMR mu maps...');
         % Read the attenuation map and compute the acfs.
-        [attenMap_human, refAttenMapHum, bedPosition_mm, info]  = interfileReadSiemensImage([attMapBaseFilename '_umap_human_00.v.hdr']);
+        % Check if we have the extended version for the mumaps:
+        if exist([attMapBaseFilename '_umap_human_ext_000_000_00.v.hdr'])
+            attMapHumanFilename = [attMapBaseFilename '_umap_human_ext_000_000_00.v.hdr'];
+        else
+            attMapHumanFilename = [attMapBaseFilename '_umap_human_00.v.hdr'];
+        end
+        [attenMap_human, refAttenMapHum, bedPosition_mm, info]  = interfileReadSiemensImage(attMapHumanFilename);
         [attenMap_hardware, refAttenMapHard, bedPosition_mm, info]  = interfileReadSiemensImage([attMapBaseFilename '_umap_hardware_00.v.hdr']);
         imageSizeAtten_mm = [refAttenMapHum.PixelExtentInWorldY refAttenMapHum.PixelExtentInWorldX refAttenMapHum.PixelExtentInWorldZ];
         % Compose both images:
@@ -130,16 +136,11 @@ if isstr(attMapBaseFilename)
     % Create ACFs of a computed phatoms with the linear attenuation
     % coefficients:
     acfFilename = ['acfsSinogram'];
-    acfsSinogram = createACFsFromImage(attenMap, imageSizeAtten_mm, outputPath, acfFilename, sinogramFilename, structSizeSino3d, 0, useGpu);
+    acfsSinogram = createACFsFromImage(attenMap, imageSizeAtten_mm, outputPath, acfFilename, structSizeSino3d, 0, useGpu);
 
     % After the projection read the acfs:
     acfFilename = [outputPath acfFilename];
-    fid = fopen([acfFilename '.i33'], 'r');
-    numSinos = sum(structSizeSino3d.sinogramsPerSegment);
-    [acfsSinogram, count] = fread(fid, structSizeSino3d.numTheta*structSizeSino3d.numR*numSinos, 'single=>single');
-    acfsSinogram = reshape(acfsSinogram, [structSizeSino3d.numR structSizeSino3d.numTheta numSinos]);
-    % Close the file:
-    fclose(fid);
+
 else
     %if ~isempty(normFilename)
     acfFilename = '';
@@ -161,10 +162,11 @@ clear atteNormFactors;
 %% RANDOMS CORRECTION
 randoms = zeros(size(sinograms));
 if numel(size(correctRandoms)) == numel(size(sinograms))
-    if size(correctRandoms) == size(sinograms)
-        % The input is the random estimate:
-        randoms = correctRandoms;
-    end
+%     if size(correctRandoms) == size(sinograms)
+%         % The input is the random estimate:
+%         randoms = correctRandoms;
+%     end
+    [randoms, structSizeSino] = estimateRandomsWithStir(correctRandoms, structSizeSino3dSpan1, overall_ncf_3d, structSizeSino3d, [outputPath pathBar 'stirRandoms' pathBar]);
 else
     % If not, we expect a 1 to estimate randoms or a 0 to not cprrect for
     % them:

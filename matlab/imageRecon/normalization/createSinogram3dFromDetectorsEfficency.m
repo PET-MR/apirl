@@ -33,7 +33,7 @@ end
 % This would be to include the gaps. It starts in the first position and
 % repeats for each block. [gap 8 crystal elements gap 8 crystal
 % elements...]. The same order is repeated in each ring.
-efficenciesPerDetector(9:9:end,:) = 0;
+%efficenciesPerDetector(9:9:end,:) = 0;
 % Offset. La proyeccion empieza en
 % Histogram of amount of times has been used each detector:
 detectorIds = 1 : numDetectors;
