@@ -10,10 +10,12 @@
 %  When a subset is projected, it returns a sinogram of the original size,
 %  but only filled in the bins of the subset. This was desgined this way to
 %  be more trnsparent for the user.
+%  11/12/2015: The span parameter, now can be replaced by a
+%  structSizeSino3d
 % Examples:
-%   [sinogram, structSizeSinogram] = ProjectMmr(image, pixelSize_mm, outputPath, span, numberOfSubsets, subsetIndex, useGpu)
+%   [sinogram, structSizeSinogram] = ProjectMmr(image, pixelSize_mm, outputPath, structSizeSino3d_span, numberOfSubsets, subsetIndex, useGpu)
 
-function [sinogram, structSizeSino3d] = ProjectMmr(image, pixelSize_mm, outputPath, span, numberOfSubsets, subsetIndex, useGpu)
+function [sinogram, structSizeSino3d] = ProjectMmr(image, pixelSize_mm, outputPath, structSizeSino3d_span, numberOfSubsets, subsetIndex, useGpu)
 
 if ~isdir(outputPath)
     mkdir(outputPath);
@@ -42,15 +44,21 @@ end
 if(isempty(subsetIndex))
     subsetIndex = 0;
 end
+% Check if is an struct or the span value:
+if(isstruct(structSizeSino3d_span))
+    structSizeSino3d = structSizeSino3d_span;
+else
+    % The parameter has only the span value:
+    % Size of mMr Sinogram's
+    numTheta = 252; numR = 344; numRings = 64; maxAbsRingDiff = 60; rFov_mm = 594/2; zFov_mm = 258; 
+    structSizeSino3d = getSizeSino3dFromSpan(numR, numTheta, numRings, rFov_mm, zFov_mm, structSizeSino3d_span, maxAbsRingDiff);
+end
 
 % Create output sample sinogram:
-% Size of mMr Sinogram's
-numTheta = 252; numR = 344; numRings = 64; maxAbsRingDiff = 60; rFov_mm = 594/2; zFov_mm = 258; 
-structSizeSino3d = getSizeSino3dFromSpan(numR, numTheta, numRings, rFov_mm, zFov_mm, span, maxAbsRingDiff);
 % empty sinogram:
 % sinogram = ones(numR, numTheta, sum(structSizeSino3d.sinogramsPerSegment), 'single');
 sinogramSampleFilename = [outputPath 'sinogramSample'];
-interfileWriteSino([], sinogramSampleFilename, structSizeSino3d);
+interfileWriteSino(single([]), sinogramSampleFilename, structSizeSino3d);
 
 % Write image in interfile:
 filenameImage = [outputPath 'inputImage'];

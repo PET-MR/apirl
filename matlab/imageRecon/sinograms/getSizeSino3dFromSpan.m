@@ -90,25 +90,27 @@ while(abs(minRingDiffs(numSegments)) < maxAbsRingDiff)  % El abs es porque voy a
     % con el positivo:
     if numSegments == 2
         minRingDiffs(numSegments) = minRingDiffs(numSegments-1) + span;
-        maxRingDiffs(numSegments) = maxRingDiffs(numSegments-1) + span;
+        if (maxRingDiffs(numSegments-1) + span) <= maxAbsRingDiff
+            maxRingDiffs(numSegments) = maxRingDiffs(numSegments-1) + span;
+        else
+            maxRingDiffs(numSegments) = maxAbsRingDiff;
+        end
     else
         % Si me paso de la máxima difrencia de anillos la trunco:
+        minRingDiffs(numSegments) = minRingDiffs(numSegments-2) + span;
         if (maxRingDiffs(numSegments-2) + span) <= maxAbsRingDiff
-            minRingDiffs(numSegments) = minRingDiffs(numSegments-2) + span;
             maxRingDiffs(numSegments) = maxRingDiffs(numSegments-2) + span;
         else
-            minRingDiffs(numSegments) = minRingDiffs(numSegments-2) + span;
             maxRingDiffs(numSegments) = maxAbsRingDiff;
         end
     end
     % Ahora hacia el lado de las diferencias negativas:
     numSegments = numSegments+1;
+    maxRingDiffs(numSegments) = maxRingDiffs(numSegments-2) - span;  
     if (abs(minRingDiffs(numSegments-2) - span)) <= maxAbsRingDiff
         minRingDiffs(numSegments) = minRingDiffs(numSegments-2) - span;  % Acá siempre debo ir -2 no tengo problema con el primero.
-        maxRingDiffs(numSegments) = maxRingDiffs(numSegments-2) - span;  
     else
         minRingDiffs(numSegments) = -maxAbsRingDiff;  % Acá siempre debo ir -2 no tengo problema con el primero.
-        maxRingDiffs(numSegments) = maxRingDiffs(numSegments-2) - span;  
     end
 end
 

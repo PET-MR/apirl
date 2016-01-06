@@ -13,10 +13,12 @@
 % The span of the sinogram is received as a parameter.
 % It receives also as a parameter the subset that it is wanted to be backprojeted. 
 % It must be left empty or in zero for projecting the complete sinogram.
+%  11/12/2015: The span parameter, now can be replaced by a
+%  structSizeSino3d
 % Examples:
-%   [image, pixelSize_mm] = BackprojectMmr(sinogram, imageSize_pixels, pixelSize_mm, outputPath, span, numberOfSubsets, subsetIndex, useGpu)
+%   [image, pixelSize_mm] = BackprojectMmr(sinogram, imageSize_pixels, pixelSize_mm, outputPath, structSizeSino3d_span, numberOfSubsets, subsetIndex, useGpu)
 
-function [image, pixelSize_mm] = BackprojectMmr(sinogram, imageSize_pixels, pixelSize_mm, outputPath, span, numberOfSubsets, subsetIndex, useGpu)
+function [image, pixelSize_mm] = BackprojectMmr(sinogram, imageSize_pixels, pixelSize_mm, outputPath, structSizeSino3d_span, numberOfSubsets, subsetIndex, useGpu)
 
 if ~isdir(outputPath)
     mkdir(outputPath);
@@ -51,10 +53,17 @@ if numel(pixelSize_mm) ~= 3
     error('The image size (imageSize_pixels) and pixel size (pixelSize_mm) parameters must be a three-elements vector.');
 end
 
+% Check if is an struct or the span value:
+if(isstruct(structSizeSino3d_span))
+    structSizeSino3d = structSizeSino3d_span;
+else
+    % The parameter has only the span value:
+    % Size of mMr Sinogram's
+    numTheta = 252; numR = 344; numRings = 64; maxAbsRingDiff = 60; rFov_mm = 594/2; zFov_mm = 258; 
+    structSizeSino3d = getSizeSino3dFromSpan(numR, numTheta, numRings, rFov_mm, zFov_mm, structSizeSino3d_span, maxAbsRingDiff);
+end
+
 % Create output sample sinogram.
-% Size of mMr Sinogram's
-numTheta = 252; numR = 344; numRings = 64; maxAbsRingDiff = 60; rFov_mm = 594/2; zFov_mm = 258;
-structSizeSino3d = getSizeSino3dFromSpan(numR, numTheta, numRings, rFov_mm, zFov_mm, span, maxAbsRingDiff);
 % Generate a constant image:
 image = ones(imageSize_pixels);
 % Write image in interfile:

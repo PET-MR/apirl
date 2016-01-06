@@ -46,8 +46,10 @@ else
 end
 barras = strfind(filename, pathBar);
 relativePath = '';
+filenameOnly = '';
 if ~isempty(barras)
     relativePath = filename(1 : barras(end));
+    filenameOnly = filename(barras(end)+1:end);
 end
 
 [info refImage] = getInfoFromInterfile(filename);
@@ -66,9 +68,21 @@ fid = fopen(params.data_file, 'r', params.byte_order);
 if (fid == -1)
     fid = fopen([relativePath params.data_file], 'r', params.byte_order);
     if (fid == -1)
-        err_id = 'Images:interfileread:invalidValue';
-        err_msg = 'Invalid value found at key ''name of data file''.';
-        error(err_id, err_msg);
+        %Finaly try getting only the fileme from e header d using e
+        %currentath:
+        barras = strfind(params.data_file, pathBar);
+        relativePathBinary = '';
+        filenameOnlyBinary = '';
+        if ~isempty(barras)
+            relativePathBinary = params.data_file(1 : barras(end));
+            filenameOnlyBinary = params.data_file(barras(end)+1:end);
+        end
+        fid = fopen([relativePath filenameOnlyBinary], 'r', params.byte_order);
+        if (fid == -1)
+            err_id = 'Images:interfileread:invalidValue';
+            err_msg = 'Invalid value found at key ''name of data file''.';
+            error(err_id, err_msg);
+        end
     end
 end
 
