@@ -40,9 +40,19 @@ end
 if(isempty(subsetIndex))
     subsetIndex = 0;
 end
-
+% % This shouldnt be necessary:
+% if numberOfSubsets ~= 0
+%     subset = zeros(size(sinogram));
+%     subset(:,subsetIndex : numberOfSubsets : end) = sinogram(:,subsetIndex : numberOfSubsets : end);
+%     sinogram=subset;
+% end
 if numel(pixelSize_mm) ~= 2
-    error('The image size (imageSize_pixels) and pixel size (pixelSize_mm) parameters must be a two-elements vector with the x-y sizes.');
+    % EDIT: Sam Ellis - 05.01.2016
+    if numel(pixelSize_mm) == 3
+        pixelSize_mm = pixelSize_mm(1:2);
+    else
+        error('The image size (imageSize_pixels) and pixel size (pixelSize_mm) parameters must be a two-elements vector with the x-y sizes.');
+    end
 end
 
 if (size(sinogram,3) ~= 1) && (size(sinogram,3) ~= 64)

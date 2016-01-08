@@ -82,13 +82,14 @@ Sinogram2DinSiemensMmr::Sinogram2DinSiemensMmr(const Sinogram2DinSiemensMmr* src
   radioScanner_mm = 328;
   radioFov_mm = 297;
   // Initialization of the values, that differ slightly from the cylindrical pet:
-  float PhiIncrement = (float)maxAng_deg / numProj;
-  for(int i = 0; i < numProj; i ++)
-  {
-    // Initialization of Phi Values
-    ptrAngValues_deg[i] = i * PhiIncrement;	// Modification now goes from 0, phiincrement, ...180-phiincrement.
-    //ptrAngValues_deg[i] = PhiIncrement/2 + i * PhiIncrement;
-  }
+  // This is done in the sinogram2d and takes into account the subsets.
+//   float PhiIncrement = (float)maxAng_deg / numProj;
+//   for(int i = 0; i < numProj; i ++)
+//   {
+//     // Initialization of Phi Values
+//     ptrAngValues_deg[i] = i * PhiIncrement;	// Modification now goes from 0, phiincrement, ...180-phiincrement.
+//     //ptrAngValues_deg[i] = PhiIncrement/2 + i * PhiIncrement;
+//   }
     // The r value is non linear in the sinogram, because each bin represent one detector element and
   // with the curve of the cylindrical scanner the distance r to the center axis increases with the cos of the bin.
   for(int j = 0; j < numR; j++)

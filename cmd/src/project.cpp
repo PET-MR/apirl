@@ -318,7 +318,7 @@ int main (int argc, char *argv[])
 	  Sinogram2D* outputProjection;
 	  if (numberOfSubsets != 0)
 	  {
-	    Sinogram2DinSiemensMmr* fullProjection = new Sinogram2DinSiemensMmr((char*)inputFilename.c_str());
+	    Sinogram2DinSiemensMmr* fullProjection = new Sinogram2DinSiemensMmr((char*)sampleProjection.c_str());
 	    outputProjection = new Sinogram2DinSiemensMmr(fullProjection, subsetIndex, numberOfSubsets);
 	  }
 	  else

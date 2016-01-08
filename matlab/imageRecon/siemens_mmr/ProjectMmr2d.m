@@ -71,23 +71,12 @@ CreateProjectConfigFileForMmr(filenameProjectionConfig, [filenameImage '.h33'], 
 status = system(['project ' filenameProjectionConfig])
 
 % Read the projected sinogram:
+[subset, structSizeSinoSubset] = interfileReadSino([projectionFilename '.h33']);
 % if is a subset, get the new size:
 if numberOfSubsets ~= 0
-    structSizeSinoSubset = structSizeSino;
-    structSizeSinoSubset.numTheta = ceil(structSizeSino.numTheta/numberOfSubsets);
-    
-    fid = fopen([projectionFilename '.i33'], 'r');
-    numSinos = sum(structSizeSinoSubset.sinogramsPerSegment);
-    [subset, count] = fread(fid, structSizeSinoSubset.numTheta*structSizeSinoSubset.numR*numSinos, 'single=>single');
-    fclose(fid);
-    subset = reshape(subset, [structSizeSinoSubset.numR structSizeSinoSubset.numTheta numSinos]);
     % Fille a sinogram of the original size
-    sinogram = zeros(structSizeSino.numR, structSizeSino.numTheta, numSinos);
+    sinogram = zeros(structSizeSino.numR, structSizeSino.numTheta, structSizeSino.numZ);
     sinogram(:,subsetIndex : numberOfSubsets : end, :) = subset;
 else
-    fid = fopen([projectionFilename '.i33'], 'r');
-    numSinos = sum(structSizeSino.numZ);
-    [sinogram, count] = fread(fid, structSizeSino.numTheta*structSizeSino.numR*numSinos, 'single=>single');
-    fclose(fid);
-    sinogram = reshape(sinogram, [structSizeSino.numR structSizeSino.numTheta numSinos]);
+    sinogram = subset;
 end

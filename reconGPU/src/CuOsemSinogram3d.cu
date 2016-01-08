@@ -368,7 +368,7 @@ bool CuOsemSinogram3d::Reconstruct(TipoProyector tipoProy, int indexGpu)
       sprintf(c_string, "_sensitivity_subset_%d", s);
       sensitivityFileName.append(c_string);
       sensitivityImage->writeInterfile((char*)sensitivityFileName.c_str());
-      updateThresholds[s] = sensitivityImage->getMaxValue()*0.005;
+      updateThresholds[s] = sensitivityImage->getMaxValue()*0.00005;
     }
   }
   
