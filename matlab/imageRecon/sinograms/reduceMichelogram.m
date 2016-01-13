@@ -10,7 +10,7 @@
 % NZ, NZ), y tres vectores con los sinogramas por segmento, y la máxima y
 % mínima diferencia entre anillos de ellos.
 
-function sinogram3D = reduceMichelogram(michelogram, structSizeSino)
+function [sinogram3D, time] = reduceMichelogram(michelogram, structSizeSino)
 
 sinogram3D = [];
 
@@ -32,6 +32,7 @@ end
 % anillos.
 indiceSino = 1; % indice del sinogram 3D.
 sinogram3D = single(zeros(structSizeSino.numR, structSizeSino.numTheta, sum(structSizeSino.sinogramsPerSegment)));
+tic;
 for segment = 1 : structSizeSino.numSegments
     % Por cada segmento, voy generando los sinogramas correspondientes y
     % contándolos, debería coincidir con los sinogramas para ese segmento: 
@@ -69,3 +70,4 @@ end
 if( indiceSino ~= (sum(structSizeSino.sinogramsPerSegment)+1))
     fprintf('Error: La cantidad de sinogramas escritos es distinta a la suma de los sinogramas por segmento.\n');
 end
+time = toc(tic);

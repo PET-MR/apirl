@@ -9,10 +9,10 @@
 %  with span 1, is that in the michelogram a 4d matrix is used with
 %  (r, theta,z1,z2).
 
-function michelogram = generateMichelogramFromSinogram3D(sinogram3d, structSizeSino3d)
+function [michelogram time] = generateMichelogramFromSinogram3D(sinogram3d, structSizeSino3d)
 
 michelogram = zeros( structSizeSino3d.numR, structSizeSino3d.numTheta, structSizeSino3d.numZ, structSizeSino3d.numZ);
-
+tic;
 % Recorro todos los sinogramas 3d y los asigno a donde corresponde:
 % Recorro todos los segmentos, y voy analizando la diferencia entre
 % anillos.
@@ -58,3 +58,4 @@ end
 if( indiceSino ~= (sum(structSizeSino3d.sinogramsPerSegment)+1))
     fprintf('Error: La cantidad de sinogramas escritos es distinta a la suma de los sinogramas por segmento.\n');
 end
+time = toc(tic);
