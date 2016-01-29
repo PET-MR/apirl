@@ -11,9 +11,9 @@ sizeImage_mm = sizeImage_pixels.*pixelSize_mm;
 phantom = zeros(sizeImage_pixels);
 % Number of Discs:
 numDiscs = 10;
-widthDiscs_pixels = 5;
+widthDiscs_pixels = 4;
 widthDiscs_mm = pixelSize_mm(3).*widthDiscs_pixels;
-sepDiscs_pixels = 5;
+sepDiscs_pixels = 4;
 sepDiscs_mm = pixelSize_mm(3).*sepDiscs_pixels;
 radioDiscs_mm = 150;
 %% COORD SYSTEM

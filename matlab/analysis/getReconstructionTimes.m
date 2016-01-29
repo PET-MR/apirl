@@ -11,7 +11,7 @@
 % backprojector.
 
 function [times_mseg] = getReconstructionTimes(logFilename)
-
+times_mseg = [];
 iteracion = [];
 logLikelihood = [];
 titles = {'Tiempos de Reconstrucción por Iteración [mseg]', 'Tiempos de Forwardprojection por Iteración [mseg]',...

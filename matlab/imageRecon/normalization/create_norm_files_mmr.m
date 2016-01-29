@@ -188,7 +188,7 @@ if isempty(my_axial_factors)
         sensitivityFactors = zeros(sum(structSizeSino3d.sinogramsPerSegment),1);
         for segment = 1 : structSizeSino3d.numSegments
             indices = (structSizeSino3d_span1.minRingDiff>=structSizeSino3d.minRingDiff(segment))&(structSizeSino3d_span1.minRingDiff<=structSizeSino3d.maxRingDiff(segment));
-            meanValuePerSegment(segment) = sum(sensitivityPerSegment(indices));
+            meanValuePerSegment(segment) = mean(sensitivityPerSegment(indices));
         end
         indiceInicioSino = 1;
         for segment = 1 : numel(structSizeSino3d.sinogramsPerSegment)

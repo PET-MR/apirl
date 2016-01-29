@@ -395,6 +395,8 @@ bool SiddonProjector::Project (Image* inputImage, Sinogram3D* outputProjection)
 		  //geomFactor = 1/rayLength_mm;
 		  if(LengthList > 0)
 		  {
+// 		    if(MyWeightsList[0][0].IndexZ != MyWeightsList[0][LengthList-1].IndexZ)
+// 		      printf("Ring change");
 		    /// Hay elementos dentro del FOV
 		    for(n = 0; n < LengthList; n++)
 		    {
@@ -413,11 +415,6 @@ bool SiddonProjector::Project (Image* inputImage, Sinogram3D* outputProjection)
 		    {
 		      free(MyWeightsList[0]);
 		    }
-		  }
-		  else
-		  {
-		    printf("No hay lista de intersección. LOR Segmento: %d. Sino %d. R: %d. Theta: %d.\n", i, j, k, l);
-		      
 		  }
 		}
 	      }

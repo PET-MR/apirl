@@ -9,7 +9,7 @@
 % scatterFraction is the scatter fraction in the sinogram.
 % outputPath for temporary files.
 
-function [emissionSinogram, afsSinogram, randomsSinogram, scatterSinogram] = simulatePhantom(phantom, attenuationMap, refImage, span, averageCountsInSino, normFactors, randomsFraction, scatterFraction, outputPath, useGpu)
+function [emissionSinogram, structSizeSino3d, overall_nf_3d, afsSinogram, randomsSinogram, scatterSinogram] = simulatePhantom(phantom, attenuationMap, refImage, span, averageCountsInSino, normFactors, randomsFraction, scatterFraction, outputPath, useGpu)
 
 if ~isdir(outputPath)
     mkdir(outputPath)
@@ -23,14 +23,15 @@ imageSize_pixels = size(phantom);
 meanPhantom = mean(mean(mean(phantom(phantom>0))));
 
 %% EMISSION DISTRIBUTION
-% Project the phantom to generate the emission sinogram:
-[projectedSinogram, structSizeSino3d] = ProjectMmr(phantom, pixelSize_mm, outputPath, span, [], [], useGpu);
+% Project the phantom to generate the emission sinogram. Always project as
+% span 1, normalize, and then apply the axial compression:
+[projectedSinogram, structSizeSino3d] = ProjectMmr(phantom, pixelSize_mm, outputPath, 1, [], [], useGpu);
 %% NORMALIZATION FACTORS
 if isstr(normFactors)
     disp('Computing the normalization correction factors...');
     % ncf:
     [overall_ncf_3d, scanner_time_invariant_ncf_3d, scanner_time_variant_ncf_3d, acquisition_dependant_ncf_3d, used_xtal_efficiencies, used_deadtimefactors, used_axial_factors] = ...
-       create_norm_files_mmr(normFactors, [], [], [], [], structSizeSino3d.span);
+       create_norm_files_mmr(normFactors, [], [], [], [], 1);
     % invert for nf:
     overall_nf_3d = overall_ncf_3d;
     overall_nf_3d(overall_ncf_3d ~= 0) = 1./overall_nf_3d(overall_ncf_3d ~= 0);
@@ -60,6 +61,7 @@ if ~isempty(attenuationMap)
 else
     afsSinogram = ones(size(projectedSinogram));
 end
+
 %% RANDOMS
 randomsSinogram = zeros(size(projectedSinogram));
 if ~isempty(randomsFraction)
@@ -75,8 +77,8 @@ if ~isempty(scatterFraction)
     end
 end
 %% COMPLETE FORWARD MODEL
-emissionSinogram = projectedSinogram.* afsSinogram .*overall_nf_3d + randomsSinogram .* overall_nf_3d + scatterSinogram;
-%% FINALLY, INTRODUCE POISSON NOISE
+emissionSinogram = projectedSinogram.*afsSinogram.*overall_nf_3d + randomsSinogram .* overall_nf_3d + scatterSinogram;
+%% FINALLY, INTRODUCE POISSON NOISE AND COMPRESS
 % Get the mean values for the projected sinogram:
 meanProjectedPhantom = mean(mean(mean(emissionSinogram(emissionSinogram>0))));
 % Apply eh scaling to the phantom and generate random counts:
@@ -84,3 +86,7 @@ emissionSinogram = poissrnd(emissionSinogram.*averageCountsInSino./ meanProjecte
 % % After generating the noise, rescale again to get the same mean
 % % value of each simulated phantom:
 % noisySinogram = noisySinogram ./ scalingRatio;
+if span ~= 1
+    [emissionSinogram, structSizeSino3dSpanN] = convertSinogramToSpan(emissionSinogram, structSizeSino3d, span);
+    
+end

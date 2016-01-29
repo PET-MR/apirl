@@ -58,11 +58,19 @@ if isstr(sinogramFilename)
         warning('The span parameter will be ignored because the input sinogram is not span 1.');
     end
 else
-    % binary sinogram (span-1?):
+    % binary sinogram (span-1?) or span span
     if size(sinogramFilename) == [344 252 4084]
         structSizeSino3d = getSizeSino3dFromSpan(344, 252, 64, ...
             296, 256, 1, 60);
         sinograms = sinogramFilename;
+    else
+        structSizeSino3d = getSizeSino3dFromSpan(344, 252, 64, ...
+            296, 256, span, 60);
+        if size(sinogramFilename) == [344 252 sum(structSizeSino3d.sinogramsPerSegment)]
+            sinograms = sinogramFilename;
+        else
+            error('Invalid sinogram matrix size. It must be span 1 or "span".');
+        end
     end
 end
 sinogramFilename = [outputPath pathBar 'sinogram'];

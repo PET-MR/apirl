@@ -76,15 +76,14 @@ refImage = imref3d(size(image), [origin_mm(2)-pixelSize_mm(2) origin_mm(2)-pixel
 % YWorldLimits= [-359.8493 358.1507];
 % ZWorldLimits= [-133.2885 124.7115];
 XWorldLimits= [origin_mm(2)-pixelSize_mm(2)/2 origin_mm(2)-pixelSize_mm(2)/2+pixelSize_mm(2)*size(image,2)];
-XWorldLimits= [origin_mm(2)-pixelSize_mm(2)/2 origin_mm(2)-pixelSize_mm(2)/2+pixelSize_mm(2)*size(image,2)];
 YWorldLimits= [origin_mm(1)-pixelSize_mm(1)/2 origin_mm(1)-pixelSize_mm(1)/2+pixelSize_mm(1)*size(image,1)];
-XWorldLimits= [-359+3/4*pixelSize_mm(2) 359+3/4*pixelSize_mm(2)];
-YWorldLimits= [-359-pixelSize_mm(1) 359-pixelSize_mm(1)];
-
-ZWorldLimits= [-258/2+2*pixelSize_mm(3) 258/2+2*pixelSize_mm(3)];
-ZWorldLimits= [-258/2-pixelSize_mm(3)*9/4 258/2-pixelSize_mm(3)*9/4];
-XWorldLimits= [-356.8832 -356.8832+pixelSize_mm(2)*imageSize_pixels(2)];    % Emprical value from dicom image of the siemens mmr
-YWorldLimits= [-359.8493 -359.8493+pixelSize_mm(1)*imageSize_pixels(1)];
+% XWorldLimits= [-359+3/4*pixelSize_mm(2) 359+3/4*pixelSize_mm(2)];
+% YWorldLimits= [-359-pixelSize_mm(1) 359-pixelSize_mm(1)];
+% 
+% ZWorldLimits= [-258/2+2*pixelSize_mm(3) 258/2+2*pixelSize_mm(3)];
+% ZWorldLimits= [-258/2-pixelSize_mm(3)*9/4 258/2-pixelSize_mm(3)*9/4];
+% XWorldLimits= [-356.8832 -356.8832+pixelSize_mm(2)*imageSize_pixels(2)];    % Emprical value from dicom image of the siemens mmr
+% YWorldLimits= [-359.8493 -359.8493+pixelSize_mm(1)*imageSize_pixels(1)];
 ZWorldLimits= [-133.2885 -133.2885+pixelSize_mm(3)*imageSize_pixels(3)];
 %image = flip(image,3); % Needs to be checked
 refImage = imref3d(size(image), XWorldLimits, YWorldLimits, ZWorldLimits);
