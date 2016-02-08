@@ -88,19 +88,25 @@ cudaPath = '/usr/local/cuda/';
 setenv('PATH', [getenv('PATH') sepEnvironment cudaPath pathBar 'bin']);
 setenv('LD_LIBRARY_PATH', [getenv('LD_LIBRARY_PATH') sepEnvironment cudaPath pathBar 'lib64']);
 % APIRL PATH
-apirlPath = '/workspaces/Martin/apirl-code/trunk/';
+apirlPath = '/home/mab15/workspace/apirl-code/trunk/';
 addpath(genpath([apirlPath pathBar 'matlab']));
 setenv('PATH', [getenv('PATH') sepEnvironment apirlPath pathBar 'build' pathBar 'bin']);
 setenv('LD_LIBRARY_PATH', [getenv('LD_LIBRARY_PATH') sepEnvironment apirlPath pathBar 'build' pathBar 'bin']);
 
-[g_truth, refImage]  = interfileRead('phantom.h33'); 
+fullFilename = '/home/mab15/workspace/KCL/Biograph_mMr/Mediciones/BRAIN_PETMR/SINOGRAMS/PET_ACQ_68_20150610155347_ima_AC_000_000.v.hdr';
+[g_truth, refImage, bedPosition_mm, info]  = interfileReadSiemensImage(fullFilename); 
 
-PET = classGpet();
+objGpet.scanner = 'mMR';
+                objGpet.method =  'otf_siddon_gpu';
+                objGpet.PSF.type = 'none';
+                objGpet.radialBinTrim = 0;
+                objGpet.Geom = '';
+PET = classGpet(objGpet);
 % Change the image sie, to the one of the phantom:
 init_image_properties(PET, refImage);
 
 % EXAMPLE NCFS
-NCF = PET.NCF;
+%NCF = PET.NCF;
 % Simulate sinogram
 y = PET.P(g_truth);
 counts = 1e8/sum(y(:));

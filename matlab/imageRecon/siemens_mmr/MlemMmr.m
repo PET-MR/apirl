@@ -141,16 +141,9 @@ if isstr(attMapBaseFilename)
     % Create ACFs of a computed phatoms with the linear attenuation
     % coefficients:
     acfFilename = ['acfsSinogram'];
-    acfsSinogram = createACFsFromImage(attenMap, imageSizeAtten_mm, outputPath, acfFilename, sinogramFilename, structSizeSino3d, 0, useGpu);
-
+    acfsSinogram = createACFsFromImage(attenMap, imageSizeAtten_mm, outputPath, acfFilename, structSizeSino3d, 0, useGpu);
     % After the projection read the acfs:
     acfFilename = [outputPath acfFilename];
-    fid = fopen([acfFilename '.i33'], 'r');
-    numSinos = sum(structSizeSino3d.sinogramsPerSegment);
-    [acfsSinogram, count] = fread(fid, structSizeSino3d.numTheta*structSizeSino3d.numR*numSinos, 'single=>single');
-    acfsSinogram = reshape(acfsSinogram, [structSizeSino3d.numR structSizeSino3d.numTheta numSinos]);
-    % Close the file:
-    fclose(fid);
 else
     %if ~isempty(normFilename)
     acfFilename = '';
@@ -240,7 +233,7 @@ if (numel(correctScatter) == 1)
         % the mr is better if this acf include the human?
         if ~strcmp(attMapBaseFilename(end-3:end),'.h33')
             acfFilename = 'acfsOnlyHuman';
-            acfsOnlyHuman = createACFsFromImage(attenMap_human, imageSizeAtten_mm, outputPath, acfFilename, sinogramFilename, structSizeSino3d, 0, useGpu);
+            acfsOnlyHuman = createACFsFromImage(attenMap_human, imageSizeAtten_mm, outputPath, acfFilename, structSizeSino3d, 0, useGpu);
             acfFilename = [outputPath acfFilename];
         else
             acfsOnlyHuman = acfsSinogram;

@@ -145,10 +145,8 @@ if isstr(attMapBaseFilename)
     % coefficients:
     acfFilename = ['acfsSinogram'];
     acfsSinogram = createACFsFromImage(attenMap, imageSizeAtten_mm, outputPath, acfFilename, structSizeSino3d, 0, useGpu);
-
     % After the projection read the acfs:
     acfFilename = [outputPath acfFilename];
-
 else
     %if ~isempty(normFilename)
     acfFilename = '';
@@ -236,7 +234,7 @@ if (numel(correctScatter) == 1)
         % the mr is better if this acf include the human?
         if ~strcmp(attMapBaseFilename(end-3:end),'.h33')
             acfFilename = 'acfsOnlyHuman';
-            acfsOnlyHuman = createACFsFromImage(attenMap_human, imageSizeAtten_mm, outputPath, acfFilename, sinogramFilename, structSizeSino3d, 0, useGpu);
+            acfsOnlyHuman = createACFsFromImage(attenMap_human, imageSizeAtten_mm, outputPath, acfFilename, structSizeSino3d, 0, useGpu);
             acfFilename = [outputPath acfFilename];
         else
             acfsOnlyHuman = acfsSinogram;
