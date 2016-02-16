@@ -20,6 +20,7 @@ mkdir(outputPath);
 disp('Read input sinogram...');
 % Read the sinograms:
 sinogramFilename = '/home/mab15/workspace/KCL/Biograph_mMr/mmr/5hr_ge68/cylinder_5hours.s.hdr';
+sinogramFilename = '/home/mab15/workspace/KCL/Biograph_mMr/Mediciones/BRAIN_PETMR/SINOGRAMS/PET_ACQ_68_20150610155347-0uncomp.s.hdr';
 [sinogram, delayedSinogram, structSizeSino3d] = interfileReadSino(sinogramFilename);
 
 %% NORMALIZATION
@@ -37,25 +38,87 @@ scanner_time_invariant_ncf_direct = scanner_time_invariant_ncf_3d(1:structSizeSi
 
 %% RANDOM SINOGRAMS SPAN 11 FROM SINGLES IN BUCKET
 sinoRandomsFromSinglesPerBucket = createRandomsFromSinglesPerBucket(sinogramFilename);
+[componentFactors, componentLabels]  = readmMrComponentBasedNormalization(cbn_filename, 0);
+crystalInterfFactor = single(componentFactors{2});
+crystalInterfFactor = repmat(crystalInterfFactor', 1, structSizeSino3d.numTheta/size(crystalInterfFactor,1));
+% c) Axial factors:
+axialFactors = zeros(sum(structSizeSino3d.sinogramsPerSegment),1);
+% Generate axial factors from a block profile saved before:
+gainPerPixelInBlock = load('axialGainPerPixelInBlock.mat');
+numberOfAxialCrystalsPerBlock = 8;
+% Check if the sensitivity profle is available:
+if exist('sensitivityPerSegment.mat') ~= 0
+    sensitivityPerSegment = load('sensitivityPerSegment.mat');
+    sensitivityPerSegment = sensitivityPerSegment.sensitivityPerSegment;
+else
+    sensitivityPerSegment = ones(structSizeSino3d_span1.numSegments,1);
+end
+if(isstruct(gainPerPixelInBlock))
+    gainPerPixelInBlock = gainPerPixelInBlock.gainPerPixelInBlock;
+end
+indiceSino = 1; % indice del sinogram 3D.
+for segment = 1 : structSizeSino3d.numSegments
+    % Por cada segmento, voy generando los sinogramas correspondientes y
+    % contándolos, debería coincidir con los sinogramas para ese segmento: 
+    numSinosThisSegment = 0;
+    % Recorro todos los z1 para ir rellenando
+    for z1 = 1 : (structSizeSino3d.numZ*2)
+        numSinosZ1inSegment = 0;   % Cantidad de sinogramas para z1 en este segmento
+        % Recorro completamente z2 desde y me quedo con los que están entre
+        % minRingDiff y maxRingDiff. Se podría hacer sin recorrer todo el
+        % sinograma pero se complica un poco.
+        z1_aux = z1;    % z1_aux la uso para recorrer.
+        for z2 = 1 : structSizeSino3d.numZ
+            % Ahora voy avanzando en los sinogramas correspondientes,
+            % disminuyendo z1 y aumentnado z2 hasta que la diferencia entre
+            % anillos llegue a maxRingDiff.
+            if ((z1_aux-z2)<=structSizeSino3d.maxRingDiff(segment))&&((z1_aux-z2)>=structSizeSino3d.minRingDiff(segment))
+                % Me asguro que esté dentro del tamaño del michelograma:
+                if(z1_aux>0)&&(z2>0)&&(z1_aux<=structSizeSino3d.numZ)&&(z2<=structSizeSino3d.numZ)
+                    numSinosZ1inSegment = numSinosZ1inSegment + 1;
+                    % Get the index of detector inside a block:
+                    pixelInBlock1 = rem(z1_aux-1, numberOfAxialCrystalsPerBlock);
+                    pixelInBlock2 = rem(z2-1, numberOfAxialCrystalsPerBlock);
+                    sinoRandomsFromSinglesPerBucket(:,:,indiceSino) = sinoRandomsFromSinglesPerBucket(:,:,indiceSino) .* crystalInterfFactor;
+                    sinoRandomsFromSinglesPerBucket(:,:,indiceSino) = sinoRandomsFromSinglesPerBucket(:,:,indiceSino) .* (gainPerPixelInBlock(pixelInBlock1+1) * gainPerPixelInBlock(pixelInBlock2+1));
+                end
+            end
+            % Pase esta combinación de (z1,z2), paso a la próxima:
+            z1_aux = z1_aux - 1;
+        end
+        if(numSinosZ1inSegment>0)
+            % I average the efficencies dividing by the number of axial
+            % combinations used for this sino:
+            %acquisition_dependant_ncf_3d(:,:,indiceSino) = acquisition_dependant_ncf_3d(:,:,indiceSino) / numSinosZ1inSegment;
+            numSinosThisSegment = numSinosThisSegment + 1;
+            indiceSino = indiceSino + 1;
+        end
+    end    
+end
+
 [randomsSinogramSpan11, structSizeSino3dSpan11] = convertSinogramToSpan(sinoRandomsFromSinglesPerBucket, structSizeSino3d, 11);
 
 % Apply normalization:
 [overall_ncf_3d, scanner_time_invariant_ncf_3d, scanner_time_variant_ncf_3d, acquisition_dependant_ncf_3d, used_xtal_efficiencies, used_deadtimefactors, used_axial_factors] = ...
    create_norm_files_mmr(cbn_filename, [], [], [], [], 11);
+
+
 normalizedRandomsSinogramSpan11 = randomsSinogramSpan11 .* scanner_time_variant_ncf_3d;
 
 %% CREATE RANDOMS ESTIMATE WITH STIR
 % The delayed sinogram must be span 1.
 [randomsStir, structSizeSino] = estimateRandomsWithStir(delayedSinogram, structSizeSino3d, overall_ncf_3d, structSizeSino3dSpan11, outputPath);
-
+%% CREATE RANDOMS WITH MY FUNCTION
+[randomsFromDelayeds, structSizeSino] = estimateRandomsFromDelayeds(delayedSinogram, structSizeSino3d, overall_ncf_3d, structSizeSino3dSpan11, outputPath);
 %%
 figure;
 aux = mean(delaySinogramSpan11,3);
 aux2 = mean(randomsSinogramSpan11,3);
 aux3 = mean(normalizedRandomsSinogramSpan11,3);
 aux4 = mean(randomsStir,3);
-plot([aux(:, 128) aux2(:, 128) aux3(:, 128) aux4(:, 128)]);
-
+plot([delaySinogramSpan11(:, 128,32) randomsSinogramSpan11(:, 128,32) normalizedRandomsSinogramSpan11(:, 128,32) ...
+    randomsStir(:, 128,32) randomsFromDelayeds(:, 128,32)./mean(randomsFromDelayeds(:)).*mean(randomsStir(:))]);
+legend('Delayed', 'Randoms from Singles', 'Randoms from Singles Normalized', 'Randoms from Stir', 'Randoms from Delayeds'); 
 %% PLOT PROFILES
 figure;
 plot([randomsSinogramSpan11(:,180,10) delaySinogramSpan11(:,180,10)]);

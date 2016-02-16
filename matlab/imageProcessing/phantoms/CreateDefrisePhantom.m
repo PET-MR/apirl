@@ -5,10 +5,11 @@
 %  *********************************************************************
 
 % Function that read the binary file from the brain web phantom.
-function [phantom refImage] = CreateDefrisePhantom(sizeImage_pixels, pixelSize_mm)
+function [phantom refImage attenMap_1_cm] = CreateDefrisePhantom(sizeImage_pixels, pixelSize_mm)
 %% PARAMETERS
 sizeImage_mm = sizeImage_pixels.*pixelSize_mm;
 phantom = zeros(sizeImage_pixels);
+attenMap_1_cm = zeros(sizeImage_pixels);
 % Number of Discs:
 numDiscs = 10;
 widthDiscs_pixels = 4;
@@ -33,6 +34,7 @@ zFirstDisc_pixels = round((sizeImage_pixels(3)-(widthDiscs_pixels+sepDiscs_pixel
 zFirstDisc_mm = Z(1,1,zFirstDisc_pixels);
 indexBackground = (sqrt((X-0).^2+(Y-0).^2) < radioDiscs_mm*1.25)  & (Z>=zFirstDisc_mm-sepDiscs_mm) & (Z<(zFirstDisc_mm+numDiscs*(widthDiscs_mm + sepDiscs_mm)));
 phantom(indexBackground) = 0.5;
+attenMap_1_cm(indexBackground) = 0.096;
 %% CREATE IMAGE
 indexCylinder2d = (sqrt((X_2D-0).^2+(Y_2D-0).^2) < radioDiscs_mm);
 for i = 1 : numDiscs
@@ -42,6 +44,7 @@ for i = 1 : numDiscs
         indexCylinder(:,:,z_pixels(j))=indexCylinder2d;
     end
     phantom(indexCylinder) = 1;
+    attenMap_1_cm(indexBackground) = 0.093; % Polyethilene.
 end
 
 refImage = imref3d(sizeImage_pixels, pixelSize_mm(2), pixelSize_mm(1), pixelSize_mm(3));
