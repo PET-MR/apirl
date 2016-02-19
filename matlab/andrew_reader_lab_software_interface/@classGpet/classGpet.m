@@ -1,3 +1,13 @@
+% *********************************************************************
+% Reconstruction Framework for Siemens Biograph mMR.  
+% class: Gpet
+% Authors: Martin Belzunce, Abolfazl Mehranian. Kings College London.
+% Date: 08/02/2016
+% *********************************************************************
+% Definition of the class classGpet to manage projector/backprojectors and
+% other tools used in the image reconstruction of Siemens Biograph mMR
+% data.
+
 classdef classGpet < handle
     properties (SetAccess = private)
         % Type of scanner. Options: '2D_radon', '2D_mMR', 'mMR'
