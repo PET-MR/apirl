@@ -8,7 +8,11 @@
 %  This functions create two sinograms with the id of each detector in a
 %  bin LOR. It works for a sinogram 3d for span 1, so one bin one detector. 
 
-function [mapaDet1Ids, mapaDet2Ids] = createMmrDetectorsIdInSinogram3d()
+function [mapaDet1Ids, mapaDet2Ids] = createMmrDetectorsIdInSinogram3d(maskGaps)
+
+if nargin == 0 
+    maskGaps = 0; % By default remove the gaps.
+end
 
 % Size of mMr Sinogram's
 numTheta = 252; numR = 344; numRings = 64; maxAbsRingDiff = 60; rFov_mm = 594/2; zFov_mm = 258; span = 1;
@@ -28,6 +32,8 @@ r = (-structSizeSino3d.numR/2):(-structSizeSino3d.numR/2+structSizeSino3d.numR-1
 [THETA, R] = meshgrid(theta,r);
 mapaDet1Ids_2d = rem((THETA + floor(R/2) + numDetectorsPerRing -1), numDetectorsPerRing) + 1;   % The +1 is added in matlab version respect than c version, because here we have 1-base indexes.
 mapaDet2Ids_2d = rem((THETA - floor((R+1)/2) + numDetectorsPerRing/2 -1), numDetectorsPerRing) + 1; % The +1 is added in matlab version respect than c version, because here we have 1-base indexes.
+
+
 
 % Now we start going through each possible sinogram, then get the rings of
 % each sinogram and get the crystal efficency for that ring in det1 and the
@@ -69,4 +75,12 @@ for segment = 1 : structSizeSino3d.numSegments
             indiceSino = indiceSino + 1;
         end
     end    
+end
+
+if maskGaps == 1
+    crystalMasks = ones(504,64);
+    crystalMasks(9:9:end,:) = 0;
+    gaps = createSinogram3dFromDetectorsEfficency(crystalMasks, structSizeSino3d, 0);
+    mapaDet1Ids(gaps == 0) = 0;
+    mapaDet2Ids(gaps == 0) = 0;
 end

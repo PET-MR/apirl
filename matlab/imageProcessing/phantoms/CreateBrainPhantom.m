@@ -58,7 +58,8 @@ phantom_rescaled(:,:,1:5) = 0;
 attenuationMap = phantom_rescaled;
 % Set the attenuation of bones:
 mu_bone_1_cm = 0.1732;
-mu_tissue_1_cm = 0.1007;
+mu_bone_1_cm = 0.1732;
+mu_tissue_1_cm = 0.097;
 attenuationMap(phantom_rescaled >0) = mu_tissue_1_cm;
-
+attenuationMap(phantom_rescaled >5.5 & phantom_rescaled <7.5) = mu_bone_1_cm;
 refImage = imref3d(imageSize_pixels, pixelSize_mm(2), pixelSize_mm(1), pixelSize_mm(3));

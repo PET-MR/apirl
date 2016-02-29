@@ -6,15 +6,23 @@
 %  Function that creates the system matrix for the mlem algorithm for crystal
 %  efficiencies. Goes from detectors to sinograms. This one is for he 3d
 %  case.
-function [detector1SystemMatrix, detector2SystemMatrix] = createDetectorSystemMatrix3d(span, normalize)
+function [detector1SystemMatrix, detector2SystemMatrix] = createDetectorSystemMatrix3d(span, normalize, removeGaps)
 %% SYSTEM MATRIZ FOR SPAN1 SINOGRAMS
+if nargin == 2
+    removeGaps = 1; % Remove gaps by default.
+end
 % Size of mMr Sinogram's
 numTheta = 252; numR = 344; numRings = 64; maxAbsRingDiff = 60; rFov_mm = 594/2; zFov_mm = 258;
 structSizeSino3d = getSizeSino3dFromSpan(numR, numTheta, numRings, rFov_mm, zFov_mm, span, maxAbsRingDiff);
 numDetectorsPerRing = 504;
 numDetectors = numDetectorsPerRing*numRings;
+if removeGaps == 1
+    maskGaps = 1;
+else
+    maskGaps = 0;
+end
+[mapaDet1Ids, mapaDet2Ids] = createMmrDetectorsIdInSinogram3d(maskGaps);
 
-[mapaDet1Ids, mapaDet2Ids] = createMmrDetectorsIdInSinogram3d();
 numBins = numel(mapaDet1Ids);
 % Image with as many rows as bins in the sinogram, and as many cols as
 % detectors. I create a saprse matrix for 3d because the size is to big:
@@ -26,10 +34,11 @@ maxNumNonZeros = numBins; % One detector per bin.
 %     detector1SystemMatrix(:,i) = mapaDet1Ids(:) == i;
 %     detector2SystemMatrix(:,i) = mapaDet2Ids(:) == i;
 % end
+indicesBins = 1:numBins;
 if span == 1
     % This is more fficient to compute it:
-    detector1SystemMatrix = sparse(1:numBins, double(mapaDet1Ids(:)), true, numBins,numDetectors,maxNumNonZeros);
-    detector2SystemMatrix = sparse(1:numBins, double(mapaDet2Ids(:)), true, numBins,numDetectors,maxNumNonZeros);
+    detector1SystemMatrix = sparse(indicesBins(mapaDet1Ids~=0&mapaDet2Ids~=0), double(mapaDet1Ids(mapaDet1Ids~=0&mapaDet2Ids~=0)), true, numBins,numDetectors,maxNumNonZeros);
+    detector2SystemMatrix = sparse(indicesBins(mapaDet1Ids~=0&mapaDet2Ids~=0), double(mapaDet2Ids(mapaDet1Ids~=0&mapaDet2Ids~=0)), true, numBins,numDetectors,maxNumNonZeros);
 else
     numBins = numR*numTheta*sum(structSizeSino3d.sinogramsPerSegment);
     accIndicesBin = [];

@@ -192,13 +192,25 @@ classdef classGpet < handle
         gf3d = Gauss3DFilter (objGpet, data, image_size, fwhm);
         ii = bit_reverse(objGpet, mm);
         lambda = Project_preComp(objGpet,X,g,Angles,RadialBins,dir);
-        init_sinogram_size(objGpet, inSpan, numRings, maxRingDifference);
         g = init_precomputed_G (objGpet);
     end
     methods (Access = public)
+        % Project:
         m = P(objGpet, x,subset_i);
+        % Backproject:
         x = PT(objGpet,m, subset_i);
+        % Normalization correction factors:
         n=NCF(varargin);
+        % Attenuation correction factors:
+        a=ACF(varargin);
+        % Randoms:
+        r=R(varargin);
+        % Scatter
+        s=S(varargin);
+        %
         osem_subsets(objGpet, nsub,nAngles);
+        %
+        init_sinogram_size(objGpet, inSpan, numRings, maxRingDifference);
+        
     end
 end

@@ -7,19 +7,40 @@
 
 clear all 
 close all
-%% PATHS FOR EXTERNAL FUNCTIONS AND RESULTS
-addpath('/home/mab15/workspace/KCL/Biograph_mMr/mmr');
+%% APIRL PATH
 apirlPath = '/home/mab15/workspace/apirl-code/trunk/';
-addpath(genpath([apirlPath '/matlab']));
-setenv('PATH', [getenv('PATH') ':/home/mab15/workspace/apirl-code/trunk/build/bin']);
-setenv('LD_LIBRARY_PATH', [getenv('LD_LIBRARY_PATH') ':/home/mab15/workspace/apirl-code/trunk/build/bin']);
+
+% Check what OS I am running on:
+if(strcmp(computer(), 'GLNXA64'))
+    os = 'linux';
+    pathBar = '/';
+    sepEnvironment = ':';
+elseif(strcmp(computer(), 'PCWIN') || strcmp(computer(), 'PCWIN64'))
+    os = 'windows';
+    pathBar = '\';
+    sepEnvironment = ';';
+else
+    disp('OS not compatible');
+    return;
+end
 outputPath = '/home/mab15/workspace/KCL/Biograph_mMr/Randoms/';
-mkdir(outputPath);
-%setenv('LD_LIBRARY_PATH', [getenv('LD_LIBRARY_PATH') ':/usr/lib/x86_64-linux-gnu/']);
+%% CUDA PATH
+cudaPath = '/usr/local/cuda/';
+setenv('PATH', [getenv('PATH') sepEnvironment cudaPath pathBar 'bin']);
+setenv('LD_LIBRARY_PATH', [getenv('LD_LIBRARY_PATH') sepEnvironment cudaPath pathBar 'lib64']);
+%% STIR PATH
+stirPath = '/usr/local/stir3.0/';
+stirMatlabPath = '/home/mab15/workspace/KCL/apirl-kcl/trunk/stir/';
+scriptsPath = [stirMatlabPath 'scripts/'];
+%% SET ENVIRONMENT AND MATLAB PATHS
+addpath(genpath([apirlPath pathBar 'matlab']));
+addpath(genpath(stirMatlabPath));
+setenv('PATH', [getenv('PATH') sepEnvironment apirlPath pathBar 'build' pathBar 'bin' ':' stirPath pathBar 'bin/']);
+setenv('LD_LIBRARY_PATH', [getenv('LD_LIBRARY_PATH') sepEnvironment apirlPath pathBar 'build' pathBar 'bin' ':' stirPath pathBar 'lib/' ]);
 %% READING THE SINOGRAMS
 disp('Read input sinogram...');
 % Read the sinograms:
-sinogramFilename = '/home/mab15/workspace/KCL/Biograph_mMr/mmr/5hr_ge68/cylinder_5hours.s.hdr';
+%sinogramFilename = '/home/mab15/workspace/KCL/Biograph_mMr/mmr/5hr_ge68/cylinder_5hours.s.hdr';
 sinogramFilename = '/home/mab15/workspace/KCL/Biograph_mMr/Mediciones/BRAIN_PETMR/SINOGRAMS/PET_ACQ_68_20150610155347-0uncomp.s.hdr';
 [sinogram, delayedSinogram, structSizeSino3d] = interfileReadSino(sinogramFilename);
 
@@ -30,8 +51,8 @@ cbn_filename = '/home/mab15/workspace/KCL/Biograph_mMr/mmr/Norm_20141008101010.n
 scanner_time_invariant_ncf_direct = scanner_time_invariant_ncf_3d(1:structSizeSino3d.numZ);
 
 %% SPAN 11
-[sinogramSpan11, structSizeSino3dSpan11] = convertSinogramToSpan(sinogram, structSizeSino3d, 11);
-[delaySinogramSpan11, structSizeSino3dSpan11] = convertSinogramToSpan(delayedSinogram, structSizeSino3d, 11);
+[sinogramSpan11, structSizeSino3dSpan11] = convertSinogramToSpan(sinogram, structSizeSino3d, 1);
+[delaySinogramSpan11, structSizeSino3dSpan11] = convertSinogramToSpan(delayedSinogram, structSizeSino3d, 1);
 
 %% DELAYED SINOGRAMS
 [ res ] = show_sinos( delaySinogramSpan11, 3, 'delayed span 11', 1 );
@@ -95,7 +116,7 @@ for segment = 1 : structSizeSino3d.numSegments
         end
     end    
 end
-
+%% OTHER SPAN
 [randomsSinogramSpan11, structSizeSino3dSpan11] = convertSinogramToSpan(sinoRandomsFromSinglesPerBucket, structSizeSino3d, 11);
 
 % Apply normalization:
@@ -109,15 +130,21 @@ normalizedRandomsSinogramSpan11 = randomsSinogramSpan11 .* scanner_time_variant_
 % The delayed sinogram must be span 1.
 [randomsStir, structSizeSino] = estimateRandomsWithStir(delayedSinogram, structSizeSino3d, overall_ncf_3d, structSizeSino3dSpan11, outputPath);
 %% CREATE RANDOMS WITH MY FUNCTION
-[randomsFromDelayeds, structSizeSino] = estimateRandomsFromDelayeds(delayedSinogram, structSizeSino3d, overall_ncf_3d, structSizeSino3dSpan11, outputPath);
+numIterations = 3;
+[randomsFromDelayeds, singlesOut] = estimateRandomsFromDelayeds(delayedSinogram, structSizeSino3d, numIterations, 11);
+%% WRITE OUTPUT
+interfileWriteSino(single(randomsStir), [outputPath 'stirRandoms'], structSizeSino);
+interfileWriteSino(single(randomsFromDelayeds), [outputPath 'apirlRandoms'], structSizeSino);
+%%
+sinogramPlane = 307;
+figure;
+plot([delaySinogramSpan11(:, 128,sinogramPlane) randomsSinogramSpan11(:, 128,sinogramPlane) normalizedRandomsSinogramSpan11(:, 128,sinogramPlane) ...
+    randomsStir(:, 128,sinogramPlane) randomsFromDelayeds(:, 128,sinogramPlane)]);
+legend('Delayed', 'Randoms from Singles', 'Randoms from Singles Normalized', 'Randoms from Stir', 'Randoms from Delayeds'); 
 %%
 figure;
-aux = mean(delaySinogramSpan11,3);
-aux2 = mean(randomsSinogramSpan11,3);
-aux3 = mean(normalizedRandomsSinogramSpan11,3);
-aux4 = mean(randomsStir,3);
-plot([delaySinogramSpan11(:, 128,32) randomsSinogramSpan11(:, 128,32) normalizedRandomsSinogramSpan11(:, 128,32) ...
-    randomsStir(:, 128,32) randomsFromDelayeds(:, 128,32)./mean(randomsFromDelayeds(:)).*mean(randomsStir(:))]);
+plot([delaySinogramSpan11(:, 128,sinogramPlane) randomsSinogramSpan11(:, 128,sinogramPlane) normalizedRandomsSinogramSpan11(:, 128,sinogramPlane) ...
+    randomsStir(:, 128,sinogramPlane) randomsFromDelayeds(:, 128,sinogramPlane)./mean(randomsFromDelayeds(:)).*mean(randomsStir(:))]);
 legend('Delayed', 'Randoms from Singles', 'Randoms from Singles Normalized', 'Randoms from Stir', 'Randoms from Delayeds'); 
 %% PLOT PROFILES
 figure;

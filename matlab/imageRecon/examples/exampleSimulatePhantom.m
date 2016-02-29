@@ -40,7 +40,7 @@ setenv('PATH', [getenv('PATH') sepEnvironment apirlPath pathBar 'build' pathBar 
 setenv('LD_LIBRARY_PATH', [getenv('LD_LIBRARY_PATH') sepEnvironment apirlPath pathBar 'build' pathBar 'bin' ':' stirPath pathBar 'lib/' ]);
 %% OUTPUT PATH
 %outputPath = '/home/mab15/workspace/KCL/AxialCompression/Simulations/PointsPhantom/';
-outputPath = '/home/mab15/workspace/KCL/AxialCompression/Simulations/Defrise/testSpan51Norm/';
+outputPath = '/home/mab15/workspace/KCL/xtal_efficiencies/simulated_phantoms/brain/';
 mkdir(outputPath);
 %% SIZE OF RECONSTRUCTED IMAGE
 % Create image from the same size than used by siemens:
@@ -51,7 +51,11 @@ imageSize_pixels = [288 288 127]; % For cover the full Fov: 596/4.1725=142.84
 % Size of the image to cover the full fov:
 sizeImage_mm = pixelSize_mm .* imageSize_pixels;
 %% CREATE PHANTOM
-[phantom, refImage, attenMap_1_cm] = CreateDefrisePhantom(imageSize_pixels, pixelSize_mm);
+% [phantom, refImage, attenMap_1_cm] = CreateDefrisePhantom(imageSize_pixels, pixelSize_mm);
+binaryFilename = '/home/mab15/workspace/KCL/xtal_efficiencies/subject04_crisp_v.rawb';
+[phantom, attenMap_1_cm, refImage] = CreateBrainPhantom(binaryFilename, imageSize_pixels, pixelSize_mm);
+interfilewrite( phantom, [outputPath 'phantom'], pixelSize_mm);
+interfilewrite( attenMap_1_cm, [outputPath 'attenMap'], pixelSize_mm);
 sigma_pixels = 2;
 %phantom=imgaussian(phantom,sigma_pixels);
 % Convert to single:
