@@ -13,23 +13,28 @@ function PETData = read_check_interfiles(PETData, FolderName)
     tag = [0 0 0 0];
     for i = 1:numel(files)
         if ~isempty(strfind(files{i},'.n.hdr'))
-            PETData.DataPath.norm = [FolderName '\' files{i}];
+            PETData.DataPath.norm = [FolderName PETData.bar files{i}];
             tag(1)= 1;
         end
         if ~isempty(strfind(files{i},'.s.hdr')) && isempty(strfind(files{i},'uncomp.s.hdr'))
-            PETData.DataPath.emission = [FolderName '\' files{i}];
+            PETData.DataPath.emission = [FolderName PETData.bar files{i}];
             tag(2) = 1;
         end
         if ~isempty(strfind(files{i},'umap_hardware.mhdr'))
-            PETData.DataPath.hardware_umap = [FolderName '\' files{i}];
+            PETData.DataPath.hardware_umap = [FolderName PETData.bar files{i}];
             tag(3) = 1;
         end
         if ~isempty(strfind(files{i},'umap_human.mhdr')) || ~isempty(strfind(files{i},'umap.mhdr'))
-            PETData.DataPath.umap = [FolderName '\' files{i}];
+            PETData.DataPath.umap = [FolderName PETData.bar files{i}];
             tag(4) = 1;
         end
         if ~isempty(strfind(files{i},'uncomp.s.hdr'))
-            PETData.DataPath.emission_uncomp = [FolderName '\' files{i}];
+            PETData.DataPath.emission_uncomp = [FolderName PETData.bar files{i}];
+        end
+        % List- mode interfile.
+        if ~isempty(strfind(files{i},'.l.hdr'))
+            PETData.DataPath.emission_listmode = [FolderName PETData.bar files{i}];
+            tag(5) = 1;
         end
     end
     if any(tag==0),
@@ -38,8 +43,9 @@ function PETData = read_check_interfiles(PETData, FolderName)
         if tag(2)==0, msg = ['Emission sinogram ''.s.hdr'' ' msg];end
         if tag(3)==0, msg = [' ''umap_hardware.mhdr'' ' msg];end
         if tag(4)==0, msg = [' ''umap_human.mhdr'' ' msg];end
-        error([ msg 'was not found in ' FolderName]);
+        if tag(5)==0, msg = ['Emission list-mode ''.l.hdr'' ' msg];end
+        warning([ msg 'was not found in ' FolderName]);
     end
-    PETData.DataPath.rawdata_sino = [FolderName '\rawdata_sino' ];
+    PETData.DataPath.rawdata_sino = [FolderName PETData.bar 'rawdata_sino' ];
     PETData.DataPath.scatters = [FolderName '-00-scatter.mhdr'];     
 end

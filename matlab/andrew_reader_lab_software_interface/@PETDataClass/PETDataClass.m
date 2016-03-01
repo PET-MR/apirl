@@ -1,5 +1,9 @@
 classdef PETDataClass < handle
     properties (SetAccess = private)
+        % Operative system.
+        os
+        % bar for the paths.
+        bar
         
         DataPath
         % The folder path containing raw data in Dicom IMA and PDT or Interfile
@@ -8,13 +12,18 @@ classdef PETDataClass < handle
         % contain 1) emission.s.hdr 2) norm.n.hdr, 3) umap_hardware.mhdr
         % and 4) umap_human.mhdr
         
-        ImageSize
-        %
-        SinogramSize
-        % [nRadialBin, nAngularBins,nSinogramPlanes]
+        % Struct with the image size.
+        image_size
+        
+        % Struct with sinogram size (including matrix size, number of
+        % segments, etc..)
+        sinogram_size
+        
+        % Span of the reconstructions:
+        span
         
         Gantry
-        % A structure with fields: .Span, .MRD ,.nCrystalRings
+        % A structure with fields: .span, .maxRingDiff ,.nCrystalRings
         
         MethodSinoData %'e7', 'stir'.
         % Use e7 tools to generate all sinogram data or the combination of
@@ -24,10 +33,16 @@ classdef PETDataClass < handle
         % Use e7 tools to process list mode data or a matlab version (to be
         % developed
         
-        DynamicFrames
+        % Number of frames.
+        NumberOfFrames
         
-        MotionFrames
+        % List with the frames time stamps (it has NumberOfFrames elements):
+        DynamicFrames_sec
         
+        % List with motion frames time stamps (it has NumberOfFrames elements):
+        MotionFrames_sec
+        
+        % Frame durations (it has NumberOfFrames elements):
         FrameDuration_sec
         
         SoftwarePaths
@@ -42,27 +57,37 @@ classdef PETDataClass < handle
         % Constructurs
         function PETData = PETDataClass(varargin)
             % Set default properties
+            PETData.DataPath.path               = ''; % Main path.
             PETData.DataPath.emission           = '';
+            PETData.DataPath.emission_listmode  = '';
             PETData.DataPath.norm               = '';
             PETData.DataPath.umap               = '';
             PETData.DataPath.hardware_umap      = '';
             PETData.DataPath.rawdata_sino       = '';
             PETData.DataPath.scatters           = '';
-            PETData.SinogramSize                = [344,252,837];
-            PETData.Gantry.Span                 = 11;
-            PETData.Gantry.MRD                  = 60;
-            PETData.Gantry.nCrystalRings        = 64;
+            PETData.span                        = 11; % span by default.
+            PETData.Gantry.nCrystalRings        = 64; % number of crystal rings.
+            PETData.Gantry.nCrystalsPerRing     = 504;  
+            PETData.Gantry.maxRingDiff          = 60; % maximum ring difference.
+            PETData.image_size.matrixSize =[344, 344, 127]; % Image size by default.
+            PETData.image_size.voxelSize_mm = [2.08626 2.08626 2.03125]; % Image size by default.
+            % Init PETData.sinogram_size:
+            init_sinogram_size(PETData, PETData.span, PETData.Gantry.nCrystalRings, PETData.Gantry.maxRingDiff); % span 11 by default.
             PETData.MethodSinoData              = 'e7';
             PETData.MethodListData              = 'e7';
-            PETData.DynamicFrames               = 1;
-            PETData.MotionFrames                = 0;
-            PETData.FrameDuration_sec               = 3600; %sec.
+            PETData.DynamicFrames_sec           = [];
+            PETData.MotionFrames_sec            = [];
+            PETData.FrameDuration_sec          = 3600; %sec.
             PETData.SoftwarePaths.STIR         = '';
             PETData.SoftwarePaths.Apirl        = '';        
             if(strcmp(computer(), 'GLNXA64')) % If linux, call wine.
+                PETData.os = 'linux';
+                PETData.bar = '/';
                 PETData.SoftwarePaths.e7.siemens   = 'wine C:\Siemens\PET\bin.win64-VA20\e7_recon.exe';
                 PETData.SoftwarePaths.e7.JSRecon12 = 'wine cscript C:\JSRecon12\JSRecon12.js ';
             else
+                PETData.os = 'windows';
+                PETData.bar = '\';
                 PETData.SoftwarePaths.e7.siemens   = 'C:\Siemens\PET\bin.win64-VA20\e7_recon.exe';
                 PETData.SoftwarePaths.e7.JSRecon12 = 'cscript C:\JSRecon12\JSRecon12.js ';
             end
@@ -70,8 +95,8 @@ classdef PETDataClass < handle
             % If not any path, ask for it.
             if nargin == 0
             % prompt a window to select the data path
-                FolderName = uigetdir();
-                PETData = PETDataClass(FolderName);
+                PETData.DataPath.path  = uigetdir();
+                PETData = PETDataClass(PETData.DataPath.path );
             else
                 % Path or struct received.
             
@@ -86,28 +111,68 @@ classdef PETDataClass < handle
                         end
                     end
                     %check the consistancy of the PETData.SinogramSize and the
-                    %Gantry.Span and Gantry.MRD
+                    %Gantry.span and Gantry.maxRingDiff
 
                 elseif isdir(varargin{1})
-                    FolderName = varargin{1};
-                    [DataType] = Which(PETData,FolderName);
-                    switch(DataType)
-                        case isInterfile
+                    PETData.DataPath.path  = varargin{1};
+                    [PETData.DataType] = Which(PETData,PETData.DataPath.path );
+                    switch(PETData.DataType)
+                        case DataTypeEnum.sinogram_interfile
                             % Read sinogram or listmode file in interfile format and 
                             % return PETData.DataPath structure
                             PETData = read_check_interfiles(PETData, FolderName);
-                        case isCompressedSino(FolderName)
+                        case DataTypeEnum.compressed_interfile
+                            % Uncompress and update data type:
                             uncompress_emission(PETData);
-                        case dicom
+                            PETData.DataType = DataTypeEnum.sinogram_interfile;
+                        case DataTypeEnum.dicom
                             %  Call JSRecon12 to generate Siemens interfiles and
                             %  return PETData.DataPath structure
                             fprintf('Calling JSRecon12...\n');
                             PETData = prompt_JSRecon12(PETData, FolderName);
-                        case list_mode
-                            PETData = histogram_data(PETData, lists, SinogramSize);
+                        case DataTypeEnum.list_mode_interfile
+                            % In PETData.DataPath.emission we have the
+                            % filename. Before histograming we need the
+                            % time frames.
+%                             list_files = dir([PETData.DataPath.path PETData.bar '*.l.hdr']);
+%                             if numel(list_files) == 0
+%                                 error('Error: list mode file not found.');
+%                             elseif numel(list_files) > 1
+%                                 error('Error: more thean one list-mode file in the path.');
+%                             else
+%                                 % Set the emission filename:
+%                                 PETData.DataPath.emission_listmode =[PETData.DataPath.path PETData.bar list_files(1).name];
+%                             end
+                            % Check for the other files:
+                            PETData = read_check_interfiles(PETData, PETData.DataPath.path);
+                           %PETData = histogram_data(PETData, lists, SinogramSize);
                     end
                 else
 
+                end
+                % Check for optional parameters:
+                if nargin == 2
+                    if isstruct(varargin{2})
+                        % get fields from user's input
+                        vfields = fieldnames(varargin{2});
+                        prop = properties(PETData);
+                        for i = 1:length(vfields)
+                            field = vfields{i};
+                            field_value = varargin{2}.(field);
+                            if strcmpi(field,'span')
+                                PETData.span = field_value;
+                            elseif strcmpi(field,'maxRingDiff')
+                                PETData.Gantry.maxRingDiff = field_value;
+                            else
+                                if sum(strcmpi(prop, field )) > 0
+                                    PETData.(field) = field_value;
+                                end
+                            end
+                        end
+
+                        %Update PETData.SinogramSize based on Gantry.span and Gantry.maxRingDiff
+                        init_sinogram_size(PETData, PETData.span, PETData.Gantry.nCrystalRings, PETData.Gantry.maxRingDiff); 
+                    end
                 end
             end
         end
@@ -115,34 +180,69 @@ classdef PETDataClass < handle
     
     
     methods (Access = private)
+        % Initialize sinogram size struct.
+        sino_size_out = init_sinogram_size(PETData, inspan, numRings, maxRingDifference);
+        % Change span sinogram.
+        [sinogram_out, sinogram_size_out] = change_sinogram_span(PETData, sinogram_in, sinogram_size_in);
         
         PETData = prompt_JSRecon12(PETData, FolderName);
         PETData = read_check_interfiles(PETData, FolderName);
-
-        function [DicomFile,IntFile] = Which(~,path)
-
+        % Histogram data: converts a list mode acquisition into span-1 sinograms.
+        PETData = histogram_data(PETData);
+        
+        function [type] = Which(PETData,path)
+            % In the folder only one type of data files can be available.
+            PETData.DataType = DataTypeEnum.none;
             listing = dir(path);
             for i = 3:length(listing)
-                [~, ~, ext] = fileparts(listing(i).name);
+                [path, name, ext] = fileparts(listing(i).name);
                 if strcmpi(ext,'.IMA') || strcmpi(ext,'.PDT')
-                    DataType = DataTypeEnum.dicom;
+                    PETData.DataType = DataTypeEnum.dicom;
+                    if (PETData.DataType ~=  DataTypeEnum.none) && (PETData.DataType ~=  DataTypeEnum.dicom)
+                        error('Please seperate the dicom files from the interfile files.')
+                    end
                 else
-                    if strcmpi(ext,'.hdr') || strcmpi(ext,'.mhdr')
+                    if strcmpi(ext,'.mhdr')
+                        PETData.DataType = DataTypeEnum.sinogram_interfile;
+                        if (PETData.DataType ~=  DataTypeEnum.none) && (PETData.DataType ~=  DataTypeEnum.sinogram_interfile)
+                            error('Please seperate the sinograms in interfile from list mode and dicom files.')
+                        end
+                    elseif strcmpi(ext,'.hdr')
                         [dummy,name,ext] = fileparts(name);
                         if strcmpi(ext,'.s') 
-                            DataType = DataTypeEnum.interfile;
+                            PETData.DataType = DataTypeEnum.sinogram_interfile;
+                            if (PETData.DataType ~=  DataTypeEnum.none) && (PETData.DataType ~=  DataTypeEnum.sinogram_interfile)
+                                error('Please seperate the sinograms in interfile from list mode and dicom files.')
+                            end
                         elseif strcmpi(ext,'.l') 
-                            DataType = DataTypeEnum.list_mode;
+                            PETData.DataType = DataTypeEnum.list_mode_interfile;
+                            if (PETData.DataType ~=  DataTypeEnum.none) && (PETData.DataType ~=  DataTypeEnum.list_mode_interfile)
+                                error('Please seperate the list_mode files from sinograms and dicom files.')
+                            end
                         end
                     end
                 end
             end
-            if ~DicomFile && ~IntFile
-                error('No Dicom/Interfile was found');
-            end
-            if DicomFile && IntFile
-                error('Please seperate the interfile and dicom files')
-            end
+            if PETData.DataType == DataTypeEnum.none
+                error('No Dicom/Interfile was found.');
+            end       
+            type = PETData.DataType;
+        end
+        
+        % This functions get the field of the struct used in Apirl and
+        % converts to the struct sinogram_size used in this framework.
+        function set_sinogram_size_from_apirl_struct(objPETRawData, structSizeSino)
+            objPETRawData.sinogram_size.nRadialBins = structSizeSino.numR;
+            objPETRawData.sinogram_size.nAnglesBins = structSizeSino.numTheta;
+            objPETRawData.sinogram_size.nSinogramPlanes = sum(structSizeSino.sinogramsPerSegment);
+            objPETRawData.sinogram_size.nPlanesPerSeg = structSizeSino.sinogramsPerSegment;
+            objPETRawData.sinogram_size.matrixSize = [objPETRawData.sinogram_size.nRadialBins objPETRawData.sinogram_size.nAnglesBins objPETRawData.sinogram_size.nSinogramPlanes];
+            objPETRawData.sinogram_size.span = structSizeSino.span;
+            objPETRawData.sinogram_size.nRings = structSizeSino.numZ;
+            objPETRawData.sinogram_size.nSeg = numel(structSizeSino.sinogramsPerSegment);
+            objPETRawData.sinogram_size.minRingDiffs = structSizeSino.minRingDiffs;
+            objPETRawData.sinogram_size.maxRingDiffs = structSizeSino.maxRingDiffs;
+            objPETRawData.sinogram_size.numPlanesMashed = structSizeSino.numPlanesMashed;
         end
         
         function status = e7_sino_rawdata(PETData)
@@ -184,7 +284,7 @@ classdef PETDataClass < handle
             % todo: Axial compression, if requested
             if ~exist(PETData.DataPath.rawdata_sino,'dir')
                 mkdir(PETData.DataPath.rawdata_sino);
-                if strcmpi(PETData.MethodSinoData,'e7') && (PETData.Gantry.Span ==11)
+                if strcmpi(PETData.MethodSinoData,'e7') && (PETData.Gantry.span ==11)
                     status = e7_sino_rawdata(PETData);
                     if status
                         error('e7_recon failed to generate sinograms');
@@ -232,12 +332,7 @@ classdef PETDataClass < handle
             data = single(reshape(d,SinoSize));
             fclose(fid);
         end
-        
-        function data = histogram_data(PETData, lists, SinogramSize)
-            % calls matlab's accumarray to generate prompts/delays
-            % sinograms from the provided lists
-        end
-        
+
         function Scatter3D = iSSRB(PETData,Scatter2D)
             
             nPlanePerSeg = Planes_Seg(PETData.Gantry);
@@ -315,17 +410,42 @@ classdef PETDataClass < handle
             mu = Load_image();
         end
 
-        function info = get_acquisition_info()
+        function info = get_acquisition_info(PETData)
             % get_acquisition_info() returns a structure contaning all key
             % infromation from dicom or interfile headers such injected dose,
             % acquisition time,...
+            if (PETData.DataType == DataTypeEnum.sinogram_interfile)
+                info = getInfoFromInterfile(PETData.DataPath.emission);
+            elseif ( DataTypeEnum.list_mode_interfile)
+                info = getInfoFromInterfile(PETData.DataPath.emission_listmode);
+            end
         end
         
-        function ListModeChopper()
+        function ListModeChopper(PETData)
             % ListModeChopper() splits list-mode data into a number of
             % specified frames and returns sinograms, based on MethodListData
             % it uses 'e7' HistogramReplay or 'matlab' read_32bit_listmode()
             % and histogram_data()
+            PETData.histogram_data()
+        end
+        
+        % Initalizes tima frames
+        function InitFramesConfig(PETData, timeFrame_sec)
+            % Get info from the header:
+            info = getInfoFromInterfile(PETData.DataPath.emission_listmode);
+            % Scan time:
+            scanTime_sec = info.ImageDurationSec;
+            % Frame durations (it has NumberOfFrames elements):
+            PETData.FrameDuration_sec = timeFrame_sec;
+            % Read from the header of the list file, the total time:
+            % Number of frames.
+            PETData.NumberOfFrames = scanTime_sec./timeFrame_sec;
+
+            % List with the frames time stamps (it has NumberOfFrames elements):
+            PETData.DynamicFrames_sec = zeros(PETData.NumberOfFrames,1);
+        
+            % Generate the time stamps for the frames:
+            PETData.DynamicFrames_sec = 0 : timeFrame_sec : timeFrame_sec*PETData.NumberOfFrames;
         end
         
         function Dicom2IF()
@@ -354,25 +474,30 @@ classdef PETDataClass < handle
             clear temp
         end
         
-        function data = AxialCompress(PETData,data)
+        function data = AxialCompress(PETData,span)
+            sinogram_in = PETData.sinogram_size;
+            PETData.span = span;
+            % sinogram_out = init_sinogram_size(PETData, PETData.span, PETData.Gantry.nCrystalRings, PETData.Gantry.maxRingDiff);
+            % Compress the emission sinogram:
+            [sinogram_out, sinogram_size_out] = change_sinogram_span(PETData, sinogram, sinogram_size_in);
         end
         
         function PlotMichelogram(PETData)
-            Span = PETData.Gantry.Span;
-            MRD = PETData.Gantry.MRD;
+            span = PETData.Gantry.span;
+            maxRingDiff = PETData.Gantry.maxRingDiff;
             nCrystalRings  = PETData.Gantry.nCrystalRings;
             
-            a = (Span+1)/2;
-            b = floor((MRD +1 - a)/Span)*Span ;
-            c = MRD +1 - (a+b);
+            a = (span+1)/2;
+            b = floor((maxRingDiff +1 - a)/span)*span ;
+            c = maxRingDiff +1 - (a+b);
             
-            nSeg = 2*floor((MRD - a)/Span)+ 3;
+            nSeg = 2*floor((maxRingDiff - a)/span)+ 3;
             
-            maxRingDiff = (MRD -c):-Span:-(MRD -c);
-            minRingDiff = (MRD -c -Span+1):-Span:-(MRD -c);
+            maxRingDiff = (maxRingDiff -c):-span:-(maxRingDiff -c);
+            minRingDiff = (maxRingDiff -c -span+1):-span:-(maxRingDiff -c);
             if c~=0
-                maxRingDiff = [ MRD, maxRingDiff,-(MRD-(c-1))];
-                minRingDiff = [MRD-(c-1), minRingDiff, -MRD ];
+                maxRingDiff = [ maxRingDiff, maxRingDiff,-(maxRingDiff-(c-1))];
+                minRingDiff = [maxRingDiff-(c-1), minRingDiff, -maxRingDiff ];
             end
             
             colo = [1:(nSeg-1)/2,(nSeg-1)/2+1,(nSeg-1)/2:-1:1];
@@ -386,7 +511,7 @@ classdef PETDataClass < handle
                 end
             end
             figure,imagesc(Michelogram),colormap gray, axis xy
-            title(sprintf('No. Segments:%d, Span: %d, MRD: %d', nSeg, Span, MRD))
+            title(sprintf('No. Segments:%d, span: %d, maxRingDiff: %d', nSeg, span, maxRingDiff))
         end
         
         function uncompress(PETData,Dir)
