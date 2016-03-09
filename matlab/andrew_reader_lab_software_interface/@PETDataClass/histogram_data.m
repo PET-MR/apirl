@@ -85,9 +85,11 @@ function data = histogram_data(PETData)
             sino_delays = accumarray(rba,1,[prod(PETData.sinogram_size.matrixSize),1]);
             % if not empty new frame:
             if ~isempty(data)
-                % Write both sinograms:
+                % reshape vector into matrices.
                 sino_prompts = reshape(sino_prompts,PETData.sinogram_size.matrixSize);
                 sino_delays = reshape(sino_delays,PETData.sinogram_size.matrixSize);
+                % Write both sinograms:
+                interfileWriteSino(sino_prompts);
                 flag_new_frame = 1;
             end
 
