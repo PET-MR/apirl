@@ -5,7 +5,7 @@
 % Date: 08/02/2016
 % *********************************************************************
 
-function objGpet = init_sinogram_size(objGpet, inSpan, numRings, maxRingDifference)
+function init_sinogram_size(objGpet, inSpan, numRings, maxRingDifference)
     objGpet.sinogram_size.span = inSpan;
     objGpet.sinogram_size.nRings = numRings;
     objGpet.sinogram_size.maxRingDifference = maxRingDifference;
@@ -92,5 +92,4 @@ function objGpet = init_sinogram_size(objGpet, inSpan, numRings, maxRingDifferen
     objGpet.sinogram_size.nSinogramPlanes = sum(objGpet.sinogram_size.nPlanesPerSeg);
     objGpet.sinogram_size.matrixSize = [objGpet.sinogram_size.nRadialBins objGpet.sinogram_size.nAnglesBins objGpet.sinogram_size.nSinogramPlanes];
 
-    output_sinogram_size = objGpet.sinogram_size;
 end

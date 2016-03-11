@@ -10,7 +10,7 @@ function PETData = read_check_interfiles(PETData, FolderName)
     % todo: list mode data
     d = dir(FolderName);
     files = {d(3:end).name}';
-    tag = [0 0 0 0];
+    tag = [0 0 0 0 0];
     for i = 1:numel(files)
         if ~isempty(strfind(files{i},'.n.hdr'))
             PETData.DataPath.norm = [FolderName PETData.bar files{i}];

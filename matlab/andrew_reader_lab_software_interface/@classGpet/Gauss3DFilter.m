@@ -5,14 +5,14 @@
 % Date: 08/02/2016
 % *********************************************************************
 
-function gf3d = Gauss3DFilter (objGpet, data, image_size, fwhm)
+function gf3d = Gauss3DFilter (objGpet, data, fwhm)
 %  fwhm: convolution kernel size in cm
 
     if fwhm==0
         gf3d = data;
         return
     end
-    vox3dsz = image_size.voxelSize_mm;
+    vox3dsz = objGpet.image_size.voxelSize_mm;
 
     gsigmm=fwhm/sqrt(2^3*log(2));
     matsz=ceil(2*fwhm./vox3dsz);

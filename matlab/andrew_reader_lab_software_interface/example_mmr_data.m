@@ -46,4 +46,11 @@ PETData.PlotMichelogram
 PETData.SinogramDisplay
 PETData.ACF2 % human-only mu-map
 PETData.Scatters; %3D scatters
+%%
+Data = PETDataClass('/home/mab15/workspace/KCL/Biograph_mMr/Mediciones/BRAIN_PETMR/SINOGRAMS/');
+
+AN = Data.muliFactors; % attenuation and normalization factors
+B = Data.addiFactors;  % additive background counts, correctted for attenuation and normalization
+E = Data.Prompts;      % emission data
+
 

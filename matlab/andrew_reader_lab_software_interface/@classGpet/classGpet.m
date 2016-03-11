@@ -39,7 +39,8 @@ classdef classGpet < handle
 
             objGpet.scanner = 'mMR';
             objGpet.method =  'otf_siddon_cpu';
-            objGpet.PSF.type = 'none';
+            objGpet.PSF.type = 'shift-invar';
+            objGpet.PSF.Width = 4; %mm
             objGpet.radialBinTrim = 0;
             objGpet.Geom = '';
             objGpet.tempPath = './temp/'; 
@@ -89,9 +90,7 @@ classdef classGpet < handle
             end
         end
         
-        function x = ones(objGpet)
-            x = ones(objGpet.image_size.matrixSize);
-        end
+
 
         function G_2D_radon_setup(objGpet)
             % Default parameter, only if it havent been loaded by the
@@ -200,7 +199,7 @@ classdef classGpet < handle
         % Backproject:
         x = PT(objGpet,m, subset_i);
         % Normalization correction factors:
-        n=NCF(varargin);
+        [n, n_ti, n_tv] = NCF(varargin);
         % Attenuation correction factors:
         a=ACF(varargin);
         % Randoms:
@@ -209,8 +208,26 @@ classdef classGpet < handle
         s=S(varargin);
         %
         osem_subsets(objGpet, nsub,nAngles);
-        %
+        
+        function x = ones(objGpet)
+            [x0,y0] = meshgrid(-objGpet.image_size.matrixSize(1)/2+1:objGpet.image_size.matrixSize(2)/2);
+            x = (x0.^2+y0.^2)<(objGpet.image_size.matrixSize(1)/2.5)^2;
+            x = repmat(x,[1,1,objGpet.image_size.matrixSize(3)]);
+        end
+        
         init_sinogram_size(objGpet, inSpan, numRings, maxRingDifference);
         
+        function SenseImg = Sensitivity(objGpet, AN)
+            SenseImg = zeros([objGpet.image_size.matrixSize, objGpet.nSubsets],'single') ;
+            fprintf('Subset: ');
+            for n = 1:objGpet.nSubsets
+                fprintf('%d, ',n);
+                SenseImg(:,:,:,n) = objGpet.PT(AN,n);
+            end
+            fprintf('Done.\n');
+        end
     end
+    
 end
+
+

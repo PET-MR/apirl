@@ -15,7 +15,7 @@ function m = P(objGpet, x,subset_i)
 
     % PSF convolution
     if strcmpi(objGpet.PSF.type,'shift-invar')
-        x = Gauss3DFilter(x, objGpet.image_size, objGpet.PSF.Width);
+        x = Gauss3DFilter(objGpet, x, objGpet.PSF.Width);
     else
         disp('todo: shift-var')
     end
