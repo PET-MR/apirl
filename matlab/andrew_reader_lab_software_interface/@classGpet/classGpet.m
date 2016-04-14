@@ -31,6 +31,8 @@ classdef classGpet < handle
         tempPath
         % Asymmertic pre-computed sysetm matrix
         Geom
+        % Method to estimate randoms:
+        method_for_randoms
     end
     
     methods
@@ -44,7 +46,7 @@ classdef classGpet < handle
             objGpet.radialBinTrim = 0;
             objGpet.Geom = '';
             objGpet.tempPath = './temp/'; 
-              
+            objGpet.method_for_randoms = 'from_ML_singles_matlab';  
            if nargin == 1
                 % Read configuration from file or from struct:
                 if isstruct(varargin{1})

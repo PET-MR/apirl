@@ -4,7 +4,7 @@
 % Authors: Martin Belzunce, Abolfazl Mehranian. Kings College London.
 % Date: 26/02/2016
 % *********************************************************************
-% Computes the scatter using one of the availables methods.
+% Computes the randoms using one of the availables methods.
 % Ways to call it:
 % R(ObjPET, delayedSinogram, ncf);
 function r=R(varargin)
@@ -13,28 +13,30 @@ function r=R(varargin)
     if ~strcmpi(objGpet.scanner,'mMR')
         error('Randoms are only available for mMR scanner.');
     end
-    
-    if nargin == 2 % Simple simulation, smooth a sinogram.
-        r = zeros(size(varargin{2}));
-        for i = 1 : size(s,3)
-            s(:,:,i) = imfilter(varargin{2}(:,:,i), h, 'same');
-        end
-        % Fit tail?
-    elseif nargin == 3 % Sss simulation, need activty image and attenuation.
-        if strcmpi(objGpet.scatter_algorithm,'e7_tools')
+    param = varargin{2};
+    if numel(param) == 1 % Simple simulation, constant background with poisson dsitribution, the input parameter is the mean total number of counts.
+        counts = varargin{2};
+        r = ones(objGpet.sinogram_size.matrixSize);
+        meanValue = counts./numel(r);
+        r = r .* meanValue;
+        % Generate a poisson distributed with contant mean value:
+        r =poissrnd(r);
+    elseif size(param) == [344 252 4084]% Sss simulation, need activty image and attenuation.
+        if strcmpi(objGpet.method_for_randoms,'e7_tools')
             % Call e7 tools:
-        elseif strcmpi(objGpet.scatter_algorithm,'from_ML_singles_stir')
+        elseif strcmpi(objGpet.method_for_randoms,'from_ML_singles_stir')
             structSizeSino3d = getSizeSino3dFromSpan(objGpet.sinogram_size.nRadialBins, objGpet.sinogram_size.nAnglesBins, ...
                 objGpet.sinogram_size.nRings, 596/2, 260, ...
                 objGpet.sinogram_size.span, objGpet.sinogram_size.maxRingDifference);
             % Call stir:
             [r, structSizeSino] = estimateRandomsWithStir(varargin{2}, structSizeSino3d, varargin{3}, structSizeSino3d, outputPath);
-        elseif strcmpi(objGpet.scatter_algorithm,'from_ML_singles_stir')
+        elseif strcmpi(objGpet.method_for_randoms,'from_ML_singles_matlab')
             structSizeSino3d = getSizeSino3dFromSpan(objGpet.sinogram_size.nRadialBins, objGpet.sinogram_size.nAnglesBins, ...
                 objGpet.sinogram_size.nRings, 596/2, 260, ...
-                objGpet.sinogram_size.span, objGpet.sinogram_size.maxRingDifference);
+                1, objGpet.sinogram_size.maxRingDifference); % The delayeds are span 1.
             % Call matlab function in apirl:
-            [r, singlesOut] = estimateRandomsFromDelayeds(varargin{2}, structSizeSino3d, numIterations, varargin{3}, structSizeSino3d, outputPath);
+            numIterations = 3;
+            [r, singlesOut] = estimateRandomsFromDelayeds(varargin{2}, structSizeSino3d, numIterations, objGpet.sinogram_size.span);
         end
     end
  end
