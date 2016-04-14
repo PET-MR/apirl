@@ -30,15 +30,17 @@
 %  Ejemplo de llamada:
 %   [fwhm, fwhm_fiteado] = getFwhmOfPointSourceImage(image,[10 10],1, 1,
 %   './result')
-
-function [fwhm, fwhm_fiteado] = getFwhmOfPointSourceImage(inputImage, sizePixel_mm, dim, graficar, fullFilename, label)
+% With the new parameter peak, it optionally gets the peak of the image
+% where to evaluate the fwhm, it might be useful for comparing multiple
+% images where the peak can move and give non-comaprable results.
+function [fwhm, fwhm_fiteado, peak] = getFwhmOfPointSourceImage(inputImage, sizePixel_mm, peak, dim, graficar, fullFilename, label)
 
 % Si no recibo el parámetro de graficar, no se grafica.
-if nargin == 2
+if nargin == 3
     graficar = 0;
 end
 
-if nargin == 3
+if nargin == 4
     error('Si se desea graficar los resultados se debe indicar en el cuarto parámetro. Ej: [fwhm, fwhm_fiteado] = getFwhmOfPointSourceImage(inputImage,dim, graficar, outputPath)');
 end
 
@@ -79,21 +81,31 @@ if (ndims(inputImage) == 3)
     coordPixelsPasoFino_mm{3} = interp(coordPixels_mm{3},upsample_factor);
 end
 
-% Si quiero el corte enx o y, busco el slice donde está el pico, si me
-% piden en el eje z busco la coordenada y del pico, para esto permuto entre
-% las coordenadas 2 y 3:
-if (dim == 3)
-    inputImage = permute(inputImage,[1 3 2]);
+% Si peak está vacío lo busco:
+if isempty(peak)
+    % Si quiero el corte enx o y, busco el slice donde está el pico, si me
+    % piden en el eje z busco la coordenada y del pico, para esto permuto entre
+    % las coordenadas 2 y 3:
+    if (dim == 3)
+        inputImage = permute(inputImage,[1 3 2]);
+    end
+    [valor,slicePico] = max(max(max(inputImage)));
+    % Ahora proceso en el plano transversal (plano XY para dim 1 y 2, e YZ para dim 3, al estar permutado es la misma operación para ambos casos):
+    imagenPlanar = inputImage(:,:,slicePico);
+    % Obtención de resolución en FWHM fiteando una gaussiana:
+    pico = max(max(imagenPlanar));
+    if pico == 0
+        fwhm = 0; fwhm_fiteado = 0;
+    end
+    [fila, columna] = find(imagenPlanar==pico);
+    peak = [fila, columna, slicePico];
+else
+    fila = peak(1);
+    columna = peak(2);
+    slicePico = peak(3);
+    imagenPlanar = inputImage(:,:,slicePico);
+    pico = imagenPlanar(fila,columna);
 end
-[valor,slicePico] = max(max(max(inputImage)));
-% Ahora proceso en el plano transversal (plano XY para dim 1 y 2, e YZ para dim 3, al estar permutado es la misma operación para ambos casos):
-imagenPlanar = inputImage(:,:,slicePico);
-% Obtención de resolución en FWHM fiteando una gaussiana:
-pico = max(max(imagenPlanar));
-if pico == 0
-    fwhm = 0; fwhm_fiteado = 0;
-end
-[fila, columna] = find(imagenPlanar==pico);
 % Ahora guardo un vector con el corte sobre el eje que me pidieron:
 if dim == 1
     % Si me piden el eje y son en realidad las filas.
@@ -123,7 +135,7 @@ end
 vector_resampled = interp(vector, upsample_factor);
 [maxValue indicePicoEje_resampled] = max(vector_resampled);
 % Calculo el FWHM:
-indicesMayoresMitad = find(vector_resampled>=0.5);
+indicesMayoresMitad = find(vector_resampled>=0.5*maxValue);
 if(numel(indicesMayoresMitad)>0)
     % Interpolate to get the value exactly at the half:
     if indicesMayoresMitad(1) ~= 1
@@ -142,15 +154,18 @@ if(numel(indicesMayoresMitad)>0)
 else
     fwhm = 0;
 end
-% Si la hago fiteando una guassiana:
-try
-    ParamsGaussiana = lsqcurvefit(@Gaussian,[max(vector),coordPixels_mm{dim}(indicePicoEje), fwhm/2.35],coordPixels_mm{dim},vector);
-    fwhm_fiteado = ParamsGaussiana(3)*2.32;
-catch
-   disp('Fitting error.'); 
-   ParamsGaussiana = [0 0 0];
-   fwhm_fiteado = 0;
-end
+
+% Deshabilito el fwhm:
+% % Si la hago fiteando una guassiana:
+% try
+%     ParamsGaussiana = lsqcurvefit(@Gaussian,[max(vector),coordPixels_mm{dim}(indicePicoEje), fwhm/2.35],coordPixels_mm{dim},vector);
+%     fwhm_fiteado = ParamsGaussiana(3)*2.32;
+% catch
+%    disp('Fitting error.'); 
+%    ParamsGaussiana = [0 0 0];
+%    fwhm_fiteado = 0;
+% end
+fwhm_fiteado = 0;
 
 % Si hay que graficar, lo hago y guardo el gráfico:
 if graficar

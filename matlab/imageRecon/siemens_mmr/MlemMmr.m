@@ -165,17 +165,20 @@ clear atteNormFactors;
 %% RANDOMS CORRECTION
 randoms = zeros(size(sinograms));
 if numel(size(correctRandoms)) == numel(size(sinograms))
-%     if size(correctRandoms) == size(sinograms)
-%         % The input is the random estimate:
-%         randoms = correctRandoms;
-%     end
-    [randoms, structSizeSino] = estimateRandomsWithStir(correctRandoms, structSizeSino3dSpan1, overall_ncf_3d, structSizeSino3d, [outputPath pathBar 'stirRandoms' pathBar]);
+    if size(correctRandoms) == size(sinograms)
+        % The input is the random estimate:
+        randoms = correctRandoms;
+    else
+        numIterations = 5;
+        [randoms, singles] = estimateRandomsFromDelayeds(delayedSinograms, structSizeSino3dSpan1, numIterations, structSizeSino3d.span);
+    end
 else
     % If not, we expect a 1 to estimate randoms or a 0 to not cprrect for
     % them:
     if(correctRandoms)
         % Stir computes randoms that are already normalized:
-        [randoms, structSizeSino] = estimateRandomsWithStir(delayedSinograms, structSizeSino3dSpan1, overall_ncf_3d, structSizeSino3d, [outputPath pathBar 'stirRandoms' pathBar]);
+        numIterations = 5;
+        [randoms, singles] = estimateRandomsFromDelayeds(delayedSinograms, structSizeSino3dSpan1, numIterations, structSizeSino3d.span);
     end
 end
 %% SCATTER CORRECTION

@@ -89,22 +89,36 @@ interfilewrite(initialEstimate, filenameInitialEstimate, pixelSize_mm);
 if isstr(normFilename)
     disp('Computing the normalization correction factors...');
     % ncf:
-    [overall_ncf_3d, scanner_time_invariant_ncf_3d, scanner_time_variant_ncf_3d, acquisition_dependant_ncf_3d, used_xtal_efficiencies, used_deadtimefactors, used_axial_factors] = ...
+    [overall_ncf_3d, scanner_time_invariant_ncf_3d, scanner_time_variant_ncf_3d, acquisition_dependant_ncf_3d, xtal_dependant_ncf_3d, used_xtal_efficiencies, used_deadtimefactors, used_axial_factors] = ...
        create_norm_files_mmr(normFilename, [], [], [], [], structSizeSino3d.span);
     % invert for nf:
     overall_nf_3d = overall_ncf_3d;
     overall_nf_3d(overall_ncf_3d ~= 0) = 1./overall_nf_3d(overall_ncf_3d ~= 0);
 else
     if ~isempty(normFilename)   % if empty no norm is used, if not used the matrix in normFilename proving is of the same size of the sinogram.
-        if size(normFilename) ~= size(sinograms)
+        if numel(size(normFilename)) == numel(size(sinograms))
+            if size(normFilename) == size(sinograms)
+                disp('Using the normalization correction factors received as a parameter...');
+                overall_ncf_3d = normFilename;
+                clear normFilename;
+                % invert for nf:
+                overall_nf_3d = overall_ncf_3d;
+                overall_nf_3d(overall_ncf_3d ~= 0) = 1./overall_nf_3d(overall_ncf_3d ~= 0);
+            end
+        elseif size(normFilename) == [504 64]   % I got the crystal efficiencies.
+            disp('Creating the normalization correction factors using the crystal efficiencies received as a parameter...');
+            [overall_ncf_3d, scanner_time_invariant_ncf_3d, scanner_time_variant_ncf_3d, acquisition_dependant_ncf_3d, xtal_dependant_ncf_3d, used_xtal_efficiencies, used_deadtimefactors, used_axial_factors] = ...
+                create_norm_files_mmr([], [], normFilename, [], [], structSizeSino3d.span);
+            % invert for nf:
+            overall_nf_3d = overall_ncf_3d;
+            overall_nf_3d(overall_ncf_3d ~= 0) = 1./overall_nf_3d(overall_ncf_3d ~= 0);
+            % for scatter:
+            xtal_dependant_nf_3d = xtal_dependant_ncf_3d;
+            xtal_dependant_nf_3d(xtal_dependant_nf_3d ~= 0) = 1./xtal_dependant_nf_3d(xtal_dependant_nf_3d ~= 0);
+        else
             error('The size of the normalization correction factors is incorrect.')
         end
-        disp('Using the normalization correction factors received as a parameter...');
-        overall_ncf_3d = normFilename;
-        clear normFilename;
-        % invert for nf:
-        overall_nf_3d = overall_ncf_3d;
-        overall_nf_3d(overall_ncf_3d ~= 0) = 1./overall_nf_3d(overall_ncf_3d ~= 0);
+        
     else
         overall_ncf_3d = ones(size(sinograms));
         overall_nf_3d = overall_ncf_3d;
@@ -148,9 +162,13 @@ if isstr(attMapBaseFilename)
     % After the projection read the acfs:
     acfFilename = [outputPath acfFilename];
 else
-    %if ~isempty(normFilename)
-    acfFilename = '';
-    acfsSinogram = ones(size(sinograms));
+    if isempty(attMapBaseFilename)
+        acfFilename = '';
+        acfsSinogram = ones(size(sinograms));
+    elseif size(attMapBaseFilename) == size(sinograms)
+        % I got the acfs:
+        acfsSinogram = attMapBaseFilename;
+    end
 end
 %% GENERATE AND SAVE ATTENUATION AND NORMALIZATION FACTORS AND CORECCTION FACTORS
 disp('Generating the ANF sinogram...');
@@ -168,11 +186,12 @@ clear atteNormFactors;
 %% RANDOMS CORRECTION
 randoms = zeros(size(sinograms));
 if numel(size(correctRandoms)) == numel(size(sinograms))
-%     if size(correctRandoms) == size(sinograms)
-%         % The input is the random estimate:
-%         randoms = correctRandoms;
-%     end
-    [randoms, structSizeSino] = estimateRandomsWithStir(correctRandoms, structSizeSino3dSpan1, overall_ncf_3d, structSizeSino3d, [outputPath pathBar 'stirRandoms' pathBar]);
+    if size(correctRandoms) == size(sinograms)
+        % The input is the random estimate:
+        randoms = correctRandoms;
+    else
+        [randoms, structSizeSino] = estimateRandomsWithStir(correctRandoms, structSizeSino3dSpan1, overall_ncf_3d, structSizeSino3d, [outputPath pathBar 'stirRandoms' pathBar]);
+    end
 else
     % If not, we expect a 1 to estimate randoms or a 0 to not cprrect for
     % them:
@@ -191,7 +210,7 @@ if numel(size(correctScatter)) == numel(size(sinograms))
     end
 end
 %% ADDITIVE SINOGRAM
-additive = (randoms .* overall_ncf_3d  + scatter).* acfsSinogram; % (randoms +scatter.*norm)./(attenFactors*nprmFactrs)
+additive = (randoms + scatter).* overall_ncf_3d .* acfsSinogram; % (randoms +scatter.*norm)./(attenFactors*nprmFactrs)
 % write additive singoram:
 additiveFilename = [outputPath 'additive'];
 interfileWriteSino(single(additive), additiveFilename, structSizeSino3d);
@@ -260,7 +279,7 @@ if (numel(correctScatter) == 1)
         end
         
         % Normalize the scatter:
-        normScatter = scatter_1 .* overall_nf_3d;
+        normScatter = scatter_1 .* xtal_dependant_nf_3d;
         % Plot profiles to test:
         profileSinogram = sum(sinograms(:,126,:),3);
         profileRandoms = sum(randoms(:,126,:),3);
@@ -277,7 +296,7 @@ if (numel(correctScatter) == 1)
         end
         
         % New dditive sinogram:
-        additive = (randoms .* overall_ncf_3d  + scatter_1).* acfsSinogram; % (randoms +scatter.*norm)./(attenFactors*nprmFactrs)
+        additive = (randoms + scatter_1 .* xtal_dependant_nf_3d).* overall_ncf_3d .* acfsSinogram;  % (randoms +scatter.*norm)./(attenFactors*nprmFactrs)
         % write additive singoram:
         additiveFilename = [outputPathScatter 'additive'];
         interfileWriteSino(single(additive), additiveFilename, structSizeSino3d);
@@ -333,7 +352,7 @@ if (numel(correctScatter) == 1)
         scatter = (scatter_1+scatter_2)./2;
         interfileWriteSino(single(scatter), [outputPathScatter 'scatter'], structSizeSino3d);
         % Normalize the scatter:
-        normScatter = scatter .* overall_nf_3d;
+        normScatter = scatter .* xtal_dependant_nf_3d;
         % Plot profiles to test:
         profileSinogram = sum(sinograms(:,126,:),3);
         profileRandoms = sum(randoms(:,126,:),3);
@@ -344,7 +363,7 @@ if (numel(correctScatter) == 1)
         legend('Sinogram', 'Randoms', 'Scatter', 'Randoms+Scatter');
         
         % New dditive sinogram:
-        additive = (randoms .* overall_ncf_3d  + scatter).* acfsSinogram; % (randoms +scatter.*norm)./(attenFactors*nprmFactrs)
+        additive = (randoms + scatter .* xtal_dependant_nf_3d).* overall_ncf_3d .* acfsSinogram;  % (randoms +scatter.*norm)./(attenFactors*nprmFactrs)
         % write additive singoram:
         additiveFilename = [outputPathScatter 'additive'];
         interfileWriteSino(single(additive), additiveFilename, structSizeSino3d);

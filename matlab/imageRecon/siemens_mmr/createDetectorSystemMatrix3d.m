@@ -113,8 +113,10 @@ combinedNormalization =  sum(detector1SystemMatrix,1) + sum(detector2SystemMatri
 % Check if the matrix is required to be normalized (by default is normalized):
 if nargin == 1 || ((nargin==2)&&(normalize==1))
     for i = 1 : size(detector1SystemMatrix,2)
-        detector1SystemMatrix(:,i) = detector1SystemMatrix(:,i)./combinedNormalization(i)';
-        detector2SystemMatrix(:,i) = detector2SystemMatrix(:,i)./combinedNormalization(i)';
+        if(combinedNormalization(i)~=0) % Because of the gaps.
+            detector1SystemMatrix(:,i) = detector1SystemMatrix(:,i)./combinedNormalization(i)';
+            detector2SystemMatrix(:,i) = detector2SystemMatrix(:,i)./combinedNormalization(i)';
+        end
     end
 end
 

@@ -45,7 +45,7 @@
 %  The size of each component matrix are hardcoded for the mMr scanner and
 %  are
 
-function [overall_ncf_3d, scanner_time_invariant_ncf_3d, scanner_time_variant_ncf_3d, acquisition_dependant_ncf_3d, used_xtal_efficiencies, used_deadtimefactors, used_axial_factors, structSizeSino3d] = ...
+function [overall_ncf_3d, scanner_time_invariant_ncf_3d, scanner_time_variant_ncf_3d, acquisition_dependant_ncf_3d, crystal_dependant_ncf_3d, used_xtal_efficiencies, used_deadtimefactors, used_axial_factors, structSizeSino3d] = ...
    create_norm_files_mmr(cbn_filename, my_axial_factors, my_selection_of_xtal_efficiencies, my_choice_of_deadtimefactors, singles_rates_per_bucket, span_choice)
 
 
@@ -127,7 +127,8 @@ crystalInterfFactor = single(componentFactors{2});
 crystalInterfFactor = repmat(crystalInterfFactor', 1, structSizeSino3d.numTheta/size(crystalInterfFactor,1));
 % c) Axial factors:
 if isempty(my_axial_factors)
-    axialFactors = zeros(sum(structSizeSino3d.sinogramsPerSegment),1);
+    axialFactors = zeros(sum(structSizeSino3d_span1.sinogramsPerSegment),1);
+    axialFactorsPerRing = zeros(64,64);
     if isempty(span_choice)
         axialFactors = structSizeSino3d.numSinosMashed'.* (1./(componentFactors{4}));    % e7 tools does not use the other component factors.*componentFactors{8}));
     else
@@ -144,28 +145,29 @@ if isempty(my_axial_factors)
             gainPerPixelInBlock = gainPerPixelInBlock.gainPerPixelInBlock;
         end
         indiceSino = 1; % indice del sinogram 3D.
-        for segment = 1 : structSizeSino3d.numSegments
+        for segment = 1 : structSizeSino3d_span1.numSegments
             % Por cada segmento, voy generando los sinogramas correspondientes y
             % contándolos, debería coincidir con los sinogramas para ese segmento: 
             numSinosThisSegment = 0;
             % Recorro todos los z1 para ir rellenando
-            for z1 = 1 : (structSizeSino3d.numZ*2)
+            for z1 = 1 : (structSizeSino3d_span1.numZ*2)
                 numSinosZ1inSegment = 0;   % Cantidad de sinogramas para z1 en este segmento
                 % Recorro completamente z2 desde y me quedo con los que están entre
                 % minRingDiff y maxRingDiff. Se podría hacer sin recorrer todo el
                 % sinograma pero se complica un poco.
                 z1_aux = z1;    % z1_aux la uso para recorrer.
-                for z2 = 1 : structSizeSino3d.numZ
+                for z2 = 1 : structSizeSino3d_span1.numZ
                     % Ahora voy avanzando en los sinogramas correspondientes,
                     % disminuyendo z1 y aumentnado z2 hasta que la diferencia entre
                     % anillos llegue a maxRingDiff.
-                    if ((z1_aux-z2)<=structSizeSino3d.maxRingDiff(segment))&&((z1_aux-z2)>=structSizeSino3d.minRingDiff(segment))
+                    if ((z1_aux-z2)<=structSizeSino3d_span1.maxRingDiff(segment))&&((z1_aux-z2)>=structSizeSino3d_span1.minRingDiff(segment))
                         % Me asguro que esté dentro del tamaño del michelograma:
-                        if(z1_aux>0)&&(z2>0)&&(z1_aux<=structSizeSino3d.numZ)&&(z2<=structSizeSino3d.numZ)
+                        if(z1_aux>0)&&(z2>0)&&(z1_aux<=structSizeSino3d_span1.numZ)&&(z2<=structSizeSino3d_span1.numZ)
                             numSinosZ1inSegment = numSinosZ1inSegment + 1;
                             % Get the index of detector inside a block:
                             pixelInBlock1 = rem(z1_aux-1, numberOfAxialCrystalsPerBlock);
                             pixelInBlock2 = rem(z2-1, numberOfAxialCrystalsPerBlock);
+                            axialFactorsPerRing(z1_aux,z2) = (gainPerPixelInBlock(pixelInBlock1+1) * gainPerPixelInBlock(pixelInBlock2+1));
                             axialFactors(indiceSino) = axialFactors(indiceSino) + (gainPerPixelInBlock(pixelInBlock1+1) * gainPerPixelInBlock(pixelInBlock2+1));
                         end
                     end
@@ -181,28 +183,69 @@ if isempty(my_axial_factors)
                 end
             end    
         end
+        axialFactors_xtal_dependent = axialFactors;
         %% Normalize to ones:
         %axialFactors = axialFactors ./ mean(axialFactors);
         
         %% Sensitivity factors:
-        sensitivityFactors = zeros(sum(structSizeSino3d.sinogramsPerSegment),1);
-        for segment = 1 : structSizeSino3d.numSegments
-            indices = (structSizeSino3d_span1.minRingDiff>=structSizeSino3d.minRingDiff(segment))&(structSizeSino3d_span1.minRingDiff<=structSizeSino3d.maxRingDiff(segment));
-            meanValuePerSegment(segment) = mean(sensitivityPerSegment(indices));
+%         sensitivityFactors = zeros(sum(structSizeSino3d.sinogramsPerSegment),1);
+%         for segment = 1 : structSizeSino3d.numSegments
+%             indices = (structSizeSino3d_span1.minRingDiff>=structSizeSino3d.minRingDiff(segment))&(structSizeSino3d_span1.minRingDiff<=structSizeSino3d.maxRingDiff(segment));
+%             meanValuePerSegment(segment) = mean(sensitivityPerSegment(indices));
+%         end
+%         indiceInicioSino = 1;
+%         for segment = 1 : numel(structSizeSino3d.sinogramsPerSegment)
+%             indiceFinSino = indiceInicioSino + structSizeSino3d.sinogramsPerSegment(segment) - 1;
+%             sensitivityFactors(indiceInicioSino:indiceFinSino) = meanValuePerSegment(segment);
+%             indiceInicioSino = indiceFinSino + 1;
+%         end
+%         sensitivityFactors = sensitivityFactors ./ mean(sensitivityFactors);
+%         
+%         % Apply sinogram normaliztion (in this case it is not necessary, but fo
+%         %r other spans it is:
+%         %axialFactors = axialFactors.*structSizeSino3d.numSinosMashed'; % All ones!
+%         
+%         axialFactors= axialFactors.*sensitivityFactors;
+        % compress:
+        if span_choice ~= 1
+            axialFactorsSpan1 = axialFactors;
+            axialFactors = zeros(sum(structSizeSino3d.sinogramsPerSegment),1);
+            indiceSino = 1; % indice del sinogram 3D.
+            for segment = 1 : structSizeSino3d.numSegments
+                % Por cada segmento, voy generando los sinogramas correspondientes y
+                % contándolos, debería coincidir con los sinogramas para ese segmento: 
+                numSinosThisSegment = 0;
+                % Recorro todos los z1 para ir rellenando
+                for z1 = 1 : (structSizeSino3d.numZ*2)
+                    numSinosZ1inSegment = 0;   % Cantidad de sinogramas para z1 en este segmento
+                    % Recorro completamente z2 desde y me quedo con los que están entre
+                    % minRingDiff y maxRingDiff. Se podría hacer sin recorrer todo el
+                    % sinograma pero se complica un poco.
+                    z1_aux = z1;    % z1_aux la uso para recorrer.
+                    for z2 = 1 : structSizeSino3d.numZ
+                        % Ahora voy avanzando en los sinogramas correspondientes,
+                        % disminuyendo z1 y aumentnado z2 hasta que la diferencia entre
+                        % anillos llegue a maxRingDiff.
+                        if ((z1_aux-z2)<=structSizeSino3d.maxRingDiff(segment))&&((z1_aux-z2)>=structSizeSino3d.minRingDiff(segment))
+                            % Me asguro que esté dentro del tamaño del michelograma:
+                            if(z1_aux>0)&&(z2>0)&&(z1_aux<=structSizeSino3d.numZ)&&(z2<=structSizeSino3d.numZ)
+                                numSinosZ1inSegment = numSinosZ1inSegment + 1;
+                                axialFactors(indiceSino) = axialFactors(indiceSino) + axialFactorsPerRing(z1_aux,z2);
+                            end
+                        end
+                        % Pase esta combinación de (z1,z2), paso a la próxima:
+                        z1_aux = z1_aux - 1;
+                    end
+                    if(numSinosZ1inSegment>0)
+                        % I average the efficencies dividing by the number of axial
+                        % combinations used for this sino:
+                        %acquisition_dependant_ncf_3d(:,:,indiceSino) = acquisition_dependant_ncf_3d(:,:,indiceSino) / numSinosZ1inSegment;
+                        numSinosThisSegment = numSinosThisSegment + 1;
+                        indiceSino = indiceSino + 1;
+                    end
+                end    
+            end
         end
-        indiceInicioSino = 1;
-        for segment = 1 : numel(structSizeSino3d.sinogramsPerSegment)
-            indiceFinSino = indiceInicioSino + structSizeSino3d.sinogramsPerSegment(segment) - 1;
-            sensitivityFactors(indiceInicioSino:indiceFinSino) = meanValuePerSegment(segment);
-            indiceInicioSino = indiceFinSino + 1;
-        end
-        sensitivityFactors = sensitivityFactors ./ mean(sensitivityFactors);
-        
-        % Apply sinogram normaliztion (in this case it is not necessary, but fo
-        %r other spans it is:
-        %axialFactors = axialFactors.*structSizeSino3d.numSinosMashed'; % All ones!
-        
-        axialFactors= axialFactors.*sensitivityFactors;
     end
 else
     axialFactors = my_axial_factors;
@@ -300,6 +343,12 @@ end
 % Just to have an approximation:
 [scanner_time_variant_ncf_3d, structSizeSino3d_span11] = convertSinogramToSpan(scanner_time_variant_ncf_3d, structSizeSino3d_span1, structSizeSino3d.span);
 [acquisition_dependant_ncf_3d, structSizeSino3d_span11] = convertSinogramToSpan(acquisition_dependant_ncf_3d, structSizeSino3d_span1, structSizeSino3d.span);
+% Crystal dependent (crystal efficienies and crystal interference factors):
+crystal_dependant_ncf_3d =  (1./crystalInterfFactor) .* scanner_time_variant_ncf_3d;
+for i = 1 : sum(structSizeSino3d.sinogramsPerSegment)
+    crystal_dependant_ncf_3d(:,:,i) =  crystal_dependant_ncf_3d(:,:,i) ./ axialFactors_xtal_dependent(i);
+end
+
 % Normalize to the number of sino mashed (because that is taken into
 % account in the axial factors):
 % Generate scanner time invariant:
