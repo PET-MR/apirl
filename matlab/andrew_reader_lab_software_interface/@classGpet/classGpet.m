@@ -33,19 +33,29 @@ classdef classGpet < handle
         Geom
         % Method to estimate randoms:
         method_for_randoms
+        % Operative system.
+        os
+        % bar for the paths.
+        bar
     end
     
     methods
         % Constructors:
         function objGpet = classGpet(varargin) % Default options: (). From file (filename)
-
+            if(strcmp(computer(), 'GLNXA64')) % If linux, call wine64.
+                objGpet.os = 'linux';
+                objGpet.bar = '/';
+            else
+                objGpet.os = 'windows';
+                objGpet.bar = '\';
+            end
             objGpet.scanner = 'mMR';
             objGpet.method =  'otf_siddon_cpu';
             objGpet.PSF.type = 'shift-invar';
             objGpet.PSF.Width = 4; %mm
             objGpet.radialBinTrim = 0;
             objGpet.Geom = '';
-            objGpet.tempPath = './temp/'; 
+            objGpet.tempPath = ['.' objGpet.bar 'temp' objGpet.bar]; 
             objGpet.method_for_randoms = 'from_ML_singles_matlab';  
            if nargin == 1
                 % Read configuration from file or from struct:
@@ -151,6 +161,7 @@ classdef classGpet < handle
                 objGpet.sinogram_size.nAnglesBins = 252;
                 objGpet.sinogram_size.nRings = 64;
                 objGpet.sinogram_size.nSinogramPlanes = 837;
+                objGpet.sinogram_size.maxRingDifference = 60;
                 objGpet.sinogram_size.nPlanesPerSeg = [127   115   115    93    93    71    71    49    49    27    27];
                 objGpet.sinogram_size.span = 11;
                 objGpet.sinogram_size.nSeg = 11;

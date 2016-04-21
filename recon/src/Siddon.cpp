@@ -265,7 +265,7 @@ float Siddon (Line3D LOR, Image* image, SiddonSegment** weightsList, int* length
   else
     alpha_x = numeric_limits<float>::max();;
   if (alpha_x <0)		// If its outside the FOV que get to the maximum value so it doesn't bother
-    alpha_x = numeric_limits<float>::max();
+    alpha_x = 0;//numeric_limits<float>::max();
   
   if(LOR.Vy > 0)
     alpha_y = ( -rFov_mm + (j_min + j_incr) * sizeImage.sizePixelY_mm - LOR.P0.Y ) / LOR.Vy;
@@ -274,7 +274,7 @@ float Siddon (Line3D LOR, Image* image, SiddonSegment** weightsList, int* length
   else
     alpha_y = numeric_limits<float>::max();
   if (alpha_y <0)
-    alpha_y = numeric_limits<float>::max();
+    alpha_y = 0;//numeric_limits<float>::max();
   
   if(LOR.Vz > 0)
     alpha_z = ( offsetZ_mm + (k_min + k_incr) * sizeImage.sizePixelZ_mm - LOR.P0.Z ) / LOR.Vz;
@@ -283,7 +283,7 @@ float Siddon (Line3D LOR, Image* image, SiddonSegment** weightsList, int* length
   else
     alpha_z = numeric_limits<float>::max();
   if (alpha_z <0)
-    alpha_z = numeric_limits<float>::max();
+    alpha_z = 0;//numeric_limits<float>::max();
 
   // En alpha_c voy guardando el valor de alpha con el que voy recorriendo los píxeles. Si hacia alpha_c - alpha_min
   // no quedaban pixeles enteros. De esta forma me lo aseguro.
@@ -739,7 +739,7 @@ void Siddon (Point2D point1, Point2D point2, Image* image, SiddonSegment** Weigh
   else
 	  alpha_x = numeric_limits<float>::max();;
   if	(alpha_x <0)		// If its outside the FOV que get to the maximum value so it doesn't bother
-	  alpha_x = numeric_limits<float>::max();
+	  alpha_x =  0; //numeric_limits<float>::max();
 
   if(LOR.Vy > 0)
 	  alpha_y = ( -rFov + (j_min + j_incr) * dy - LOR.P0.Y ) / LOR.Vy;
@@ -748,7 +748,7 @@ void Siddon (Point2D point1, Point2D point2, Image* image, SiddonSegment** Weigh
   else
 	  alpha_y = numeric_limits<float>::max();
   if	(alpha_y <0)
-	  alpha_y = numeric_limits<float>::max();
+	  alpha_y = 0; //numeric_limits<float>::max();
 
 
   float alpha_c = alpha_min;	// Auxiliar alpha value for save the latest alpha vlaue calculated
