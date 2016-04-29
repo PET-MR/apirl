@@ -135,6 +135,7 @@ classdef classGpet < handle
                 objGpet.sinogram_size.nSinogramPlanes = 1;
                 objGpet.sinogram_size.span = 1;
                 objGpet.sinogram_size.nSeg = 1;
+                objGpet.sinogram_size.nRings = 1;
 %                 objGpet.radialBinTrim = 0;
             else
                 

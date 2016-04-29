@@ -57,10 +57,16 @@ refAct = imref3d(size(tAct),xLimits,yLimits,zLimits);
 pixelSize_mm = [2.08625 2.08625 2.03125];
 %[tMu refAt] = imregister(tMu, refAt,tAct, refAct, 'affine', optimizer, metric);
 [tMu, refAt] = ImageResample(tMu, refAt, refAct);
+tMu(tMu<0) = 0;
 %% GET AN SLICE
 slice = 59; % fOR THE CAUDATE.
 tAct_2d = tAct(:,:,slice);
 tMu_2d = tMu(:,:,slice);
+% Add hot and cold spots:138:165,155:188
+% Hot spot:
+tAct_2d(151:152, 163:164) = tAct_2d(152:153, 163:164)*2;
+% Cold spot:
+tAct_2d(151:152, 180:181) = tAct_2d(152:153, 180:181)*0.2;
 %% CUT THE IMAGE
 % If we keep the full size image, we have the problem that overlaps
 % withdetectors:
@@ -70,6 +76,8 @@ tMut_2d_reduced = tMu_2d(indexReduced, indexReduced);
 xLimits = [-size(tAct_2d_reduced,2)/2*2.08625 size(tAct_2d_reduced,2)/2*2.08625];
 yLimits = [-size(tMut_2d_reduced,1)/2*2.08625 size(tMut_2d_reduced,1)/2*2.08625];
 zLimits = 0;
+
+% Save image:
 refAct_2d_reduced = imref2d(size(tAct_2d_reduced),xLimits,yLimits);
 refAt_2d_reduced = imref2d(size(tMut_2d_reduced),xLimits,yLimits);
 %% CONVERSION OF IMAGES INTO GATE NEEDS
@@ -84,6 +92,10 @@ tAct_2d_reduced = tAct_2d_reduced.*conversionFactor;
 interfilewrite(tAct_2d, [outputPath 'actMap'], [refAct_2d_reduced.PixelExtentInWorldY refAct_2d_reduced.PixelExtentInWorldX]);
 interfilewrite(tMu_2d, [outputPath 'muMap'], [refAct_2d_reduced.PixelExtentInWorldY refAct_2d_reduced.PixelExtentInWorldX]);
 
+% create a constant image.
+const = zeros(size(tAct_2d_reduced));
+const(tMut_2d_reduced>0.01) = 1;
+interfilewrite(uint16(const), [outputPath 'constMap_uint16'], [refAct_2d_reduced.PixelExtentInWorldY refAct_2d_reduced.PixelExtentInWorldX ]);
 interfilewrite(uint16(tAct_2d), [outputPath 'actMap_uint16'], [refAct_2d_reduced.PixelExtentInWorldY refAct_2d_reduced.PixelExtentInWorldX]);
 interfilewrite(uint16(tAct_2d_reduced), [outputPath 'actMap_reduced_uint16'], [refAct_2d_reduced.PixelExtentInWorldY refAct_2d_reduced.PixelExtentInWorldX]);
 %% MUMAP
@@ -117,10 +129,6 @@ interfilewrite(uint16(tMu_2d_reduced_uint16), [outputPath 'muMap_reduced_uint16'
 %% SMALL REGION TO SIMULATE IN GATE
 outputPath = '/home/mab15/workspace/KCL/Biograph_mMr/GateModel/svn_2d/CaudatePhantom/';
 caudateImage = uint16(tAct_2d(138:165,155:188));
-% Hot spot:
-caudateImage(round(size(caudateImage,1)/2), 10) = caudateImage(round(size(caudateImage,1)/2), 10)*2;
-% Cold spot:
-caudateImage(round(size(caudateImage,1)/2), 25) = caudateImage(round(size(caudateImage,1)/2), 25)*0.2;
 caudateImage_aten = tMu_2d_uint16(138:165,155:188);
 xLimits = [-size(caudateImage,2)/2*2.08625 size(caudateImage,2)/2*2.08625];
 yLimits = [-size(caudateImage,1)/2*2.08625 size(caudateImage,1)/2*2.08625];
@@ -131,3 +139,35 @@ interfilewrite(uint16(caudateImage_aten), [outputPath 'muMap_uint16'], [refCauda
 % create a constant image.
 const = ones(size(caudateImage));
 interfilewrite(uint16(const), [outputPath 'constMap_uint16'], [refCaudate.PixelExtentInWorldY refCaudate.PixelExtentInWorldX ]);
+%% SMALL REGION TO SIMULATE IN GATE BUT IN THE SAME SIZE
+outputPath = '/home/mab15/workspace/KCL/Biograph_mMr/GateModel/svn_2d/CaudatePhantomFullImage/';
+if ~isdir(outputPath)
+    mkdir(outputPath);
+end
+caudateFullImage = zeros(size(tAct_2d));
+caudateFullImage(138:165,155:188) = uint16(tAct_2d(138:165,155:188));
+caudateFullImage_reduced = caudateFullImage(indexReduced, indexReduced);
+
+xLimits = [-size(caudateImage,2)/2*2.08625 size(caudateImage,2)/2*2.08625];
+yLimits = [-size(caudateImage,1)/2*2.08625 size(caudateImage,1)/2*2.08625];
+zLimits = 0;
+% create a constant image.
+const = zeros(size(tAct_2d));
+const(138:165,155:188) = 1;
+const_reduced = const(indexReduced, indexReduced);
+interfilewrite(uint16(const_reduced), [outputPath 'constMap_uint16'], [refAct_2d_reduced.PixelExtentInWorldY refAct_2d_reduced.PixelExtentInWorldX ]);
+interfilewrite(uint16(caudateFullImage_reduced), [outputPath 'actMap_uint16'], [refAct_2d_reduced.PixelExtentInWorldY refAct_2d_reduced.PixelExtentInWorldX]);
+interfilewrite(uint16(tMu_2d_reduced_uint16), [outputPath 'muMap_reduced_uint16'], [refAct_2d_reduced.PixelExtentInWorldY refAct_2d_reduced.PixelExtentInWorldX ]);
+% Range atenuation:
+fid = fopen(sprintf('%s/RangeAttenuation.dat',outputPath), 'w');
+if(fid == -1)
+    fprintf('No se pudo crear el archivo RangeAttenuation.dat');
+end
+% En la primera línea la cantidad de materiales:
+fprintf(fid,'%d\n', numMaterials);
+for i = 1 : numMaterials
+    % Uso colores aleatorios:
+    fprintf(fid,'%.1f\t%.1f\t%s\ttrue %.1f %.1f %.1f\n', i, i, nameMaterials{i},...
+        rand(1),rand(1),rand(1));
+end
+fclose(fid);

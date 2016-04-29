@@ -49,6 +49,7 @@
 #include <Sinograms2Din3DArPet.h>
 #include <Sinograms2DinCylindrical3Dpet.h>
 #include <Sinogram3DSiemensMmr.h>
+#include <Sinograms2DinSiemensMmr.h>
 #ifdef __USE_CUDA__
   #include <CuProjector.h>
   #include <CuProjectorInterface.h>
@@ -297,26 +298,60 @@ int main (int argc, char *argv[])
 	cout<<"Starting projection:" << endl;
 	double startTime = omp_get_wtime();	
 	// Ahora hago la proyección según el tipo de dato de entrada:
-	if(outputType.compare("Sinogram2D")==0)
+	if((outputType.compare("Sinogram2D")==0)||(outputType.compare("Sinogram2DinSiemensMmr")==0))
 	{
+	  Sinogram2D* outputProjection;
 	  // Sinograma 2D de tipo genérico, este no tine ningún parámetro estra. Simplemente
 	  // se lee la imagen del FOV.
-	  
-	 Sinogram2D* outputProjection = new Sinogram2DinCylindrical3Dpet((char*)inputFilename.c_str(), rFov_mm, rScanner_mm);
-    
+	  if (outputType.compare("Sinogram2D")==0)
+	  {
+	    outputProjection = new Sinogram2DinCylindrical3Dpet((char*)sampleProjection.c_str(), rFov_mm, rScanner_mm);
+	  }
+	  else
+	  {
+	    outputProjection = new Sinogram2DinSiemensMmr((char*)sampleProjection.c_str());
+	  }
 	  
 	  outputProjection->FillConstant(0);
 	  forwardprojector->Project(inputImage, outputProjection);
+	  
+	  /// Compute atenuation correction factors
+	  for(int j = 0; j < outputProjection->getNumProj(); j++)
+	  {
+		
+	    for(int k = 0; k < outputProjection->getNumR(); k++)
+	    {
+	      /// Cada Sinograma 2D me represnta múltiples LORs, según la mínima y máxima diferencia entre anillos.
+	      /// Por lo que cada bin me va a sumar cuentas en lors con distintos ejes axiales.
+	      if(outputProjection->getSinogramBin(j,k) != 0)
+	      {
+		outputProjection->setSinogramBin(j,k,exp(outputProjection->getSinogramBin(j,k)));
+	      }
+	      else
+	      {
+		/// Si 0, fijar el acf en 1:
+		outputProjection->setSinogramBin(j,k,1);
+	      }
+	    }
+	  }    
 	  outputProjection->writeInterfile(outputFilename);
 	}
-	else if((outputType.compare("Sinograms2D")==0)||(outputType.compare("Sinograms2DinCylindrical3Dpet")==0))
+	else if((outputType.compare("Sinograms2D")==0)||(outputType.compare("Sinograms2DinCylindrical3Dpet")==0)||(outputType.compare("Sinograms2DinSiemensMmr")==0))
 	{
-	  // Sinogramas 2D genérico (para scanner cilíndrico).
-	  if(getCylindricalScannerParameters(parameterFileName, "generateACFs", &rFov_mm, &axialFov_mm, &rScanner_mm))
+	  Sinograms2DmultiSlice* outputProjection;
+	  if((outputType.compare("Sinograms2D")==0)||(outputType.compare("Sinograms2DinCylindrical3Dpet")==0))
 	  {
-	    return -1;
+	    // Sinogramas 2D genérico (para scanner cilíndrico).
+	    if(getCylindricalScannerParameters(parameterFileName, "generateACFs", &rFov_mm, &axialFov_mm, &rScanner_mm))
+	    {
+	      return -1;
+	    }
+	    outputProjection = new Sinograms2DinCylindrical3Dpet((char*)sampleProjection.c_str(), rFov_mm, axialFov_mm, rScanner_mm); 
 	  }
-	  Sinograms2DinCylindrical3Dpet* outputProjection = new Sinograms2DinCylindrical3Dpet((char*)sampleProjection.c_str(), rFov_mm, axialFov_mm, rScanner_mm); 
+	  else
+	  {
+	    outputProjection = new Sinograms2DinSiemensMmr((char*)sampleProjection.c_str()); 
+	  }
 	  outputProjection->FillConstant(0);
 	  float x_mm, y_mm, z_mm;
 	  // Recorro todos los slices y hago la proyección:

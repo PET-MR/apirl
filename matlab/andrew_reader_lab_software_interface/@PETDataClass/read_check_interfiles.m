@@ -20,7 +20,7 @@ function PETData = read_check_interfiles(PETData, FolderName)
             PETData.DataPath.emission = [FolderName PETData.bar files{i}];
             tag(2) = 1;
         end
-        if ~isempty(strfind(files{i},'umap_hardware.mhdr'))
+        if ~isempty(strfind(files{i},'umap-hardware.mhdr'))
             PETData.DataPath.hardware_umap = [FolderName PETData.bar files{i}];
             tag(3) = 1;
         end
@@ -32,8 +32,8 @@ function PETData = read_check_interfiles(PETData, FolderName)
             PETData.DataPath.emission_uncomp = [FolderName PETData.bar files{i}];
         end
         % List- mode interfile.
-        if ~isempty(strfind(files{i},'.l.hdr'))
-            PETData.DataPath.emission_listmode = [FolderName PETData.bar files{i}];
+        if ~isempty(strfind(files{i},'.l'))
+            PETData.DataPath.emission_listmode = [FolderName PETData.bar files{i}(1:end-1) 'hdr']; % The header is .hdr
             tag(5) = 1;
         end
     end

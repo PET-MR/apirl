@@ -8,10 +8,10 @@
 function PETData = prompt_JSRecon12(PETData, FolderName)
             
     [PathName,Name] = fileparts(FolderName);
-    Root_path = [PathName '\' Name '-Converted\'];
+    Root_path = [PathName PETData.bar Name '-Converted' PETData.bar];
 
     if ~exist(Root_path,'dir')
-        [status,~] = system([PETData.SoftwarePaths.e7.JSRecon12 FolderName]);
+        [status,~] = system([PETData.SoftwarePaths.e7.JSRecon12 ' ' FolderName]);
         if status
             error('JSRecon12 failed to generate sinograms');
         end

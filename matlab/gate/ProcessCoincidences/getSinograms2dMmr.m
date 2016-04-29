@@ -18,6 +18,7 @@ addpath('/sources/MATLAB/WorkingCopy/ImageRecon');
 %%  VARIABLES PARA GENERACIÓN DE SINOGRAMAS 3D
 sinogram = single(zeros(structSizeSino2D.numR,structSizeSino2D.numTheta, sum(structSizeSino2D.numZ)));
 sinogram_scatter = single(zeros(structSizeSino2D.numR,structSizeSino2D.numTheta, sum(structSizeSino2D.numZ)));
+sinogram_without_scatter = single(zeros(structSizeSino2D.numR,structSizeSino2D.numTheta, sum(structSizeSino2D.numZ)));
 %% VARIABLES AUXILIARES Y PARA VISUALIZACIÓN DE RESULTADOS PARCIALES
 % Valores de cada coordenada dentro de la simulación:
 valoresX = -400:2:400;                   % Valores posibles de emisión de positrones en la variable Z (O sea, subre todo el FOV).
@@ -222,7 +223,7 @@ for i = 1 : structSimu.numSplits
                 % The same for scattered events:
                 indicesScatter = coincidenceMatrix(:,colCompton1)>0 | coincidenceMatrix(:,colCompton2)>0;
                 histCrystalsCombScatter = histCrystalsCombScatter + hist3([globalCrystalId1(indicesScatter) globalCrystalId2(indicesScatter)], {1:numberOfCrystals 1:numberOfCrystals});
-                
+                                
 
                 %% FIN DEL LOOP
             end
@@ -245,8 +246,10 @@ sinogram(:) = histCrystalsComb(sub2ind(size(histCrystalsComb),mapaDet1Ids(:), ma
 sinogram(:) =  sinogram(:) + histCrystalsComb(sub2ind(size(histCrystalsComb),mapaDet2Ids(:), mapaDet1Ids(:)));
 sinogram_scatter(:) = histCrystalsCombScatter(sub2ind(size(histCrystalsComb),mapaDet1Ids(:), mapaDet2Ids(:)));
 sinogram_scatter(:) =  sinogram_scatter(:) + histCrystalsCombScatter(sub2ind(size(histCrystalsComb),mapaDet2Ids(:), mapaDet1Ids(:)));
+sinogram_without_scatter(:) = sinogram(:) - sinogram_scatter(:);
 interfileWriteSino(sinogram, [outputPath 'sinogram'], structSizeSino2D);
 interfileWriteSino(sinogram_scatter, [outputPath 'sinogram_scatter'], structSizeSino2D);
+interfileWriteSino(sinogram_without_scatter, [outputPath 'sinogram_without_scatter'], structSizeSino2D);
 %% WRITE EMISSION
 interfilewrite(emissionMap, [outputPath 'emissionMap'], pixelSize_mm);
 

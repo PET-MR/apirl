@@ -2010,7 +2010,7 @@ const char *MdcReadINTF(FILEINFO *fi)
   MdcSplitPath(fi->ipath,fi->idir,fi->ifname);
   MdcFree(origpath);
 
-  if (fi->truncated) return("INTF Truncated image file");
+  //if (fi->truncated) return("INTF Truncated image file"); // The library accept only headers, in that case the interfile reader would say this error.
 
   return NULL; 
 

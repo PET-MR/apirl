@@ -392,11 +392,16 @@ bool Sinogram2D::readFromInterfile(string headerFilename)
 	this->ptrSinogram = (float*) realloc(this->ptrSinogram, sizeof(float)*this->numProj*this->numR);
 	int nBinsSino2d = this->numProj * this->numR;
 	IMG_DATA *id;
-	for(int i = 0; i < (int)fi->number; i++)
+	if(!fi->truncated)
 	{
-	  id = &fi->image[i];
-	  memcpy(this->ptrSinogram + i*nBinsSino2d, id->buf, sizeof(float)*nBinsSino2d);
+	  for(int i = 0; i < (int)fi->number; i++)
+	  {
+	    id = &fi->image[i];
+	    memcpy(this->ptrSinogram + i*nBinsSino2d, id->buf, sizeof(float)*nBinsSino2d);
+	  }
 	}
+	else
+	  memset(this->ptrSinogram, 0, nBinsSino2d);
   }
   else
   {

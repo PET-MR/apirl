@@ -31,7 +31,7 @@ genAcfFilename = [outputPath 'genACFs_' acfFilename '.par'];
 % empty sinogram:
 % sinogram = ones(numR, numTheta, sum(structSizeSino3d.sinogramsPerSegment), 'single');
 filenameSinogram = [outputPath 'sinogramSample'];
-interfileWriteSino([], filenameSinogram, structSizeSinos);
+interfileWriteSino(single([]), filenameSinogram, structSizeSinos);
 
 % I have to add the extensions of the interfiles:
 CreateGenAcfConfigFile(genAcfFilename, structSizeSinos, [filenameSinogram '.h33'], [attenuationMapFilename '.h33'], [outputPath acfFilename], useGpu);

@@ -70,7 +70,7 @@ classdef PETDataClass < handle
             PETData.Gantry.nCrystalsPerRing     = 504;
             PETData.Gantry.maxRingDiff          = 60; % maximum ring difference.
             PETData.image_size.matrixSize       = [344, 344, 127]; % Image size by default.
-            PETData.sinogram_size               = [344 252,837];
+            PETData.sinogram_size.matrixSize    = [344 252,837];
             PETData.image_size.voxelSize_mm     = [2.08626 2.08626 2.03125]; % Image size by default.
             PETData.MethodSinoData              = 'e7';
             PETData.MethodListData              = 'e7';
@@ -471,7 +471,7 @@ classdef PETDataClass < handle
             PETData.FrameDuration_sec = timeFrame_sec;
             % Read from the header of the list file, the total time:
             % Number of frames.
-            PETData.NumberOfFrames = scanTime_sec./timeFrame_sec;
+            PETData.NumberOfFrames = ceil(scanTime_sec./timeFrame_sec);
 
             % List with the frames time stamps (it has NumberOfFrames elements):
             PETData.DynamicFrames_sec = zeros(PETData.NumberOfFrames,1);

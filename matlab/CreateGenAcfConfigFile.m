@@ -30,8 +30,10 @@ end
 % Type of sinogram, depending of the size structure type:
 if isfield(structSizeSino,'sinogramsPerSegment')
     sinogramType = 'Sinogram3DSiemensMmr';
+elseif structSizeSino.numZ > 1
+    sinogramType = 'Sinograms2DinSiemensMmr';
 else
-    sinogramType = 'Sinograms2D';
+    sinogramType = 'Sinogram2DinSiemensMmr';
 end
 
 % Ahora debo ir escribiendo los campos. Algunos son fijos, y otros

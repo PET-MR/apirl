@@ -25,11 +25,32 @@ if isempty(ext)
     filename = [filename '.hdr'];
 end
 
+if(strcmp(computer(), 'GLNXA64'))
+    os = 'linux';
+    pathBar = '/';
+elseif(strcmp(computer(), 'PCWIN') || strcmp(computer(), 'PCWIN64'))
+    os = 'windows';
+    pathBar = '\';
+else
+    disp('OS not compatible');
+    return;
+end
+
 % open file for parsing
 fid = fopen(filename);
 if fid == -1
     error('Images:interfileinfo:invalidFilename', ...
           'Can not find header file %s.', filename);
+end
+
+% Como los interfile yo los manejo siempre con el h33 e i33 siempre en el
+% mismo path, pero que se puedan leer y crear desde otro path. Cuando el
+% nombre del interfile a leer tiene un path además del nombre, dicho path
+% también debo agregarselo al "data file name" que figura en el h33:
+relativePath = '';
+barras = strfind(filename, pathBar);
+if ~isempty(barras)
+    relativePath = filename(1 : barras(end));
 end
 
 % initialize variables
@@ -209,6 +230,19 @@ end
 
 % close file
 fclose(fid);
+
+% Add the relative path to the binary filename, if there is no path in the
+% interfile:
+barras = strfind(info.NameOfDataFile, '\'); % 
+if isempty(barras)
+    info.NameOfDataFile = [relativePath info.NameOfDataFile];
+else
+    % Remove the path from the e7_tools 
+    barras = strfind(info.NameOfDataFile, '\');
+    info.NameOfDataFile = [relativePath info.NameOfDataFile(barras(end)+1:end)];
+end
+
+
 
 if ~isfield(info, 'SmsMiHeaderNameSpace')
     structSizeSino = [];

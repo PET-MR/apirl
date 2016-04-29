@@ -9,8 +9,8 @@
 % To do: process gantry position events and patien tracking evnets.
 function data = histogram_data(PETData)
     % Read the list mode file.
-    info = getInfoFromInterfile(PETData.DataPath.emission_listmode);
-    binary_file = info.NameOfDataFile;
+    info = getInfoFromSiemensIntf(PETData.DataPath.emission_listmode);
+    binary_file = [PETData.DataPath.emission_listmode(1:end-3) 'l']; % In the info sometimes is the wrong info
     % Open file:
     fid = fopen(binary_file, 'r');
     if fid == -1 
@@ -19,15 +19,15 @@ function data = histogram_data(PETData)
     % Read chunk of events: 1x10^6:
     seconds_per_mark = 0.001
     event_size_bytes = 4;
-    chunk_size_events = 1000000;
+    chunk_size_events = 10000000;
     chunk_size_bytes = chunk_size_events *event_size_bytes;
     
     % I fill one sinogram per frame:
     data = [];
     for i = 1 : PETData.NumberOfFrames
         % Create a sinogram:
-        sino_prompts = zeros(PETData.sinogram_size.matrixSize);
-        sino_delays = zeros(PETData.sinogram_size.matrixSize);
+        sino_prompts = zeros(prod(PETData.sinogram_size.matrixSize),1, 'single');
+        sino_delays = zeros(prod(PETData.sinogram_size.matrixSize),1, 'single');
         startingTimeForThisFrame_sec = PETData.DynamicFrames_sec(i);
         endingTimeForThisFrame_sec = PETData.DynamicFrames_sec(i+1);
         flag_new_frame = 0;
@@ -80,14 +80,20 @@ function data = histogram_data(PETData)
 
             right_bits = (rba <= prod(PETData.sinogram_size.matrixSize)) ;
             rba = rba(right_bits);
-
-            sino_prompts = accumarray(pba,1,[prod(PETData.sinogram_size.matrixSize),1]);
-            sino_delays = accumarray(rba,1,[prod(PETData.sinogram_size.matrixSize),1]);
+            
+            sino_prompts = sino_prompts + accumarray(pba,1,[prod(PETData.sinogram_size.matrixSize),1]);
+            sino_delays = sino_delays + accumarray(rba,1,[prod(PETData.sinogram_size.matrixSize),1]);
+            disp(sprintf('Frame %d. %d new coincidences. Total counts: %d', i, numel(pba), sum(sino_prompts)));
+            disp(sprintf('Frame %d. %d new delayed coincidences. Total delayed counts: %d', i, numel(rba), sum(sino_delays)));
             % if not empty new frame:
             if ~isempty(data)
                 % Write both sinograms:
                 sino_prompts = reshape(sino_prompts,PETData.sinogram_size.matrixSize);
                 sino_delays = reshape(sino_delays,PETData.sinogram_size.matrixSize);
+                interfileWriteSino(single(sino_prompts), [PETData.DataPath.path 'sinogram_frame_' num2str(i)], getSizeSino3dFromSpan(PETData.sinogram_size.nRadialBins, PETData.sinogram_size.nAnglesBins, PETData.sinogram_size.nRings, ...
+                    296, 256, PETData.sinogram_size.span, PETData.sinogram_size.maxRingDifference));
+                interfileWriteSino(single(sino_prompts), [PETData.DataPath.path 'sinogram_frame_' num2str(i) '_delayed'], getSizeSino3dFromSpan(PETData.sinogram_size.nRadialBins, PETData.sinogram_size.nAnglesBins, PETData.sinogram_size.nRings, ...
+                    296, 256, PETData.sinogram_size.span, PETData.sinogram_size.maxRingDifference));
                 flag_new_frame = 1;
             end
 
@@ -95,6 +101,14 @@ function data = histogram_data(PETData)
 
         end
     end
+    % Write last frame:
+    % Write both sinograms:
+    sino_prompts = reshape(sino_prompts,PETData.sinogram_size.matrixSize);
+    sino_delays = reshape(sino_delays,PETData.sinogram_size.matrixSize);
+    interfileWriteSino(single(sino_prompts), [PETData.DataPath.path 'sinogram_frame_' num2str(i)], getSizeSino3dFromSpan(PETData.sinogram_size.nRadialBins, PETData.sinogram_size.nAnglesBins, PETData.sinogram_size.nRings, ...
+        296, 256, PETData.sinogram_size.span, PETData.sinogram_size.maxRingDifference));
+    interfileWriteSino(single(sino_prompts), [PETData.DataPath.path 'sinogram_frame_' num2str(i) '_delayed'], getSizeSino3dFromSpan(PETData.sinogram_size.nRadialBins, PETData.sinogram_size.nAnglesBins, PETData.sinogram_size.nRings, ...
+        296, 256, PETData.sinogram_size.span, PETData.sinogram_size.maxRingDifference));
     fclose(fid);
 
 
