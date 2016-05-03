@@ -68,7 +68,7 @@ interfilewrite(single(image), filenameImage, pixelSize_mm);
 filenameProjectionConfig = [outputPath 'projectPhantom.par'];
 projectionFilename = [outputPath 'projectedSinogram'];
 CreateProjectConfigFileForMmr(filenameProjectionConfig, [filenameImage '.h33'], [sinogramSampleFilename '.h33'], projectionFilename, numberOfSubsets, subsetIndex, useGpu);
-status = system(['project ' filenameProjectionConfig])
+status = system(['project "' filenameProjectionConfig '"'])
 
 % Read the projected sinogram:
 [subset, structSizeSinoSubset] = interfileReadSino([projectionFilename '.h33']);

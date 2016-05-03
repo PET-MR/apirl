@@ -86,7 +86,7 @@ interfileWriteSino(single(sinogram), sinogramFilename, structSizeSino);
 filenameBackprojectionConfig = [outputPath 'backprojectSinogram.par'];
 backprojectionFilename = [outputPath 'backprojectedImage'];
 CreateBackprojectConfigFileForMmr(filenameBackprojectionConfig, [sinogramFilename '.h33'], [filenameImage '.h33'], backprojectionFilename, numberOfSubsets, subsetIndex, useGpu);
-status = system(['backproject ' filenameBackprojectionConfig])
+status = system(['backproject "' filenameBackprojectionConfig '"'])
 
 % Read the image:
 image = interfileRead([backprojectionFilename '.h33']);
