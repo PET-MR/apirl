@@ -7,13 +7,6 @@
 
 function [sinogram, TiempoSimulacion, emissionMap] = getSinograms2dMmr(outputPath, structSimu, structSizeSino2D, graficarOnline)
 
-%% OTRAS FUNCIONES QUE SE UTILIZAN
-% Agrego el path donde tengo algunas funciones de uso general. En este caso
-% hist4.
-addpath('/sources/MATLAB/FuncionesGenerales');
-addpath('/sources/MATLAB/VersionesFinales');
-addpath('/sources/MATLAB/WorkingCopy/ImageProcessing');
-addpath('/sources/MATLAB/WorkingCopy/ImageRecon');
 
 %%  VARIABLES PARA GENERACIÓN DE SINOGRAMAS 3D
 sinogram = single(zeros(structSizeSino2D.numR,structSizeSino2D.numTheta, sum(structSizeSino2D.numZ)));

@@ -3,15 +3,16 @@
 %  Author: Martin Belzunce. Kings College London.
 %  Created: 20/04/2016
 %  *********************************************************************
-%  Generates a system matrix from 2d mmr, it receives the limits of the
-%  pixels in x and y. Example, pixel(1,1) it has the coordinates
-%  [coordX(1):coordX(2),coordY(1):coordY(2)]. 
+%  Generates a 2d sinogram for each point source simulated with a 2d gate simulation of the mmr.
 
-function [systemMatrix, TiempoSimulacion, emissionMap] = generateSystemMatrix2dMmr(outputPath, structSimu, structSizeSino2D, coordX, coordY, graficarOnline)
+function [sinograms, timeSimulations, emissionMap] = getSinograms2dFromPointSourcesMmr(outputPath, structSimu, structSizeSino2D, numSources, graficarOnline)
+
 
 %%  VARIABLES PARA GENERACIÓN DE SINOGRAMAS 3D
-sinogram = single(zeros(structSizeSino2D.numR,structSizeSino2D.numTheta, sum(structSizeSino2D.numZ)));
-sinogram_scatter = single(zeros(structSizeSino2D.numR,structSizeSino2D.numTheta, sum(structSizeSino2D.numZ)));
+sinograms = cell(numSources,1);
+for i = 1 : numSources
+    sinograms{i} = single(zeros(structSizeSino2D.numR,structSizeSino2D.numTheta, sum(structSizeSino2D.numZ)));
+end
 %% VARIABLES AUXILIARES Y PARA VISUALIZACIÓN DE RESULTADOS PARCIALES
 % Valores de cada coordenada dentro de la simulación:
 valoresX = -400:2:400;                   % Valores posibles de emisión de positrones en la variable Z (O sea, subre todo el FOV).
@@ -22,24 +23,17 @@ valoresYX = {valoresY valoresX};           % Cell Array con los valores posibles
 % Matricez para imágenes de detección en el plano XY de todo el scanner:
 histDetectionXY = zeros(numel(valoresYX{1}), numel(valoresYX{2}));
 %% EMISSION MAP
-imageSize_pixels = [numel(coordY)-1 numel(coordX)-1];
-pixelSize_mm = [coordY(2)-coordY(1) coordX(2)-coordX(1)];
-coordX_center_mm = coordX(1) + pixelSize_mm(2)/2 : pixelSize_mm(2) : coordX(end);% - pixelSize_mm(2)/2; % Coordinates centred in the pixel (coordX are the edges).
-coordY_center_mm = coordY(1) + pixelSize_mm(1)/2 : pixelSize_mm(1) : coordY(end);% - pixelSize_mm(1)/2; % Coordinates centred in the pixel (coordY are the edges).
+imageSize_pixels = [344 344];
+pixelSize_mm = [2.08625 2.08625];
+coordX = -pixelSize_mm(2)*imageSize_pixels(2)/2+pixelSize_mm(2)/2:pixelSize_mm(2):pixelSize_mm(2)*imageSize_pixels(2)/2-pixelSize_mm(2)/2;
 emissionMap = zeros(imageSize_pixels);
-%% SYSTEM MATRIX
-% One sinogram for pxiel:
-systemMatrix = cell(imageSize_pixels);
-systemMatrix_scatter = cell(imageSize_pixels);
-for i = 1 : numel(systemMatrix)
-    systemMatrix{i} = zeros(size(sinogram));
-    systemMatrix_scatter{i} = zeros(size(sinogram));
-end
+
 %% SCANNER PARAMETERS
 numberofAxialBlocks = 1;
 numberofTransverseBlocksPerRing = 56;
 numberOfBlocks = numberofTransverseBlocksPerRing*numberofAxialBlocks;
 numberOfTransverseCrystalsPerBlock = 9; % includes the gap
+coordY = -pixelSize_mm(1)*imageSize_pixels(1)/2+pixelSize_mm(1)/2:pixelSize_mm(1):pixelSize_mm(1)*imageSize_pixels(1)/2-pixelSize_mm(1)/2;
 numberOfAxialCrystalsPerBlock = 1;
 numberOfBlocksPerRing = 56;
 numberOfRings = 1;
@@ -61,7 +55,7 @@ eventosSinCompton = 0;
 eventosTotalesEnVentana = 0;
 eventosTruesConScatter = 0;
 TiempoSplitsAnteriores = 0; % Variable que acumula los tiempos de adquisición de los aplits ya procesados.
-TiempoSimulacion = 0;            % Variable que indica el tiempo total de la simulación.
+timeSimulations = 0;            % Variable que indica el tiempo total de la simulación.
 
 % Variables para histogramas y filtrado de energía:
 CanalesEnergia =  0:0.001:2.0;  % Canales de Energía para el histograma.
@@ -74,7 +68,6 @@ HistEnergiasSinCompton = zeros(1,numel(CanalesEnergia));  % Inicialización en c
 eventosTotales = 0;
 
 TiempoSplitsAnteriores = 0; % Variable que acumula los tiempos de adquisición de los aplits ya procesados.
-TiempoSimulacion = 0;            % Variable que indica el tiempo total de la simulación.
 
 %% PARÁMETROS DEL ARCHIVO DE COINCIDENCIAS DEL GATE
 % Índices de columnas en el archivo de salida:
@@ -82,12 +75,12 @@ numColumnas = 20*2;
 numColumnasPorSingle = numColumnas / 2;
 colEventId1 = 2;
 colEventId2 = 2 + numColumnasPorSingle;
-colSourceId1 = 3;
-colSourceId2 = 3 + numColumnasPorSingle;
 colTimeStamp1 = 7;
 colTimeStamp2 = 7 + numColumnasPorSingle;
 colEnergy1 = 8;
 colEnergy2 = 8 + numColumnasPorSingle;
+colSourceId1 = 3;
+colSourceId2 = 3 + numColumnasPorSingle;
 colEmisionX1 = 4;
 colEmisionX2 = 4 + numColumnasPorSingle;
 colEmisionY1 = 5;
@@ -156,11 +149,11 @@ for i = 1 : structSimu.numSplits
                 % Obtengo el tiempo de duración de la simulación hasta el
                 % evento procesado en el ciclo actual.
                 TiempoSplit = coincidenceMatrix(end,colTimeStamp1) - TiempoInicialSplit;
-                TiempoSimulacion = TiempoSplit + TiempoSplitsAnteriores;
+                timeSimulations = TiempoSplit + TiempoSplitsAnteriores;
                 disp('');
                 fprintf('Tiempo Inicial Split: %d\n', TiempoInicialSplit);
                 fprintf('Tiempo Medición Split: %d\n', TiempoSplit);
-                fprintf('Tiempo Total Simulación: %d\n', TiempoSimulacion);
+                fprintf('Tiempo Total Simulación: %d\n', timeSimulations);
                 fprintf('\n\n');
                 disp('%%%%%%%%%%% VENTANA DE ENERGÍA %%%%%%%%%%%');
                 eventosTotales = eventosTotales + eventosLeidos;
@@ -188,62 +181,46 @@ for i = 1 : structSimu.numSplits
                     imshow(histDetectionXY, []);
                     title('Histogram of Detections in Plane XY');
                 end
-                % Remove randoms because they are not part of the system
-                % matrix:
-                indiceRandomsEvents = (coincidenceMatrix(:,colEventId1) ~= coincidenceMatrix(:,colEventId2));
-                coincidenceMatrix(indiceRandomsEvents,:) = [];
                 
                 % Emission map:
                 emissionMap = emissionMap + hist3([coincidenceMatrix(:,colEmisionY1), coincidenceMatrix(:,colEmisionX1)],...
-                    {coordY_center_mm, coordX_center_mm});
+                    {coordY, coordX});
                 if(graficarOnline)
                     figure(3);
                     imshow(emissionMap,[]);
                     title(sprintf('Slice %d of the Emission Map', slice));
                 end
-                %% GENERATE SYSTEM MATRIX
-                for y = 1 : size(systemMatrix,1)
-                    for x = 1 : size(systemMatrix,2)
-                        indexThisPixel = (coincidenceMatrix(:,colEmisionY1) >= coordY(y)) & (coincidenceMatrix(:,colEmisionY1) < coordY(y+1)) & ...
-                            (coincidenceMatrix(:,colEmisionX1) >= coordX(x)) & (coincidenceMatrix(:,colEmisionX1) < coordX(x+1));
-                                        % Need to convert the indexes in the simulation into the
-                        % crystal indexes used by mmr. In the simulation, the
-                        % crystal Id is the crystal within a block [0:8;9:18;..]
-                        % Then there are 56*8 blocks, again startiing axially:
-                        globalCrystalId1 = rem(coincidenceMatrix(indexThisPixel,colVolIdCrystal),numberOfTransverseCrystalsPerBlock) + floor(coincidenceMatrix(indexThisPixel,colVolIdCrystal)/numberOfTransverseCrystalsPerBlock)*numberOfTransverseCrystalsPerRing+...
-                            rem(coincidenceMatrix(indexThisPixel,colVolIdBlock),numberofTransverseBlocksPerRing)*numberOfTransverseCrystalsPerBlock + floor(coincidenceMatrix(indexThisPixel,colVolIdBlock)/numberofTransverseBlocksPerRing)*numberOfTransverseCrystalsPerRing*numberofAxialBlocks;
-                        globalCrystalId2 = rem(coincidenceMatrix(indexThisPixel,colVolIdCrystal2),numberOfTransverseCrystalsPerBlock) + floor(coincidenceMatrix(indexThisPixel,colVolIdCrystal2)/numberOfTransverseCrystalsPerBlock)*numberOfTransverseCrystalsPerRing+...
-                            rem(coincidenceMatrix(indexThisPixel,colVolIdBlock2),numberofTransverseBlocksPerRing)*numberOfTransverseCrystalsPerBlock + floor(coincidenceMatrix(indexThisPixel,colVolIdBlock2)/numberofTransverseBlocksPerRing)*numberOfTransverseCrystalsPerRing*numberofAxialBlocks;
-                        % To generate the sinogram, I use the detector id:
-                        %crystalIdInRing1 = rem(globalCrystalId1,numberOfTransverseCrystalsPerRing)+1;
-                        %ringId1 = floor(globalCrystalId1/numberOfTransverseCrystalsPerRing)+1;
-                        % Based 1 index:
-                        globalCrystalId1 = globalCrystalId1 + 1;
-                        globalCrystalId2 = globalCrystalId2 + 1;
-                        % Convert from Gate to mmr:
-                        globalCrystalId1 = 130-globalCrystalId1;
-                        globalCrystalId1(globalCrystalId1<=0) = globalCrystalId1(globalCrystalId1<=0) + 504; 
-                        globalCrystalId2 = 130-globalCrystalId2;
-                        globalCrystalId2(globalCrystalId2<=0) = globalCrystalId2(globalCrystalId2<=0) + 504; 
+                %% PROCESS EACH POINT SOURCE
+                for i = 1 : numSources
+                    indiceEventsForSource = (coincidenceMatrix(:,colSourceId1) == (i-1)) & (coincidenceMatrix(:,colSourceId2) == (i-1));
+                    %% SINOGRAM 2D
+                    % Need to convert the indexes in the simulation into the
+                    % crystal indexes used by mmr. In the simulation, the
+                    % crystal Id is the crystal within a block [0:8;9:18;..]
+                    % Then there are 56*8 blocks, again startiing axially:
+                    globalCrystalId1 = rem(coincidenceMatrix(indiceEventsForSource,colVolIdCrystal),numberOfTransverseCrystalsPerBlock) + floor(coincidenceMatrix(indiceEventsForSource,colVolIdCrystal)/numberOfTransverseCrystalsPerBlock)*numberOfTransverseCrystalsPerRing+...
+                        rem(coincidenceMatrix(indiceEventsForSource,colVolIdBlock),numberofTransverseBlocksPerRing)*numberOfTransverseCrystalsPerBlock + floor(coincidenceMatrix(indiceEventsForSource,colVolIdBlock)/numberofTransverseBlocksPerRing)*numberOfTransverseCrystalsPerRing*numberofAxialBlocks;
+                    globalCrystalId2 = rem(coincidenceMatrix(indiceEventsForSource,colVolIdCrystal2),numberOfTransverseCrystalsPerBlock) + floor(coincidenceMatrix(indiceEventsForSource,colVolIdCrystal2)/numberOfTransverseCrystalsPerBlock)*numberOfTransverseCrystalsPerRing+...
+                        rem(coincidenceMatrix(indiceEventsForSource,colVolIdBlock2),numberofTransverseBlocksPerRing)*numberOfTransverseCrystalsPerBlock + floor(coincidenceMatrix(indiceEventsForSource,colVolIdBlock2)/numberofTransverseBlocksPerRing)*numberOfTransverseCrystalsPerRing*numberofAxialBlocks;
+                    % To generate the sinogram, I use the detector id:
+                    %crystalIdInRing1 = rem(globalCrystalId1,numberOfTransverseCrystalsPerRing)+1;
+                    %ringId1 = floor(globalCrystalId1/numberOfTransverseCrystalsPerRing)+1;
+                    % Based 1 index:
+                    globalCrystalId1 = globalCrystalId1 + 1;
+                    globalCrystalId2 = globalCrystalId2 + 1;
+                    % Convert from Gate to mmr:
+                    globalCrystalId1 = 130-globalCrystalId1;
+                    globalCrystalId1(globalCrystalId1<=0) = globalCrystalId1(globalCrystalId1<=0) + 504; 
+                    globalCrystalId2 = 130-globalCrystalId2;
+                    globalCrystalId2(globalCrystalId2<=0) = globalCrystalId2(globalCrystalId2<=0) + 504; 
 
-                        % Histogram with a combination of crystals:
-                        histCrystalsComb = hist3([globalCrystalId1 globalCrystalId2], {1:numberOfCrystals 1:numberOfCrystals});
-                        % Gaps:
-                        histCrystalsComb(9:9:end,:) = 0;
-                        histCrystalsComb(:,9:9:end) = 0;
-                        % From the histogram of crystals:
-                        systemMatrix{y,x}(:) = systemMatrix{y,x}(:) + histCrystalsComb(sub2ind(size(histCrystalsComb),mapaDet1Ids(:), mapaDet2Ids(:)));
-                        systemMatrix{y,x}(:) =  systemMatrix{y,x}(:) + histCrystalsComb(sub2ind(size(histCrystalsComb),mapaDet2Ids(:), mapaDet1Ids(:)));
-                        
-                        % To debug the scatter
-%                         % The same for scattered events:
-%                         indicesScatter = coincidenceMatrix(indexThisPixel,colCompton1)>0 | coincidenceMatrix(indexThisPixel,colCompton2)>0;
-%                         histCrystalsCombScatter = hist3([globalCrystalId1(indicesScatter) globalCrystalId2(indicesScatter)], {1:numberOfCrystals 1:numberOfCrystals});
-%                         histCrystalsCombScatter(9:9:end,:) = 0;
-%                         systemMatrix_scatter{y,x}(:) = systemMatrix_scatter{y,x}(:) + histCrystalsCombScatter(sub2ind(size(histCrystalsCombScatter),mapaDet1Ids(:), mapaDet2Ids(:)));
-%                         systemMatrix_scatter{y,x}(:) =  systemMatrix_scatter{y,x}(:) + histCrystalsCombScatter(sub2ind(size(histCrystalsCombScatter),mapaDet2Ids(:), mapaDet1Ids(:)));
-                        
-                    end
+                    % Histogram with a combination of crystals:
+                    histCrystalsComb = hist3([globalCrystalId1 globalCrystalId2], {1:numberOfCrystals 1:numberOfCrystals});
+                    % Gaps:
+                    histCrystalsComb(9:9:end,:) = 0;
+                    histCrystalsComb(:,9:9:end) = 0;
+                    sinograms{i}(:) = sinograms{i}(:) + histCrystalsComb(sub2ind(size(histCrystalsComb),mapaDet1Ids(:), mapaDet2Ids(:)));
+                    sinograms{i}(:) =  sinograms{i}(:) + histCrystalsComb(sub2ind(size(histCrystalsComb),mapaDet2Ids(:), mapaDet1Ids(:)));
                 end
 
                 %% FIN DEL LOOP
@@ -261,13 +238,11 @@ for i = 1 : structSimu.numSplits
     TiempoSplitsAnteriores = TiempoSplitsAnteriores + TiempoSplit;
 end    
 TiempoSimulacion = TiempoSplitsAnteriores;
-%% COMPLETE SINOGRAMS
-for y = 1 : size(systemMatrix,1)
-    for x = 1 : size(systemMatrix,2)
-        interfileWriteSino(single(systemMatrix{y,x}), [outputPath sprintf('sinogram_y%d_x%d',y,x)], structSizeSino2D);
-    end
+%% SAVE SINOGRAMS
+for i = 1 : numSources
+    interfileWriteSino(sinograms{i}, [outputPath sprintf('sinogram_%d',i)], structSizeSino2D);
 end
-%% WRITE EMISSION
+
 interfilewrite(emissionMap, [outputPath 'emissionMap'], pixelSize_mm);
 
 
