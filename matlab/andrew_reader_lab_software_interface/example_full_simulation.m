@@ -16,16 +16,16 @@ else
     return;
 end
 % CUDA PATH
-cudaPath = '/usr/local/cuda/';
-setenv('PATH', [getenv('PATH') sepEnvironment cudaPath pathBar 'bin']);
-setenv('LD_LIBRARY_PATH', [getenv('LD_LIBRARY_PATH') sepEnvironment cudaPath pathBar 'lib64']);
+% cudaPath = '/usr/local/cuda/';
+% setenv('PATH', [getenv('PATH') sepEnvironment cudaPath pathBar 'bin']);
+% setenv('LD_LIBRARY_PATH', [getenv('LD_LIBRARY_PATH') sepEnvironment cudaPath pathBar 'lib64']);
 % APIRL PATH
-apirlPath = '/workspaces/Martin/apirl-code/trunk/';
+apirlPath = 'E:\apirl-code\trunk\';
 addpath(genpath([apirlPath pathBar 'matlab']));
 setenv('PATH', [getenv('PATH') sepEnvironment apirlPath pathBar 'build' pathBar 'bin']);
 setenv('LD_LIBRARY_PATH', [getenv('LD_LIBRARY_PATH') sepEnvironment apirlPath pathBar 'build' pathBar 'bin']);
 %% SIMULATE A BRAIN PHANTOM WITH ATTENUATION, NORMALIZATION, RANDOMS AND SCATTER
-[sinogram, delayedSinogram, structSizeSino3d] = interfileReadSino('/home/mab15/workspace/KCL/Biograph_mMr/Mediciones/BRAIN_PETMR/SINOGRAMS/PET_ACQ_68_20150610155347-0uncomp.s.hdr');
+[sinogram, delayedSinogram, structSizeSino3d] = interfileReadSino('E:\PatientData\FDG\PETSinoPlusUmap-Converted\PETSinoPlusUmap-00\PETSinoPlusUmap-00-sino-uncomp.s.hdr');
 load subject_4_tpm.mat;
 load brainWeb3D.mat;
 % % tAct: activity image.
@@ -57,7 +57,7 @@ refAct = imref3d(size(tAct),xLimits,yLimits,zLimits);
 [tMu, refAt] = ImageResample(tMu, refAt, refAct);
 
 PET.scanner = 'mMR';
-PET.method =  'otf_siddon_gpu';
+PET.method =  'otf_siddon_cpu';
 PET.PSF.type = 'none';
 PET.radialBinTrim = 0;
 PET.Geom = '';
@@ -67,7 +67,7 @@ PET = classGpet(PET);
 % Change the image sie, to the one of the phantom:
 PET.init_image_properties(refAct);
 % Change the span size:
-span = 1;
+span = 11;
 numRings = 64;
 maxRingDifference = 60;
 PET.init_sinogram_size(span, numRings, maxRingDifference);

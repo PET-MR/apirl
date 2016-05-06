@@ -99,13 +99,13 @@ class DLLEXPORT Mlem2dTgsInSegment : public Mlem
 	  /// Método que carga desde un archivo interfile el factor multiplicativo del modelo de proyección.
 	  /**  Este método habilita el factor multiplicativo en el forward model de la proyección.
 	  */
-	  bool setMultiplicativeProjection(string acfFilename){};
+	  bool setMultiplicativeProjection(string acfFilename){return false;};
 	  
 	  /// Método que carga un sinograma desde un archivo interfile con el término aditivo en el modelo de la proyección.
 	  /**  Este método habilita el termino aditivo en el forward model del proyector. El término aditivo
 	  * debe estar dividido por el multiplicative factor, ya que este se aplica solo en la sensitivity image.
 	  */
-	  bool setAdditiveProjection(string acfFilename){};
+	  bool setAdditiveProjection(string acfFilename){return false;};
 	  
 	  /// Método que realiza la reconstrucción de las proyecciones. 
 	  bool Reconstruct();
