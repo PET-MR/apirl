@@ -125,16 +125,19 @@ bool Sinogram3D::readFromInterfile(string headerFilename, float radioScanner_mm)
   char* ultimaBarra = strrchr(filename_i33, PATH_BAR);
   if(ultimaBarra == NULL)
   {
-    // Agregp el path del headerFilename
+    // Agregp el path del headerFilename si es que tiene:
     ultimaBarra = strrchr((char*)headerFilename.c_str(), PATH_BAR);
-    // Uso buffer como intermedio. Primero copio el header:
-    strncpy(buffer, headerFilename.c_str(), (ultimaBarra-headerFilename.c_str()+1));
-    // strncpy no agrega el cero de fin de string:
-    buffer[ultimaBarra-headerFilename.c_str()+1] = '\0';
-    // Luego concateno:
-    strcat(buffer, filename_i33);
-    // Finalmente copio todo en filename_i33_
-    strcpy(filename_i33, buffer);
+	if(ultimaBarra != NULL)
+	{
+		// Uso buffer como intermedio. Primero copio el header:
+		strncpy(buffer, headerFilename.c_str(), (ultimaBarra-headerFilename.c_str()+1));
+		// strncpy no agrega el cero de fin de string:
+		buffer[ultimaBarra-headerFilename.c_str()+1] = '\0';
+		// Luego concateno:
+		strcat(buffer, filename_i33);
+		// Finalmente copio todo en filename_i33_
+		strcpy(filename_i33, buffer);
+	}
   }
   
   // Por ahora hago una lectura muy simple:
