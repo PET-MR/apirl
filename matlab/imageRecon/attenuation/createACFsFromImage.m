@@ -37,7 +37,7 @@ interfileWriteSino(single([]), filenameSinogram, structSizeSinos);
 CreateGenAcfConfigFile(genAcfFilename, structSizeSinos, [filenameSinogram '.h33'], [attenuationMapFilename '.h33'], [outputPath acfFilename], useGpu);
 
 % Then execute APIRL:
-status = system(['generateACFs ' genAcfFilename]); 
+status = system(['generateACFs "' genAcfFilename '"']); 
 
 % % Move the sinogram to the output path:
 % status = system(['mv ' genAcfFilename]); 

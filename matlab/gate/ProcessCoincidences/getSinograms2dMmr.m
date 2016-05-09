@@ -215,8 +215,9 @@ for i = 1 : structSimu.numSplits
                 histCrystalsComb(:,9:9:end) = 0;
                 % The same for scattered events:
                 indicesScatter = coincidenceMatrix(:,colCompton1)>0 | coincidenceMatrix(:,colCompton2)>0;
-                histCrystalsCombScatter = histCrystalsCombScatter + hist3([globalCrystalId1(indicesScatter) globalCrystalId2(indicesScatter)], {1:numberOfCrystals 1:numberOfCrystals});
-                                
+                if (sum(indicesScatter) > 0)
+                    histCrystalsCombScatter = histCrystalsCombScatter + hist3([globalCrystalId1(indicesScatter) globalCrystalId2(indicesScatter)], {1:numberOfCrystals 1:numberOfCrystals});
+                end
 
                 %% FIN DEL LOOP
             end
