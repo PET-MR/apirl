@@ -165,7 +165,7 @@ int main (int argc, char *argv[])
 	string attenMapFilename;
 	string normProjFilename;
 	int numberOfSubsets, subsetIndex;
-	Projector* forwardprojector;
+	Projector* forwardprojector = NULL;
 	bool enableAttenuationCorrection = false;
 	#ifdef __USE_CUDA__
 	  CuProjector* cuProjector;

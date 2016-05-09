@@ -287,17 +287,17 @@ float Siddon (Line3D LOR, Image* image, SiddonSegment** weightsList, int* length
 
   // En alpha_c voy guardando el valor de alpha con el que voy recorriendo los píxeles. Si hacia alpha_c - alpha_min
   // no quedaban pixeles enteros. De esta forma me lo aseguro.
-  if(((alpha_x-alpha_x_u) >= (alpha_y-alpha_y_u)) && ((alpha_x-alpha_x_u) >= (alpha_z-alpha_z_u)))
+  if(((alpha_x) >= (alpha_y)) && ((alpha_x) >= (alpha_z)))
   {
-	alpha_c = alpha_x-alpha_x_u;
+	alpha_c = alpha_x;
   }
-  else if((alpha_y-alpha_y_u) >= (alpha_z-alpha_z_u))
+  else if((alpha_y) >= (alpha_z))
   {
-	  alpha_c = alpha_y-alpha_y_u;
+	  alpha_c = alpha_y;
   }
   else
   {
-	  alpha_c = alpha_z-alpha_z_u;
+	  alpha_c = alpha_z;
   }
 
   // Inicialización de i,j a sus valores de entrada.

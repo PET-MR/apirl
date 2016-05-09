@@ -195,7 +195,12 @@ classdef classGpet < handle
         
         function objGpet=init_image_properties(objGpet, refImage)
             objGpet.image_size.matrixSize = refImage.ImageSize;
-            objGpet.image_size.voxelSize_mm = [refImage.PixelExtentInWorldY refImage.PixelExtentInWorldX refImage.PixelExtentInWorldZ];
+            refType = whos('refImage');
+            if strcmp(refType.class,'imref3d' )
+                objGpet.image_size.voxelSize_mm = [refImage.PixelExtentInWorldY refImage.PixelExtentInWorldX refImage.PixelExtentInWorldZ];
+            elseif strcmp(refType.class,'imref2d')
+                objGpet.image_size.voxelSize_mm = [refImage.PixelExtentInWorldY refImage.PixelExtentInWorldX];
+            end
         end
         
     end
