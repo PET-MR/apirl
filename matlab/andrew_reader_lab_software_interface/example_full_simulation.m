@@ -48,7 +48,7 @@ refAt  = imref3d(size(tMu),xLimits,yLimits,zLimits);
 PET.init_image_properties(refAct);
 
 % Change the span size:
-span = 1;
+span = 11;
 numRings = 64;
 maxRingDifference = 60;
 PET.init_sinogram_size(span, numRings, maxRingDifference);
