@@ -23,7 +23,7 @@ setenv('PATH', [getenv('PATH') sepEnvironment apirlPath pathBar 'build' pathBar 
 setenv('LD_LIBRARY_PATH', [getenv('LD_LIBRARY_PATH') sepEnvironment apirlPath pathBar 'build' pathBar 'bin']);
 %% INIT CLASS GPET
 PET.scanner = 'mMR';
-PET.method =  'otf_siddon_cpu';
+PET.method =  'otf_siddon_gpu';
 PET.PSF.type = 'none';
 PET.radialBinTrim = 0;
 PET.Geom = '';

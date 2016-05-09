@@ -26,6 +26,36 @@
 
 using namespace std;
 
+// DLL export/import declaration: visibility of objects
+#ifndef LINK_STATIC
+	#ifdef WIN32               // Win32 build
+		#pragma warning( disable: 4251 )
+		#ifdef DLL_BUILD    // this applies to DLL building
+			#define DLLEXPORT __declspec(dllexport)
+		#else                   // this applies to DLL clients/users
+			#define DLLEXPORT __declspec(dllimport)
+		#endif
+		#define DLLLOCAL        // not explicitly export-marked objects are local by default on Win32
+	#else
+		#ifdef HAVE_GCCVISIBILITYPATCH   // GCC 4.x and patched GCC 3.4 under Linux
+			#define DLLEXPORT __attribute__ ((visibility("default")))
+			#define DLLLOCAL __attribute__ ((visibility("hidden")))
+		#else
+			#define DLLEXPORT
+			#define DLLLOCAL
+		#endif
+	#endif
+#else                         // static linking
+	#ifdef WIN32               // Win32 build
+		#pragma warning( disable: 4251 )
+	#endif
+	#define DLLEXPORT
+	#define DLLLOCAL
+#endif
+/*#ifdef __cplusplus
+	extern "C" 
+#endif*/
+
 /// Clase que define un sinograma de dos dimensiones.
 /**
   Clase que define un sinograma de dos dimensiones genérico.

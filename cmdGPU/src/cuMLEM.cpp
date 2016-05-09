@@ -439,11 +439,11 @@ int main (int argc, char *argv[])
     {
       mlem->setSensitivityFilename(sensitivityFilename);
     }
-    Michelogram* micho = new Michelogram(inputProjection->getNumProj(), inputProjection->getNumR(), inputProjection->getNumRings(), 1, inputProjection->getMaxRingDiff(), inputProjection->getRadioFov_mm(), inputProjection->getAxialFoV_mm());
+    /*Michelogram* micho = new Michelogram(inputProjection->getNumProj(), inputProjection->getNumR(), inputProjection->getNumRings(), 1, inputProjection->getMaxRingDiff(), inputProjection->getRadioFov_mm(), inputProjection->getAxialFoV_mm());
     double t1=omp_get_wtime();
     micho->ReadDataFromSinogram3D(inputProjection);
     double t2=omp_get_wtime();
-    cout << "Processing time: "<< (t2-t1) << endl;
+    cout << "Processing time: "<< (t2-t1) << endl;*/
   }
   else if(inputType.compare("Michelogram")==0)
   {
