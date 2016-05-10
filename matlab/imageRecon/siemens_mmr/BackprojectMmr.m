@@ -18,7 +18,7 @@
 % Examples:
 %   [image, pixelSize_mm] = BackprojectMmr(sinogram, imageSize_pixels, pixelSize_mm, outputPath, structSizeSino3d_span, numberOfSubsets, subsetIndex, useGpu)
 
-function [image, pixelSize_mm] = BackprojectMmr(sinogram, imageSize_pixels, pixelSize_mm, outputPath, structSizeSino3d_span, numberOfSubsets, subsetIndex, useGpu)
+function [image, pixelSize_mm] = BackprojectMmr(sinogram, imageSize_pixels, pixelSize_mm, outputPath, structSizeSino3d_span, numberOfSubsets, subsetIndex, useGpu, numSamples)
 
 if ~isdir(outputPath)
     mkdir(outputPath);
@@ -37,6 +37,9 @@ end
 
 if nargin == 7
     useGpu = 0;
+    numSamples = 1;
+elseif nargin == 8
+    numSamples = 1;
 elseif nargin < 7
     error('Invalid number of parameters: [image, pixelSize_mm] = BackprojectMmrSpan1(sinogram, imageSize_pixels, pixelSize_mm, outputPath, useGpu)');
 end
@@ -79,7 +82,7 @@ interfileWriteSino(single(sinogram), sinogramFilename, structSizeSino3d);
 % Generate backprojected image:
 filenameBackprojectionConfig = [outputPath 'backprojectSinogram.par'];
 backprojectionFilename = [outputPath 'backprojectedImage'];
-CreateBackprojectConfigFileForMmr(filenameBackprojectionConfig, [sinogramFilename '.h33'], [filenameImage '.h33'], backprojectionFilename, numberOfSubsets, subsetIndex, useGpu);
+CreateBackprojectConfigFileForMmr(filenameBackprojectionConfig, [sinogramFilename '.h33'], [filenameImage '.h33'], backprojectionFilename, numberOfSubsets, subsetIndex, useGpu, numSamples);
 status = system(['backproject ' filenameBackprojectionConfig])
 
 % Remove the input sinogram:

@@ -15,7 +15,7 @@
 % Examples:
 %   [sinogram, structSizeSinogram] = ProjectMmr(image, pixelSize_mm, outputPath, structSizeSino3d_span, numberOfSubsets, subsetIndex, useGpu)
 
-function [sinogram, structSizeSino3d] = ProjectMmr(image, pixelSize_mm, outputPath, structSizeSino3d_span, numberOfSubsets, subsetIndex, useGpu)
+function [sinogram, structSizeSino3d] = ProjectMmr(image, pixelSize_mm, outputPath, structSizeSino3d_span, numberOfSubsets, subsetIndex, useGpu, numSamples)
 
 if ~isdir(outputPath)
     mkdir(outputPath);
@@ -34,6 +34,9 @@ end
 
 if nargin == 6
     useGpu = 0;
+    numSamples = 1;
+elseif nargin == 7
+    numSamples = 1;
 elseif nargin < 6
     error('Invalid number of parameters: [sinogram, structSizeSinogram] = ProjectMmrSpan1(image, pixelSize_mm, outputPath, useGpu)');
 end
@@ -68,7 +71,7 @@ interfilewrite(single(image), filenameImage, pixelSize_mm);
 % Generate projecte sinogram:
 filenameProjectionConfig = [outputPath 'projectPhantom.par'];
 projectionFilename = [outputPath 'projectedSinogram'];
-CreateProjectConfigFileForMmr(filenameProjectionConfig, [filenameImage '.h33'], [sinogramSampleFilename '.h33'], projectionFilename, numberOfSubsets, subsetIndex, useGpu);
+CreateProjectConfigFileForMmr(filenameProjectionConfig, [filenameImage '.h33'], [sinogramSampleFilename '.h33'], projectionFilename, numberOfSubsets, subsetIndex, useGpu, numSamples);
 status = system(['project ' filenameProjectionConfig])
 
 % Read the projected sinogram:

@@ -16,10 +16,13 @@
 % output filename := Project_PointSources_
 % END :=
 
-function CreateProjectConfigFileForMmr(configfilename, inputFile, outputSample, outputFilename, numberOfSubsets, subsetIndex, useGpu)
+function CreateProjectConfigFileForMmr(configfilename, inputFile, outputSample, outputFilename, numberOfSubsets, subsetIndex, useGpu, numSamples)
 
 if nargin == 6
     useGpu = 0;
+    numSamples = 1;
+elseif nargin == 7
+    numSamples = 1;
 end
 
 % Handle the number of subsets:
@@ -61,6 +64,7 @@ fprintf(fid,'Projection Parameters :=\n');
 fprintf(fid,'output type := %s\n', sinogramType);
 if useGpu == 0
     fprintf(fid,'projector := Siddon\n');
+    fprintf(fid,'siddon number of samples on the detector := %d', numSamples);
 else
     fprintf(fid,'projector := CuSiddonProjector\n');
     fprintf(fid,'projector block size := {256,1,1}\n');

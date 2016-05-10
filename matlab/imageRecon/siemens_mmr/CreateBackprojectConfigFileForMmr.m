@@ -20,10 +20,12 @@
 % subset index := 5
 %
 
-function CreateBackprojectConfigFileForMmr(configfilename, inputFile, outputSample, outputFilename, numberOfSubsets, subsetIndex, useGpu)
-
+function CreateBackprojectConfigFileForMmr(configfilename, inputFile, outputSample, outputFilename, numberOfSubsets, subsetIndex, useGpu, numSamples)
 if nargin == 6
     useGpu = 0;
+    numSamples = 1;
+elseif nargin == 7
+    numSamples = 1;
 end
 
 % Handle the number of subsets:
@@ -66,6 +68,7 @@ fprintf(fid,'Backproject Parameters :=\n');
 fprintf(fid,'input type := %s\n', sinogramType);
 if useGpu == 0
     fprintf(fid,'backprojector := Siddon\n');
+    fprintf(fid,'siddon number of samples on the detector := %d', numSamples);
 else
     fprintf(fid,'backprojector := CuSiddonProjector\n');
     fprintf(fid,'backprojector block size := {576,1,1}\n');
