@@ -1,7 +1,7 @@
 classdef classGpet < handle
     properties (SetAccess = private)
         % Type of scanner. Options: '2D_radon', '2D_mMR', 'mMR'
-        scanner
+        scanner 
         % Sinogram size:
         sinogram_size     % Struct with the size of the sinogram
         % Image size:
