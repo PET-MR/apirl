@@ -50,6 +50,7 @@ classdef classGpet < handle
                 objGpet.bar = '\';
             end
             objGpet.scanner = 'mMR';
+            objGpet.initScanner();
             objGpet.method =  'otf_siddon_cpu';
             objGpet.PSF.type = 'shift-invar';
             objGpet.PSF.Width = 4; %mm
@@ -63,26 +64,24 @@ classdef classGpet < handle
                     if ~isfield(varargin{1}, 'scanner') || ~isfield(varargin{1}, 'method')
                         disp('Configuration for ''mMR'' scanner and ''otf_siddon_cpu''');
                     end
-                    % get fields from user's param
-                        vfields = fieldnames(varargin{1});
-                        prop = properties(objGpet);
-                        for i = 1:length(vfields)
-                            field = vfields{i};
-                            if sum(strcmpi(prop, field )) > 0
-                                objGpet.(field) = varargin{1}.(field);
-                            end
-                        end
+                    Revise(objGpet,varargin{1});
+                    
+                % Read configuration from file:
                 elseif ischar(varargin{1})
                     objGpet.readConfigFromFile(varargin{1})
                 end
             else
-                % Other options?
+                % Read configuration from name/value pairs:
+                objGpet = varargin_pair(objGpet, varargin);
             end
             if ~isdir(objGpet.tempPath)
                 mkdir(objGpet.tempPath)
             end
-            % Init scanner properties:
-            objGpet.initScanner();
+            
+            if (objGpet.sinogram_size.span ~=11) || (objGpet.sinogram_size.maxRingDifference ~=60 ) % default values
+                init_sinogram_size(objGpet, objGpet.sinogram_size.span, objGpet.sinogram_size.nRings, objGpet.sinogram_size.maxRingDifference);
+            end
+            
         end
         
         function objGpet = readConfigFromFile(objGpet, strFilename)
@@ -136,7 +135,7 @@ classdef classGpet < handle
                 objGpet.sinogram_size.span = 1;
                 objGpet.sinogram_size.nSeg = 1;
                 objGpet.sinogram_size.nRings = 1;
-%                 objGpet.radialBinTrim = 0;
+                %                 objGpet.radialBinTrim = 0;
             else
                 
             end
@@ -166,7 +165,8 @@ classdef classGpet < handle
                 objGpet.sinogram_size.nPlanesPerSeg = [127   115   115    93    93    71    71    49    49    27    27];
                 objGpet.sinogram_size.span = 11;
                 objGpet.sinogram_size.nSeg = 11;
-%                 objGpet.radialBinTrim = 0;
+                %add maxDiff
+                %                 objGpet.radialBinTrim = 0;
             else
                 
             end
@@ -195,10 +195,10 @@ classdef classGpet < handle
         
         function objGpet=init_image_properties(objGpet, refImage)
             objGpet.image_size.matrixSize = refImage.ImageSize;
-            refType = whos('refImage');
-            if strcmp(refType.class,'imref3d' )
+            
+            if refImage.ImageSize(3) >1
                 objGpet.image_size.voxelSize_mm = [refImage.PixelExtentInWorldY refImage.PixelExtentInWorldX refImage.PixelExtentInWorldZ];
-            elseif strcmp(refType.class,'imref2d')
+            else
                 objGpet.image_size.voxelSize_mm = [refImage.PixelExtentInWorldY refImage.PixelExtentInWorldX];
             end
         end
@@ -211,6 +211,76 @@ classdef classGpet < handle
         ii = bit_reverse(objGpet, mm);
         lambda = Project_preComp(objGpet,X,g,Angles,RadialBins,dir);
         g = init_precomputed_G (objGpet);
+       
+        function objGpet = Revise(objGpet,opt)
+            % to revise the properties of a given object without
+            % re-instantiation
+            vfields = fieldnames(opt);
+            prop = properties(objGpet);
+            for i = 1:length(vfields)
+                field = vfields{i};
+                if sum(strcmpi(prop, field )) > 0
+                    objGpet.(field) = opt.(field);
+                end
+            end
+            
+            if isfield(opt,'nSubsets')
+                objGpet.set_subsets(opt.nSubsets)
+            end
+        end
+        
+        function objGpet =  varargin_pair(objGpet, varargs)
+            % example PET = classGpet('scanner','mMR',
+            % 'nSubsets',14,'PSF.Width', 2);
+            
+            npair = floor(length(varargs) / 2);
+            if 2*npair ~= length(varargs),
+                error('need names and values in pairs');
+            end
+            args = {varargs{1:2:end}};
+            vals = {varargs{2:2:end}};
+            
+            prop = properties(objGpet);
+            
+            for ii=1:npair
+                arg = args{ii};
+                val = vals{ii};
+                
+                if ~ischar(arg)
+                    error('unknown option of class %s', class(arg))
+                end
+                
+                if sum(strcmpi(prop, arg )) > 0
+                    objGpet.(arg) = val;
+                    continue;
+                end
+                
+                % for pairs with sub-fields such as : ('PSF.Width', 3)
+                idot = strfind(arg, '.');
+                if ~isempty(idot)
+                    arg1 = arg([1:(idot-1)]);
+                    arg2 = arg([(idot+1):end]);
+                    
+                    if ~(sum(strcmpi(prop, arg1 )) > 0)
+                       error('unknown property')
+                    end
+                    subProp = fieldnames(objGpet.(arg1));
+                    if ~(sum(strcmpi(subProp, arg2 )) > 0)
+                        error('unknown sub-property')
+                    end
+                    s = struct('type', {'.', '.'}, 'subs', ...
+                        { arg([1:(idot-1)]), arg([(idot+1):end]) });
+                    
+                    objGpet = subsasgn(objGpet, s, val);
+                end
+                
+            end
+            
+        end
+        
+        function objGpet = readConfigFromFile(objGpet, strFilename)
+            error('todo: read configuration from file');
+        end
     end
     methods (Access = public)
         % Project:
@@ -245,6 +315,23 @@ classdef classGpet < handle
             end
             fprintf('Done.\n');
         end
+        
+        function display(objGpet) %#ok<DISPLAY>
+            disp(objGpet)
+            methods(objGpet)
+        end
+        
+        function Img = OPOSEM(objGpet,Prompts,RS, SensImg,Img, nIter)
+            
+            for i = 1:nIter
+                for j = 1:objGpet.nSubsets
+                    Img = Img.*objGpet.PT(Prompts./(objGpet.P(Img,j)+ RS + 1e-5),j)./(SensImg(:,:,:,j)+1e-5);
+                    Img = max(0,Img);
+                end
+            end
+        end
+        
+
     end
     
 end
