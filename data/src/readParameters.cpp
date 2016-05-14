@@ -41,7 +41,7 @@ int getSensitivityFromFile (string mlemFilename, string cmd, bool* bSensitivityF
 	  }
 	  else
 	  {
-	    cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
+	    cout<<"Error number "<<errorCode<<" in the parameters file."<<endl;
 	    return -1;
 	  }
   }
@@ -79,7 +79,7 @@ int getSaveIntermidiateIntervals (string mlemFilename, string cmd, int* saveIter
 	  }
 	  else
 	  {
-	    cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
+	    cout<<"Error number "<<errorCode<<" in the parameters file."<<endl;
 	    return -1;
 	  }
   }
@@ -99,7 +99,7 @@ int getSaveIntermidiateIntervals (string mlemFilename, string cmd, int* saveIter
 	  }
 	  else
 	  {
-	    cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
+	    cout<<"Error number "<<errorCode<<" in the parameters file."<<endl;
 	    return -1;
 	  }
     }
@@ -124,12 +124,12 @@ int getProjectorBackprojectorNames(string mlemFilename, string cmd, string* strF
   {
     if(errorCode == PMF_KEY_NOT_FOUND)
     {
-      cout<<"Error "<<errorCode<<" en el archivo de parámetros. No se encuentra la definición del forwardprojector."<<endl;
+     cout<<"Error number "<<errorCode<<" in the parameters file. The forwardprojector was not found."<<endl;
       return -1;
     }
     else
     {
-      cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
+      cout<<"Error number "<<errorCode<<" in the parameters file."<<endl;
       return -1;
     }
   }
@@ -141,12 +141,12 @@ int getProjectorBackprojectorNames(string mlemFilename, string cmd, string* strF
   {
     if(errorCode == PMF_KEY_NOT_FOUND)
     {
-      cout<<"Error "<<errorCode<<" en el archivo de parámetros. No se encuentra la definición del backprojector."<<endl;
+      cout<<"Error number "<<errorCode<<" in the parameters file. The backprojector was not found."<<endl;
       return -1;
     }
     else
     {
-      cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
+      cout<<"Error number "<<errorCode<<" in the parameters file."<<endl;
       return -1;
     }
   }
@@ -176,7 +176,7 @@ int getSiddonProjectorParameters(string mlemFilename, string cmd, int* numSample
     }
     else
     {
-      cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
+      cout<<"Error number "<<errorCode<<" in the parameters file."<<endl;
       return -1;
     }
   }
@@ -199,13 +199,12 @@ int getRotationBasedProjectorParameters(string mlemFilename, string cmd, string 
     // Hubo un error. Salgo del comando.
     if(errorCode == PMF_KEY_NOT_FOUND)
     {
-      cout<<"No se encontró el parámetro ""interpolation_method"", el cual es obligatorio "
-      "para el proyector RotationBasedProjector."<<endl;
+      cout<<"Error number "<<errorCode<<" in the parameters file. The ""interpolation_method"" was not found and is mandatory for the projector RotationBasedProjector."<<endl;
       return -1;
     }
     else
     {
-      cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
+      cout<<"Error number "<<errorCode<<" in the parameters file."<<endl;
       return -1;
     }
   }
@@ -216,7 +215,7 @@ int getRotationBasedProjectorParameters(string mlemFilename, string cmd, string 
   }
   else
   {
-    cout<<"Error "<<errorCode<<" en el archivo de parámetros. Método de interpolación inexistente para RotationBasedProjector."<<endl;
+    cout<<"Error number "<<errorCode<<" in the parameters file. Interpolation method not valid for RotationBasedProjector."<<endl;
     return -1;
   }
   return 0;
@@ -239,12 +238,12 @@ int getPositivityCondition (string mlemFilename, string cmd)
 	// signfica que hubo un error.
 	if(errorCode == PMF_KEY_NOT_FOUND)
 	{
-		// No está la keyword, como era opcional se carga con su valor por default.
+	  // No está la keyword, como era opcional se carga con su valor por default.
 	}
 	else
 	{
-		cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
-		return -1;
+	  cout<<"Error number "<<errorCode<<" in the parameters file."<<endl;
+	  return -1;
 	}
   }
   else
@@ -277,7 +276,7 @@ int getCylindricalScannerParameters(string mlemFilename, string cmd, float* radi
 	  }
 	  else
 	  {
-	    cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
+	    cout<<"Error number "<<errorCode<<" in the parameters file."<<endl;
 	    return -1;
 	  }
   }
@@ -300,7 +299,7 @@ int getCylindricalScannerParameters(string mlemFilename, string cmd, float* radi
 	  }
 	  else
 	  {
-	    cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
+	    cout<<"Error number "<<errorCode<<" in the parameters file."<<endl;
 	    return -1;
 	  }
   }
@@ -322,7 +321,7 @@ int getCylindricalScannerParameters(string mlemFilename, string cmd, float* radi
 	  }
 	  else
 	  {
-	    cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
+	    cout<<"Error number "<<errorCode<<" in the parameters file."<<endl;
 	    return -1;
 	  }
   }
@@ -359,7 +358,7 @@ int getNumberOfSubsets(string mlemFilename, string cmd, float* numberOfSubsets)
     }
     else
     {
-      cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
+      cout<<"Error number "<<errorCode<<" in the parameters file."<<endl;
       return -1;
     }
   }
@@ -390,7 +389,7 @@ int getArPetParameters(string mlemFilename, string cmd, float* radiusFov_mm, flo
     }
     else
     {
-      cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
+      cout<<"Error number "<<errorCode<<" in the parameters file."<<endl;
       return -1;
     }
   }
@@ -414,7 +413,7 @@ int getArPetParameters(string mlemFilename, string cmd, float* radiusFov_mm, flo
 	  }
 	  else
 	  {
-	    cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
+	    cout<<"Error number "<<errorCode<<" in the parameters file."<<endl;
 	    return -1;
 	  }
   }
@@ -437,7 +436,7 @@ int getArPetParameters(string mlemFilename, string cmd, float* radiusFov_mm, flo
 	  }
 	  else
 	  {
-	    cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
+	    cout<<"Error number "<<errorCode<<" in the parameters file."<<endl;
 	    return -1;
 	  }
   }
@@ -460,7 +459,7 @@ int getArPetParameters(string mlemFilename, string cmd, float* radiusFov_mm, flo
 	  }
 	  else
 	  {
-	    cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
+	    cout<<"Error number "<<errorCode<<" in the parameters file."<<endl;
 	    return -1;
 	  }
   }
@@ -487,7 +486,7 @@ int getCorrectionSinogramNames(string mlemFilename, string cmd, string* acfFilen
     }
     else
     {
-      cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
+      cout<<"Error number "<<errorCode<<" in the parameters file."<<endl;
       return -1;
     }
   }
@@ -504,7 +503,7 @@ int getCorrectionSinogramNames(string mlemFilename, string cmd, string* acfFilen
     }
     else
     {
-      cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
+      cout<<"Error number "<<errorCode<<" in the parameters file."<<endl;
       return -1;
     }
   }
@@ -522,7 +521,7 @@ int getCorrectionSinogramNames(string mlemFilename, string cmd, string* acfFilen
     }
     else
     {
-      cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
+      cout<<"Error number "<<errorCode<<" in the parameters file."<<endl;
       return -1;
     }
   }
@@ -549,7 +548,7 @@ int getMultiplicativeSinogramName(string mlemFilename, string cmd, string* multi
     }
     else
     {
-      cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
+      cout<<"Error number "<<errorCode<<" in the parameters file."<<endl;
       return -1;
     }
   }
@@ -575,7 +574,7 @@ int getAdditiveSinogramName(string mlemFilename, string cmd, string* additiveFil
     }
     else
     {
-      cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
+      cout<<"Error number "<<errorCode<<" in the parameters file."<<endl;
       return -1;
     }
   }
