@@ -10,10 +10,14 @@
 
 classdef classGpet < handle
     properties (SetAccess = private)
-        % Type of scanner. Options: '2D_radon', '2D_mMR', 'mMR'
+        % Type of scanner. Options: '2D_radon', 'mMR', 'cylindrical'
         scanner 
+        % Properties of the scanner. This is an structure with additional
+        % parameters specific for each scanner, for example for cylindrical
+        % scanner it has the radius_mm propery.
+        scanner_properties
         % Sinogram size:
-        sinogram_size     % Struct with the size of the sinogram
+        sinogram_size     % Struct with the size of the sinogram, it can be 2d, multislice2d and 3d.
         % Image size:
         image_size
         % Projector/Backrpojector. Options:
@@ -94,8 +98,8 @@ classdef classGpet < handle
                 objGpet.G_2D_radon_setup();
             elseif strcmpi(objGpet.scanner,'mMR')
                 objGpet.G_mMR_setup();
-            elseif strcmpi(objGpet.scanner,'2D_mMR')
-                objGpet.G_2D_mMR_setup();
+            elseif strcmpi(objGpet.scanner,'cylindrical')
+                objGpet.G_cylindrical_setup();
             else
                 error('unkown scanner')
             end
@@ -126,15 +130,21 @@ classdef classGpet < handle
             objGpet.sinogram_size.matrixSize = [objGpet.sinogram_size.nRadialBins objGpet.sinogram_size.nAnglesBins objGpet.sinogram_size.nSinogramPlanes];
             objGpet.osem_subsets(objGpet.nSubsets, objGpet.sinogram_size.nAnglesBins);
         end
-        
-        function G_2D_mMR_setup(objGpet)
+                        
+        function G_mMR_setup(objGpet)
+            % Default parameter, only if it havent been loaded by the
+            % config previously:
+            objGpet.scanner_properties.radius_mm = 356;
             if isempty(objGpet.sinogram_size)
                 objGpet.sinogram_size.nRadialBins = 344;
                 objGpet.sinogram_size.nAnglesBins = 252;
-                objGpet.sinogram_size.nSinogramPlanes = 1;
-                objGpet.sinogram_size.span = 1;
-                objGpet.sinogram_size.nSeg = 1;
-                objGpet.sinogram_size.nRings = 1;
+                objGpet.sinogram_size.nRings = 64;
+                objGpet.sinogram_size.nSinogramPlanes = 837;
+                objGpet.sinogram_size.maxRingDifference = 60;
+                objGpet.sinogram_size.nPlanesPerSeg = [127   115   115    93    93    71    71    49    49    27    27];
+                objGpet.sinogram_size.span = 11;
+                objGpet.sinogram_size.nSeg = 11;
+                %add maxDiff
                 %                 objGpet.radialBinTrim = 0;
             else
                 
@@ -145,17 +155,18 @@ classdef classGpet < handle
             if isempty(objGpet.nIter)
                 objGpet.nIter = 3;
             end
+            
             objGpet.sinogram_size.matrixSize = [objGpet.sinogram_size.nRadialBins objGpet.sinogram_size.nAnglesBins objGpet.sinogram_size.nSinogramPlanes];
-            objGpet.image_size.matrixSize =[344, 344, 1];
+            objGpet.image_size.matrixSize =[344, 344, 127];
             objGpet.image_size.voxelSize_mm = [2.08626 2.08626 2.03125];
             
             objGpet.osem_subsets(objGpet.nSubsets, objGpet.sinogram_size.nAnglesBins);
-            
         end
         
-        function G_mMR_setup(objGpet)
+        function G_cylindrical_setup(objGpet)
             % Default parameter, only if it havent been loaded by the
-            % config previously:
+            % config previously. By default use the same size of mmr, additionally needs the scanner radius:
+            
             if isempty(objGpet.sinogram_size)
                 objGpet.sinogram_size.nRadialBins = 344;
                 objGpet.sinogram_size.nAnglesBins = 252;
