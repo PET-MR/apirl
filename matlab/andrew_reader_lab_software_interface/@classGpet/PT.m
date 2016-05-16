@@ -45,15 +45,15 @@ function x = PT(objGpet,m, subset_i)
         elseif strcmpi(objGpet.method, 'otf_siddon_gpu')
             [x, pixelSize] = BackprojectMmr(m, objGpet.image_size.matrixSize, objGpet.image_size.voxelSize_mm, objGpet.tempPath, objGpet.sinogram_size.span, numSubsets, subset_i, 1);
         end
-    elseif strcmpi(objGpet.scanner,'2D_mMR')
+    elseif strcmpi(objGpet.scanner,'cylindrical')
         if strcmpi(objGpet.method, 'pre-computed_matlab')
-            g = init_precomputed_G (objGpet);
-            RadialBins = (1 : objGpet.sinogram_size.nRadialBins-objGpet.radialBinTrim)+floor(objGpet.radialBinTrim/2);
-            x = Project_preComp(objGpet,m,g,angles,RadialBins,-1);
+            disp('todo: is the precomputed version compatible with any cylindrical geometry?.')
         elseif strcmpi(objGpet.method, 'otf_siddon_cpu')
-            [x, pixelSize] = BackprojectMmr2d(m, objGpet.image_size.matrixSize, objGpet.image_size.voxelSize_mm, objGpet.tempPath,numSubsets, subset_i, 0);
+            structSizeSino = get_sinogram_size_for_apirl(objGpet);
+            [x, pixelSize] = Backproject(m, objGpet.image_size.matrixSize, objGpet.image_size.voxelSize_mm, objGpet.tempPath, objGpet.scanner, objGpet.scanner_properties, structSizeSino, numSubsets, subset_i, 0);
         elseif strcmpi(objGpet.method, 'otf_siddon_gpu')
-            [x, pixelSize] = BackprojectMmr2d(m, objGpet.image_size.matrixSize, objGpet.image_size.voxelSize_mm, objGpet.tempPath, numSubsets, subset_i, 1);
+            structSizeSino = get_sinogram_size_for_apirl(objGpet);
+            [x, pixelSize] = Backproject(m, objGpet.image_size.matrixSize, objGpet.image_size.voxelSize_mm, objGpet.tempPath, objGpet.scanner, objGpet.scanner_properties, structSizeSino, numSubsets, subset_i, 1);
         end
     else
         error('unkown scanner')

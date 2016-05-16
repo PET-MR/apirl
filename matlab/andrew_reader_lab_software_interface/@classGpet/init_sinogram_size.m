@@ -16,10 +16,24 @@ function init_sinogram_size(objGpet, inSpan, numRings, maxRingDifference)
         else
             numRings = 1;
         end
+        aux = objGpet.sinogram_size;
+        % Clear sinogram size to remove 3d parameters:
+        objGpet.sinogram_size = rmfield(objGpet.sinogram_size, fieldnames(objGpet.sinogram_size));
+        objGpet.sinogram_size.nRadialBins = aux.sinogram_size.nRadialBins;
+        objGpet.sinogram_size.nAnglesBins = aux.sinogram_size.nAnglesBins;
+        objGpet.sinogram_size.span = aux.sinogram_size.span;
         objGpet.sinogram_size.matrixSize = [objGpet.sinogram_size.nRadialBins objGpet.sinogram_size.nAnglesBins 1];
+        objGpet.sinogram_size.nSinogramPlanes = numRings;
     elseif objGpet.sinogram_size.span == 0
         % multi slice 2d:
+        aux = objGpet.sinogram_size;
+        % Clear sinogram size to remove 3d parameters:
+        objGpet.sinogram_size = rmfield(objGpet.sinogram_size, fieldnames(objGpet.sinogram_size));
+        objGpet.sinogram_size.nRadialBins = aux.nRadialBins;
+        objGpet.sinogram_size.nAnglesBins = aux.nAnglesBins;
+        objGpet.sinogram_size.span = aux.span;
         objGpet.sinogram_size.nRings = numRings;
+        objGpet.sinogram_size.nSinogramPlanes = numRings;
         objGpet.sinogram_size.matrixSize = [objGpet.sinogram_size.nRadialBins objGpet.sinogram_size.nAnglesBins objGpet.sinogram_size.nRings];
     else
         % 3d sinogram:

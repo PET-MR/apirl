@@ -90,7 +90,7 @@ fprintf(fid,'output type := %s\n', sinogramType);
 if strcmp(scanner, 'cylindrical')
     fprintf(fid,'cylindrical pet radius (in mm) := %f\n', scanner_properties.radius_mm);
     fprintf(fid,'axial fov (in mm) := %f\n', scanner_properties.axialFov_mm);
-    fprintf(fid,'radius fov (in mm) := %f\n', scanner_properties.radiusFov_mm);
+    fprintf(fid,'radius fov (in mm) := %f\n', scanner_properties.radialFov_mm);
     
 end
 if useGpu == 0

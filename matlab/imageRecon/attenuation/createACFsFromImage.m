@@ -14,10 +14,12 @@
 %  acfFile. It also receives the filename of the sinogram which is intenden
 %  to correct for attenuation as it's needed in APIRl. And finally the
 %  struct with the size of the sinogram.
-function acfs = createACFsFromImage(attenuationMap_1_cm, sizePixel_mm, outputPath, acfFilename, structSizeSinos, visualization, useGpu)
+function acfs = createACFsFromImage(attenuationMap_1_cm, sizePixel_mm, outputPath, acfFilename, structSizeSinos, visualization, useGpu, scanner, scanner_properties)
 
 if nargin == 6
     useGpu = 0;
+    scanner = 'mMR';
+    scanner_properties = '';
 end
 
 % Call function to create phantom:
@@ -34,7 +36,7 @@ filenameSinogram = [outputPath 'sinogramSample'];
 interfileWriteSino(single([]), filenameSinogram, structSizeSinos);
 
 % I have to add the extensions of the interfiles:
-CreateGenAcfConfigFile(genAcfFilename, structSizeSinos, [filenameSinogram '.h33'], [attenuationMapFilename '.h33'], [outputPath acfFilename], useGpu);
+CreateGenAcfConfigFile(genAcfFilename, structSizeSinos, [filenameSinogram '.h33'], [attenuationMapFilename '.h33'], [outputPath acfFilename], useGpu, scanner, scanner_properties);
 
 % Then execute APIRL:
 status = system(['generateACFs "' genAcfFilename '"']); 
@@ -52,7 +54,7 @@ end
 fid = fopen([outputPath acfFilename '.i33'], 'r');
 [acfs, count] = fread(fid, structSizeSinos.numTheta*structSizeSinos.numR*numSinos, 'single=>single');
 acfs = reshape(acfs, [structSizeSinos.numR structSizeSinos.numTheta numSinos]);
-
+acfs(isnan(acfs)) = 1;
 % Close the file:
 fclose(fid);
 

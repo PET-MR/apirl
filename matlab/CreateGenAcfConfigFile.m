@@ -12,10 +12,13 @@
 % function CreateGenAcfConfigFile(configfilename, outputType, outputProjection, inputImageFile, outputFilename)
 %   Ahora:
 % function CreateGenAcfConfigFile(configfilename, structSizeSino, outputProjection, inputImageFile, outputFilename)
-function CreateGenAcfConfigFile(configfilename, structSizeSino, outputProjection, inputImageFile, outputFilename, useGpu)
+function CreateGenAcfConfigFile(configfilename, structSizeSino, outputProjection, inputImageFile, outputFilename, useGpu, scanner, scanner_properties)
 
 if nargin == 5
     useGpu = 0;
+    scanner = 'mMR';
+elseif nargin == 6
+    scanner = 'mMR';
 end
 
 % Uso solo los datos del cilindrical, por uso esos para los acf:
@@ -27,15 +30,24 @@ if(fid == -1)
     fprintf('No se pudo crear el archivo %s.', configfilename);
 end
 % Sinogram type: 
-% Type of sinogram, depending of the size structure type:
-if isfield(structSizeSino,'sinogramsPerSegment')
-    sinogramType = 'Sinogram3DSiemensMmr';
-elseif structSizeSino.numZ > 1
-    sinogramType = 'Sinograms2DinSiemensMmr';
-else
-    sinogramType = 'Sinogram2DinSiemensMmr';
+if strcmp(scanner, 'mMR')
+    % Type of sinogram, depending of the size structure type:
+    if isfield(structSizeSino,'sinogramsPerSegment')
+        sinogramType = 'Sinogram3DSiemensMmr';
+    elseif structSizeSino.numZ > 1
+        sinogramType = 'Sinograms2DinSiemensMmr';
+    else
+        sinogramType = 'Sinogram2DinSiemensMmr';
+    end
+elseif strcmp(scanner, 'cylindrical')
+    if isfield(structSizeSino,'sinogramsPerSegment')
+        sinogramType = 'Sinogram3D';
+    elseif structSizeSino.numZ > 1
+        sinogramType = 'Sinograms2D';
+    else
+        sinogramType = 'Sinogram2D';
+    end
 end
-
 % Ahora debo ir escribiendo los campos. Algunos son fijos, y otros
 % dependerán de la imagen:
 fprintf(fid,'generateACFs Parameters :=\n');
@@ -50,7 +62,13 @@ else
     fprintf(fid,'projector block size := {128,1,1}\n');
     fprintf(fid,'gpu id := 0\n');
 end
-fprintf(fid,'cylindrical pet radius (in mm) := %f\n', cylindricalRadius_mm);
-fprintf(fid,'radius fov (in mm) := %f\n', structSizeSino.rFov_mm);
-fprintf(fid,'axial fov (in mm) := %f\n', structSizeSino.zFov_mm);
+if strcmp(scanner, 'cylindrical')
+    fprintf(fid,'cylindrical pet radius (in mm) := %f\n', scanner_properties.radius_mm);
+    fprintf(fid,'radius fov (in mm) := %f\n', scanner_properties.radialFov_mm);
+    fprintf(fid,'axial fov (in mm) := %f\n', scanner_properties.axialFov_mm);
+elseif strcmp(scanner, 'mMR')
+    fprintf(fid,'cylindrical pet radius (in mm) := %f\n', cylindricalRadius_mm);
+    fprintf(fid,'radius fov (in mm) := %f\n', structSizeSino.rFov_mm);
+    fprintf(fid,'axial fov (in mm) := %f\n', structSizeSino.zFov_mm);
+end
 fclose(fid);

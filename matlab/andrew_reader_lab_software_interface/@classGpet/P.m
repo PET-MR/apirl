@@ -61,11 +61,9 @@ function m = P(objGpet, x,subset_i)
                 [m, structSizeSinogram] = ProjectMmr(x, objGpet.image_size.voxelSize_mm, objGpet.tempPath, objGpet.sinogram_size.span, numSubsets, subset_i, 1);
             end
         end
-    elseif strcmpi(objGpet.scanner,'2D_mMR')
+    elseif strcmpi(objGpet.scanner,'cylindrical')
         if strcmpi(objGpet.method, 'pre-computed_matlab')               
-            g = init_precomputed_G (objGpet);
-            RadialBins = (1 : objGpet.sinogram_size.nRadialBins-objGpet.radialBinTrim)+floor(objGpet.radialBinTrim/2);
-            m = Project_preComp(objGpet,x, g, angles, RadialBins, 1);
+            disp('todo: is the precomputed version compatible with any cylindrical geometry?.')
         else
             % Select the subsets:
             if nargin < 3
@@ -74,10 +72,11 @@ function m = P(objGpet, x,subset_i)
             else
                 numSubsets = objGpet.nSubsets;  % Not use directly objGpet.nSubsets, because it canbe the case where there is a number of susbets configured but we still want to project the shile sinogram.
             end
+            structSizeSino = get_sinogram_size_for_apirl(objGpet);
             if strcmpi(objGpet.method, 'otf_siddon_cpu')
-                [m, structSizeSinogram] = ProjectMmr2d(x, objGpet.image_size.voxelSize_mm, objGpet.tempPath, numSubsets, subset_i, 0);
+                [m, structSizeSinogram] = Project(x, objGpet.image_size.voxelSize_mm, objGpet.tempPath, objGpet.scanner, objGpet.scanner_properties, structSizeSino, numSubsets, subset_i, 0);
             elseif strcmpi(objGpet.method, 'otf_siddon_gpu')
-                [m, structSizeSinogram] = ProjectMmr2d(x, objGpet.image_size.voxelSize_mm, objGpet.tempPath, numSubsets, subset_i, 1);
+                [m, structSizeSinogram] = Project(x, objGpet.image_size.voxelSize_mm, objGpet.tempPath, objGpet.scanner, objGpet.scanner_properties, structSizeSino, numSubsets, subset_i, 1);
             end
         end
 

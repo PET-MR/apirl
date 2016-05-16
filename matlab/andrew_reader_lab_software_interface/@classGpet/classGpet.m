@@ -53,7 +53,11 @@ classdef classGpet < handle
                 objGpet.os = 'windows';
                 objGpet.bar = '\';
             end
-            objGpet.scanner = 'mMR';
+            if nargin == 0
+                objGpet.scanner = 'mMR';
+            else
+                objGpet.scanner = varargin{1}.scanner;
+            end
             objGpet.initScanner();
             objGpet.method =  'otf_siddon_cpu';
             objGpet.PSF.type = 'shift-invar';
@@ -134,7 +138,6 @@ classdef classGpet < handle
         function G_mMR_setup(objGpet)
             % Default parameter, only if it havent been loaded by the
             % config previously:
-            objGpet.scanner_properties.radius_mm = 356;
             if isempty(objGpet.sinogram_size)
                 objGpet.sinogram_size.nRadialBins = 344;
                 objGpet.sinogram_size.nAnglesBins = 252;
@@ -168,6 +171,7 @@ classdef classGpet < handle
             % config previously. By default use the same size of mmr, additionally needs the scanner radius:
             
             if isempty(objGpet.sinogram_size)
+                objGpet.scanner_properties.radius_mm = 356;
                 objGpet.sinogram_size.nRadialBins = 344;
                 objGpet.sinogram_size.nAnglesBins = 252;
                 objGpet.sinogram_size.nRings = 64;
@@ -178,9 +182,13 @@ classdef classGpet < handle
                 objGpet.sinogram_size.nSeg = 11;
                 %add maxDiff
                 %                 objGpet.radialBinTrim = 0;
-            else
-                
+                           
             end
+            
+            if ~isfield(objGpet.scanner_properties, 'radius_mm')
+                objGpet.scanner_properties.radius_mm = 356;
+            end
+            
             if isempty(objGpet.nSubsets)
                 objGpet.nSubsets = 21;
             end
@@ -193,6 +201,11 @@ classdef classGpet < handle
             objGpet.image_size.voxelSize_mm = [2.08626 2.08626 2.03125];
             
             objGpet.osem_subsets(objGpet.nSubsets, objGpet.sinogram_size.nAnglesBins);
+            
+            % Init the scanner parameters depending on the desired image.
+            % The FOV used covers the whole image:
+            objGpet.scanner_properties.radialFov_mm = max(objGpet.image_size.matrixSize(2)*objGpet.image_size.voxelSize_mm(2),objGpet.image_size.matrixSize(1)*objGpet.image_size.voxelSize_mm(1))./2;
+            objGpet.scanner_properties.axialFov_mm = objGpet.image_size.matrixSize(3)*objGpet.image_size.voxelSize_mm(3);
         end
         
         function set_subsets(objGpet, numSubsets)
@@ -214,6 +227,23 @@ classdef classGpet < handle
             end
         end
         
+        % This functions get the field of the struct used in Apirl and
+        % converts to the struct sinogram_size used in this framework.
+        function structSizeSino = get_sinogram_size_for_apirl(objPETRawData)
+            structSizeSino.numR = objPETRawData.sinogram_size.nRadialBins;
+            structSizeSino.numTheta = objPETRawData.sinogram_size.nAnglesBins;
+            structSizeSino.numSinogramPlanes = objPETRawData.sinogram_size.nSinogramPlanes;
+            structSizeSino.span = objPETRawData.sinogram_size.span;
+            structSizeSino.numZ = objPETRawData.sinogram_size.nRings;
+            if structSizeSino.span > 0
+                structSizeSino.numSegments = objPETRawData.sinogram_size.nSeg;
+                structSizeSino.sinogramsPerSegment = objPETRawData.sinogram_size.nPlanesPerSeg;
+                structSizeSino.minRingDiff = objPETRawData.sinogram_size.minRingDiffs;
+                structSizeSino.maxRingDiff = objPETRawData.sinogram_size.maxRingDiffs;
+                structSizeSino.numPlanesMashed = objPETRawData.sinogram_size.numPlanesMashed;
+            end
+        end
+        
     end
     
     % Methods in a separate file:
@@ -222,23 +252,6 @@ classdef classGpet < handle
         ii = bit_reverse(objGpet, mm);
         lambda = Project_preComp(objGpet,X,g,Angles,RadialBins,dir);
         g = init_precomputed_G (objGpet);
-       
-        function objGpet = Revise(objGpet,opt)
-            % to revise the properties of a given object without
-            % re-instantiation
-            vfields = fieldnames(opt);
-            prop = properties(objGpet);
-            for i = 1:length(vfields)
-                field = vfields{i};
-                if sum(strcmpi(prop, field )) > 0
-                    objGpet.(field) = opt.(field);
-                end
-            end
-            
-            if isfield(opt,'nSubsets')
-                objGpet.set_subsets(opt.nSubsets)
-            end
-        end
         
         function objGpet =  varargin_pair(objGpet, varargs)
             % example PET = classGpet('scanner','mMR',
@@ -289,9 +302,7 @@ classdef classGpet < handle
             
         end
         
-        function objGpet = readConfigFromFile(objGpet, strFilename)
-            error('todo: read configuration from file');
-        end
+        
     end
     methods (Access = public)
         % Project:
@@ -317,6 +328,10 @@ classdef classGpet < handle
         
         init_sinogram_size(objGpet, inSpan, numRings, maxRingDifference);
         
+        function sino_size = get_sinogram_size(objGpet)
+            sino_size = objGpet.sinogram_size;
+        end
+        
         function SenseImg = Sensitivity(objGpet, AN)
             SenseImg = zeros([objGpet.image_size.matrixSize, objGpet.nSubsets],'single') ;
             fprintf('Subset: ');
@@ -330,6 +345,40 @@ classdef classGpet < handle
         function display(objGpet) %#ok<DISPLAY>
             disp(objGpet)
             methods(objGpet)
+        end
+        
+        function objGpet = Revise(objGpet,opt)
+            % to revise the properties of a given object without
+            % re-instantiation
+            vfields = fieldnames(opt);
+            prop = properties(objGpet);
+            for i = 1:length(vfields)
+                % if is an struct, update only the received fields in that
+                % structure, for example for sinogram_size:
+                if isstruct(opt.(vfields{i}))
+                    field = vfields{i};
+                    if sum(strcmpi(prop, field )) > 0
+                        subprop = fieldnames(objGpet.(field));
+                        secondary_fields = fieldnames(opt.(field));
+                        for j = 1 : length(secondary_fields)
+                            subfield = secondary_fields{j};
+                            if sum(strcmpi(subprop, subfield )) > 0
+                                objGpet.(field).(secondary_fields{j}) = opt.(field).(secondary_fields{j});
+                            end
+                        end
+                    end
+                else
+                    % It isnt
+                    field = vfields{i};
+                    if sum(strcmpi(prop, field )) > 0
+                        objGpet.(field) = opt.(field);
+                    end
+                end
+            end
+            objGpet.init_sinogram_size(objGpet.sinogram_size.span, objGpet.sinogram_size.nRings, objGpet.sinogram_size.maxRingDifference);
+            if isfield(opt,'nSubsets')
+                objGpet.set_subsets(opt.nSubsets)
+            end
         end
         
         function Img = OPOSEM(objGpet,Prompts,RS, SensImg,Img, nIter)

@@ -13,7 +13,7 @@
 % Examples:
 %   [sinogram, structSizeSinogram] = Project(image, pixelSize_mm, outputPath, scanner, scanner_parameters, structSizeSino3d_span, numberOfSubsets, subsetIndex, useGpu)
 
-function [sinogram, structSizeSinogram] = Project(image, pixelSize_mm, outputPath, scanner, scanner_parameters, structSizeSino3d_span, numberOfSubsets, subsetIndex, useGpu, numSamples)
+function [sinogram, structSizeSino] = Project(image, pixelSize_mm, outputPath, scanner, scanner_parameters, structSizeSino, numberOfSubsets, subsetIndex, useGpu, numSamples)
 
 if ~isdir(outputPath)
     mkdir(outputPath);
@@ -45,21 +45,45 @@ end
 if(isempty(subsetIndex))
     subsetIndex = 0;
 end
+
 % Check if is an struct or the span value:
-if(isstruct(structSizeSino3d_span))
-    structSizeSino3d = structSizeSino3d_span;
+if isfield(structSizeSino, 'sinogramsPerSegment')
+    if numel(structSizeSino.sinogramsPerSegment) == 1
+        numSinos = structSizeSino.numZ; % to be used later.
+        if structSizeSino.numZ == 1
+            % sinogram 2d.
+            if size(image,3) ~= 1
+                error('Backprojecct: an image with multiple slices can not be backprojected into a sinogram 2d.');
+            end
+        else
+            if size(image,3) ~= structSizeSino.numZ
+                error('Backprojecct: the number of slices of the image is different to the number of rings of the output sinogram.');
+            end
+        end
+    else
+        % 3d sinogram
+        numSinos = sum(structSizeSino.sinogramsPerSegment); % to be used later.
+    end
 else
-    % The parameter has only the span value:
-    % Size of mMr Sinogram's
-    numTheta = 252; numR = 344; numRings = 64; maxAbsRingDiff = 60; rFov_mm = 594/2; zFov_mm = 258; 
-    structSizeSino3d = getSizeSino3dFromSpan(numR, numTheta, numRings, rFov_mm, zFov_mm, structSizeSino3d_span, maxAbsRingDiff);
+    numSinos = structSizeSino.numZ; % to be used later.
+    % sinogram 2d.
+    if structSizeSino.numZ == 1
+        % sinogram 2d.
+        if size(image,3) ~= 1
+            error('Backprojecct: an image with multiple slices can not be backprojected into a sinogram 2d.');
+        end
+    else
+        if size(image,3) ~= structSizeSino.numZ
+            error('Backprojecct: the number of slices of the image is different to the number of rings of the output sinogram.');
+        end
+    end
 end
 
 % Create output sample sinogram:
 % empty sinogram:
 % sinogram = ones(numR, numTheta, sum(structSizeSino3d.sinogramsPerSegment), 'single');
 sinogramSampleFilename = [outputPath 'sinogramSample'];
-interfileWriteSino(single([]), sinogramSampleFilename, structSizeSino3d);
+interfileWriteSino(single([]), sinogramSampleFilename, structSizeSino);
 
 % Write image in interfile:
 filenameImage = [outputPath 'inputImage'];
@@ -75,11 +99,11 @@ status = system(['project ' filenameProjectionConfig])
 % Read the projected sinogram:
 % if is a subset, get the new size:
 if numberOfSubsets ~= 0
-    structSizeSino3dSubset = structSizeSino3d;
-    structSizeSino3dSubset.numTheta = ceil(structSizeSino3d.numTheta/numberOfSubsets);
+    structSizeSino3dSubset = structSizeSino;
+    structSizeSino3dSubset.numTheta = ceil(structSizeSino.numTheta/numberOfSubsets);
     
     fid = fopen([projectionFilename '.i33'], 'r');
-    numSinos = sum(structSizeSino3dSubset.sinogramsPerSegment);
+    
     [subset, count] = fread(fid, structSizeSino3dSubset.numTheta*structSizeSino3dSubset.numR*numSinos, 'single=>single');
     fclose(fid);
     subset = reshape(subset, [structSizeSino3dSubset.numR structSizeSino3dSubset.numTheta numSinos]);
@@ -88,8 +112,8 @@ if numberOfSubsets ~= 0
     sinogram(:,subsetIndex : numberOfSubsets : end, :) = subset;
 else
     fid = fopen([projectionFilename '.i33'], 'r');
-    numSinos = sum(structSizeSino3d.sinogramsPerSegment);
-    [sinogram, count] = fread(fid, structSizeSino3d.numTheta*structSizeSino3d.numR*numSinos, 'single=>single');
+    [sinogram, count] = fread(fid, structSizeSino.numTheta*structSizeSino.numR*numSinos, 'single=>single');
     fclose(fid);
-    sinogram = reshape(sinogram, [structSizeSino3d.numR structSizeSino3d.numTheta numSinos]);
+    sinogram = reshape(sinogram, [structSizeSino.numR structSizeSino.numTheta numSinos]);
 end
+sinogram(isnan(sinogram)) = 0;

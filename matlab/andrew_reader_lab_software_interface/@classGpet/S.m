@@ -9,8 +9,8 @@ function s=S(varargin)
     objGpet = varargin{1};
     h = fspecial('gaussian',30,10);
     s = [];
-    if ~strcmpi(objGpet.scanner,'mMR')&& ~strcmpi(objGpet.scanner,'2D_mMR')
-        error('NCFs are only available for mMR scanner.');
+    if ~strcmpi(objGpet.scanner,'mMR')&& ~strcmpi(objGpet.scanner,'cylindrical')
+        error('NCFs are only available for mMR and cylindrical scanners.');
     end
     if nargin == 2 % Simple simulation, smooth a sinogram.
         s = zeros(size(varargin{2}));

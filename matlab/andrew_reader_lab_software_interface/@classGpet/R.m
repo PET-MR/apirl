@@ -10,10 +10,12 @@
 function r=R(varargin)
     objGpet = varargin{1};
     r = [];
-    if ~strcmpi(objGpet.scanner,'mMR')&& ~strcmpi(objGpet.scanner,'2D_mMR')
-        error('Randoms are only available for mMR scanner.');
+    if ~strcmpi(objGpet.scanner,'mMR')&& ~strcmpi(objGpet.scanner,'cylindrical')
+        error('Randoms are only available for mMR or cylindrical scanner.');
     end
-    param = varargin{2};
+    if nargin == 2
+        param = varargin{2};
+    end
     if strcmpi(objGpet.scanner,'mMR')
         if numel(param) == 1 % Simple simulation, constant background with poisson dsitribution, the input parameter is the mean total number of counts.
             counts = varargin{2};
@@ -32,15 +34,33 @@ function r=R(varargin)
                 % Call stir:
                 [r, structSizeSino] = estimateRandomsWithStir(varargin{2}, structSizeSino3d, varargin{3}, structSizeSino3d, outputPath);
             elseif strcmpi(objGpet.method_for_randoms,'from_ML_singles_matlab')
-                structSizeSino3d = getSizeSino3dFromSpan(objGpet.sinogram_size.nRadialBins, objGpet.sinogram_size.nAnglesBins, ...
-                    objGpet.sinogram_size.nRings, 596/2, 260, ...
-                    1, objGpet.sinogram_size.maxRingDifference); % The delayeds are span 1.
-                % Call matlab function in apirl:
-                numIterations = 3;
-                [r, singlesOut] = estimateRandomsFromDelayeds(varargin{2}, structSizeSino3d, numIterations, objGpet.sinogram_size.span);
+                structSizeSino = get_sinogram_size_for_apirl(objGpet);
+                if isfield(structSizeSino, 'sinogramsPerSegment')
+                    if numel(structSizeSino.sinogramsPerSegment) == 1
+                        if structSizeSino.numZ == 1
+                             numIterations = 3;
+                             [r, singlesOut] = estimateRandomsFromDelayeds2d(varargin{2}, structSizeSino, numIterations);
+                        else
+                             numIterations = 3;
+                             [r, singlesOut] = estimateRandomsFromDelayeds2d(varargin{2}, structSizeSino, numIterations);
+                        end
+                    else
+                        % Call matlab function in apirl:
+                        numIterations = 3;
+                        [r, singlesOut] = estimateRandomsFromDelayeds(varargin{2}, structSizeSino, numIterations, objGpet.sinogram_size.span);
+                    end
+                else
+                    if structSizeSino.numZ == 1
+                        numIterations = 3;
+                        [r, singlesOut] = estimateRandomsFromDelayeds2d(varargin{2}, structSizeSino, numIterations);
+                    else
+                        numIterations = 3;
+                        [r, singlesOut] = estimateRandomsFromDelayeds2d(varargin{2}, structSizeSino, numIterations);
+                    end
+                end
             end
         end
-    elseif strcmpi(objGpet.scanner,'2D_mMR')
+    elseif strcmpi(objGpet.scanner,'cylindrical')
         if numel(param) == 1 % Simple simulation, constant background with poisson dsitribution, the input parameter is the mean total number of counts.
             counts = varargin{2};
             r = ones(objGpet.sinogram_size.matrixSize);
@@ -48,19 +68,9 @@ function r=R(varargin)
             r = r .* meanValue;
             % Generate a poisson distributed with contant mean value:
             r =poissrnd(r);
-        elseif size(param) == [344 252]% Sss simulation, need activty image and attenuation.
-            if strcmpi(objGpet.method_for_randoms,'e7_tools')
-                % Call e7 tools:
-                error(sprintf('Randoms with %s not available for 2d.', objGpet.method_for_randoms));
-            elseif strcmpi(objGpet.method_for_randoms,'from_ML_singles_stir')
-                error(sprintf('Randoms with %s not available for 2d.', objGpet.method_for_randoms));
-            elseif strcmpi(objGpet.method_for_randoms,'from_ML_singles_matlab')
-                structSizeSino2d = getSizeSino2dStruct(objGpet.sinogram_size.nRadialBins, objGpet.sinogram_size.nAnglesBins, ...
-                    objGpet.sinogram_size.nRings, 596/2, 260);
-                % Call matlab function in apirl:
-                numIterations = 3;
-                [r, singlesOut] = estimateRandomsFromDelayeds2d(varargin{2}, structSizeSino2d, numIterations);
-            end
+        elseif strcmpi(objGpet.method_for_randoms,'from_ML_singles_matlab')
+            error('Randoms using from_ML_singles_matlab are only available for mMR scanner.');
+        
         end
     end
  end
