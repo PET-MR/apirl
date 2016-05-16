@@ -179,6 +179,7 @@ if strcmp(tipo,'sinogram2D')
     % Ahora cantidad de filas y columnas:
     fprintf(fid,'!matrix size [1] := %d\n', structSizeSino.numR);
     fprintf(fid,'!matrix size [2] := %d\n', structSizeSino.numTheta);
+    fprintf(fid,'!matrix size [3] := %d\n', structSizeSino.numZ);
     % Tipo de dato. Los formatos disponibles son:
     % signed integer|unsigned integer|long float|short float|bit|ASCII
     % Para esto busco el tipo de dato de la variable imagen:
