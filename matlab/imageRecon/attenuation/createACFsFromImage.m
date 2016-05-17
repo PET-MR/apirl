@@ -20,6 +20,9 @@ if nargin == 6
     useGpu = 0;
     scanner = 'mMR';
     scanner_properties = '';
+elseif nargin == 7
+    scanner = 'mMR';
+    scanner_properties = '';
 end
 
 % Call function to create phantom:

@@ -39,10 +39,10 @@ elseif nargin < 6
     error('Invalid number of parameters: [sinogram, structSizeSinogram] = Project(image, pixelSize_mm, outputPath, scanner, scanner_parameters, structSizeSino3d_span, numberOfSubsets, subsetIndex, useGpu, numSamples)');
 end
 % Handle the number of subsets:
-if isempty(numberOfSubsets)
+if isempty(numberOfSubsets)||(numberOfSubsets<=1) % 1 subset is the same to not using any subset.
     numberOfSubsets = 0;
 end
-if(isempty(subsetIndex))
+if(isempty(subsetIndex))||(numberOfSubsets<=1)
     subsetIndex = 0;
 end
 
@@ -98,7 +98,7 @@ status = system(['project ' filenameProjectionConfig])
 
 % Read the projected sinogram:
 % if is a subset, get the new size:
-if numberOfSubsets ~= 0
+if numberOfSubsets > 1
     structSizeSino3dSubset = structSizeSino;
     structSizeSino3dSubset.numTheta = ceil(structSizeSino.numTheta/numberOfSubsets);
     
@@ -108,7 +108,7 @@ if numberOfSubsets ~= 0
     fclose(fid);
     subset = reshape(subset, [structSizeSino3dSubset.numR structSizeSino3dSubset.numTheta numSinos]);
     % Fille a sinogram of the original size
-    sinogram = zeros(structSizeSino3d.numR, structSizeSino3d.numTheta, numSinos);
+    sinogram = zeros(structSizeSino.numR, structSizeSino.numTheta, numSinos);
     sinogram(:,subsetIndex : numberOfSubsets : end, :) = subset;
 else
     fid = fopen([projectionFilename '.i33'], 'r');

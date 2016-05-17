@@ -149,15 +149,19 @@ bool Sinograms2DmultiSlice::readFromInterfile(string headerFilename)
 	IMG_DATA *id;
 	id = &fi->image[i];
 	float* ptrSinogram = this->getSinogram2D(i)->getSinogramPtr();
-	memcpy(ptrSinogram, id->buf, sizeof(float)*nBinsSino2d);
+	// We accept empty sinograms as a sample, in that case fill it with zeros, if not copy from the binary:
+	if (fi->truncated == MDC_YES)
+	  memset(ptrSinogram, 0, sizeof(float)*nBinsSino2d);
+	else
+	  memcpy(ptrSinogram, id->buf, sizeof(float)*nBinsSino2d);
 	this->getSinogram2D(i)->initParameters();
     }
 	
   }
   else
   {
-	  this->strError = "Al momento solo se soportan sinogramas del tipo float.";
-	  return false;
+    this->strError = "Only float images are accepted.";
+    return false;
   }
   return true;
 }

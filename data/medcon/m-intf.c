@@ -1730,9 +1730,14 @@ char *MdcReadIntfImages(FILEINFO *fi, MDC_INTERFILE *intf)
 
         default: 
           if ((nbr=(Uint32)fread(id->buf,1,bytes,fi->ifp)) != bytes) { 
-              if (nbr > 0) err=MdcHandleTruncated(fi,i+1,MDC_YES);
-              else err=MdcHandleTruncated(fi,i,MDC_YES);
-              if (err != NULL) return(err);
+	    if (nbr==0)
+	    {
+	      // It can be empty for the samples, so not remap:
+	       err=MdcHandleTruncated(fi,i+1,MDC_NO);
+	    }
+            else if (nbr > 0) err=MdcHandleTruncated(fi,i+1,MDC_YES);
+	    else err=MdcHandleTruncated(fi,i,MDC_YES);
+	    if (err != NULL) return(err);
           } 
      } 
      if (fi->truncated) break;

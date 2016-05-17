@@ -37,6 +37,8 @@ classdef classGpet < handle
         Geom
         % Method to estimate randoms:
         method_for_randoms
+        % Method to estimate scatter:
+        method_for_scatter
         % Operative system.
         os
         % bar for the paths.
@@ -186,7 +188,7 @@ classdef classGpet < handle
             end
             
             if ~isfield(objGpet.scanner_properties, 'radius_mm')
-                objGpet.scanner_properties.radius_mm = 356;
+                objGpet.scanner_properties.radius_mm = 370;
             end
             
             if isempty(objGpet.nSubsets)
@@ -302,7 +304,70 @@ classdef classGpet < handle
             
         end
         
+        function nPlanePerSeg = Planes_Seg (objGpet)
+            
+            a = (objGpet.sinogram_size.maxRingDifference -(objGpet.sinogram_size.span+1)/2);
+            b = floor(a/objGpet.sinogram_size.span)+ floor(objGpet.sinogram_size.maxRingDifference/a);
+            nseg = 2*b+1;
+
+            a = ones(objGpet.sinogram_size.nRings);
+            minRingDiff = [0,(objGpet.sinogram_size.span+1)/2:objGpet.sinogram_size.span:objGpet.sinogram_size.maxRingDifference];
+
+            s = zeros(1,(nseg+1)/2);
+            for j = 1:(nseg+1)/2
+                s(j) = length(diag(a,minRingDiff(j)));
+            end
+
+            if objGpet.sinogram_size.span>1, s = 2*s-1; end
+
+            nPlanePerSeg = zeros(1,nseg);
+            nPlanePerSeg(1) = s(1);
+            nPlanePerSeg(2:2:end) = s(2:end);
+            nPlanePerSeg(3:2:end) = s(2:end);
+
+        end
+
+        function Scatter3D = iSSRB(objGpet,Scatter2D)
+            
+            nPlanePerSeg = Planes_Seg(objGpet);
+            
+            mo = cumsum(nPlanePerSeg)';
+            no =[[1;mo(1:end-1)+1],mo];            
+
+            Scatter3D = zeros(objGpet.sinogram_size.matrixSize,'single');
+            Scatter3D(:,:,no(1,1):no(1,2),:) = Scatter2D;
+            
+            for i = 2:2:length(nPlanePerSeg)
+                
+                delta = (nPlanePerSeg(1)- nPlanePerSeg(i))/2;
+                indx = nPlanePerSeg(1) - delta;
+                
+                Scatter3D (:,:,no(i,1):no(i,2),:) = Scatter2D(:,:,delta+1:indx,:);
+                Scatter3D (:,:,no(i+1,1):no(i+1,2),:) = Scatter2D(:,:,delta+1:indx,:);
+            end
+        end
         
+        function scatter_3D = scatter_scaling(objGpet,scatter_3D, emission_sinogram, ncf, acf, randoms)
+            
+            gaps = ncf==0;
+            scatter_3D =  scatter_3D./ncf;
+            scatter_3D(gaps)=0;
+            
+            Trues = emission_sinogram - randoms;     
+            
+            for i = 1: size(acf,3)
+                acf_i = acf(:,:,i);
+                mask = acf_i <= min(acf(:));
+                
+                scatter_3D_tail = scatter_3D(:,:,i).*mask;
+                Trues_tail = Trues(:,:,i).*mask;
+                
+                scale_factor = sum(Trues_tail(:))./sum(scatter_3D_tail(:));
+                scatter_3D(:,:,i) = scatter_3D(:,:,i)*scale_factor;
+            end
+            
+        end
+                       
     end
     methods (Access = public)
         % Project:
@@ -332,12 +397,27 @@ classdef classGpet < handle
             sino_size = objGpet.sinogram_size;
         end
         
+        % Converts sinogram
+        function sino_compressed = apply_axial_compression_from_span1(objGpet, sinogram)
+            structSizeSino3d = getSizeSino3dFromSpan(objGpet.sinogram_size.nRadialBins, objGpet.sinogram_size.nAnglesBins, objGpet.sinogram_size.nRings, ...
+                0, 0, 1, objGpet.sinogram_size.maxRingDifference);
+            if numel(sinogram) ~= (objGpet.sinogram_size.nRadialBins*objGpet.sinogram_size.nAnglesBins*sum(structSizeSino3d.sinogramsPerSegment))
+                error('The input sinogram needs to be span 1.');
+            end
+            [sino_compressed, structSizeSino3dSpanN] = convertSinogramToSpan(sinogram, structSizeSino3d,  objGpet.sinogram_size.span);
+        end
+        
+        
         function SenseImg = Sensitivity(objGpet, AN)
             SenseImg = zeros([objGpet.image_size.matrixSize, objGpet.nSubsets],'single') ;
             fprintf('Subset: ');
-            for n = 1:objGpet.nSubsets
-                fprintf('%d, ',n);
-                SenseImg(:,:,:,n) = objGpet.PT(AN,n);
+            if objGpet.nSubsets > 1
+                for n = 1:objGpet.nSubsets
+                    fprintf('%d, ',n);
+                    SenseImg(:,:,:,n) = objGpet.PT(AN,n);
+                end
+            else
+                SenseImg = objGpet.PT(AN);
             end
             fprintf('Done.\n');
         end
@@ -381,8 +461,14 @@ classdef classGpet < handle
             end
         end
         
+        function Img = OPMLEM(objGpet,Prompts,RS, SensImg,Img, nIter)
+            for i = 1:nIter
+                Img = Img.*objGpet.PT(Prompts./(objGpet.P(Img)+ RS + 1e-5))./(SensImg+1e-5);
+                Img = max(0,Img);
+            end
+        end
+        
         function Img = OPOSEM(objGpet,Prompts,RS, SensImg,Img, nIter)
-            
             for i = 1:nIter
                 for j = 1:objGpet.nSubsets
                     Img = Img.*objGpet.PT(Prompts./(objGpet.P(Img,j)+ RS + 1e-5),j)./(SensImg(:,:,:,j)+1e-5);

@@ -34,7 +34,8 @@ function r=R(varargin)
                 % Call stir:
                 [r, structSizeSino] = estimateRandomsWithStir(varargin{2}, structSizeSino3d, varargin{3}, structSizeSino3d, outputPath);
             elseif strcmpi(objGpet.method_for_randoms,'from_ML_singles_matlab')
-                structSizeSino = get_sinogram_size_for_apirl(objGpet);
+                structSizeSino = getSizeSino3dFromSpan(objGpet.sinogram_size.nRadialBins, objGpet.sinogram_size.nAnglesBins, ...
+                    objGpet.sinogram_size.nRings, 596/2, 260, 1, objGpet.sinogram_size.maxRingDifference); % delayeds are span 1.
                 if isfield(structSizeSino, 'sinogramsPerSegment')
                     if numel(structSizeSino.sinogramsPerSegment) == 1
                         if structSizeSino.numZ == 1

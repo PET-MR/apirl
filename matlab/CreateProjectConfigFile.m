@@ -95,7 +95,7 @@ if strcmp(scanner, 'cylindrical')
 end
 if useGpu == 0
     fprintf(fid,'projector := Siddon\n');
-    fprintf(fid,'siddon number of samples on the detector := %d', numSamples);
+    fprintf(fid,'siddon number of samples on the detector := %d\n', numSamples);
 else
     fprintf(fid,'projector := CuSiddonProjector\n');
     fprintf(fid,'projector block size := {256,1,1}\n');

@@ -35,12 +35,12 @@ else
     return;
 end
 
-if nargin == 7
+if nargin == 9
     useGpu = 0;
     numSamples = 1;
-elseif nargin == 8
+elseif nargin == 10
     numSamples = 1;
-elseif nargin < 7
+elseif nargin < 9
     error('Invalid number of parameters: [image, pixelSize_mm] = BackprojectMmrSpan1(sinogram, imageSize_pixels, pixelSize_mm, outputPath, useGpu)');
 end
 
@@ -99,7 +99,7 @@ interfileWriteSino(single(sinogram), sinogramFilename, structSizeSino);
 % Generate backprojected image:
 filenameBackprojectionConfig = [outputPath 'backprojectSinogram.par'];
 backprojectionFilename = [outputPath 'backprojectedImage'];
-CreateBackprojectConfigFileForMmr(filenameBackprojectionConfig, [sinogramFilename '.h33'], [filenameImage '.h33'], scanner, scanner_properties, backprojectionFilename, numberOfSubsets, subsetIndex, useGpu, numSamples);
+CreateBackprojectConfigFile(filenameBackprojectionConfig, [sinogramFilename '.h33'], [filenameImage '.h33'], scanner, scanner_parameters, backprojectionFilename, numberOfSubsets, subsetIndex, useGpu, numSamples);
 status = system(['backproject ' filenameBackprojectionConfig])
 
 % Remove the input sinogram:
@@ -107,3 +107,4 @@ delete([sinogramFilename '.*']);
 
 % Read the image:
 image = interfileRead([backprojectionFilename '.h33']);
+image(isnan(image)) = 0;

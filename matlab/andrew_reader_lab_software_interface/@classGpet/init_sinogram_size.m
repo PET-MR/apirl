@@ -19,9 +19,10 @@ function init_sinogram_size(objGpet, inSpan, numRings, maxRingDifference)
         aux = objGpet.sinogram_size;
         % Clear sinogram size to remove 3d parameters:
         objGpet.sinogram_size = rmfield(objGpet.sinogram_size, fieldnames(objGpet.sinogram_size));
-        objGpet.sinogram_size.nRadialBins = aux.sinogram_size.nRadialBins;
-        objGpet.sinogram_size.nAnglesBins = aux.sinogram_size.nAnglesBins;
-        objGpet.sinogram_size.span = aux.sinogram_size.span;
+        objGpet.sinogram_size.nRadialBins = aux.nRadialBins;
+        objGpet.sinogram_size.nAnglesBins = aux.nAnglesBins;
+        objGpet.sinogram_size.span = aux.span;
+        objGpet.sinogram_size.nRings = numRings;
         objGpet.sinogram_size.matrixSize = [objGpet.sinogram_size.nRadialBins objGpet.sinogram_size.nAnglesBins 1];
         objGpet.sinogram_size.nSinogramPlanes = numRings;
     elseif objGpet.sinogram_size.span == 0
@@ -121,6 +122,9 @@ function init_sinogram_size(objGpet, inSpan, numRings, maxRingDifference)
         end
         objGpet.sinogram_size.nSinogramPlanes = sum(objGpet.sinogram_size.nPlanesPerSeg);
     end
+    % subsets:
+    objGpet.osem_subsets(objGpet.nSubsets, objGpet.sinogram_size.nAnglesBins);
+    % matrix size:
     objGpet.sinogram_size.matrixSize = [objGpet.sinogram_size.nRadialBins objGpet.sinogram_size.nAnglesBins objGpet.sinogram_size.nSinogramPlanes];
 
 end
