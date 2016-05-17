@@ -471,7 +471,10 @@ classdef classGpet < handle
         function Img = OPOSEM(objGpet,Prompts,RS, SensImg,Img, nIter)
             for i = 1:nIter
                 for j = 1:objGpet.nSubsets
-                    Img = Img.*objGpet.PT(Prompts./(objGpet.P(Img,j)+ RS + 1e-5),j)./(SensImg(:,:,:,j)+1e-5);
+                    % Mask because the projector returns a sinogram of the
+                    % same size:
+                    mask = zeros(size(Prompts)); mask(:,j:objGpet.nSubsets:objGpet.sinogram_size.nAnglesBins,:) = 1;
+                    Img = Img.*objGpet.PT(Prompts.*mask./(objGpet.P(Img,j)+ RS.*mask + 1e-5),j)./(SensImg(:,:,:,j)+1e-5);
                     Img = max(0,Img);
                 end
             end
