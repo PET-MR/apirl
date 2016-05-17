@@ -16,7 +16,7 @@ function PETData = read_check_interfiles(PETData, FolderName)
             PETData.DataPath.norm = [FolderName PETData.bar files{i}];
             tag(1)= 1;
         end
-        if ~isempty(strfind(files{i},'.s.hdr')) && isempty(strfind(files{i},'uncomp.s.hdr'))
+        if ~isempty(strfind(files{i},'sino.mhdr')) && isempty(strfind(files{i},'uncomp.s.hdr'))
             PETData.DataPath.emission = [FolderName PETData.bar files{i}];
             tag(2) = 1;
         end

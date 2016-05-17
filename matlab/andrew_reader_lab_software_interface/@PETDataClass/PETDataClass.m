@@ -320,22 +320,22 @@ classdef PETDataClass < handle
                 % similar switch-case statement.
                 case 'prompts'
                     filename  = [PETData.DataPath.rawdata_sino '\emis_00.s'];
-                    data = read_sinograms(PETData,filename, PETData.sinogram_size);
+                    data = read_sinograms(PETData,filename, PETData.sinogram_size.matrixSize);
                 case 'randoms'
                     filename  = [PETData.DataPath.rawdata_sino '\smoothed_rand_00.s'];
-                    data = read_sinograms(PETData,filename, PETData.sinogram_size);
+                    data = read_sinograms(PETData,filename, PETData.sinogram_size.matrixSize);
                 case 'NCF'
                     filename  = [PETData.DataPath.rawdata_sino '\norm3d_00.a'];
-                    data = read_sinograms(PETData,filename, PETData.sinogram_size);
+                    data = read_sinograms(PETData,filename, PETData.sinogram_size.matrixSize);
                 case 'ACF'
                     filename  = [PETData.DataPath.rawdata_sino '\acf_00.a'];
-                    data = read_sinograms(PETData,filename, PETData.sinogram_size);
+                    data = read_sinograms(PETData,filename, PETData.sinogram_size.matrixSize);
                 case 'ACF2'
                     filename  = [PETData.DataPath.rawdata_sino '\acf_second_00.a'];
-                    data = read_sinograms(PETData,filename, PETData.sinogram_size);
+                    data = read_sinograms(PETData,filename, PETData.sinogram_size.matrixSize);
                 case 'scatters'
                     filename  = [PETData.DataPath.rawdata_sino '\scatter_estim2d_000000.s'];
-                    scatter_2D = read_sinograms(PETData,filename, [PETData.sinogram_size(1:2) 127]);
+                    scatter_2D = read_sinograms(PETData,filename, [PETData.sinogram_size.matrixSize(1:2) 127]);
                     scatter_3D = iSSRB(PETData,scatter_2D);
                     data = scatter_scaling(PETData,scatter_3D);
                     clear scatter_3D scatter_2D
@@ -359,7 +359,7 @@ classdef PETDataClass < handle
             mo = cumsum(nPlanePerSeg)';
             no =[[1;mo(1:end-1)+1],mo];            
 
-            Scatter3D = zeros(PETData.sinogram_size,'single');
+            Scatter3D = zeros(PETData.sinogram_size.matrixSize,'single');
             Scatter3D(:,:,no(1,1):no(1,2),:) = Scatter2D;
             
             for i = 2:2:length(nPlanePerSeg)
@@ -428,13 +428,13 @@ classdef PETDataClass < handle
             acf = Load_sinogram(PETData,'ACF2');
         end
         
-        function mul = muliFactors(PETData)
+        function mul = AN(PETData)
             mul = PETData.ACF .* PETData.NCF;
             mul = 1./mul;
             mul(isinf(mul)) = 0;
         end
         
-        function add = addiFactors(PETData)
+        function add = RS(PETData)
             add = PETData.ACF .* PETData.NCF.*(PETData.Scatters + PETData.Randoms);
         end        
         
@@ -501,7 +501,7 @@ classdef PETDataClass < handle
                 temp = Prompts(PETData);
             end
             figure
-            for i = 1:5:PETData.sinogram_size(2)
+            for i = 1:5:PETData.sinogram_size.matrixSize(2)
                 drawnow,imshow(squeeze(temp(:,i,:)),[])
             end
             clear temp
