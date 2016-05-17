@@ -559,6 +559,13 @@ classdef PETDataClass < handle
             PETData.DataPath.emission_uncomp = [pathstr '\' name(1:end-2) '_uncomp.s.hdr'];
             uncompress_emission(PETData);
         end
+		
+		function display(PETData)
+            
+            disp(PETData)
+            methods(PETData)
+            
+        end
     end
     
 end
