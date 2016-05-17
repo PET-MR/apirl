@@ -50,12 +50,13 @@ randoms = PET.R(delayedSinogram);
 %% SCATTER
 scatterBinaryFilename = '/media/mab15/DATA/PatientData/FDG/PETSinoPlusUmap-Converted/PETSinoPlusUmap-00/temp/scatter_estim2d_000000.s';
 scatter = PET.S(scatterBinaryFilename, sino_compressed, ncfs, acfs, randoms); % Needs all that parameters to scale it.
+% This scatter is already normalzied
 %% SENSITIVITY IMAGE
 anf = acfs .* ncfs;
 anf(anf~=0) = 1./anf(anf~=0);
 sensImage = PET.Sensitivity(anf);
 %% OP-OSEM
 % additive term:
-additive = (randoms.*ncfs + scatter).*acfs; % (randoms +scatter.*nfs)./(afs*nfs) = randoms*acfs*ncfs+scatter*acfs;
+additive = (randoms + scatter).*ncfs.*acfs; % (randoms +scatter)./(afs*nfs) = (randoms+scatter)
 recon = PET.ones();
 recon = PET.OPOSEM(sino_compressed,additive, sensImage,recon, ceil(60/PET.nSubsets));
