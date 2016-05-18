@@ -55,18 +55,16 @@ classdef classGpet < handle
                 objGpet.os = 'windows';
                 objGpet.bar = '\';
             end
-            if (nargin == 0)
-                objGpet.scanner = 'mMR';
-            else
-                if isfield(varargin{1},'scanner')
-                    objGpet.scanner = varargin{1}.scanner;
-                elseif any(cellfun(@any,strfind(varargin,'scanner')))
-                    i = find(cellfun(@any,strfind(varargin,'scanner')));
-                    objGpet.scanner = varargin{i+1};
-                else
-                    objGpet.scanner = 'mMR';
-                end
+            
+            objGpet.scanner = 'mMR'; % default
+            
+            if isfield(varargin{1},'scanner')
+                objGpet.scanner = varargin{1}.scanner;
+            elseif any(cellfun(@any,strfind(varargin,'scanner')))
+                i = find(cellfun(@any,strfind(varargin,'scanner')));
+                objGpet.scanner = varargin{i+1};
             end
+            
             objGpet.initScanner();
             objGpet.method =  'otf_siddon_cpu';
             objGpet.PSF.type = 'shift-invar';
