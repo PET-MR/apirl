@@ -68,7 +68,7 @@ fprintf(fid,'Backproject Parameters :=\n');
 fprintf(fid,'input type := %s\n', sinogramType);
 if useGpu == 0
     fprintf(fid,'backprojector := Siddon\n');
-    fprintf(fid,'siddon number of samples on the detector := %d', numSamples);
+    fprintf(fid,'siddon number of samples on the detector := %d\n', numSamples);
 else
     fprintf(fid,'backprojector := CuSiddonProjector\n');
     fprintf(fid,'backprojector block size := {576,1,1}\n');
