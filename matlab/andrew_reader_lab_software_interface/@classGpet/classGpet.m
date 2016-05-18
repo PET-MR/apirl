@@ -60,8 +60,9 @@ classdef classGpet < handle
             else
                 if isfield(varargin{1},'scanner')
                     objGpet.scanner = varargin{1}.scanner;
-                elseif strcmpi(varargin{1},'scanner')
-                    objGpet.scanner = varargin{2};
+                elseif any(cellfun(@any,strfind(varargin,'scanner')))
+                    i = find(cellfun(@any,strfind(varargin,'scanner')));
+                    objGpet.scanner = varargin{i+1};
                 else
                     objGpet.scanner = 'mMR';
                 end
@@ -77,8 +78,8 @@ classdef classGpet < handle
            if nargin == 1
                 % Read configuration from file or from struct:
                 if isstruct(varargin{1})
-                    if ~isfield(varargin{1}, 'method')
-                        disp('Configuration for ''otf_siddon_cpu''');
+                    if ~isfield(varargin{1}, 'scanner') || ~isfield(varargin{1}, 'method')
+                        disp('Configuration for''otf_siddon_cpu''');
                     end
                     Revise(objGpet,varargin{1});
                     
