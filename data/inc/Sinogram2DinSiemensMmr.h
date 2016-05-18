@@ -65,7 +65,7 @@ class DLLEXPORT Sinogram2DinSiemensMmr : public Sinogram2DinCylindrical3Dpet
 	  
 	  /** Length of the crystal element. */
 	  static const float crystalElementLength_mm;
-	
+	public:
 	  /// Mean depth of interaction:
 	  static const float meanDOI_mm;
 

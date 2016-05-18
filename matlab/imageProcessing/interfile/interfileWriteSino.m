@@ -95,8 +95,12 @@ filenameSino = sprintf('%s.i33', filename);
 if (~isfield(structSizeSino, 'numSegments'))
     tipo = 'sinogram2D';
 else
-    % Michelograma
-    tipo = 'sinogram3D';
+    if structSizeSino.span > 0
+        % Michelograma
+        tipo = 'sinogram3D';
+    else
+        tipo = 'sinogram2D';
+    end
 end
 
 if isempty(sinogram)

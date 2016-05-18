@@ -54,10 +54,19 @@ function s=S(varargin)
                 error('Unexpected file size for %s', filename);
             end
             s = reshape(s, [344 252 127]);
-            % Convert into the sinogram size:
-            s = objGpet.iSSRB(s);
-            % Scale it:
-            s = objGpet.scatter_scaling(s, varargin{3}, varargin{4}, varargin{5}, varargin{6});
+            if objGpet.sinogram_size.span >= 1
+                % Convert into the sinogram size:
+                s = objGpet.iSSRB(s);
+                % Scale it:
+                s = objGpet.scatter_scaling(s, varargin{3}, varargin{4}, varargin{5}, varargin{6});
+            elseif objGpet.sinogram_size.span == 0
+                rings = 1 : objGpet.sinogram_size.nRings;
+                planes = 1 : objGpet.sinogram_size.nRings/(127+1) : objGpet.sinogram_size.nRings;
+                [X1,Y1,Z1] = meshgrid(1:252,1:344,planes);
+                [X2,Y2,Z2] = meshgrid(1:252,1:344,rings);
+                s = interp3(X1,Y1,Z1,s,X2,Y2,Z2);
+                s = objGpet.scatter_scaling(s, varargin{3}, varargin{4}, varargin{5}, varargin{6});
+            end
         end
     end
  end

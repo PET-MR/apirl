@@ -406,6 +406,8 @@ int main (int argc, char *argv[])
 		{
 		  outputProjection->getSinogram2D(i)->setSinogramBin(j,k,exp(outputProjection->getSinogram2D(i)->getSinogramBin(j,k)));
 		}
+		else
+		  outputProjection->getSinogram2D(i)->setSinogramBin(j,k,1);
 	      }
 	    }
 	  }

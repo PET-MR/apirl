@@ -23,6 +23,7 @@ function init_sinogram_size(objGpet, inSpan, numRings, maxRingDifference)
         objGpet.sinogram_size.nAnglesBins = aux.nAnglesBins;
         objGpet.sinogram_size.span = aux.span;
         objGpet.sinogram_size.nRings = numRings;
+        objGpet.sinogram_size.maxRingDifference = 0;
         objGpet.sinogram_size.matrixSize = [objGpet.sinogram_size.nRadialBins objGpet.sinogram_size.nAnglesBins 1];
         objGpet.sinogram_size.nSinogramPlanes = numRings;
     elseif objGpet.sinogram_size.span == 0
@@ -34,6 +35,7 @@ function init_sinogram_size(objGpet, inSpan, numRings, maxRingDifference)
         objGpet.sinogram_size.nAnglesBins = aux.nAnglesBins;
         objGpet.sinogram_size.span = aux.span;
         objGpet.sinogram_size.nRings = numRings;
+        objGpet.sinogram_size.maxRingDifference = 0;
         objGpet.sinogram_size.nSinogramPlanes = numRings;
         objGpet.sinogram_size.matrixSize = [objGpet.sinogram_size.nRadialBins objGpet.sinogram_size.nAnglesBins objGpet.sinogram_size.nRings];
     else

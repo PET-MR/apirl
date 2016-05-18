@@ -44,11 +44,21 @@ end
 
 if strcmp(scanner, 'mMR')
     if isfield(structSizeSino, 'sinogramsPerSegment')
-        if numel(structSizeSino.sinogramsPerSegment) == 1 & ~isfield(structSizeSino, 'span')    % If its span a field a 3d sinogram with axial compression of 121 (1 segment)
-            if structSizeSino.numZ == 1
-                sinogramType = 'Sinogram2DinSiemensMmr';
+        if numel(structSizeSino.sinogramsPerSegment) == 1      % If its span a field a 3d sinogram with axial compression of 121 (1 segment)
+            if ~isfield(structSizeSino, 'span')
+                if structSizeSino.numZ == 1
+                    sinogramType = 'Sinogram2DinSiemensMmr';
+                else
+                    sinogramType = 'Sinograms2DinSiemensMmr';
+                end
+            elseif structSizeSino.span >= 1
+                sinogramType = 'Sinogram3DSiemensMmr';
             else
-                sinogramType = 'Sinograms2DinSiemensMmr';
+                if structSizeSino.numZ == 1
+                    sinogramType = 'Sinogram2DinSiemensMmr';
+                else
+                    sinogramType = 'Sinograms2DinSiemensMmr';
+                end
             end
         else
             sinogramType = 'Sinogram3DSiemensMmr';

@@ -173,8 +173,10 @@ bool SiddonProjector::Project (Image* inputImage, Sinogram2D* outputProjection)
 		outputProjection->incrementSinogramBin(i,j, geomFactor * MyWeightsList[0][l].Segment * 
 		  ptrPixels[MyWeightsList[0][l].IndexY * sizeImage.nPixelsX + MyWeightsList[0][l].IndexX]);		  
 	    }
+	    #ifdef __DEBUG__
 	    if(outputProjection->getSinogramBin(i,j) != outputProjection->getSinogramBin(i,j))
 	      printf("Warnign: NaN.\n");
+	    #endif
 	    free(MyWeightsList[0]);
 	  }
 	}

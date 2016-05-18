@@ -31,6 +31,7 @@ const float Sinograms2DinSiemensMmr::crystalElementSize_mm = 4.0891f;
 /// Width of each rings.
 const float Sinograms2DinSiemensMmr::widthRings_mm = 4.03125f; //axialFov_mm / numRings;
 
+
 /// Constructor de copia
 Sinograms2DinSiemensMmr::Sinograms2DinSiemensMmr(Sinograms2DinSiemensMmr* srcSino):Sinograms2DmultiSlice((Sinograms2DmultiSlice*) srcSino)
 {
@@ -44,7 +45,19 @@ Sinograms2DinSiemensMmr::Sinograms2DinSiemensMmr(string fileName):Sinograms2Dmul
 {
   this->readFromInterfile(fileName);
   initParameters();
+//   float lr;
+//   // The r value is non linear in the sinogram, because each bin represent one detector element and
+//   // with the curve of the cylindrical scanner the distance r to the center axis increases with the cos of the bin.
+//   for(int j = 0; j < numR; j++)
+//   {
+//     // ptrRvalues initialization is necesary just one time
+//     // 1) Get the length on the cylindrical surface for each bin (from x=0 to the center of the crystal element):
+//     lr = (Sinogram2DinSiemensMmr::binSize_mm/2 + Sinogram2DinSiemensMmr::binSize_mm*(j-(float)(numR/2)));
+//     // 2) Now I get the x coordinate for that r.
+//     ptrRvalues_mm[j] = (radioScanner_mm + Sinogram2DinSiemensMmr::meanDOI_mm* cos(lr/radioScanner_mm)) * sin(lr/radioScanner_mm);
+//   }
 }
+
 
 /// Destructor de la clase Segmento.
 Sinograms2DinSiemensMmr::~Sinograms2DinSiemensMmr()

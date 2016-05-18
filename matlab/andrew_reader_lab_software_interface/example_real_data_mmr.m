@@ -23,16 +23,28 @@ setenv('PATH', [getenv('PATH') sepEnvironment apirlPath pathBar 'build' pathBar 
 setenv('LD_LIBRARY_PATH', [getenv('LD_LIBRARY_PATH') sepEnvironment apirlPath pathBar 'build' pathBar 'bin']);
 %% INIT CLASS GPET
 PET.scanner = 'mMR';
-PET.method =  'otf_siddon_gpu';
+PET.method =  'otf_siddon_cpu';
 PET.PSF.type = 'none';
 PET.radialBinTrim = 0;
 PET.Geom = '';
 PET.method_for_randoms = 'from_ML_singles_matlab'; %'from_e7_binary_interfile';
 PET.method_for_scatter = 'from_e7_binary_interfile';
+% To change span:
+PET.sinogram_size.span = 11; % Any span, 0 for multislice 2d, -1 for 2d.
 PET = classGpet(PET);
 %% EMISSION SINOGRAM
 [sinogram, delayedSinogram, structSizeSino3d] = interfileReadSino('/media/mab15/DATA/PatientData/FDG/PETSinoPlusUmap-Converted/PETSinoPlusUmap-00/PETSinoPlusUmap-00-sino-uncomp.s.hdr');
-sino_compressed = PET.apply_axial_compression_from_span1(sinogram);
+if PET.sinogram_size.span > 1
+    sino_compressed = PET.apply_axial_compression_from_span1(sinogram);
+elseif PET.sinogram_size.span == 0
+    % Get the direct sinograms:
+    sino_compressed = sinogram(:,:,1:PET.sinogram_size.nRings);
+    delayedSinogram = delayedSinogram(:,:,1:PET.sinogram_size.nRings);
+elseif PET.sinogram_size.span == -1
+    % Get the central slice:
+    sino_compressed = sinogram(:,:,round(PET.sinogram_size.nRings/2));
+    delayedSinogram = delayedSinogram(:,:,round(PET.sinogram_size.nRings/2));
+end
 %% NORM
 ncfs = PET.NCF(); % time-invariant.
 %ncfs = PET.NCF('PETSinoPlusUmap-norm.n'); % time-variant.
@@ -57,6 +69,7 @@ anf(anf~=0) = 1./anf(anf~=0);
 sensImage = PET.Sensitivity(anf);
 %% OP-OSEM
 % additive term:
-additive = (randoms + scatter).*ncfs.*acfs; % (randoms +scatter)./(afs*nfs) = (randoms+scatter)
+additive = (randoms + scatter).*ncfs.*acfs; % (randoms +scatter)./(afs*nfs) = (randoms+scatter)+
+additive = zeros(size(additive));
 recon = PET.ones();
 recon = PET.OPOSEM(sino_compressed,additive, sensImage,recon, ceil(60/PET.nSubsets));

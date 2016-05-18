@@ -154,7 +154,7 @@ bool Sinograms2DmultiSlice::readFromInterfile(string headerFilename)
 	  memset(ptrSinogram, 0, sizeof(float)*nBinsSino2d);
 	else
 	  memcpy(ptrSinogram, id->buf, sizeof(float)*nBinsSino2d);
-	this->getSinogram2D(i)->initParameters();
+	//this->getSinogram2D(i)->initParameters(); it should be intialized in initSinograms()
     }
 	
   }

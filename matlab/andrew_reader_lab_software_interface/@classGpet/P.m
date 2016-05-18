@@ -55,12 +55,19 @@ function m = P(objGpet, x,subset_i)
             else
                 numSubsets = objGpet.nSubsets;  % Not use directly objGpet.nSubsets, because it canbe the case where there is a number of susbets configured but we still want to project the shile sinogram.
             end
+%             if strcmpi(objGpet.method, 'otf_siddon_cpu')
+%                 [m, structSizeSinogram] = ProjectMmr(x, objGpet.image_size.voxelSize_mm, objGpet.tempPath, objGpet.sinogram_size.span, numSubsets, subset_i, 0);
+%             elseif strcmpi(objGpet.method, 'otf_siddon_gpu')
+%                 [m, structSizeSinogram] = ProjectMmr(x, objGpet.image_size.voxelSize_mm, objGpet.tempPath, objGpet.sinogram_size.span, numSubsets, subset_i, 1);
+%             end
+            structSizeSino = get_sinogram_size_for_apirl(objGpet);
             if strcmpi(objGpet.method, 'otf_siddon_cpu')
-                [m, structSizeSinogram] = ProjectMmr(x, objGpet.image_size.voxelSize_mm, objGpet.tempPath, objGpet.sinogram_size.span, numSubsets, subset_i, 0);
+                [m, structSizeSinogram] = Project(x, objGpet.image_size.voxelSize_mm, objGpet.tempPath, objGpet.scanner, objGpet.scanner_properties, structSizeSino, numSubsets, subset_i, 0);
             elseif strcmpi(objGpet.method, 'otf_siddon_gpu')
-                [m, structSizeSinogram] = ProjectMmr(x, objGpet.image_size.voxelSize_mm, objGpet.tempPath, objGpet.sinogram_size.span, numSubsets, subset_i, 1);
+                [m, structSizeSinogram] = Project(x, objGpet.image_size.voxelSize_mm, objGpet.tempPath, objGpet.scanner, objGpet.scanner_properties, structSizeSino, numSubsets, subset_i, 1);
             end
         end
+        
     elseif strcmpi(objGpet.scanner,'cylindrical')
         if strcmpi(objGpet.method, 'pre-computed_matlab')               
             disp('todo: is the precomputed version compatible with any cylindrical geometry?.')

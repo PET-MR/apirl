@@ -44,7 +44,7 @@
 %  are
 
 function [overall_ncf_2d, scanner_time_invariant_ncf_2d, scanner_time_variant_ncf_2d, acquisition_dependant_ncf_2d, crystal_dependant_ncf_2d, used_xtal_efficiencies, used_deadtimefactors, used_axial_factors, structSizeSino2d] = ...
-   create_norm_files_mmr(cbn_filename, my_selection_of_xtal_efficiencies, my_choice_of_deadtimefactors, singles_rates_per_bucket, numRings)
+   create_norm_files_mmr_2d(cbn_filename, my_selection_of_xtal_efficiencies, my_choice_of_deadtimefactors, singles_rates_per_bucket, numRings)
 
 
 used_xtal_efficiencies = [];
@@ -177,4 +177,14 @@ scanner_time_invariant_ncf_2d = scanner_time_invariant_ncf_2d.*gaps;
 
 overall_ncf_2d = scanner_time_invariant_ncf_2d .* acquisition_dependant_ncf_2d .* scanner_time_variant_ncf_2d;
 
+% If numRings > 1 include axial factors:
+if numRings > 1
+    % Generate axial factors from a block profile saved before:
+    gainPerPixelInBlock = load('axialGainPerPixelInBlock.mat');
+    gainPerPixelInBlock = gainPerPixelInBlock.gainPerPixelInBlock;
+    gainPerRing = repmat(gainPerPixelInBlock,numberofAxialBlocks,1);
+    for i = 1 : numRings
+        overall_ncf_2d(:,:,i) = overall_ncf_2d(:,:,i) .* gainPerRing(i);
+    end
+end
 

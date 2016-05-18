@@ -28,9 +28,10 @@ PET.PSF.type = 'none';
 PET.radialBinTrim = 0;
 PET.Geom = '';
 PET.random_algorithm = 'from_ML_singles_matlab';
+PET.sinogram_size.span = 0;
 PET = classGpet(PET);
 %% SIMULATE A BRAIN PHANTOM WITH ATTENUATION, NORMALIZATION, RANDOMS AND SCATTER
-[sinogram, delayedSinogram, structSizeSino3d] = interfileReadSino('E:\PatientData\FDG\PETSinoPlusUmap-Converted\PETSinoPlusUmap-00\PETSinoPlusUmap-00-sino-uncomp.s.hdr');
+%[sinogram, delayedSinogram, structSizeSino3d] = interfileReadSino('E:\PatientData\FDG\PETSinoPlusUmap-Converted\PETSinoPlusUmap-00\PETSinoPlusUmap-00-sino-uncomp.s.hdr');
 load BrainMultiMaps_mMR.mat;
 
 tAct = permute(MultiMaps_Ref.PET, [2 1 3]);

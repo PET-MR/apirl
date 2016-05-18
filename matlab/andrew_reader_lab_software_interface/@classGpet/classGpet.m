@@ -99,7 +99,19 @@ classdef classGpet < handle
             if (objGpet.sinogram_size.span ~=11) || (objGpet.sinogram_size.maxRingDifference ~=60 ) % default values
                 init_sinogram_size(objGpet, objGpet.sinogram_size.span, objGpet.sinogram_size.nRings, objGpet.sinogram_size.maxRingDifference);
             end
-            
+            if objGpet.sinogram_size.span == 0
+                objGpet.image_size.voxelSize_mm(3) = objGpet.image_size.voxelSize_mm(3)*objGpet.image_size.matrixSize(3)/objGpet.sinogram_size.nRings;
+                objGpet.image_size.matrixSize(3)=objGpet.sinogram_size.nRings;
+                warning('Overriding the image size to the number of rings to work in multislice 2d. Now the image size is %dx%dx%d and voxel size is %fx%fx%f.', ...
+                    objGpet.image_size.matrixSize(1), objGpet.image_size.matrixSize(2), objGpet.image_size.matrixSize(3),...
+                    objGpet.image_size.voxelSize_mm(1), objGpet.image_size.voxelSize_mm(2), objGpet.image_size.voxelSize_mm(3));
+            elseif objGpet.sinogram_size.span == -1
+                % Keep the voxel sizeobjGpet.image_size.voxelSize_mm(3)
+                objGpet.image_size.matrixSize(3)=objGpet.sinogram_size.nRings;
+                warning('Overriding the image size to the number of rings to work in multislice 2d. Now the image size is %dx%dx%d and voxel size is %fx%fx%f.', ...
+                    objGpet.image_size.matrixSize(1), objGpet.image_size.matrixSize(2), objGpet.image_size.matrixSize(3),...
+                    objGpet.image_size.voxelSize_mm(1), objGpet.image_size.voxelSize_mm(2), objGpet.image_size.voxelSize_mm(3));
+            end
         end
         
         function objGpet = readConfigFromFile(objGpet, strFilename)
@@ -365,7 +377,7 @@ classdef classGpet < handle
             scatter_3D(gaps)=0;
             
             Trues = emission_sinogram - randoms;     
-            
+            Trues(Trues<0) = 0;
             for i = 1: size(acf,3)
                 acf_i = acf(:,:,i);
                 mask = acf_i <= min(acf(:));

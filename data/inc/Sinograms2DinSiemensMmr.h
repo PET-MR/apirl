@@ -82,7 +82,7 @@ class DLLEXPORT Sinograms2DinSiemensMmr : public Sinograms2DmultiSlice
     
     /// Width of each detector's ring in the mMR.
     static const float widthRings_mm;
-    
+	  
     /** Sinogramas 2D que forman parte del segmento. 
       Es un vector de punteros a objetos Sinograms2DinSiemensMmr.
     */

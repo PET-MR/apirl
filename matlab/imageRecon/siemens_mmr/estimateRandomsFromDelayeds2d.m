@@ -43,24 +43,28 @@ combSystemMatrix = (detector1SystemMatrix+detector2SystemMatrix);%./repmat(combi
 % combinedNormalization =  sum(detector1SystemMatrix',2) + sum(detector2SystemMatrix',2);
 % combSystemMatrix = (detector1SystemMatrix+detector2SystemMatrix);%./repmat(combinedNormalization',[size(detector1SystemMatrix,1) 1]);
 
-%% FAN-SUM OF DELAYEDS
-disp('Computing initial estimate...');
-fansum = combSystemMatrix'*double(delayedSinogram2d(:));
-singles = sqrt(fansum./combinedNormalization);
-% randoms = (detector1SystemMatrix*double(singles)).*(detector2SystemMatrix*double(singles));
-% randoms = reshape(randoms, [structSizeSino3dSpan1.numR structSizeSino3dSpan1.numTheta sum(structSizeSino3dSpan1.sinogramsPerSegment)]);
-% sum((delayedSinogramSpan1(:)-randoms(:)).^2)
+%% GET A RANDOMS SINOGRAM FOR EACH RING
+% They are independent because its 2d:
+for i = 1 : structSizeSino2d.numZ
+    delayedSinogram2d_ring_i = delayedSinogram2d(:,:,i);
+    %% FAN-SUM OF DELAYEDS
+    disp('Computing initial estimate...');
+    fansum = combSystemMatrix'*double(delayedSinogram2d_ring_i(:));
+    singles = sqrt(fansum./combinedNormalization);
+    % randoms = (detector1SystemMatrix*double(singles)).*(detector2SystemMatrix*double(singles));
+    % randoms = reshape(randoms, [structSizeSino3dSpan1.numR structSizeSino3dSpan1.numTheta sum(structSizeSino3dSpan1.sinogramsPerSegment)]);
+    % sum((delayedSinogramSpan1(:)-randoms(:)).^2)
 
-for i = 1 : numIterations
-    disp(sprintf('Iteration %d...',i));
-    %% GENERATE RANDOM ESTIMATE FROM SINGLES
-    aux1= combSystemMatrix'*double(delayedSinogram2d(:));
-    aux3 = detector1SystemMatrix'*(detector2SystemMatrix*double(singles));
-    aux4 = detector2SystemMatrix'*(detector1SystemMatrix*double(singles));
-    singles = (aux1)./((aux3+aux4));
+    for j = 1 : numIterations
+        disp(sprintf('Iteration %d for Ring %d...',j,i));
+        %% GENERATE RANDOM ESTIMATE FROM SINGLES
+        aux1= combSystemMatrix'*double(delayedSinogram2d_ring_i(:));
+        aux3 = detector1SystemMatrix'*(detector2SystemMatrix*double(singles));
+        aux4 = detector2SystemMatrix'*(detector1SystemMatrix*double(singles));
+        singles = (aux1)./((aux3+aux4));
+    end
+    randoms_ring_i = (detector1SystemMatrix*double(singles)).*(detector2SystemMatrix*double(singles));
+    randoms(:,:,i) = reshape(randoms_ring_i, [structSizeSino2d.numR structSizeSino2d.numTheta]);
 end
-randoms = (detector1SystemMatrix*double(singles)).*(detector2SystemMatrix*double(singles));
-randoms = reshape(randoms, [structSizeSino2d.numR structSizeSino2d.numTheta]);
-
 
     

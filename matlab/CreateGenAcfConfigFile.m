@@ -31,23 +31,53 @@ if(fid == -1)
 end
 % Sinogram type: 
 if strcmp(scanner, 'mMR')
-    % Type of sinogram, depending of the size structure type:
-    if isfield(structSizeSino,'sinogramsPerSegment')
-        sinogramType = 'Sinogram3DSiemensMmr';
-    elseif structSizeSino.numZ > 1
-        sinogramType = 'Sinograms2DinSiemensMmr';
+    if isfield(structSizeSino, 'sinogramsPerSegment')
+        if numel(structSizeSino.sinogramsPerSegment) == 1      % If its span a field a 3d sinogram with axial compression of 121 (1 segment)
+            if ~isfield(structSizeSino, 'span')
+                if structSizeSino.numZ == 1
+                    sinogramType = 'Sinogram2DinSiemensMmr';
+                else
+                    sinogramType = 'Sinograms2DinSiemensMmr';
+                end
+            elseif structSizeSino.span >= 1
+                sinogramType = 'Sinogram3DSiemensMmr';
+            else
+                if structSizeSino.numZ == 1
+                    sinogramType = 'Sinogram2DinSiemensMmr';
+                else
+                    sinogramType = 'Sinograms2DinSiemensMmr';
+                end
+            end
+        else
+            sinogramType = 'Sinogram3DSiemensMmr';
+        end
     else
-        sinogramType = 'Sinogram2DinSiemensMmr';
+        if structSizeSino.numZ == 1
+            sinogramType = 'Sinogram2DinSiemensMmr';
+        else
+            sinogramType = 'Sinograms2DinSiemensMmr';
+        end
     end
 elseif strcmp(scanner, 'cylindrical')
-    if isfield(structSizeSino,'sinogramsPerSegment')
-        sinogramType = 'Sinogram3D';
-    elseif structSizeSino.numZ > 1
-        sinogramType = 'Sinograms2D';
+    if isfield(structSizeSino, 'sinogramsPerSegment')
+        if numel(structSizeSino.sinogramsPerSegment) == 1
+            if structSizeSino.numZ == 1
+                sinogramType = 'Sinogram2D';
+            else
+                sinogramType = 'Sinograms2D';
+            end
+        else
+            sinogramType = 'Sinogram3D';
+        end
     else
-        sinogramType = 'Sinogram2D';
+        if structSizeSino.numZ == 1
+            sinogramType = 'Sinogram2D';
+        else
+            sinogramType = 'Sinograms2D';
+        end
     end
 end
+
 % Ahora debo ir escribiendo los campos. Algunos son fijos, y otros
 % dependerán de la imagen:
 fprintf(fid,'generateACFs Parameters :=\n');

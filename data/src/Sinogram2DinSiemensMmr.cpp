@@ -186,8 +186,10 @@ bool Sinogram2DinSiemensMmr::getPointsFromLor (int indexAng, int indexR, Point2D
 {
   float r = this->getRValue(indexR);
   float rad_PhiAngle = this->getAngValue(indexAng) * DEG_TO_RAD;
+  float lr = (binSize_mm/2 + binSize_mm*(indexR-(float)(numR/2)));
+  float effRadioScanner_mm = (radioScanner_mm + meanDOI_mm* cos(lr/radioScanner_mm));
   // RadioFov se usa si no se tiene geometrías, en el cylindricalpet se debe utilizar el radioscanner:
-  float auxValue = sqrt(radioScanner_mm * radioScanner_mm - r * r);
+  float auxValue = sqrt(effRadioScanner_mm * effRadioScanner_mm - r * r);
   *geom = 1;
   if(r > radioFov_mm)
   {
