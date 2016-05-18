@@ -61,7 +61,7 @@ classdef classGpet < handle
             else
                 if isfield(varargin{1},'scanner')
                     objGpet.scanner = varargin{1}.scanner;
-                elseif any(cellfun(@any,strfind(varargin,'scanner')))
+                elseif length(varargin)>=2 && ischar(varargin{1}) % pair name,values
                     i = find(cellfun(@any,strfind(varargin,'scanner')));
                     objGpet.scanner = varargin{i+1};
                 else
