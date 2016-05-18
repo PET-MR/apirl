@@ -16,11 +16,13 @@ function PETData = read_check_interfiles(PETData, FolderName)
             PETData.DataPath.norm = [FolderName PETData.bar files{i}];
             tag(1)= 1;
         end
-        if ~isempty(strfind(files{i},'sino.mhdr')) && isempty(strfind(files{i},'uncomp.s.hdr'))
-            PETData.DataPath.emission = [FolderName PETData.bar files{i}];
-            tag(2) = 1;
+        if ~isempty(strfind(files{i},'.mhdr')) && isempty(strfind(files{i},'uncomp.s.hdr'))
+            if isempty(strfind(files{i},'AC.mhdr')) && isempty(strfind(files{i},'human.mhdr')) && isempty(strfind(files{i},'hardware.mhdr'))
+                PETData.DataPath.emission = [FolderName PETData.bar files{i}];
+                tag(2) = 1;
+            end
         end
-        if ~isempty(strfind(files{i},'umap-hardware.mhdr'))
+        if ~isempty(strfind(files{i},'umap_hardware.mhdr'))
             PETData.DataPath.hardware_umap = [FolderName PETData.bar files{i}];
             tag(3) = 1;
         end

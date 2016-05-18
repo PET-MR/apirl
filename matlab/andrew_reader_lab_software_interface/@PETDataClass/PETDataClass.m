@@ -213,7 +213,7 @@ classdef PETDataClass < handle
             listing = dir(path);
             for i = 3:length(listing)
                 [~, name, ext] = fileparts(listing(i).name);
-                if strcmpi(ext,'.IMA') || strcmpi(ext,'.PDT')
+                if strcmpi(ext,'.IMA') || strcmpi(ext,'.PDT') || length(ext) > 5
                     PETData.DataType = DataTypeEnum.dicom;
                     if (PETData.DataType ~=  DataTypeEnum.none) && (PETData.DataType ~=  DataTypeEnum.dicom)
                         error('Please seperate the dicom files from the interfile files.')
@@ -264,15 +264,16 @@ classdef PETDataClass < handle
         
         function status = e7_sino_rawdata(PETData)
             % e7_sino_rawdata calls e7_recon to gereate all raw data and
-            command = [PETData.SoftwarePaths.e7.siemens ' -e ' PETData.DataPath.emission ...
-                ' -u ' PETData.DataPath.umap ',' PETData.DataPath.hardware_umap...
-                ' -n ' PETData.DataPath.norm ' --os ' PETData.DataPath.scatters ' --rs --force -l 73,. -d ' PETData.DataPath.rawdata_sino];
+            command = [PETData.SoftwarePaths.e7.siemens ' -e "' PETData.DataPath.emission '"' ...
+                ' -u "' PETData.DataPath.umap '","' PETData.DataPath.hardware_umap '"' ...
+                ' -n "' PETData.DataPath.norm '" --os "' PETData.DataPath.scatters '" --rs --force -l 73,. -d "' PETData.DataPath.rawdata_sino '"'];
             [status,message] = system(command);
         end
         
         function status = uncompress_emission(PETData)
             % calls e7 intfcompr.exe to uncompress data
-            command = [PETData.SoftwarePaths.e7.siemens 'intfcompr.exe -e ' PETData.DataPath.emission ' --oe ' PETData.DataPath.emission_uncomp];
+            [pathstr,name] = fileparts(PETData.SoftwarePaths.e7.siemens);
+            command = [pathstr '\intfcompr.exe -e "' PETData.DataPath.emission '" --oe "' PETData.DataPath.emission_uncomp '"'];
             [status,~] = system(command);
             if status
                 error('intfcompr:: uncompression was failed');
@@ -558,13 +559,6 @@ classdef PETDataClass < handle
             PETData.DataPath.emission = Dir;
             PETData.DataPath.emission_uncomp = [pathstr '\' name(1:end-2) '_uncomp.s.hdr'];
             uncompress_emission(PETData);
-        end
-		
-		function display(PETData)
-            
-            disp(PETData)
-            methods(PETData)
-            
         end
     end
     
