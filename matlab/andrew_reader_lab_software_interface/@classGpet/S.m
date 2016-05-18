@@ -68,5 +68,23 @@ function s=S(varargin)
                 s = objGpet.scatter_scaling(s, varargin{3}, varargin{4}, varargin{5}, varargin{6});
             end
         end
+    elseif nargin == 7 % S(objGpet,scatter_3D, emission_sinogram, ncf, acf, randoms, ring)
+        if strcmpi(objGpet.method_for_scatter,'from_e7_binary_interfile') && ischar(varargin{2})
+            filename = varargin{2};
+            fid = fopen(filename, 'r');
+            if fid == -1
+                error('The scatter binary file was not found.');
+            end
+            s = fread(fid, inf, 'single');
+            if numel(s) ~= [344*252*127]
+                error('Unexpected file size for %s', filename);
+            end
+            s = reshape(s, [344 252 127]);
+            if objGpet.sinogram_size.span == -1
+                plane = varargin{7}*(127+1)/ 64;
+                s = s(:,:,plane);
+                s = objGpet.scatter_scaling(s, varargin{3}, varargin{4}, varargin{5}, varargin{6});
+            end
+        end
     end
  end

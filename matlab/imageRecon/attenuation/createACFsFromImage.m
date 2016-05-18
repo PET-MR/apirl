@@ -49,7 +49,11 @@ status = system(['generateACFs "' genAcfFilename '"']);
 
 % Read the generated acfs:
 if isfield(structSizeSinos,'sinogramsPerSegment')
-    numSinos = sum(structSizeSinos.sinogramsPerSegment);
+    if structSizeSinos.span > 0
+        numSinos = sum(structSizeSinos.sinogramsPerSegment);
+    else
+        numSinos = structSizeSinos.numZ;
+    end
 else
     numSinos = structSizeSinos.numZ;
 end

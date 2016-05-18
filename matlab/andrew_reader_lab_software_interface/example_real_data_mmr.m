@@ -42,8 +42,9 @@ elseif PET.sinogram_size.span == 0
     delayedSinogram = delayedSinogram(:,:,1:PET.sinogram_size.nRings);
 elseif PET.sinogram_size.span == -1
     % Get the central slice:
-    sino_compressed = sinogram(:,:,round(PET.sinogram_size.nRings/2));
-    delayedSinogram = delayedSinogram(:,:,round(PET.sinogram_size.nRings/2));
+    ring = 32;
+    sino_compressed = sinogram(:,:,ring);
+    delayedSinogram = delayedSinogram(:,:,ring);
 end
 %% NORM
 ncfs = PET.NCF(); % time-invariant.
@@ -54,6 +55,11 @@ attenuationMapHardware_filename = '/media/mab15/DATA/PatientData/FDG/PETSinoPlus
 [attenuationMap refMuMap] = interfileReadSiemensImage(attenuationMap_filename);
 [attenuationMapHardware refMuMap] = interfileReadSiemensImage(attenuationMapHardware_filename);
 attenuationMap = attenuationMap + attenuationMapHardware;
+if PET.sinogram_size.span == -1
+    % Get only
+    slice = 2*ring; % atten map has 127 slices and the direct rings 64.
+    attenuationMap = attenuationMap(:,:,slice);
+end
 acfs = PET.ACF(attenuationMap, refMuMap);
 %% RANDOMS
 % if uses the randomsBinaryFilename = '/media/mab15/DATA/PatientData/FDG/PETSinoPlusUmap-Converted/PETSinoPlusUmap-00/temp/smoothed_rand_00.s';
@@ -61,7 +67,13 @@ acfs = PET.ACF(attenuationMap, refMuMap);
 randoms = PET.R(delayedSinogram);
 %% SCATTER
 scatterBinaryFilename = '/media/mab15/DATA/PatientData/FDG/PETSinoPlusUmap-Converted/PETSinoPlusUmap-00/temp/scatter_estim2d_000000.s';
-scatter = PET.S(scatterBinaryFilename, sino_compressed, ncfs, acfs, randoms); % Needs all that parameters to scale it.
+% for 3d or multislice 2d:
+if PET.sinogram_size.span >=0
+    scatter = PET.S(scatterBinaryFilename, sino_compressed, ncfs, acfs, randoms); % Needs all that parameters to scale it.
+else
+    % For 2d select the sinogram ring:
+    scatter = PET.S(scatterBinaryFilename, sino_compressed, ncfs, acfs, randoms, ring);
+end
 % This scatter is already normalzied
 %% SENSITIVITY IMAGE
 anf = acfs .* ncfs;
