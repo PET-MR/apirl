@@ -74,7 +74,7 @@ if(ENABLE_GPU)
 	SET(CUDA_LIBRARIES_BUILD	STATIC)
 	#SET(CUDA_LIBRARIES_BUILD	SHARED)
 	# Seteo las compute capabilities con las que quiero compilar (Por default es la más baja: 1.0):
-	SET(CUDA_COMPUTE_CAPABILITY 2.0)
+	SET(CUDA_COMPUTE_CAPABILITY 3.5)
 	# Algunas opciones adicionales para cuda.
 	#SET(CUDA_USE_FAST_MATH ON)
 	# Tipo de Cache que se habilita:
