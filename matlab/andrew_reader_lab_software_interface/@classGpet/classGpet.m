@@ -55,10 +55,16 @@ classdef classGpet < handle
                 objGpet.os = 'windows';
                 objGpet.bar = '\';
             end
-            if nargin == 0
+            if (nargin == 0)
                 objGpet.scanner = 'mMR';
             else
-                objGpet.scanner = varargin{1}.scanner;
+                if isfield(varargin{1},'scanner')
+                    objGpet.scanner = varargin{1}.scanner;
+                elseif strcmpi(varargin{1},'scanner')
+                    objGpet.scanner = varargin{2};
+                else
+                    objGpet.scanner = 'mMR';
+                end
             end
             objGpet.initScanner();
             objGpet.method =  'otf_siddon_cpu';
@@ -71,8 +77,8 @@ classdef classGpet < handle
            if nargin == 1
                 % Read configuration from file or from struct:
                 if isstruct(varargin{1})
-                    if ~isfield(varargin{1}, 'scanner') || ~isfield(varargin{1}, 'method')
-                        disp('Configuration for ''mMR'' scanner and ''otf_siddon_cpu''');
+                    if ~isfield(varargin{1}, 'method')
+                        disp('Configuration for ''otf_siddon_cpu''');
                     end
                     Revise(objGpet,varargin{1});
                     
@@ -101,10 +107,13 @@ classdef classGpet < handle
         % Function that intializes the scanner:
         function initScanner(objGpet)
             if strcmpi(objGpet.scanner,'2D_radon')
+                disp('Configuration for ''2D_radon'' scanner');
                 objGpet.G_2D_radon_setup();
             elseif strcmpi(objGpet.scanner,'mMR')
+                disp('Configuration for ''mMR'' scanner');
                 objGpet.G_mMR_setup();
             elseif strcmpi(objGpet.scanner,'cylindrical')
+                disp('Configuration for ''cylindrical'' scanner');
                 objGpet.G_cylindrical_setup();
             else
                 error('unkown scanner')
