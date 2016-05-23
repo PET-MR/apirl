@@ -1,5 +1,5 @@
 % *********************************************************************
-% Reconstruction Framework for Siemens Biograph mMR.  
+% Reconstruction Framework for Siemens Biograph mMR.
 % class: PETDataClass
 % Authors: Martin Belzunce, Abolfazl Mehranian. Kings College London.
 % Date: 01/03/2016
@@ -8,16 +8,35 @@
 % from the PETData config.
 % To do: process gantry position events and patien tracking evnets.
 function data = histogram_data(PETData)
+
+if strcmpi(PETData.MethodListData,'e7')
+    fprintf('calling e7 histogram replay...\n')
+    frame = [num2str(PETData.FrameTimePoints(1)) ':' ];
+    for i = 2:length(PETData.FrameTimePoints)-1
+        frame = [frame num2str(PETData.FrameTimePoints(i)) ','];
+    end
+    frame = [frame num2str(PETData.FrameTimePoints(end))];
+    command = [PETData.SoftwarePaths.e7.HistogramReplay ' --lmhd "' PETData.DataPath.lmhd '"' ...
+        ' --lmdat "' PETData.DataPath.lmdat '" --lmode PROMPTS_RANDOMS --opre ' PETData.DataPath.Name ' --frame ' frame];
+    
+    [status,message] = system(command);
+    if status
+        display(message)
+        error('HistogramReplay was failed');
+    end
+else
+    fprintf('calling MATLAB histogrammer...\n')
+    
     % Read the list mode file.
     info = getInfoFromSiemensIntf(PETData.DataPath.emission_listmode);
     binary_file = [PETData.DataPath.emission_listmode(1:end-3) 'l']; % In the info sometimes is the wrong info
     % Open file:
     fid = fopen(binary_file, 'r');
-    if fid == -1 
+    if fid == -1
         error('Error: List-mode binary file not found.');
     end
     % Read chunk of events: 1x10^6:
-    seconds_per_mark = 0.001
+    seconds_per_mark = 0.001;
     event_size_bytes = 4;
     chunk_size_events = 10000000;
     chunk_size_bytes = chunk_size_events *event_size_bytes;
@@ -43,17 +62,17 @@ function data = histogram_data(PETData)
             % Process tags:
             % Timing events:
             tagTimeEventsMask = logical(bitxor(bitshift(data,-29),3)==7);
-            indicesTime = find(tagTimeEventsMask); 
+            indicesTime = find(tagTimeEventsMask);
             % Time marker:
             elapsed_time_marker_msec = bitand(data(tagTimeEventsMask),hex2dec('1fffffff'));
             % Dead time marker with singles rate per block:
             tagDeadTimeTrackerMask = logical(bitxor(bitshift(data,-29),2)==7);
             dead_time_marker_msec = bitand(data(tagTimeEventsMask),hex2dec('1fffffff'));
-
+            
             % tagGantryEventsMask = logical(bitxor(bitshift(data,-29),1)==7);
             % tagPatientEventsMask = logical(bitxor(bitshift(data,-28),1)==15);
             % tagControlEventsMask = logical(bitxor(bitshift(data,-28),0)==15);
-
+            
             % Get time stamps:
             timeStamps_sec = single(elapsed_time_marker_msec) .* seconds_per_mark;
             % We don't need to check the intial time, because we are
@@ -77,7 +96,7 @@ function data = histogram_data(PETData)
             
             right_bits = (pba <= prod(PETData.sinogram_size.matrixSize)) ;
             pba = pba(right_bits);
-
+            
             right_bits = (rba <= prod(PETData.sinogram_size.matrixSize)) ;
             rba = rba(right_bits);
             
@@ -96,9 +115,9 @@ function data = histogram_data(PETData)
                     296, 256, PETData.sinogram_size.span, PETData.sinogram_size.maxRingDifference));
                 flag_new_frame = 1;
             end
-
-         
-
+            
+            
+            
         end
     end
     % Write last frame:
@@ -110,6 +129,6 @@ function data = histogram_data(PETData)
     interfileWriteSino(single(sino_prompts), [PETData.DataPath.path 'sinogram_frame_' num2str(i) '_delayed'], getSizeSino3dFromSpan(PETData.sinogram_size.nRadialBins, PETData.sinogram_size.nAnglesBins, PETData.sinogram_size.nRings, ...
         296, 256, PETData.sinogram_size.span, PETData.sinogram_size.maxRingDifference));
     fclose(fid);
-
-
+    
+    
 end
