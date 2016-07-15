@@ -23,12 +23,12 @@ setenv('PATH', [getenv('PATH') sepEnvironment apirlPath pathBar 'build' pathBar 
 setenv('LD_LIBRARY_PATH', [getenv('LD_LIBRARY_PATH') sepEnvironment apirlPath pathBar 'build' pathBar 'bin']);
 %% INIT CLASS GPET
 PET.scanner = 'mMR';
-PET.method =  'otf_siddon_gpu';
+PET.method =  'otf_siddon_cpu';
 PET.PSF.type = 'none';
 PET.radialBinTrim = 0;
 PET.Geom = '';
 PET.random_algorithm = 'from_ML_singles_matlab';
-PET.sinogram_size.span = 0;
+PET.sinogram_size.span = -1;
 PET = classGpet(PET);
 %% SIMULATE A BRAIN PHANTOM WITH ATTENUATION, NORMALIZATION, RANDOMS AND SCATTER
 %[sinogram, delayedSinogram, structSizeSino3d] = interfileReadSino('E:\PatientData\FDG\PETSinoPlusUmap-Converted\PETSinoPlusUmap-00\PETSinoPlusUmap-00-sino-uncomp.s.hdr');
@@ -44,6 +44,10 @@ yLimits = [-size(tAct,1)/2*pixelSize_mm(1) size(tAct,1)/2*pixelSize_mm(1)];
 zLimits = [-size(tAct,3)/2*pixelSize_mm(3) size(tAct,3)/2*pixelSize_mm(3)];
 refAct = imref3d(size(tAct),xLimits,yLimits,zLimits);
 refAt  = imref3d(size(tMu),xLimits,yLimits,zLimits);
+% T1 image:
+T1 = permute(MultiMaps_Ref.T1, [2 1 3]);
+T1 = T1(end:-1:1,:,:);
+
 
 % Change the image sie, to the one of the phantom:
 PET.init_image_properties(refAct);
@@ -91,4 +95,12 @@ s = poissrnd(s_withoutNorm.*n);
 % Add randoms and scatter@
 simulatedSinogram = y_poisson + s + r;
 
-
+%% SENSITIVITY IMAGE
+anf = acf .* ncf;
+anf(anf~=0) = 1./anf(anf~=0);
+sensImage = PET.Sensitivity(anf);
+%% OP-OSEM
+% additive term:
+additive = (r + s).*ncf.*acf; % (randoms +scatter)./(afs*nfs) = (randoms+scatter)+
+recon = PET.ones();
+recon = PET.OPOSEM(simulatedSinogram,additive, sensImage,recon, ceil(60/PET.nSubsets));

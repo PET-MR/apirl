@@ -139,6 +139,10 @@ interfilewrite(uint16(caudateImage_aten), [outputPath 'muMap_uint16'], [refCauda
 % create a constant image.
 const = ones(size(caudateImage));
 interfilewrite(uint16(const), [outputPath 'constMap_uint16'], [refCaudate.PixelExtentInWorldY refCaudate.PixelExtentInWorldX ]);
+% Use a point source also:
+point = zeros(size(caudateImage));
+point(round(size(caudateImage,1)./2),1) = 1;
+interfilewrite(uint16(point), [outputPath 'pointMap_uint16'], [refCaudate.PixelExtentInWorldY refCaudate.PixelExtentInWorldX ]);
 %% SMALL REGION TO SIMULATE IN GATE BUT IN THE SAME SIZE
 outputPath = '/home/mab15/workspace/KCL/Biograph_mMr/GateModel/svn_2d/CaudatePhantomFullImage/';
 if ~isdir(outputPath)

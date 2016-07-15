@@ -24,12 +24,12 @@ if strcmpi(PETData.MethodListData,'e7')
         display(message)
         error('HistogramReplay was failed');
     end
-else
+elseif strcmpi(PETData.MethodListData,'matlab')
     fprintf('calling MATLAB histogrammer...\n')
     
     % Read the list mode file.
-    info = getInfoFromSiemensIntf(PETData.DataPath.emission_listmode);
-    binary_file = [PETData.DataPath.emission_listmode(1:end-3) 'l']; % In the info sometimes is the wrong info
+    info = getInfoFromSiemensIntf(PETData.DataPath.lmhd);
+    binary_file = [PETData.DataPath.lmdat]; % In the info sometimes is the wrong info
     % Open file:
     fid = fopen(binary_file, 'r');
     if fid == -1
@@ -43,12 +43,17 @@ else
     
     % I fill one sinogram per frame:
     data = [];
+    offsetTime = 0;
+    flagOffsetSet = 0;
     for i = 1 : PETData.NumberOfFrames
         % Create a sinogram:
         sino_prompts = zeros(prod(PETData.sinogram_size.matrixSize),1, 'single');
         sino_delays = zeros(prod(PETData.sinogram_size.matrixSize),1, 'single');
-        startingTimeForThisFrame_sec = PETData.DynamicFrames_sec(i);
-        endingTimeForThisFrame_sec = PETData.DynamicFrames_sec(i+1);
+        
+        % I have noticed that the events has an offset in time, so now i
+        % take the first time from the data:
+        startingTimeForThisFrame_sec = offsetTime + PETData.DynamicFrames_sec(i);
+        endingTimeForThisFrame_sec = offsetTime + PETData.DynamicFrames_sec(i+1);
         flag_new_frame = 0;
         % Read the list-mode:
         while(~feof(fid)& ~flag_new_frame)
@@ -61,12 +66,12 @@ else
             % sinograms from the provided lists
             % Process tags:
             % Timing events:
-            tagTimeEventsMask = logical(bitxor(bitshift(data,-29),3)==7);
+            tagTimeEventsMask = logical(bitshift(data,-29)==4);
             indicesTime = find(tagTimeEventsMask);
             % Time marker:
             elapsed_time_marker_msec = bitand(data(tagTimeEventsMask),hex2dec('1fffffff'));
             % Dead time marker with singles rate per block:
-            tagDeadTimeTrackerMask = logical(bitxor(bitshift(data,-29),2)==7);
+            tagDeadTimeTrackerMask = logical(bitshift(data,-29)==5);
             dead_time_marker_msec = bitand(data(tagTimeEventsMask),hex2dec('1fffffff'));
             
             % tagGantryEventsMask = logical(bitxor(bitshift(data,-29),1)==7);
@@ -75,6 +80,13 @@ else
             
             % Get time stamps:
             timeStamps_sec = single(elapsed_time_marker_msec) .* seconds_per_mark;
+            % Check for any offset in time
+            if flagOffsetSet == 0
+                offsetTime = timeStamps_sec(1)-seconds_per_mark;
+                startingTimeForThisFrame_sec = offsetTime + PETData.DynamicFrames_sec(i);
+                endingTimeForThisFrame_sec = offsetTime + PETData.DynamicFrames_sec(i+1);
+                flagOffsetSet = 1;
+            end
             % We don't need to check the intial time, because we are
             % removing previous frames files:
             indiceTimeStampsOutOfFrame = find(timeStamps_sec > endingTimeForThisFrame_sec);
@@ -126,7 +138,7 @@ else
     sino_delays = reshape(sino_delays,PETData.sinogram_size.matrixSize);
     interfileWriteSino(single(sino_prompts), [PETData.DataPath.path 'sinogram_frame_' num2str(i)], getSizeSino3dFromSpan(PETData.sinogram_size.nRadialBins, PETData.sinogram_size.nAnglesBins, PETData.sinogram_size.nRings, ...
         296, 256, PETData.sinogram_size.span, PETData.sinogram_size.maxRingDifference));
-    interfileWriteSino(single(sino_prompts), [PETData.DataPath.path 'sinogram_frame_' num2str(i) '_delayed'], getSizeSino3dFromSpan(PETData.sinogram_size.nRadialBins, PETData.sinogram_size.nAnglesBins, PETData.sinogram_size.nRings, ...
+    interfileWriteSino(single(sino_delays), [PETData.DataPath.path 'sinogram_frame_' num2str(i) '_delayed'], getSizeSino3dFromSpan(PETData.sinogram_size.nRadialBins, PETData.sinogram_size.nAnglesBins, PETData.sinogram_size.nRings, ...
         296, 256, PETData.sinogram_size.span, PETData.sinogram_size.maxRingDifference));
     fclose(fid);
     

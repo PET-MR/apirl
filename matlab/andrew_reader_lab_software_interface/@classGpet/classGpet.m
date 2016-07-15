@@ -430,6 +430,16 @@ classdef classGpet < handle
             [sino_compressed, structSizeSino3dSpanN] = convertSinogramToSpan(sinogram, structSizeSino3d,  objGpet.sinogram_size.span);
         end
         
+        function mask = get_fov_maks(objGpet, radiusFov_mm)
+            if nargin == 1
+                radiusFov_mm = 596;
+            end
+            mask = objGpet.ones;
+            radiusFov_pixels = radiusFov_mm/objGpet.image_size.voxelSize_mm(1);
+            [X,Y,Z] = meshgrid(1:objGpet.image_size.matrixSize(2),1:objGpet.image_size.matrixSize(1),1:objGpet.image_size.matrixSize(3));
+            indicesOutMask = ((X-objGpet.image_size.matrixSize(2)/2).^2+(Y-objGpet.image_size.matrixSize(1)/2).^2) > radiusFov_pixels.^2;
+            mask(indicesOutMask) = 0;
+        end
         
         function SenseImg = Sensitivity(objGpet, AN)
             SenseImg = zeros([objGpet.image_size.matrixSize, objGpet.nSubsets],'single') ;

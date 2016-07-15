@@ -17,6 +17,7 @@ d = dir(FolderName);
 file = {d(3:end).name}';
 js = 0;
 jl = 0;
+tag = [0 0 0];
 for i = 1:numel(file)
     if isThis(file{i},'.n.hdr')
         PETData.DataPath.norm = [FolderName PETData.bar file{i}];
@@ -64,7 +65,7 @@ if any(tag==0),
     if tag(1)==0, msg = ['Normalization ''.n.hdr'' ' msg];end
     if tag(2)==0, msg = [' ''umap_hardware.mhdr'' ' msg];end
     if tag(3)==0, msg = [' ''umap_human.mhdr'' ' msg];end
-    error([ msg 'was not found in ' FolderName]);
+    warning([ msg 'was not found in ' FolderName]);
 end
 
 PETData.DataPath.scatters(1).n = [FolderName '-00-scatter.mhdr'];
@@ -75,28 +76,28 @@ if PETData.isSinogram
     end
 end
 
-if PETData.isListMode
-    [Dir,Name]=fileparts(PETData.DataPath.lmdat) ;
-    if reFraming
-        PETData.DataPath.Name  =[Dir PETData.bar Name '-sino-' num2str(reFraming) ];
-    else
-        PETData.DataPath.Name  =[Dir PETData.bar Name '-sino'];
-    end
-    
-        %call Histogram_replay to generate the sinograms per frame
-    fprintf('Histogram replay\n');
-    PETData.histogram_data();
-    
-    for i = 1: PETData.NumberOfFrames
-        PETData.DataPath.emission(i).n        = [PETData.DataPath.Name  '-'  num2str(i-1) '.mhdr'];
-        if reFraming %avoid overwritting the data
-            PETData.DataPath.rawdata_sino(i).n    = [Dir  PETData.bar 'rawdata_sino-' num2str(reFraming) '-' num2str(i-1)];
-        else
-            PETData.DataPath.rawdata_sino(i).n    = [Dir  PETData.bar 'rawdata_sino-' num2str(i-1)];
-        end
-        PETData.make_mhdr(PETData.DataPath.emission(i).n)
-        
-    end
-end
+% if PETData.isListMode
+%     [Dir,Name]=fileparts(PETData.DataPath.lmdat) ;
+%     if reFraming
+%         PETData.DataPath.Name  =[Dir PETData.bar Name '-sino-' num2str(reFraming) ];
+%     else
+%         PETData.DataPath.Name  =[Dir PETData.bar Name '-sino'];
+%     end
+%     
+%         %call Histogram_replay to generate the sinograms per frame
+%     fprintf('Histogram replay\n');
+%     PETData.histogram_data();
+%     
+%     for i = 1: PETData.NumberOfFrames
+%         PETData.DataPath.emission(i).n        = [PETData.DataPath.Name  '-'  num2str(i-1) '.mhdr'];
+%         if reFraming %avoid overwritting the data
+%             PETData.DataPath.rawdata_sino(i).n    = [Dir  PETData.bar 'rawdata_sino-' num2str(reFraming) '-' num2str(i-1)];
+%         else
+%             PETData.DataPath.rawdata_sino(i).n    = [Dir  PETData.bar 'rawdata_sino-' num2str(i-1)];
+%         end
+%         PETData.make_mhdr(PETData.DataPath.emission(i).n)
+%         
+%     end
+% end
 
 end

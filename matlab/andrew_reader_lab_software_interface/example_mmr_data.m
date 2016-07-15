@@ -20,7 +20,7 @@ cudaPath = '/usr/local/cuda/';
 setenv('PATH', [getenv('PATH') sepEnvironment cudaPath pathBar 'bin']);
 setenv('LD_LIBRARY_PATH', [getenv('LD_LIBRARY_PATH') sepEnvironment cudaPath pathBar 'lib64']);
 % APIRL PATH
-apirlPath = '/home/mab15/workspace/apirl-code/trunk/';
+apirlPath = 'E:\workspace\apirl-code\';
 addpath(genpath([apirlPath pathBar 'matlab']));
 setenv('PATH', [getenv('PATH') sepEnvironment apirlPath pathBar 'build' pathBar 'bin']);
 setenv('LD_LIBRARY_PATH', [getenv('LD_LIBRARY_PATH') sepEnvironment apirlPath pathBar 'build' pathBar 'bin']);
@@ -31,11 +31,13 @@ setenv('LD_LIBRARY_PATH', [getenv('LD_LIBRARY_PATH') sepEnvironment apirlPath pa
 opt.span= 1;
 opt.MethodSinoData= 'e7';
 % user provides the path
-PETData = PETDataClass('/media/mab15/DATA/PatientData/Florbetaben/PETListPlusUmap-Converted/PETListPlusUmap-LM-00/', opt);
-timeFrame_sec = 200;
-PETData.InitFramesConfig(timeFrame_sec);
+PETData = PETDataClass('E:\BR1_010\raw');
+PETData.uncompress(PETData.DataPath.emission);
+%PETData = PETDataClass('/media/mab15/DATA/PatientData/Florbetaben/PETListPlusUmap-Converted/PETListPlusUmap-LM-00/', opt);
+%timeFrame_sec = 200;
+%PETData.InitFramesConfig(timeFrame_sec);
 %%
-PETData.ListModeChopper()
+%PETData.ListModeChopper()
 % %% TEST INTERFILE SINOGRAM
 % % user provides the path and modifies default  settings
 % PETData = PETDataClass('/home/mab15/workspace/KCL/Biograph_mMr/Mediciones/BRAIN_PETMR/SINOGRAMS',opt); 

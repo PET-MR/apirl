@@ -52,7 +52,7 @@ if(isempty(subsetIndex))
     subsetIndex = 0;
 end
 
-if numel(pixelSize_mm) ~= 3
+if (numel(pixelSize_mm) ~= 3) && (imageSize_pixels(3) ~= 1)
     error('The image size (imageSize_pixels) and pixel size (pixelSize_mm) parameters must be a three-elements vector.');
 end
 
@@ -68,7 +68,7 @@ if isfield(structSizeSino, 'sinogramsPerSegment')
                 error('Backprojecct: an image with multiple slices can not be backprojected into a sinogram 2d.');
             end
         else
-            if size(image,3) ~= structSizeSino.numZ
+            if size(image,3) ~= structSizeSino.sinogramsPerSegment(1)
                 error('Backprojecct: the number of slices of the image is different to the number of rings of the output sinogram.');
             end
         end

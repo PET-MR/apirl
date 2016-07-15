@@ -48,7 +48,7 @@ end
 
 % Check if is an struct or the span value:
 if isfield(structSizeSino, 'sinogramsPerSegment')
-    if numel(structSizeSino.sinogramsPerSegment) == 1
+    if (numel(structSizeSino.sinogramsPerSegment) == 1) && (structSizeSino.sinogramsPerSegment(1)==structSizeSino.numZ)
         numSinos = structSizeSino.numZ; % to be used later.
         if structSizeSino.numZ == 1
             % sinogram 2d.
@@ -56,7 +56,7 @@ if isfield(structSizeSino, 'sinogramsPerSegment')
                 error('Backprojecct: an image with multiple slices can not be backprojected into a sinogram 2d.');
             end
         else
-            if size(image,3) ~= structSizeSino.numZ
+            if size(image,3) ~= structSizeSino.sinogramsPerSegment(1)
                 error('Backprojecct: the number of slices of the image is different to the number of rings of the output sinogram.');
             end
         end

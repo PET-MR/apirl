@@ -22,15 +22,16 @@ addpath(genpath([apirlPath pathBar 'matlab']));
 setenv('PATH', [getenv('PATH') sepEnvironment apirlPath pathBar 'build' pathBar 'bin']);
 setenv('LD_LIBRARY_PATH', [getenv('LD_LIBRARY_PATH') sepEnvironment apirlPath pathBar 'build' pathBar 'bin']);
 %% INIT CLASS GPET
-PET.scanner = '2D_mMR';
+PET.scanner = 'mMR';
 PET.method =  'otf_siddon_cpu';
 PET.PSF.type = 'none';
 PET.radialBinTrim = 0;
 PET.Geom = '';
+PET.sinogram_size.span = -1;
 PET.random_algorithm = 'from_ML_singles_matlab';
 PET = classGpet(PET);
 %% SIMULATE A BRAIN PHANTOM WITH ATTENUATION, NORMALIZATION, RANDOMS AND SCATTER
-[sinogram, delayedSinogram, structSizeSino3d] = interfileReadSino('E:\PatientData\FDG\PETSinoPlusUmap-Converted\PETSinoPlusUmap-00\PETSinoPlusUmap-00-sino-uncomp.s.hdr');
+[sinogram, delayedSinogram, structSizeSino3d] = interfileReadSino('/media/mab15/DATA_BACKUP/Scans/PatientData/FDG_Patient_01/e7/PETSinoPlusUmap-Converted/PETSinoPlusUmap-00/PETSinoPlusUmap-00-sino-uncomp.s.hdr');
 delayedSinogram_2d = delayedSinogram(:,:,60);
 load BrainMultiMaps_mMR.mat;
 % Get only one slice of the phantom:

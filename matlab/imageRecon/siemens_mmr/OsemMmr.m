@@ -211,7 +211,7 @@ if numel(size(correctScatter)) == numel(size(sinograms))
     end
 end
 %% ADDITIVE SINOGRAM
-additive = (randoms + scatter* overall_nf_3d).* overall_ncf_3d .* acfsSinogram; % (randoms +scatter.*norm)./(attenFactors*nprmFactrs)
+additive = (randoms + scatter.* overall_nf_3d).* overall_ncf_3d .* acfsSinogram; % (randoms +scatter.*norm)./(attenFactors*nprmFactrs)
 % write additive singoram:
 additiveFilename = [outputPath 'additive'];
 interfileWriteSino(single(additive), additiveFilename, structSizeSino3d);

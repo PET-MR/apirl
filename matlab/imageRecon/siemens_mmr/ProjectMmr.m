@@ -72,7 +72,7 @@ interfilewrite(single(image), filenameImage, pixelSize_mm);
 filenameProjectionConfig = [outputPath 'projectPhantom.par'];
 projectionFilename = [outputPath 'projectedSinogram'];
 CreateProjectConfigFileForMmr(filenameProjectionConfig, [filenameImage '.h33'], [sinogramSampleFilename '.h33'], projectionFilename, numberOfSubsets, subsetIndex, useGpu, numSamples);
-status = system(['project ' filenameProjectionConfig])
+status = system(['project ' '"' filenameProjectionConfig '"'])
 
 % Read the projected sinogram:
 % if is a subset, get the new size:

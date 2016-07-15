@@ -1,6 +1,11 @@
-function [sinogram_out, sinogram_size_out] = change_sinogram_span(objPETRawData, sinogram_in, sinogram_size_in)
+function [sinogram_out, sinogram_size_out] = change_sinogram_span(objPETRawData, sinogram_in, sinogram_size_in, span_in)
 %UNTITLED Summary of this function goes here
 %   Detailed explanation goes here
+if nargin == 3
+    span = objPETRawData.span;
+else
+    span = span_in;
+end
 
     if sinogram_size_in.span ~= 1
         % The output span is different than span 1, so we need to expand to
@@ -26,7 +31,7 @@ function [sinogram_out, sinogram_size_out] = change_sinogram_span(objPETRawData,
                     % Ahora voy avanzando en los sinogramas correspondientes,
                     % disminuyendo z1 y aumentnado z2 hasta que la diferencia entre
                     % anillos llegue a maxRingDiffss.
-                    if ((z1_aux-z2)<=sinogram_size_in.maxRingDiffss(segment))&&((z1_aux-z2)>=sinogram_size_in.minRingDiffss(segment))
+                    if ((z1_aux-z2)<=sinogram_size_in.maxRingDiffs(segment))&&((z1_aux-z2)>=sinogram_size_in.minRingDiffs(segment))
                         % Me asguro que esté dentro del tamaño del michelograma:
                         if(z1_aux>0)&&(z2>0)&&(z1_aux<=sinogram_size_in.nRings)&&(z2<=sinogram_size_in.nRings)
                             numSinosZ1inSegment = numSinosZ1inSegment + 1;
@@ -50,14 +55,14 @@ function [sinogram_out, sinogram_size_out] = change_sinogram_span(objPETRawData,
     end
     
     % Outpus sinogram:
-    sinogram_size_out = init_sinogram_size(objPETRawData, span, sinogram_size_in.nRings, sinogram_size_in.nRings.maxRingDiffserence);
-    sinogram_out = single(sinogram_size_out.matrixSize);
+    sinogram_size_out = objPETRawData.init_sinogram_size(span, sinogram_size_in.nRings, sinogram_size_in.maxRingDifference);
+    sinogram_out = single(zeros(sinogram_size_out.matrixSize));
     % Recorro todos los segmentos, y voy analizando la diferencia entre
     % anillos.
     indiceSino = 1; % indice del sinogram 3D.
     
     tic;
-    for segment = 1 : sinogram_size.nSeg
+    for segment = 1 : sinogram_size_out.nSeg
         % Por cada segmento, voy generando los sinogramas correspondientes y
         % contándolos, debería coincidir con los sinogramas para ese segmento: 
         numSinosThisSegment = 0;

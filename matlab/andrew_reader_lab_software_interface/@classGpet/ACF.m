@@ -9,7 +9,11 @@ function a=ACF(objGpet, attenuationMap_1_cm, refImage)
     if ~strcmpi(objGpet.scanner,'mMR')&& ~strcmpi(objGpet.scanner,'cylindrical')
      error('ACFs are only available for mMR scanner.');
     end
-    pixelSize_mm = [refImage.PixelExtentInWorldY refImage.PixelExtentInWorldX refImage.PixelExtentInWorldZ];
+    if isfield(refImage, 'PixelExtentInWorldZ')
+        pixelSize_mm = [refImage.PixelExtentInWorldY refImage.PixelExtentInWorldX refImage.PixelExtentInWorldZ];
+    else
+        pixelSize_mm = [refImage.PixelExtentInWorldY refImage.PixelExtentInWorldX];
+    end
     % if span 0 the attenuation map needs to have the same number of slcies
     % than rings:
     if objGpet.sinogram_size.span == 0 && (objGpet.sinogram_size.nRings ~= size(attenuationMap_1_cm,3))

@@ -35,28 +35,32 @@ outputPath = '/home/mab15/workspace/KCL/Biograph_mMr/GateModel/svn/BrainPhantom/
 if ~isdir(outputPath)
     mkdir(outputPath)
 end
-load subject_4_tpm.mat;
-load brainWeb3D.mat;
-% tAct: activity image. Need to transpose and invert the y axis.
-% tMu: attenuationMap. Is in different scale and size.
-tAct = permute(tAct, [2 1 3]);
+load BrainMultiMaps_mMR.mat;
+tAct = permute(MultiMaps_Ref.PET, [2 1 3]);
 tAct = tAct(end:-1:1,:,:);
-tMu = permute(tMu, [2 1 3]);
+tMu = permute(MultiMaps_Ref.uMap, [2 1 3]);
 tMu = tMu(end:-1:1,:,:);
-% Register both images:
-[optimizer,metric] = imregconfig('multimodal');
-optimizer.InitialRadius = 0.01;
-xLimitsAt = [-size(tMu,2)/2*1.8 size(tMu,2)/2*1.8];
-yLimitsAt = [-size(tMu,1)/2*1.8 size(tMu,1)/2*1.8];
-zLimitsAt = [-size(tMu,3)/2*2.5 size(tMu,3)/2*2.5];
-refAt  = imref3d(size(tMu),xLimitsAt,yLimitsAt,zLimitsAt);
-xLimits = [-size(tAct,2)/2*2.08625 size(tAct,2)/2*2.08625];
-yLimits = [-size(tAct,1)/2*2.08625 size(tAct,1)/2*2.08625];
-zLimits = [-size(tAct,3)/2*2.03125 size(tAct,3)/2*2.03125];
-refAct = imref3d(size(tAct),xLimits,yLimits,zLimits);
 pixelSize_mm = [2.08625 2.08625 2.03125];
-%[tMu refAt] = imregister(tMu, refAt,tAct, refAct, 'affine', optimizer, metric);
-[tMu, refAt] = ImageResample(tMu, refAt, refAct);
+xLimits = [-size(tAct,2)/2*pixelSize_mm(2) size(tAct,2)/2*pixelSize_mm(2)];
+yLimits = [-size(tAct,1)/2*pixelSize_mm(1) size(tAct,1)/2*pixelSize_mm(1)];
+zLimits = [-size(tAct,3)/2*pixelSize_mm(3) size(tAct,3)/2*pixelSize_mm(3)];
+refAct = imref3d(size(tAct),xLimits,yLimits,zLimits);
+refAt  = imref3d(size(tMu),xLimits,yLimits,zLimits);
+%% ADD TUMOUR
+centre_mm = [40 -75 15];
+radius_mm = 5;
+[X,Y,Z] = meshgrid([xLimits(1)+pixelSize_mm(1)/2:pixelSize_mm(1):xLimits(2)-pixelSize_mm(1)/2],[yLimits(1)+pixelSize_mm(2)/2:pixelSize_mm(2):yLimits(2)-pixelSize_mm(2)/2],[zLimits(1)+pixelSize_mm(3)/2:pixelSize_mm(3):zLimits(2)-pixelSize_mm(3)/2]);
+indicesTumour = ((X-centre_mm(1)).^2 + (Y-centre_mm(2)).^2 + (Z-centre_mm(3)).^2) < radius_mm.^3;
+tAct(indicesTumour) = mean(tAct(indicesTumour))*2;
+
+centre_mm = [52 12 10];
+radius_mm = 2;
+[X,Y,Z] = meshgrid([xLimits(1)+pixelSize_mm(1)/2:pixelSize_mm(1):xLimits(2)-pixelSize_mm(1)/2],[yLimits(1)+pixelSize_mm(2)/2:pixelSize_mm(2):yLimits(2)-pixelSize_mm(2)/2],[zLimits(1)+pixelSize_mm(3)/2:pixelSize_mm(3):zLimits(2)-pixelSize_mm(3)/2]);
+indicesTumour = ((X-centre_mm(1)).^2 + (Y-centre_mm(2)).^2 + (Z-centre_mm(3)).^2) < radius_mm.^3;
+tAct(indicesTumour) = mean(tAct(indicesTumour))*2;
+
+% Normalize to maximum of unsigned int:
+tAct = tAct ./ max(max(max(tAct))) .* (2^12-1);
 %% CUT THE IMAGE
 % If we keep the full size image, we have the problem that overlaps
 % withdetectors:
@@ -110,6 +114,7 @@ end
 fclose(fid);
 interfilewrite(uint16(tMu_uint16), [outputPath 'muMap_uint16'], [refAt.PixelExtentInWorldY refAt.PixelExtentInWorldX refAt.PixelExtentInWorldZ]);
 interfilewrite(uint16(tMu_reduced_uint16), [outputPath 'muMap_reduced_uint16'], [refAt.PixelExtentInWorldY refAt.PixelExtentInWorldX refAt.PixelExtentInWorldZ]);
+
 %% SMALL REGION TO SIMULATE IN GATE
 outputPath = '/home/mab15/workspace/KCL/Biograph_mMr/GateModel/svn/CaudatePhantom/';
 caudateImage = uint16(tAct(138:165,155:188,56:62));

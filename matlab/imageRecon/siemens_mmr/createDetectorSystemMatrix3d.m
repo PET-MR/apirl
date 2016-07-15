@@ -104,8 +104,8 @@ else
         end    
     end
     % Create the sparse matrix:
-    detector1SystemMatrix = sparse(accIndicesBin, double(accDetector1Ids(:)), 1./numCrystalsMashed(accIndicesBin), numBins,numDetectors,maxNumNonZeros);
-    detector2SystemMatrix = sparse(accIndicesBin, double(accDetector2Ids(:)), 1./numCrystalsMashed(accIndicesBin), numBins,numDetectors,maxNumNonZeros);
+    detector1SystemMatrix = sparse(accIndicesBin(accDetector1Ids~=0&accDetector2Ids~=0), double(accDetector1Ids(accDetector1Ids~=0&accDetector2Ids~=0)), 1./numCrystalsMashed(accIndicesBin(accDetector1Ids~=0&accDetector2Ids~=0)), numBins,numDetectors,maxNumNonZeros);
+    detector2SystemMatrix = sparse(accIndicesBin(accDetector1Ids~=0&accDetector2Ids~=0), double(accDetector2Ids(accDetector1Ids~=0&accDetector2Ids~=0)), 1./numCrystalsMashed(accIndicesBin(accDetector1Ids~=0&accDetector2Ids~=0)), numBins,numDetectors,maxNumNonZeros);
 end
 
 combinedNormalization =  sum(detector1SystemMatrix,1) + sum(detector2SystemMatrix,1);

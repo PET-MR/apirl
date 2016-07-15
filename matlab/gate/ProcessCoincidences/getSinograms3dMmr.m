@@ -9,19 +9,12 @@
 %  Genera sinogramas 3d sin degradar resolución ni incorporar zonas
 %  muertas.
 
-function [sinogram, TiempoSimulacion, emissionMap] = getSinograms3dMmr(outputPath, structSimu, structSizeSino3D, graficarOnline)
-
-%% OTRAS FUNCIONES QUE SE UTILIZAN
-% Agrego el path donde tengo algunas funciones de uso general. En este caso
-% hist4.
-addpath('/sources/MATLAB/FuncionesGenerales');
-addpath('/sources/MATLAB/VersionesFinales');
-addpath('/sources/MATLAB/WorkingCopy/ImageProcessing');
-addpath('/sources/MATLAB/WorkingCopy/ImageRecon');
+function [sinogram, sinogram_scatter, sinogram_randoms, TiempoSimulacion, emissionMap] = getSinograms3dMmr(outputPath, structSimu, structSizeSino3D, graficarOnline)
 
 %%  VARIABLES PARA GENERACIÓN DE SINOGRAMAS 3D
 sinogram = single(zeros(structSizeSino3D.numR,structSizeSino3D.numTheta, sum(structSizeSino3D.sinogramsPerSegment)));
 sinogram_scatter = single(zeros(structSizeSino3D.numR,structSizeSino3D.numTheta, sum(structSizeSino3D.sinogramsPerSegment)));
+sinogram_randoms = single(zeros(structSizeSino3D.numR,structSizeSino3D.numTheta, sum(structSizeSino3D.sinogramsPerSegment)));
 %% VARIABLES AUXILIARES Y PARA VISUALIZACIÓN DE RESULTADOS PARCIALES
 % Valores de cada coordenada dentro de la simulación:
 valoresX = -400:2:400;                   % Valores posibles de emisión de positrones en la variable Z (O sea, subre todo el FOV).
@@ -54,6 +47,7 @@ numberOfCrystals = numberOfTransverseCrystalsPerRing*numberOfRings;
 
 histCrystalsComb = zeros(numberOfCrystals, numberOfCrystals);
 histCrystalsCombScatter = zeros(numberOfCrystals, numberOfCrystals);
+histCrystalsCombRandoms = zeros(numberOfCrystals, numberOfCrystals);
 %% OTRAS VARIABLES A INICIALIZAR
 % Variables relacionadas con el conteo de eventos:
 eventosTotales = 0;
@@ -139,11 +133,16 @@ for i = 1 : structSimu.numSplits
             fprintf('Iniciando el procesamiento del archivo %s.\n', NombreArch);
             while feof(FID) == 0
                 datos = textscan(FID, '%f', 100000 * numColumnas);
+                if isempty(datos{1})
+                    break;
+                end
                 if mod(numel(datos{1}), numColumnas) ~= 0
                     % El archivo no esta entero, puede que se haya cortado
                     % por una finalizacion abrupta de la simulacion.
                     % Elimino la coincidencia incompleta
                     datos{1}(end-(mod(numel(datos{1}),numColumnas)-1) : end) =[];
+                    % Remove an addional row:
+                    datos{1}(end-numColumnas+1 : end) =[];
                 end
                 % Le doy forma de matriz a todos los datos leídos.
                 coincidenceMatrix = reshape(datos{1}, numColumnas, numel(datos{1})/numColumnas)';
@@ -234,7 +233,9 @@ for i = 1 : structSimu.numSplits
                 % The same for scattered events:
                 indicesScatter = coincidenceMatrix(:,colCompton1)>0 | coincidenceMatrix(:,colCompton2)>0;
                 histCrystalsCombScatter = histCrystalsCombScatter + hist3([globalCrystalId1(indicesScatter) globalCrystalId2(indicesScatter)], {1:numberOfCrystals 1:numberOfCrystals});
-                
+                % The same for randoms events:
+                indicesRandoms = coincidenceMatrix(:,colEventId1) ~= coincidenceMatrix(:,colEventId2);
+                histCrystalsCombRandoms = histCrystalsCombRandoms + hist3([globalCrystalId1(indicesRandoms) globalCrystalId2(indicesRandoms)], {1:numberOfCrystals 1:numberOfCrystals});
 
                 %% FIN DEL LOOP
             end
@@ -257,8 +258,11 @@ sinogram(:) = histCrystalsComb(sub2ind(size(histCrystalsComb),mapaDet1Ids(:), ma
 sinogram(:) =  sinogram(:) + histCrystalsComb(sub2ind(size(histCrystalsComb),mapaDet2Ids(:), mapaDet1Ids(:)));
 sinogram_scatter(:) = histCrystalsCombScatter(sub2ind(size(histCrystalsComb),mapaDet1Ids(:), mapaDet2Ids(:)));
 sinogram_scatter(:) =  sinogram_scatter(:) + histCrystalsCombScatter(sub2ind(size(histCrystalsComb),mapaDet2Ids(:), mapaDet1Ids(:)));
+sinogram_randoms(:) = histCrystalsCombRandoms(sub2ind(size(histCrystalsComb),mapaDet1Ids(:), mapaDet2Ids(:)));
+sinogram_randoms(:) =  sinogram_randoms(:) + histCrystalsCombRandoms(sub2ind(size(histCrystalsComb),mapaDet2Ids(:), mapaDet1Ids(:)));
 interfileWriteSino(sinogram, [outputPath 'sinogram'], structSizeSino3D);
 interfileWriteSino(sinogram_scatter, [outputPath 'sinogram_scatter'], structSizeSino3D);
+interfileWriteSino(sinogram_randoms, [outputPath 'sinogram_randoms'], structSizeSino3D);
 %% WRITE EMISSION
 interfilewrite(emissionMap, [outputPath 'emissionMap'], pixelSize_mm);
 

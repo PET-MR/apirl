@@ -23,7 +23,7 @@
 %
 % Examples:
 %   volume = MlemMmr(sinogramFilename, normFilename, attMapBaseFilename, outputPath, pixelSize_mm, numInputIterations, optUseGpu)
-function [volume overall_ncf_3d acfsSinogram randoms scatter] = MlemMmr(sinogramFilename, span, normFilename, attMapBaseFilename, correctRandoms, correctScatter, outputPath, pixelSize_mm, numIterations, saveInterval, useGpu, stirMatlabPath, removeTempFiles)
+function [volume overall_ncf_3d acfsSinogram randoms scatter] = MlemMmr(sinogramFilename, span, normFilename, attMapHumanFilename, attMapHardwareFilename, correctRandoms, correctScatter, outputPath, pixelSize_mm, numIterations, saveInterval, useGpu, stirMatlabPath, removeTempFiles)
 
 mkdir(outputPath);
 % Check what OS I am running on:
@@ -38,8 +38,8 @@ else
     return;
 end
 % Check if we have received pixel size:
-if nargin ~= 13
-    [volume overall_ncf_3d acfsSinogram randoms scatter] = MlemMmr(sinogramFilename, span, normFilename, attMapBaseFilename, correctRandoms, correctScatter, outputPath, pixelSize_mm, numIterations, saveInterval, useGpu, stirMatlabPath, removeTempFiles)
+if nargin ~= 14
+    [volume overall_ncf_3d acfsSinogram randoms scatter] = MlemMmr(sinogramFilename, span, normFilename, attMapHumanFilename, attMapHardwareFilename, correctRandoms, correctScatter, outputPath, pixelSize_mm, numIterations, saveInterval, useGpu, stirMatlabPath, removeTempFiles)
 end
 
 imageSize_mm = [600 600 257.96875];
@@ -109,32 +109,28 @@ else
 end
    
 %% ATTENUATION MAP
-if isstr(attMapBaseFilename)
+if isstr(attMapHumanFilename)
     % Check if its attenuation from siemens or a post processed image:
-    if ~strcmp(attMapBaseFilename(end-3:end),'.h33')
+    if ~strcmp(attMapHumanFilename(end-3:end),'.h33')
         disp('Computing the attenuation correction factors from mMR mu maps...');
         % Read the attenuation map and compute the acfs.
-        % Check if we have the extended version for the mumaps:
-        if exist([attMapBaseFilename '_umap_human_ext_000_000_00.v.hdr'])
-            attMapHumanFilename = [attMapBaseFilename '_umap_human_ext_000_000_00.v.hdr'];
-        else
-            attMapHumanFilename = [attMapBaseFilename '_umap_human_00.v.hdr'];
-        end
         [attenMap_human, refAttenMapHum, bedPosition_mm, info]  = interfileReadSiemensImage(attMapHumanFilename);
-        [attenMap_hardware, refAttenMapHard, bedPosition_mm, info]  = interfileReadSiemensImage([attMapBaseFilename '_umap_hardware_00.v.hdr']);
+        if isstr(attMapHardwareFilename)
+            [attenMap_hardware, refAttenMapHard, bedPosition_mm, info]  = interfileReadSiemensImage(attMapHardwareFilename);
+        end
         imageSizeAtten_mm = [refAttenMapHum.PixelExtentInWorldY refAttenMapHum.PixelExtentInWorldX refAttenMapHum.PixelExtentInWorldZ];
         % Compose both images:
         attenMap = attenMap_hardware + attenMap_human;
         % I need to translate because siemens uses an slightly displaced
         % center (taken from dicom images, the first pixel is -359.8493 ,-356.8832 
-        displacement_mm = [-1.5 -imageSizeAtten_mm(2)*size(attenMap_human,1)/2+356.8832 0];
-        [attenMap, Rtranslated] = imtranslate(attenMap, refAttenMapHum, displacement_mm,'OutputView','same');
+        %displacement_mm = [-1.5 -imageSizeAtten_mm(2)*size(attenMap_human,1)/2+356.8832 0];
+        %[attenMap, Rtranslated] = imtranslate(attenMap, refAttenMapHum, displacement_mm,'OutputView','same');
         
     else
         disp('Computing the attenuation correction factors from post processed APIRL mu maps...');
-        attenMap_human = interfileRead(attMapBaseFilename);
+        attenMap_human = interfileRead(attMapHumanFilename);
         attenMap = attenMap_human;
-        infoAtten = interfileinfo(attMapBaseFilename); 
+        infoAtten = interfileinfo(attMapHumanFilename); 
         imageSizeAtten_mm = [infoAtten.ScalingFactorMmPixel1 infoAtten.ScalingFactorMmPixel2 infoAtten.ScalingFactorMmPixel3];
     end   
 
@@ -145,9 +141,13 @@ if isstr(attMapBaseFilename)
     % After the projection read the acfs:
     acfFilename = [outputPath acfFilename];
 else
-    %if ~isempty(normFilename)
-    acfFilename = '';
-    acfsSinogram = ones(size(sinograms));
+    if isempty(attMapHumanFilename)
+        acfFilename = '';
+        acfsSinogram = ones(size(sinograms));
+    elseif size(attMapBaseFilename) == size(sinograms)
+        % I got the acfs:
+        acfsSinogram = attMapHumanFilename;
+    end
 end
 %% GENERATE AND SAVE ATTENUATION AND NORMALIZATION FACTORS AND CORECCTION FACTORS
 disp('Generating the ANF sinogram...');
@@ -215,7 +215,7 @@ else
     CreateCuMlemConfigFileForMmr(filenameMlemConfig, [sinogramFilename '.h33'], [filenameInitialEstimate '.h33'], outputFilenamePrefix, numIterations, [],...
         saveInterval, saveIntermediate, [anfFilename '.h33'], [additiveFilename '.h33'], 0, 576, 576, 512);
     % Execute APIRL: 
-    status = system(['cuMLEM ' filenameMlemConfig])
+    status = system(['cuMLEM ' '"' filenameMlemConfig '"'])
 end
 %% READ RESULTS
 % Read interfile reconstructed image:
@@ -234,8 +234,9 @@ if (numel(correctScatter) == 1)
         stirScriptsPath = [stirMatlabPath pathBar 'scripts'];
         % The scatter needs the image but also the acf to scale, and in the case of
         % the mr is better if this acf include the human?
-        if ~strcmp(attMapBaseFilename(end-3:end),'.h33')
+        if isstr(attMapHumanFilename)
             acfFilename = 'acfsOnlyHuman';
+            [attenMap_human, refAttenMapHum, bedPosition_mm, info]  = interfileReadSiemensImage(attMapHumanFilename);
             acfsOnlyHuman = createACFsFromImage(attenMap_human, imageSizeAtten_mm, outputPath, acfFilename, structSizeSino3d, 0, useGpu);
             acfFilename = [outputPath acfFilename];
         else

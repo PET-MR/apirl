@@ -5,13 +5,15 @@
 %  *********************************************************************
 %  Generates a 2d sinogram for each point source simulated with a 2d gate simulation of the mmr.
 
-function [sinograms, timeSimulations, emissionMap] = getSinograms2dFromPointSourcesMmr(outputPath, structSimu, structSizeSino2D, numSources, graficarOnline)
+function [sinograms, sinograms_without_randoms, sinograms_without_scatter_randoms, timeSimulations, emissionMap] = getSinograms2dFromPointSourcesMmr(outputPath, structSimu, structSizeSino2D, numSources, graficarOnline)
 
 
 %%  VARIABLES PARA GENERACIÓN DE SINOGRAMAS 3D
 sinograms = cell(numSources,1);
 for i = 1 : numSources
     sinograms{i} = single(zeros(structSizeSino2D.numR,structSizeSino2D.numTheta, sum(structSizeSino2D.numZ)));
+    sinograms_without_randoms{i} = single(zeros(structSizeSino2D.numR,structSizeSino2D.numTheta, sum(structSizeSino2D.numZ)));
+    sinograms_without_scatter_randoms{i} = single(zeros(structSizeSino2D.numR,structSizeSino2D.numTheta, sum(structSizeSino2D.numZ)));
 end
 %% VARIABLES AUXILIARES Y PARA VISUALIZACIÓN DE RESULTADOS PARCIALES
 % Valores de cada coordenada dentro de la simulación:
@@ -193,6 +195,8 @@ for i = 1 : structSimu.numSplits
                 %% PROCESS EACH POINT SOURCE
                 for i = 1 : numSources
                     indiceEventsForSource = (coincidenceMatrix(:,colSourceId1) == (i-1)) & (coincidenceMatrix(:,colSourceId2) == (i-1));
+                    indiceRandoms = coincidenceMatrix(:,colEventId1) ~= coincidenceMatrix(:,colEventId2);
+                    indiceScatter = (coincidenceMatrix(:,colCompton1)>0) | (coincidenceMatrix(:,colCompton2)>0);
                     %% SINOGRAM 2D
                     % Need to convert the indexes in the simulation into the
                     % crystal indexes used by mmr. In the simulation, the
@@ -221,6 +225,22 @@ for i = 1 : structSimu.numSplits
                     histCrystalsComb(:,9:9:end) = 0;
                     sinograms{i}(:) = sinograms{i}(:) + histCrystalsComb(sub2ind(size(histCrystalsComb),mapaDet1Ids(:), mapaDet2Ids(:)));
                     sinograms{i}(:) =  sinograms{i}(:) + histCrystalsComb(sub2ind(size(histCrystalsComb),mapaDet2Ids(:), mapaDet1Ids(:)));
+                    
+                    % Histogram with a combination of crystals:
+                    histCrystalsComb = hist3([globalCrystalId1(~indiceRandoms) globalCrystalId2(~indiceRandoms)], {1:numberOfCrystals 1:numberOfCrystals});
+                    % Gaps:
+                    histCrystalsComb(9:9:end,:) = 0;
+                    histCrystalsComb(:,9:9:end) = 0;
+                    sinograms_without_randoms{i}(:) = sinograms_without_randoms{i}(:) + histCrystalsComb(sub2ind(size(histCrystalsComb),mapaDet1Ids(:), mapaDet2Ids(:)));
+                    sinograms_without_randoms{i}(:) =  sinograms_without_randoms{i}(:) + histCrystalsComb(sub2ind(size(histCrystalsComb),mapaDet2Ids(:), mapaDet1Ids(:)));
+                    
+                    % Histogram with a combination of crystals:
+                    histCrystalsComb = hist3([globalCrystalId1(~indiceRandoms & ~indiceScatter) globalCrystalId2(~indiceRandoms & ~indiceScatter)], {1:numberOfCrystals 1:numberOfCrystals});
+                    % Gaps:
+                    histCrystalsComb(9:9:end,:) = 0;
+                    histCrystalsComb(:,9:9:end) = 0;
+                    sinograms_without_scatter_randoms{i}(:) = sinograms_without_scatter_randoms{i}(:) + histCrystalsComb(sub2ind(size(histCrystalsComb),mapaDet1Ids(:), mapaDet2Ids(:)));
+                    sinograms_without_scatter_randoms{i}(:) =  sinograms_without_scatter_randoms{i}(:) + histCrystalsComb(sub2ind(size(histCrystalsComb),mapaDet2Ids(:), mapaDet1Ids(:)));
                 end
 
                 %% FIN DEL LOOP

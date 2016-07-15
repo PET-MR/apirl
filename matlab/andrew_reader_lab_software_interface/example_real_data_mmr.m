@@ -17,7 +17,7 @@ else
 end
 
 % APIRL PATH
-apirlPath = 'E:\apirl-code\trunk\';
+apirlPath = '/home/mab15/workspace/apirl-code/trunk/';
 addpath(genpath([apirlPath pathBar 'matlab']));
 setenv('PATH', [getenv('PATH') sepEnvironment apirlPath pathBar 'build' pathBar 'bin']);
 setenv('LD_LIBRARY_PATH', [getenv('LD_LIBRARY_PATH') sepEnvironment apirlPath pathBar 'build' pathBar 'bin']);
@@ -30,10 +30,11 @@ PET.Geom = '';
 PET.method_for_randoms = 'from_ML_singles_matlab'; %'from_e7_binary_interfile';
 PET.method_for_scatter = 'from_e7_binary_interfile';
 % To change span:
-PET.sinogram_size.span = 11; % Any span, 0 for multislice 2d, -1 for 2d.
+PET.sinogram_size.span = -1; % Any span, 0 for multislice 2d, -1 for 2d.
+PET.nSubsets = 1;
 PET = classGpet(PET);
 %% EMISSION SINOGRAM
-[sinogram, delayedSinogram, structSizeSino3d] = interfileReadSino('/media/mab15/DATA/PatientData/FDG/PETSinoPlusUmap-Converted/PETSinoPlusUmap-00/PETSinoPlusUmap-00-sino-uncomp.s.hdr');
+[sinogram, delayedSinogram, structSizeSino3d] = interfileReadSino('/media/mab15/DATA_BACKUP/Scans/PatientData/FDG_Patient_01/e7/PETSinoPlusUmap-Converted/PETSinoPlusUmap-00/PETSinoPlusUmap-00-sino-uncomp.s.hdr');
 if PET.sinogram_size.span > 1
     sino_compressed = PET.apply_axial_compression_from_span1(sinogram);
 elseif PET.sinogram_size.span == 0
@@ -50,8 +51,8 @@ end
 ncfs = PET.NCF(); % time-invariant.
 %ncfs = PET.NCF('PETSinoPlusUmap-norm.n'); % time-variant.
 %% ACFs
-attenuationMap_filename = '/media/mab15/DATA/PatientData/FDG/PETSinoPlusUmap-Converted/PETSinoPlusUmap-00/PETSinoPlusUmap-00-umap.v.hdr';
-attenuationMapHardware_filename = '/media/mab15/DATA/PatientData/FDG/PETSinoPlusUmap-Converted/PETSinoPlusUmap-00/PETSinoPlusUmap-00-umap-hardware.v.hdr';
+attenuationMap_filename = '/media/mab15/DATA_BACKUP/Scans/PatientData/FDG_Patient_01/e7/PETSinoPlusUmap-Converted/PETSinoPlusUmap-00/PETSinoPlusUmap-00-umap.v.hdr';
+attenuationMapHardware_filename = '/media/mab15/DATA_BACKUP/Scans/PatientData/FDG_Patient_01/e7/PETSinoPlusUmap-Converted/PETSinoPlusUmap-00/PETSinoPlusUmap-00-umap-hardware.v.hdr';
 [attenuationMap refMuMap] = interfileReadSiemensImage(attenuationMap_filename);
 [attenuationMapHardware refMuMap] = interfileReadSiemensImage(attenuationMapHardware_filename);
 attenuationMap = attenuationMap + attenuationMapHardware;
@@ -66,7 +67,7 @@ acfs = PET.ACF(attenuationMap, refMuMap);
 % randoms = PET.R(randomsBinaryFilename);
 randoms = PET.R(delayedSinogram);
 %% SCATTER
-scatterBinaryFilename = '/media/mab15/DATA/PatientData/FDG/PETSinoPlusUmap-Converted/PETSinoPlusUmap-00/temp/scatter_estim2d_000000.s';
+scatterBinaryFilename = '/media/mab15/DATA_BACKUP/Scans/PatientData/FDG_Patient_01/e7/PETSinoPlusUmap-Converted/PETSinoPlusUmap-00/rawdata_sino/scatter_estim2d_000000.s';
 % for 3d or multislice 2d:
 if PET.sinogram_size.span >=0
     scatter = PET.S(scatterBinaryFilename, sino_compressed, ncfs, acfs, randoms); % Needs all that parameters to scale it.

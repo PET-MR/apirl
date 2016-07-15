@@ -77,7 +77,7 @@ while (true)
     % semicolon, the whole line is treated as comment.
     line_txt = regexprep(line_txt, ';.*$', '');
         
-    if (sum(isspace(line_txt)) == length(line_txt))
+    if (sum(isspace(line_txt))+sum(line_txt==0)) == length(line_txt)
         % Line is empty, skip to the next.
         continue;
 

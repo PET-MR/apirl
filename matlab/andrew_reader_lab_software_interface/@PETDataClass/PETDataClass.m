@@ -157,6 +157,8 @@ classdef PETDataClass < handle
                     
                 end
                 % Check for optional parameters:
+                % default sinogram size:
+                PETData.init_sinogram_size(11, 64, 60); 
                 if nargin == 2
                     if isstruct(varargin{2})
                         % get fields from user's input
@@ -186,10 +188,7 @@ classdef PETDataClass < handle
     
     
     methods (Access = private)
-        % Initialize sinogram size struct.
-        sino_size_out = init_sinogram_size(PETData, inspan, numRings, maxRingDifference);
-        % Change span sinogram.
-        [sinogram_out, sinogram_size_out] = change_sinogram_span(PETData, sinogram_in, sinogram_size_in);
+
         make_mhdr(PETData,filename);
         PETData = prompt_JSRecon12(PETData, FolderName,reFraming);
         PETData = read_histogram_interfiles(PETData, FolderName,reFraming);
@@ -201,8 +200,8 @@ classdef PETDataClass < handle
             PETData.DataType ='';
             listing = dir(path);
             for i = 3:length(listing)
-                [path, name, ext] = fileparts(listing(i).name);
-                if strcmpi(ext,'.IMA') || strcmpi(ext,'.PDT') || length(ext) > 5
+                [path_dummy, name, ext] = fileparts(listing(i).name); % This name doesnt include the path.
+                if strcmpi(ext,'.IMA') || strcmpi(ext,'.PDT') || (length(ext) > 5 & ~isempty(name)) %isemoty(name) for hidenn file startinng with . in linux.
                     j_d = j_d + 1;
                 elseif (strcmpi(ext,'.mhdr') || strcmpi(ext,'.hdr')) && ~isempty(strfind(name,'.s')) && isempty(strfind(name,'uncomp'))
                     j_si = j_si + 1;
@@ -386,6 +385,11 @@ classdef PETDataClass < handle
     
     methods (Access = public)
         
+        % Initialize sinogram size struct.
+        sino_size_out = init_sinogram_size(PETData, inspan, numRings, maxRingDifference);
+        % Change span sinogram.
+        [sinogram_out, sinogram_size_out] = change_sinogram_span(PETData, sinogram_in, sinogram_size_in, span);
+        
         function  P = Prompts(PETData,frame)
             if nargin==1
                 if PETData.isSinogram==1
@@ -464,12 +468,15 @@ classdef PETDataClass < handle
             end
         end
         
-        function ListModeChopper(PETData)
+        function ListModeChopper(PETData, method)
             % ListModeChopper() splits list-mode data into a number of
             % specified frames and returns sinograms, based on MethodListData
             % it uses 'e7' HistogramReplay or 'matlab' read_32bit_listmode()
             % and histogram_data()
-            PETData.histogram_data()
+            if nargin == 2
+                PETData.MethodListData = method;
+            end
+            PETData.histogram_data();
         end
         
         function frameListmodeData(PETData,newFrame,FrameName)
@@ -489,7 +496,7 @@ classdef PETDataClass < handle
         % Initalizes tima frames
         function InitFramesConfig(PETData, timeFrame_sec)
             % Get info from the header:
-            info = getInfoFromInterfile(PETData.DataPath.emission_listmode);
+            info = getInfoFromInterfile(PETData.DataPath.lmhd);
             % Scan time:
             scanTime_sec = info.ImageDurationSec;
             % Frame durations (it has NumberOfFrames elements):

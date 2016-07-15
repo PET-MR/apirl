@@ -83,7 +83,7 @@ interfileWriteSino(single(sinogram), sinogramFilename, structSizeSino3d);
 filenameBackprojectionConfig = [outputPath 'backprojectSinogram.par'];
 backprojectionFilename = [outputPath 'backprojectedImage'];
 CreateBackprojectConfigFileForMmr(filenameBackprojectionConfig, [sinogramFilename '.h33'], [filenameImage '.h33'], backprojectionFilename, numberOfSubsets, subsetIndex, useGpu, numSamples);
-status = system(['backproject ' filenameBackprojectionConfig])
+status = system(['backproject ' '"' filenameBackprojectionConfig '"'])
 
 % Remove the input sinogram:
 delete([sinogramFilename '.*']);
