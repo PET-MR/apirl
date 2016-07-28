@@ -128,6 +128,10 @@ for i = 1 : structSimu.numSplits
             fprintf('Iniciando el procesamiento del archivo %s.\n', NombreArch);
             while feof(FID) == 0
                 datos = textscan(FID, '%f', 100000 * numColumnas);
+                if isempty(datos{1})
+                    TiempoSplit = 0;
+                    break;
+                end
                 if mod(numel(datos{1}), numColumnas) ~= 0
                     % El archivo no esta entero, puede que se haya cortado
                     % por una finalizacion abrupta de la simulacion.
@@ -203,10 +207,10 @@ for i = 1 : structSimu.numSplits
                 globalCrystalId1 = globalCrystalId1 + 1;
                 globalCrystalId2 = globalCrystalId2 + 1;
                 % Convert from Gate to mmr:
-                globalCrystalId1 = 130-globalCrystalId1;
-                globalCrystalId1(globalCrystalId1<=0) = globalCrystalId1(globalCrystalId1<=0) + 504; 
-                globalCrystalId2 = 130-globalCrystalId2;
-                globalCrystalId2(globalCrystalId2<=0) = globalCrystalId2(globalCrystalId2<=0) + 504; 
+                globalCrystalId1 = globalCrystalId1+121;
+                globalCrystalId1(globalCrystalId1>504) = globalCrystalId1(globalCrystalId1>504) - 504; 
+                globalCrystalId2 = globalCrystalId2+121;
+                globalCrystalId2(globalCrystalId2>504) = globalCrystalId2(globalCrystalId2>504) - 504; 
 
                 % Histogram with a combination of crystals:
                 histCrystalsComb = histCrystalsComb + hist3([globalCrystalId1 globalCrystalId2], {1:numberOfCrystals 1:numberOfCrystals});

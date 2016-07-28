@@ -39,6 +39,12 @@ tAct = permute(MultiMaps_Ref.PET(:,:,60), [2 1 3]);
 tAct = tAct(end:-1:1,:);
 tMu = permute(MultiMaps_Ref.uMap(:,:,60), [2 1 3]);
 tMu = tMu(end:-1:1,:);
+% T1 image:
+T1 = permute(MultiMaps_Ref.T1(:,:,60), [2 1 3]);
+T1 = T1(end:-1:1,:,:);
+% T1 image:
+T2 = permute(MultiMaps_Ref.T2(:,:,60), [2 1 3]);
+T2 = T2(end:-1:1,:,:);
 pixelSize_mm = [2.08625 2.08625 2.03125];
 xLimits = [-size(tAct,2)/2*pixelSize_mm(2) size(tAct,2)/2*pixelSize_mm(2)];
 yLimits = [-size(tAct,1)/2*pixelSize_mm(1) size(tAct,1)/2*pixelSize_mm(1)];
