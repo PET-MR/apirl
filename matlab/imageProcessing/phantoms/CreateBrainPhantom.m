@@ -63,7 +63,10 @@ skinAct = 16;
 indicesWhiteMatter = phantom_rescaled == 48;
 indicesGrayMatter = phantom_rescaled == 32;
 indicesSkin = phantom_rescaled == 96;
-indicesBone = phantom_rescaled == 112;
+indicesSkull = phantom_rescaled == 112;
+indicesMarrow = phantom_rescaled == 177;
+indicesDura = phantom_rescaled == 161;
+indicesBone = indicesSkull | indicesMarrow | indicesDura;
 %% CREATE ATTENUATION MAP
 % brainweb material id:
 % 0=Background, 1=CSF, 2=Gray Matter, 3=White Matter, 4=Fat, 5=Muscle, 6=Muscle/Skin, 7=Skull, 8=vessels, 9=around fat, 10 =dura matter, 11=bone marrow
