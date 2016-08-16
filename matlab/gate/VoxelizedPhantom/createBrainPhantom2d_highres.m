@@ -206,3 +206,60 @@ for i = 1 : numMaterials
         rand(1),rand(1),rand(1));
 end
 fclose(fid);
+%% CREATE MASKS
+% Convert the phantom into the grid size used in reconstruction:
+[tAct_2d_small_lesions_recon, refActRecon] = ImageResample(tAct_2d_small_lesions, refAt, refAtRecon);
+[tAct_2d_bigger_lesions_recon, refActRecon] = ImageResample(tAct_2d_bigger_lesions, refAt, refAtRecon);
+
+
+% Now the same for the striatum phantom:
+imageSize_recon = [344 344];
+pixelSize_mm = [2.08625 2.08625];
+indicesRoiRows_recon = 147:174;
+indicesRoiCols_recon = 156:189;
+imageSizeRoi_recon = [numel(indicesRoiRows_recon) numel(indicesRoiCols_recon)];
+% Coordinates of striatum roi:
+xLimitsAt_striatum = [-size(tMu_2d,2)/2*0.5+(indicesRoiCols(1)-1)*0.5  -size(tMu_2d,2)/2*0.5+indicesRoiCols(end)*0.5];
+yLimitsAt_striatum = [-size(tMu_2d,1)/2*0.5+(indicesRoiRows(1)-1)*0.5  -size(tMu_2d,1)/2*0.5+indicesRoiRows(end)*0.5];
+%zLimitsAt = [-size(tMu_2d,3)/2*0.5 size(tMu_2d,3)/2*0.5];
+refActRoi  = imref2d(size(tMu_2d),xLimitsAt,yLimitsAt);
+xLimits = [-imageSize_recon(2)/2*pixelSize_mm(2)+(indicesRoiCols_recon(1)-1)*pixelSize_mm(2)  -imageSize_recon(2)/2*pixelSize_mm(2)+indicesRoiCols_recon(end)*pixelSize_mm(2)];
+yLimits = [-imageSize_recon(1)/2*pixelSize_mm(1)+(indicesRoiRows_recon(1)-1)*pixelSize_mm(1)  -imageSize_recon(1)/2*pixelSize_mm(1)+indicesRoiRows_recon(end)*pixelSize_mm(1)];
+%zLimits = [-size(tMu_for_recon,3)/2*2.03125 size(tMu_for_recon,3)/2*2.03125];
+refActRecon = imref2d(imageSizeRoi_recon,xLimits,yLimits);
+[caudateFullImage_small_lesions_recon, refActRecon_roi] = ImageResample(caudateFullImage_small_lesions, refActRoi, refActRecon);
+[caudateFullImage_bigger_lesions_recon, refActRecon_roi] = ImageResample(caudateFullImage_bigger_lesions, refActRoi, refActRecon);
+
+% Create a folder for the masks:
+masksPath = [outputPath '/masks/'];
+if ~isdir(masksPath)
+    mkdir(masksPath)
+end
+interfilewrite(tAct_2d_small_lesions_recon, [masksPath 'actMap_small_lesions_recon_size'], [refAtRecon.PixelExtentInWorldY refAtRecon.PixelExtentInWorldX ]);
+interfilewrite(tAct_2d_bigger_lesions_recon, [masksPath 'muMactMap_bigger_lesions_recon_size'], [refAtRecon.PixelExtentInWorldY refAtRecon.PixelExtentInWorldX ]);
+interfilewrite(caudateFullImage_small_lesions_recon, [masksPath 'actMap_small_lesions_recon_size_roi'], [refActRecon_roi.PixelExtentInWorldY refActRecon_roi.PixelExtentInWorldX ]);
+interfilewrite(caudateFullImage_bigger_lesions_recon, [masksPath 'muMactMap_bigger_lesions_recon_size_roi'], [refActRecon_roi.PixelExtentInWorldY refActRecon_roi.PixelExtentInWorldX ]);
+
+% call Image segmenter to generate the mask:
+%imageSegmenter
+% I create segmentation function with it:
+[masks.Caudate,maskedImage] = segmentCaudate(caudateFullImage_small_lesions_recon);
+[masks.LateralVentricle,maskedImage] = segmentLateralVentricle(caudateFullImage_small_lesions_recon);
+[masks.Putamen,maskedImage] = segmentPutamen(caudateFullImage_small_lesions_recon);
+[masks.ColdSmallSpot,maskedImage] = segmentSmallColdSpot(caudateFullImage_small_lesions_recon);
+[masks.HotSmallSpot,maskedImage] = segmentSmallHotSpot(caudateFullImage_small_lesions_recon);
+[masks.CaudateWithBiggerSpots,maskedImage] = segmentCaudateWithBiggerSpots(caudateFullImage_small_lesions_recon);
+[masks.ColdBigSpot,maskedImage] = segmentBigColdSpot(caudateFullImage_small_lesions_recon);
+[masks.HotBigSpot,maskedImage] = segmentBigHotSpot(caudateFullImage_small_lesions_recon);
+[masks.WhiteMatter,maskedImage]  = segmentWhiteMatter(caudateFullImage_small_lesions_recon);
+
+save([masksPath 'masks_for_metrics'], 'masks');
+interfilewrite(single(masks.Caudate), [masksPath 'mask_caudate_roi'], [refActRecon_roi.PixelExtentInWorldY refActRecon_roi.PixelExtentInWorldX ]);
+interfilewrite(single(masks.LateralVentricle), [masksPath 'mask_lateral_ventricle_roi'], [refActRecon_roi.PixelExtentInWorldY refActRecon_roi.PixelExtentInWorldX ]);
+interfilewrite(single(masks.Putamen), [masksPath 'mask_putamen_roi'], [refActRecon_roi.PixelExtentInWorldY refActRecon_roi.PixelExtentInWorldX ]);
+interfilewrite(single(masks.ColdSmallSpot), [masksPath 'mask_cold_small_spot_roi'], [refActRecon_roi.PixelExtentInWorldY refActRecon_roi.PixelExtentInWorldX ]);
+interfilewrite(single(masks.HotSmallSpot), [masksPath 'mask_hot_small_spot_roi'], [refActRecon_roi.PixelExtentInWorldY refActRecon_roi.PixelExtentInWorldX ]);
+interfilewrite(single(masks.CaudateWithBiggerSpots), [masksPath 'mask_caudate_bigger_spot_roi'], [refActRecon_roi.PixelExtentInWorldY refActRecon_roi.PixelExtentInWorldX ]);
+interfilewrite(single(masks.ColdBigSpot), [masksPath 'mask_cold_big_spot_roi'], [refActRecon_roi.PixelExtentInWorldY refActRecon_roi.PixelExtentInWorldX ]);
+interfilewrite(single(masks.HotBigSpot), [masksPath 'mask_hot_big_spot_roi'], [refActRecon_roi.PixelExtentInWorldY refActRecon_roi.PixelExtentInWorldX ]);
+interfilewrite(single(masks.WhiteMatter), [masksPath 'mask_white_matter_roi'], [refActRecon_roi.PixelExtentInWorldY refActRecon_roi.PixelExtentInWorldX ]);
