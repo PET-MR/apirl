@@ -414,6 +414,11 @@ classdef classGpet < handle
             x = repmat(x,[1,1,objGpet.image_size.matrixSize(3)]);
         end
         
+        function x = zeros(objGpet)
+            
+            x = zeros(objGpet.image_size.matrixSize);
+        end
+        
         init_sinogram_size(objGpet, inSpan, numRings, maxRingDifference);
         
         function sino_size = get_sinogram_size(objGpet)

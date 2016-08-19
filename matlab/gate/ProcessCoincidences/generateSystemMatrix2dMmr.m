@@ -24,8 +24,8 @@ histDetectionXY = zeros(numel(valoresYX{1}), numel(valoresYX{2}));
 %% EMISSION MAP
 imageSize_pixels = [numel(coordY)-1 numel(coordX)-1];
 pixelSize_mm = [coordY(2)-coordY(1) coordX(2)-coordX(1)];
-coordX_center_mm = coordX(1) + pixelSize_mm(2)/2 : pixelSize_mm(2) : coordX(end);% - pixelSize_mm(2)/2; % Coordinates centred in the pixel (coordX are the edges).
-coordY_center_mm = coordY(1) + pixelSize_mm(1)/2 : pixelSize_mm(1) : coordY(end);% - pixelSize_mm(1)/2; % Coordinates centred in the pixel (coordY are the edges).
+coordX_center_mm = coordX(1) + pixelSize_mm(2)/2 : pixelSize_mm(2) : coordX(end)- pixelSize_mm(2)/2 + 0.1;% - pixelSize_mm(2)/2; % Coordinates centred in the pixel (coordX are the edges).
+coordY_center_mm = coordY(1) + pixelSize_mm(1)/2 : pixelSize_mm(1) : coordY(end)- pixelSize_mm(1)/2 + 0.1;% - pixelSize_mm(1)/2; % Coordinates centred in the pixel (coordY are the edges).
 emissionMap = zeros(imageSize_pixels);
 %% SYSTEM MATRIX
 % One sinogram for pxiel:

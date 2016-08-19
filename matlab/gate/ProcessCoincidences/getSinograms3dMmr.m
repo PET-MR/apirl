@@ -211,25 +211,26 @@ for i = 1 : structSimu.numSplits
                 %crystalIdInRing1 = rem(globalCrystalId1,numberOfTransverseCrystalsPerRing)+1;
                 %ringId1 = floor(globalCrystalId1/numberOfTransverseCrystalsPerRing)+1;
                 % Based 1 index:
-                globalCrystalId1 = globalCrystalId1 + 1;
-                globalCrystalId2 = globalCrystalId2 + 1;
+                % globalCrystalId1 = globalCrystalId1 + 1;
+                % globalCrystalId2 = globalCrystalId2 + 1;
                 % Convert from Gate to mmr:
-                globalCrystalId1_ring = floor((globalCrystalId1-1)/504)+1;
-                globalCrystalId1_Inring = rem((globalCrystalId1-1),504)+1;
-                globalCrystalId2_ring = floor((globalCrystalId2-1)/504)+1;
-                globalCrystalId2_Inring = rem((globalCrystalId2-1),504)+1;
-                globalCrystalId1_Inring = 130-globalCrystalId1_Inring;
-                globalCrystalId1_Inring(globalCrystalId1_Inring<=0) = globalCrystalId1_Inring(globalCrystalId1_Inring<=0) + 504; 
-                globalCrystalId2_Inring = 130-globalCrystalId2_Inring;
-                globalCrystalId2_Inring(globalCrystalId2_Inring<=0) = globalCrystalId2_Inring(globalCrystalId2_Inring<=0) + 504; 
+                globalCrystalId1_ring = floor((globalCrystalId1)/504)+1;
+                globalCrystalId1_Inring = rem((globalCrystalId1),504)+1;
+                globalCrystalId2_ring = floor((globalCrystalId2)/504)+1;
+                globalCrystalId2_Inring = rem((globalCrystalId2),504)+1;
+                globalCrystalId1_Inring = globalCrystalId1_Inring + 121;
+                globalCrystalId1_Inring(globalCrystalId1_Inring>504) = globalCrystalId1_Inring(globalCrystalId1_Inring>504) - 504; 
+                globalCrystalId2_Inring = globalCrystalId2_Inring + 121;
+                globalCrystalId2_Inring(globalCrystalId2_Inring>504) = globalCrystalId2_Inring(globalCrystalId2_Inring>504) - 504; 
                 % Go back to linear indices:
                 globalCrystalId1 = sub2ind([504,64],globalCrystalId1_Inring,globalCrystalId1_ring);
                 globalCrystalId2 = sub2ind([504,64],globalCrystalId2_Inring,globalCrystalId2_ring);
                 % Histogram with a combination of crystals:
                 histCrystalsComb = histCrystalsComb + hist3([globalCrystalId1 globalCrystalId2], {1:numberOfCrystals 1:numberOfCrystals});
                 % Gaps:
-                histCrystalsComb(9:9:end,:) = 0;
-                histCrystalsComb(:,9:9:end) = 0;
+                %histCrystalsComb(9:9:end,:) = 0;
+                %histCrystalsComb(:,9:9:end) = 0;
+                
                 % The same for scattered events:
                 indicesScatter = coincidenceMatrix(:,colCompton1)>0 | coincidenceMatrix(:,colCompton2)>0;
                 histCrystalsCombScatter = histCrystalsCombScatter + hist3([globalCrystalId1(indicesScatter) globalCrystalId2(indicesScatter)], {1:numberOfCrystals 1:numberOfCrystals});
@@ -265,5 +266,3 @@ interfileWriteSino(sinogram_scatter, [outputPath 'sinogram_scatter'], structSize
 interfileWriteSino(sinogram_randoms, [outputPath 'sinogram_randoms'], structSizeSino3D);
 %% WRITE EMISSION
 interfilewrite(emissionMap, [outputPath 'emissionMap'], pixelSize_mm);
-
-
