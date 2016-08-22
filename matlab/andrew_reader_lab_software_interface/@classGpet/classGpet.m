@@ -260,11 +260,14 @@ classdef classGpet < handle
             structSizeSino.numSinogramPlanes = objPETRawData.sinogram_size.nSinogramPlanes;
             structSizeSino.span = objPETRawData.sinogram_size.span;
             structSizeSino.numZ = objPETRawData.sinogram_size.nRings;
+            structSizeSino.rFov_mm = 0; % not used
+            structSizeSino.zFov_mm = 0; % not used
             if structSizeSino.span > 0
                 structSizeSino.numSegments = objPETRawData.sinogram_size.nSeg;
                 structSizeSino.sinogramsPerSegment = objPETRawData.sinogram_size.nPlanesPerSeg;
                 structSizeSino.minRingDiff = objPETRawData.sinogram_size.minRingDiffs;
                 structSizeSino.maxRingDiff = objPETRawData.sinogram_size.maxRingDiffs;
+                structSizeSino.maxAbsRingDiff = objPETRawData.sinogram_size.maxRingDifference;
                 structSizeSino.numPlanesMashed = objPETRawData.sinogram_size.numPlanesMashed;
             end
         end
@@ -437,7 +440,7 @@ classdef classGpet < handle
         
         function mask = get_fov_maks(objGpet, radiusFov_mm)
             if nargin == 1
-                radiusFov_mm = 596;
+                radiusFov_mm = 596/2;
             end
             mask = objGpet.ones;
             radiusFov_pixels = radiusFov_mm/objGpet.image_size.voxelSize_mm(1);
