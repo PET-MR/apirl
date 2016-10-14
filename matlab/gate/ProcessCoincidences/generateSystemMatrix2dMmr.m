@@ -138,6 +138,9 @@ for i = 1 : structSimu.numSplits
             fprintf('Iniciando el procesamiento del archivo %s.\n', NombreArch);
             while feof(FID) == 0
                 datos = textscan(FID, '%f', 100000 * numColumnas);
+                if isempty(datos{1})
+                    break;
+                end
                 if mod(numel(datos{1}), numColumnas) ~= 0
                     % El archivo no esta entero, puede que se haya cortado
                     % por una finalizacion abrupta de la simulacion.

@@ -39,7 +39,7 @@ if isfield(info, 'ImageInfo1')
     origin_mm = [fieldsImage(4) fieldsImage(3) fieldsImage(2)];
 else
     % Image centred:
-    origin_mm = [-pixelSize_mm(2)*imageSize_pixels(2)/2 -pixelSize_mm(3)*imageSize_pixels(3)/2 -pixelSize_mm(3)*imageSize_pixels(3)/2];
+    origin_mm = [-pixelSize_mm(2)*imageSize_pixels(2)/2 -pixelSize_mm(1)*imageSize_pixels(1)/2 -pixelSize_mm(3)*imageSize_pixels(3)/2];
 end
 % Initial bed position:
 bedPosition_mm = info.StartHorizontalBedPositionMm;

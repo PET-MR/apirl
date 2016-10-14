@@ -9,7 +9,8 @@ function a=ACF(objGpet, attenuationMap_1_cm, refImage)
     if ~strcmpi(objGpet.scanner,'mMR')&& ~strcmpi(objGpet.scanner,'cylindrical')
      error('ACFs are only available for mMR scanner.');
     end
-    if isfield(refImage, 'PixelExtentInWorldZ')
+    type = whos('refImage');
+    if strcmp(type.class, 'imref3d')
         pixelSize_mm = [refImage.PixelExtentInWorldY refImage.PixelExtentInWorldX refImage.PixelExtentInWorldZ];
     else
         pixelSize_mm = [refImage.PixelExtentInWorldY refImage.PixelExtentInWorldX];

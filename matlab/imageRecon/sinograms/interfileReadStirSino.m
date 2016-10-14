@@ -125,7 +125,12 @@ for i = 2 : 2: numel(sinogramsPerSegment_stir)
 end
 
 % Create the struct:
-structSizeSino = getSizeSino3dStruct(numR, numTheta, numZ, radioFov_mm, zFov_mm, sinogramsPerSegment, minRingDiff, maxRingDiff, maxAbsRingDiff);
+flag_2d = 0;
+if numel(sinogramsPerSegment) == 1
+    if sinogramsPerSegment == 1
+        flag_2d = 1;
+    end
+end
 
 % Name of the binary file:
 filenameBinaryData = getParameterValue(textFields, 'name of data file');
@@ -140,41 +145,49 @@ if(fid == -1)
     fprintf('Binary file %s couldn''t be opened for reading.', filenameBinaryData);
 end
 
-% Initialize sinogram:
-sinogram = zeros(numR, numTheta, sum(sinogramsPerSegment));
+if flag_2d == 1
+    structSizeSino = getSizeSino2dStruct(numR, numTheta, numZ, radioFov_mm, zFov_mm);
+    sinogram = fread(fid, [numR*numTheta], 'single'); % Write in single.
+    sinogram = reshape(sinogram, [numR 1 numTheta]);
+    sinogram = permute(sinogram, [1 3 2]);
+else
+    structSizeSino = getSizeSino3dStruct(numR, numTheta, numZ, radioFov_mm, zFov_mm, sinogramsPerSegment, minRingDiff, maxRingDiff, maxAbsRingDiff);
+    % Initialize sinogram:
+    sinogram = zeros(numR, numTheta, sum(sinogramsPerSegment));
 
-% I have to write it in the order of the sinogram stir, so for each segment
-% of stir I find the equivalent of the traditional sinogram.
-for i = 1 : numel(sinogramsPerSegment_stir)
-    % Read the first segment:
-    sinograms_stir_thisSegment = fread(fid, [sinogramsPerSegment_stir(i)*numR*numTheta], 'single'); % Write in single.
-    sinograms_stir_thisSegment = reshape(sinograms_stir_thisSegment, [numR sinogramsPerSegment_stir(i) numTheta]);
-    sinograms_stir_thisSegment = permute(sinograms_stir_thisSegment, [1 3 2]);
-    % Get the index of segments for the stir sinogram:
-    % This would be the way if the segments in stir were the same as in
-    % siemens and in apirl:
-%     if(minRingDiff_stir(i) > 0) && (maxRingDiff_stir(i) > 0)
-%         indexSegmentSino = 2*i - numel(sinogramsPerSegment_stir) - 1;
-%     elseif(minRingDiff_stir(i) < 0) && (maxRingDiff_stir(i) < 0)
-%         indexSegmentSino = numel(sinogramsPerSegment_stir) - 2*(i-1);
-%     else
-%         indexSegmentSino = 1;
-%     end
-    % But in stir is used z2-z1 instead of z1-z2, so we have to invert the order -1 the possitive:
-    if(minRingDiff_stir(i) > 0) && (maxRingDiff_stir(i) > 0)
-        indexSegmentSino = 2*i - numel(sinogramsPerSegment_stir);
-    elseif(minRingDiff_stir(i) < 0) && (maxRingDiff_stir(i) < 0)
-        indexSegmentSino = numel(sinogramsPerSegment_stir) - 2*(i-1) - 1;
-    else
-        indexSegmentSino = 1;
+    % I have to write it in the order of the sinogram stir, so for each segment
+    % of stir I find the equivalent of the traditional sinogram.
+    for i = 1 : numel(sinogramsPerSegment_stir)
+        % Read the first segment:
+        sinograms_stir_thisSegment = fread(fid, [sinogramsPerSegment_stir(i)*numR*numTheta], 'single'); % Write in single.
+        sinograms_stir_thisSegment = reshape(sinograms_stir_thisSegment, [numR sinogramsPerSegment_stir(i) numTheta]);
+        sinograms_stir_thisSegment = permute(sinograms_stir_thisSegment, [1 3 2]);
+        % Get the index of segments for the stir sinogram:
+        % This would be the way if the segments in stir were the same as in
+        % siemens and in apirl:
+    %     if(minRingDiff_stir(i) > 0) && (maxRingDiff_stir(i) > 0)
+    %         indexSegmentSino = 2*i - numel(sinogramsPerSegment_stir) - 1;
+    %     elseif(minRingDiff_stir(i) < 0) && (maxRingDiff_stir(i) < 0)
+    %         indexSegmentSino = numel(sinogramsPerSegment_stir) - 2*(i-1);
+    %     else
+    %         indexSegmentSino = 1;
+    %     end
+        % But in stir is used z2-z1 instead of z1-z2, so we have to invert the order -1 the possitive:
+        if(minRingDiff_stir(i) > 0) && (maxRingDiff_stir(i) > 0)
+            indexSegmentSino = 2*i - numel(sinogramsPerSegment_stir);
+        elseif(minRingDiff_stir(i) < 0) && (maxRingDiff_stir(i) < 0)
+            indexSegmentSino = numel(sinogramsPerSegment_stir) - 2*(i-1) - 1;
+        else
+            indexSegmentSino = 1;
+        end
+        % Get the index of sinos for this segment counting the sinograms:
+        indiceBaseSino = 0;
+        for j = 1 : indexSegmentSino-1
+            indiceBaseSino = indiceBaseSino + structSizeSino.sinogramsPerSegment(j);
+        end
+        indicesSino = (indiceBaseSino+1) : (indiceBaseSino+ structSizeSino.sinogramsPerSegment(indexSegmentSino));
+        sinogram(:,:,indicesSino) = sinograms_stir_thisSegment;
     end
-    % Get the index of sinos for this segment counting the sinograms:
-    indiceBaseSino = 0;
-    for j = 1 : indexSegmentSino-1
-        indiceBaseSino = indiceBaseSino + structSizeSino.sinogramsPerSegment(j);
-    end
-    indicesSino = (indiceBaseSino+1) : (indiceBaseSino+ structSizeSino.sinogramsPerSegment(indexSegmentSino));
-    sinogram(:,:,indicesSino) = sinograms_stir_thisSegment;
 end
 fclose(fid);
 

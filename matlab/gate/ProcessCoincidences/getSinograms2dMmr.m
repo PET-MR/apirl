@@ -5,7 +5,7 @@
 %  *********************************************************************
 %  Generates a 2d sinogram from a 2d gate simulation of the mmr.
 
-function [sinogram, TiempoSimulacion, emissionMap] = getSinograms2dMmr(outputPath, structSimu, structSizeSino2D, graficarOnline)
+function [sinogram, TiempoSimulacion, emissionMap] = getSinograms2dMmr(outputPath, structSimu, structSizeSino2D, pixelSize_mm, graficarOnline)
 
 
 %%  VARIABLES PARA GENERACIÓN DE SINOGRAMAS 3D
@@ -22,8 +22,8 @@ valoresYX = {valoresY valoresX};           % Cell Array con los valores posibles
 % Matricez para imágenes de detección en el plano XY de todo el scanner:
 histDetectionXY = zeros(numel(valoresYX{1}), numel(valoresYX{2}));
 %% EMISSION MAP
-imageSize_pixels = [344 344];
-pixelSize_mm = [2.08625 2.08625];
+imageSize_pixels = [344 344].*[2.08625 2.08625]./pixelSize_mm;
+%pixelSize_mm = [2.08625 2.08625];
 coordX = -pixelSize_mm(2)*imageSize_pixels(2)/2+pixelSize_mm(2)/2:pixelSize_mm(2):pixelSize_mm(2)*imageSize_pixels(2)/2-pixelSize_mm(2)/2;
 emissionMap = zeros(imageSize_pixels);
 %% SCANNER PARAMETERS
@@ -183,9 +183,6 @@ for i = 1 : structSimu.numSplits
                     title('Histogram of Detections in Plane XY');
                 end
                 
-                % Emission map:
-                emissionMap = emissionMap + hist3([coincidenceMatrix(:,colEmisionY1), coincidenceMatrix(:,colEmisionX1)],...
-                    {coordY, coordX});
                 if(graficarOnline)
                     figure(3);
                     imshow(emissionMap,[]);
@@ -211,7 +208,12 @@ for i = 1 : structSimu.numSplits
                 globalCrystalId1(globalCrystalId1>504) = globalCrystalId1(globalCrystalId1>504) - 504; 
                 globalCrystalId2 = globalCrystalId2+121;
                 globalCrystalId2(globalCrystalId2>504) = globalCrystalId2(globalCrystalId2>504) - 504; 
-
+                
+                % To remove the gaps using the crystal index:
+                indicesGaps = find((rem(globalCrystalId1,9)~=0)&(rem(globalCrystalId2,9)~=0));
+                % first, get the emission map:
+                emissionMap = emissionMap + hist3([coincidenceMatrix((indicesGaps),colEmisionY1), coincidenceMatrix((indicesGaps),colEmisionX1)],...
+                    {coordY, coordX});
                 % Histogram with a combination of crystals:
                 histCrystalsComb = histCrystalsComb + hist3([globalCrystalId1 globalCrystalId2], {1:numberOfCrystals 1:numberOfCrystals});
                 % Gaps:

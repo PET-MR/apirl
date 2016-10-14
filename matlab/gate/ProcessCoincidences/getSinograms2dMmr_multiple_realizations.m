@@ -5,7 +5,7 @@
 %  *********************************************************************
 %  Generates a 2d sinogram from a 2d gate simulation of the mmr.
 
-function [sinogram, TiempoSimulacion, emissionMap] = getSinograms2dMmr_multiple_realizations(outputPath, structSimu, structSizeSino2D, countsPerRealization_rate, numberOfRealizations)
+function [sinogram, TiempoSimulacion, emissionMap, emissionMap_1mm] = getSinograms2dMmr_multiple_realizations(outputPath, structSimu, structSizeSino2D, countsPerRealization_rate, numberOfRealizations)
 
 graficarOnline = 0; % No plot for multiple realizations.
 %%  VARIABLES PARA GENERACIÓN DE SINOGRAMAS 3D
@@ -29,14 +29,24 @@ histDetectionXY = zeros(numel(valoresYX{1}), numel(valoresYX{2}));
 %% EMISSION MAP
 imageSize_pixels = [344 344];
 pixelSize_mm = [2.08625 2.08625];
+pixelSize_highres_mm = pixelSize_mm./2;
+imageSize_highres_pixels = imageSize_pixels.*2;
 coordX = -pixelSize_mm(2)*imageSize_pixels(2)/2+pixelSize_mm(2)/2:pixelSize_mm(2):pixelSize_mm(2)*imageSize_pixels(2)/2-pixelSize_mm(2)/2;
-emissionMap = zeros(imageSize_pixels);
+coordY = -pixelSize_mm(1)*imageSize_pixels(1)/2+pixelSize_mm(1)/2:pixelSize_mm(1):pixelSize_mm(1)*imageSize_pixels(1)/2-pixelSize_mm(1)/2;
+coordX_highres = -pixelSize_highres_mm(2)*imageSize_highres_pixels(2)/2+pixelSize_highres_mm(2)/2:pixelSize_highres_mm(2):pixelSize_highres_mm(2)*imageSize_highres_pixels(2)/2-pixelSize_highres_mm(2)/2;
+coordY_highres = -pixelSize_highres_mm(1)*imageSize_highres_pixels(1)/2+pixelSize_highres_mm(1)/2:pixelSize_highres_mm(1):pixelSize_highres_mm(1)*imageSize_highres_pixels(1)/2-pixelSize_highres_mm(1)/2;
+% The emission map is also for each realization:
+for i = 1 : numel(numberOfRealizations)
+    for j = 1 : numberOfRealizations(i)
+        emissionMap{i,j} = zeros(imageSize_pixels);
+        emissionMap_1mm{i,j} = zeros(imageSize_highres_pixels);
+    end
+end
 %% SCANNER PARAMETERS
 numberofAxialBlocks = 1;
 numberofTransverseBlocksPerRing = 56;
 numberOfBlocks = numberofTransverseBlocksPerRing*numberofAxialBlocks;
 numberOfTransverseCrystalsPerBlock = 9; % includes the gap
-coordY = -pixelSize_mm(1)*imageSize_pixels(1)/2+pixelSize_mm(1)/2:pixelSize_mm(1):pixelSize_mm(1)*imageSize_pixels(1)/2-pixelSize_mm(1)/2;
 numberOfAxialCrystalsPerBlock = 1;
 numberOfBlocksPerRing = 56;
 numberOfRings = 1;
@@ -192,14 +202,6 @@ for i = 1 : structSimu.numSplits
                     title('Histogram of Detections in Plane XY');
                 end
                 
-                % Emission map:
-                emissionMap = emissionMap + hist3([coincidenceMatrix(:,colEmisionY1), coincidenceMatrix(:,colEmisionX1)],...
-                    {coordY, coordX});
-                if(graficarOnline)
-                    figure(3);
-                    imshow(emissionMap,[]);
-                    title(sprintf('Slice %d of the Emission Map', slice));
-                end
                 %% SINOGRAM 2D
                 % Need to convert the indexes in the simulation into the
                 % crystal indexes used by mmr. In the simulation, the
@@ -249,6 +251,13 @@ for i = 1 : structSimu.numSplits
                     for n = 1 : numberOfRealizations(m)
                         % numbre of events to select:
                         indicesThisRealizations = ((n-1)*coincidencesThisRealizations+1):(n*coincidencesThisRealizations);
+                        % To remove the gaps using the crystal index:
+                        indicesGaps = find((rem(globalCrystalId1(indicesThisRealizations),9)~=0)&(rem(globalCrystalId2(indicesThisRealizations),9)~=0));
+                        % first, get the emission map:
+                        emissionMap{m,n} = emissionMap{m,n} + hist3([coincidenceMatrix(indicesThisRealizations(indicesGaps),colEmisionY1), coincidenceMatrix(indicesThisRealizations(indicesGaps),colEmisionX1)],...
+                            {coordY, coordX});
+                        emissionMap_1mm{m,n} = emissionMap_1mm{m,n} + hist3([coincidenceMatrix(indicesThisRealizations(indicesGaps),colEmisionY1), coincidenceMatrix(indicesThisRealizations(indicesGaps),colEmisionX1)],...
+                            {coordY_highres, coordX_highres});
                         % Histogram with a combination of crystals:
                         histCrystalsComb{m,n} = histCrystalsComb{m,n} + hist3([globalCrystalId1(indicesThisRealizations) globalCrystalId2(indicesThisRealizations)], {1:numberOfCrystals 1:numberOfCrystals});
                         % Gaps:
@@ -285,12 +294,14 @@ for i = 1 : numel(numberOfRealizations)
         sinogram_scatter{i,j}(:) = histCrystalsCombScatter{i,j}(sub2ind(size(histCrystalsComb{i,j}),mapaDet1Ids(:), mapaDet2Ids(:)));
         sinogram_scatter{i,j}(:) =  sinogram_scatter{i,j}(:) + histCrystalsCombScatter{i,j}(sub2ind(size(histCrystalsComb{i,j}),mapaDet2Ids(:), mapaDet1Ids(:)));
         sinogram_without_scatter{i,j}(:) = sinogram{i,j}(:) - sinogram_scatter{i,j}(:);
-        interfileWriteSino(sinogram{i,j}, [outputPath sprintf('sinogram_%.2ecounts_%d', sum(sinogram{i,j}(:)), j)], structSizeSino2D);
-        interfileWriteSino(sinogram_scatter{i,j}, [outputPath sprintf('sinogram_scatter_%.2ecounts_%d', sum(sinogram{i,j}(:)), j)], structSizeSino2D);
-        interfileWriteSino(sinogram_without_scatter{i,j}, [outputPath sprintf('sinogram_without_scatter_%.2ecounts_%d', sum(sinogram{i,j}(:)), j)], structSizeSino2D);
+        interfileWriteSino(single(sinogram{i,j}), [outputPath sprintf('sinogram_%.2ecounts_%d', sum(sinogram{i,j}(:)), j)], structSizeSino2D);
+        interfileWriteSino(single(sinogram_scatter{i,j}), [outputPath sprintf('sinogram_scatter_%.2ecounts_%d', sum(sinogram{i,j}(:)), j)], structSizeSino2D);
+        interfileWriteSino(single(sinogram_without_scatter{i,j}), [outputPath sprintf('sinogram_without_scatter_%.2ecounts_%d', sum(sinogram{i,j}(:)), j)], structSizeSino2D);
+        % WRITE EMISSION
+        interfilewrite(single(emissionMap{i,j}), [outputPath sprintf('emissionMap_%.2ecounts_%d',sum(sinogram{i,j}(:)), j)], pixelSize_mm);
+        interfilewrite(single(emissionMap{i,j}), [outputPath sprintf('emissionMap_1mm_%.2ecounts_%d',sum(sinogram{i,j}(:)), j)], pixelSize_mm);
     end
 end
-%% WRITE EMISSION
-interfilewrite(emissionMap, [outputPath 'emissionMap'], pixelSize_mm);
+
 
 

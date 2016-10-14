@@ -100,7 +100,8 @@ end
 fprintf(fid,'!number format := %s\n', strFormat);
 fprintf(fid,'!number of bytes per pixel := %d\n', numBytesPerPixel);
 % Cantidad de dimensiones
-fprintf(fid,'!number of dimensions := %d\n', numel(size(image)));
+%fprintf(fid,'!number of dimensions := %d\n', numel(size(image)));
+fprintf(fid,'!number of dimensions := %d\n', 3);
 % Datos de cada dimensión:
 fprintf(fid,'matrix axis label [1] := x\n');
 fprintf(fid,'!matrix size [1] := %d\n', size(image,2)); % Es el ancho en realidad, o sea la coordenada x que son las columnas.
@@ -110,13 +111,20 @@ fprintf(fid,'matrix axis label [2] := y\n');
 fprintf(fid,'!matrix size [2] := %d\n', size(image,1)); % Es el ancho en realidad, o sea la coordenada x que son las columnas.
 fprintf(fid,'scaling factor (mm/pixel) [2] := %f\n', sizePixel(2));
 
-fprintf(fid,'matrix axis label [3] := z\n');
-fprintf(fid,'!matrix size [3] := %d\n', size(image,3)); % Es el ancho en realidad, o sea la coordenada x que son las columnas.
-fprintf(fid,'scaling factor (mm/pixel) [3] := %f\n', sizePixel(3));
 
+if numel(sizePixel) >= 3
+    fprintf(fid,'matrix axis label [3] := z\n');
+    fprintf(fid,'!matrix size [3] := %d\n', size(image,3)); % Es el ancho en realidad, o sea la coordenada x que son las columnas.
+    fprintf(fid,'scaling factor (mm/pixel) [3] := %f\n', sizePixel(3));
+else
+    fprintf(fid,'matrix axis label [3] := z\n');
+    fprintf(fid,'!matrix size [3] := %d\n', 1); % Es el ancho en realidad, o sea la coordenada x que son las columnas.
+    fprintf(fid,'scaling factor (mm/pixel) [3] := %f\n', 1);
+end
 fprintf(fid,'first pixel offset (mm) [1] := %f\n', -sizePixel(1)*size(image,2)/2);
 fprintf(fid,'first pixel offset (mm) [2] := %f\n', -sizePixel(2)*size(image,1)/2);
 fprintf(fid,'first pixel offset (mm) [3] := %f\n', 0);
+
 % Nuevamente la cantidad de imágenes:
 fprintf(fid,'!number of frames := 1\n');
 

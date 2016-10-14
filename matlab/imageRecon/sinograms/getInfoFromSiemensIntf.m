@@ -54,7 +54,7 @@ if ~isempty(barras)
 end
 
 % initialize variables
-bad_chars = '!()[]/-_%:+*';    % Added %,:, siemens interfile sues it.
+bad_chars = '!()[]/-_%:+*^';    % Added %,:, siemens interfile sues it.
 dates = {'DateOfKeys' 'ProgramDate' 'PatientDob' 'StudyDate'};
 times = {'StudyTime' 'ImageStartTime'};
 found_header = 0;

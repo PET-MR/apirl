@@ -78,24 +78,30 @@ end
 filenameHeader = sprintf('%s.hs', filename);
 filenameSino = sprintf('%s.s', filename);
 
-centerSegment = ceil(numel(structSizeSino.sinogramsPerSegment) / 2);
-% The segments are odd. The segment in the middle is the direct singorams
-% in stir:
-sinogramsPerSegment_stir(centerSegment) = structSizeSino.sinogramsPerSegment(1);
-minRingDiff_stir(centerSegment) = structSizeSino.minRingDiff(1);
-maxRingDiff_stir(centerSegment) = structSizeSino.maxRingDiff(1);
-for i = 2 : 2: numel(structSizeSino.sinogramsPerSegment)
-    % The positive diff first:
-    sinogramsPerSegment_stir(centerSegment+round(i/2)) = structSizeSino.sinogramsPerSegment(i);
-    minRingDiff_stir(centerSegment+round(i/2)) = structSizeSino.minRingDiff(i);
-    maxRingDiff_stir(centerSegment+round(i/2)) = structSizeSino.maxRingDiff(i);
-    % The negative diff:
-    sinogramsPerSegment_stir(centerSegment-round(i/2)) = structSizeSino.sinogramsPerSegment(i+1);
-    minRingDiff_stir(centerSegment-round(i/2)) = structSizeSino.minRingDiff(i+1);
-    maxRingDiff_stir(centerSegment-round(i/2)) = structSizeSino.maxRingDiff(i+1);
-
+% 3D sinogram:
+if isfield(structSizeSino, 'sinogramsPerSegment')
+    centerSegment = ceil(numel(structSizeSino.sinogramsPerSegment) / 2);
+    % The segments are odd. The segment in the middle is the direct singorams
+    % in stir:
+    sinogramsPerSegment_stir(centerSegment) = structSizeSino.sinogramsPerSegment(1);
+    minRingDiff_stir(centerSegment) = structSizeSino.minRingDiff(1);
+    maxRingDiff_stir(centerSegment) = structSizeSino.maxRingDiff(1);
+    for i = 2 : 2: numel(structSizeSino.sinogramsPerSegment)
+        % The positive diff first:
+        sinogramsPerSegment_stir(centerSegment+round(i/2)) = structSizeSino.sinogramsPerSegment(i);
+        minRingDiff_stir(centerSegment+round(i/2)) = structSizeSino.minRingDiff(i);
+        maxRingDiff_stir(centerSegment+round(i/2)) = structSizeSino.maxRingDiff(i);
+        % The negative diff:
+        sinogramsPerSegment_stir(centerSegment-round(i/2)) = structSizeSino.sinogramsPerSegment(i+1);
+        minRingDiff_stir(centerSegment-round(i/2)) = structSizeSino.minRingDiff(i+1);
+        maxRingDiff_stir(centerSegment-round(i/2)) = structSizeSino.maxRingDiff(i+1);
+    end
+else
+    % sinogram 2d:
+    sinogramsPerSegment_stir = 1;
+    minRingDiff_stir = 0;
+    maxRingDiff_stir = 0;
 end
-
 % Open header
 fid = fopen(filenameHeader, 'w');
 if(fid == -1)
@@ -152,31 +158,60 @@ for i = 2 : numel(maxRingDiff_stir)
      fprintf(fid,', %d', maxRingDiff_stir(i));
 end
 fprintf(fid,' }\n');
-% Fixed parameters for Siemens Mmr scanner:
-fprintf(fid,'Scanner parameters:= \n');
-fprintf(fid,'Scanner type := Siemens mMR\n');
-fprintf(fid,'Number of rings                          := 64\n');
-fprintf(fid,'Number of detectors per ring             := 504\n');
-fprintf(fid,'Inner ring diameter (cm)                 := 65.6\n');
-fprintf(fid,'Average depth of interaction (cm)        := 0.7\n');
-fprintf(fid,'Distance between rings (cm)              := 0.40625\n');
-fprintf(fid,'Default bin size (cm)                    := 0.208626\n');
-fprintf(fid,'View offset (degrees)                    := 0\n');
-fprintf(fid,'Maximum number of non-arc-corrected bins := 344\n');
-fprintf(fid,'Default number of arc-corrected bins     := 344\n');
-fprintf(fid,'Number of blocks per bucket in transaxial direction         := 1\n');
-fprintf(fid,'Number of blocks per bucket in axial direction              := 2\n');
-fprintf(fid,'Number of crystals per block in axial direction             := 8\n');
-fprintf(fid,'Number of crystals per block in transaxial direction        := 9\n');
-fprintf(fid,'Number of detector layers                                   := 1\n');
-fprintf(fid,'Number of crystals per singles unit in axial direction      := 16\n');
-fprintf(fid,'Number of crystals per singles unit in transaxial direction := 9\n');
-fprintf(fid,'end scanner parameters:=\n');
-fprintf(fid,'effective central bin size (cm) := 0.208815\n');
-fprintf(fid,'number of time frames := 1\n');
-fprintf(fid,'image duration (sec)[1] := 1\n');
-fprintf(fid,'image relative start time (sec)[1] := 0\n');
-fprintf(fid,'!END OF INTERFILE :=\n');
+
+if isfield(structSizeSino, 'sinogramsPerSegment')
+    % Fixed parameters for Siemens Mmr scanner:
+    fprintf(fid,'Scanner parameters:= \n');
+    fprintf(fid,'Scanner type := Siemens mMR\n');
+    fprintf(fid,'Number of rings                          := 64\n');
+    fprintf(fid,'Number of detectors per ring             := 504\n');
+    fprintf(fid,'Inner ring diameter (cm)                 := 65.6\n');
+    fprintf(fid,'Average depth of interaction (cm)        := 0.7\n');
+    fprintf(fid,'Distance between rings (cm)              := 0.40625\n');
+    fprintf(fid,'Default bin size (cm)                    := 0.208626\n');
+    fprintf(fid,'View offset (degrees)                    := 0\n');
+    fprintf(fid,'Maximum number of non-arc-corrected bins := 344\n');
+    fprintf(fid,'Default number of arc-corrected bins     := 344\n');
+    fprintf(fid,'Number of blocks per bucket in transaxial direction         := 1\n');
+    fprintf(fid,'Number of blocks per bucket in axial direction              := 2\n');
+    fprintf(fid,'Number of crystals per block in axial direction             := 8\n');
+    fprintf(fid,'Number of crystals per block in transaxial direction        := 9\n');
+    fprintf(fid,'Number of detector layers                                   := 1\n');
+    fprintf(fid,'Number of crystals per singles unit in axial direction      := 16\n');
+    fprintf(fid,'Number of crystals per singles unit in transaxial direction := 9\n');
+    fprintf(fid,'end scanner parameters:=\n');
+    fprintf(fid,'effective central bin size (cm) := 0.208815\n');
+    fprintf(fid,'number of time frames := 1\n');
+    fprintf(fid,'image duration (sec)[1] := 1\n');
+    fprintf(fid,'image relative start time (sec)[1] := 0\n');
+    fprintf(fid,'!END OF INTERFILE :=\n');
+else
+    % Fixed parameters for Siemens Mmr scanner:
+    fprintf(fid,'Scanner parameters:= \n');
+    fprintf(fid,'Scanner type := Siemens mMR\n');
+    fprintf(fid,'Number of rings                          := 1\n');
+    fprintf(fid,'Number of detectors per ring             := 504\n');
+    fprintf(fid,'Inner ring diameter (cm)                 := 65.6\n');
+    fprintf(fid,'Average depth of interaction (cm)        := 0.7\n');
+    fprintf(fid,'Distance between rings (cm)              := 0.40625\n');
+    fprintf(fid,'Default bin size (cm)                    := 0.208626\n');
+    fprintf(fid,'View offset (degrees)                    := 0\n');
+    fprintf(fid,'Maximum number of non-arc-corrected bins := 344\n');
+    fprintf(fid,'Default number of arc-corrected bins     := 344\n');
+    fprintf(fid,'Number of blocks per bucket in transaxial direction         := 1\n');
+    fprintf(fid,'Number of blocks per bucket in axial direction              := 1\n');
+    fprintf(fid,'Number of crystals per block in axial direction             := 1\n');
+    fprintf(fid,'Number of crystals per block in transaxial direction        := 9\n');
+    fprintf(fid,'Number of detector layers                                   := 1\n');
+    fprintf(fid,'Number of crystals per singles unit in axial direction      := 1\n');
+    fprintf(fid,'Number of crystals per singles unit in transaxial direction := 9\n');
+    fprintf(fid,'end scanner parameters:=\n');
+    fprintf(fid,'effective central bin size (cm) := 0.208815\n');
+    fprintf(fid,'number of time frames := 1\n');
+    fprintf(fid,'image duration (sec)[1] := 1\n');
+    fprintf(fid,'image relative start time (sec)[1] := 0\n');
+    fprintf(fid,'!END OF INTERFILE :=\n');
+end
 % Header ready:
 fclose(fid);
 
@@ -192,39 +227,45 @@ if(fid == -1)
 end
 
 if onlyHeader == 0
-    % I have to write it in the order of the sinogram stir, so for each segment
-    % of stir I find the equivalent of the traditional sinogram.
-    for i = 1 : numel(sinogramsPerSegment_stir)
-        % Get the index of segments for the stir sinogram:
-        % This would be the way if the segments in stir were the same as in
-        % siemens and in apirl:
-    %     if(minRingDiff_stir(i) > 0) && (maxRingDiff_stir(i) > 0)
-    %         indexSegmentSino = 2*i - numel(sinogramsPerSegment_stir) - 1;
-    %     elseif(minRingDiff_stir(i) < 0) && (maxRingDiff_stir(i) < 0)
-    %         indexSegmentSino = numel(sinogramsPerSegment_stir) - 2*(i-1);
-    %     else
-    %         indexSegmentSino = 1;
-    %     end
-        % But in stir is used z2-z1 instead of z1-z2, so we have to invert the order -1 the possitive:
-        if(minRingDiff_stir(i) > 0) && (maxRingDiff_stir(i) > 0)
-            indexSegmentSino = 2*i - numel(sinogramsPerSegment_stir);
-        elseif(minRingDiff_stir(i) < 0) && (maxRingDiff_stir(i) < 0)
-            indexSegmentSino = numel(sinogramsPerSegment_stir) - 2*(i-1) - 1;
-        else
-            indexSegmentSino = 1;
+    % 3D sinogram:
+    if isfield(structSizeSino, 'sinogramsPerSegment')
+        % I have to write it in the order of the sinogram stir, so for each segment
+        % of stir I find the equivalent of the traditional sinogram.
+        for i = 1 : numel(sinogramsPerSegment_stir)
+            % Get the index of segments for the stir sinogram:
+            % This would be the way if the segments in stir were the same as in
+            % siemens and in apirl:
+        %     if(minRingDiff_stir(i) > 0) && (maxRingDiff_stir(i) > 0)
+        %         indexSegmentSino = 2*i - numel(sinogramsPerSegment_stir) - 1;
+        %     elseif(minRingDiff_stir(i) < 0) && (maxRingDiff_stir(i) < 0)
+        %         indexSegmentSino = numel(sinogramsPerSegment_stir) - 2*(i-1);
+        %     else
+        %         indexSegmentSino = 1;
+        %     end
+            % But in stir is used z2-z1 instead of z1-z2, so we have to invert the order -1 the possitive:
+            if(minRingDiff_stir(i) > 0) && (maxRingDiff_stir(i) > 0)
+                indexSegmentSino = 2*i - numel(sinogramsPerSegment_stir);
+            elseif(minRingDiff_stir(i) < 0) && (maxRingDiff_stir(i) < 0)
+                indexSegmentSino = numel(sinogramsPerSegment_stir) - 2*(i-1) - 1;
+            else
+                indexSegmentSino = 1;
+            end
+            sinogram_stir_thisSegment = zeros([structSizeSino.numR structSizeSino.numTheta sinogramsPerSegment_stir(i)], 'single');
+            % Get the index of sinos for this segment counting the sinograms:
+            indiceBaseSino = 0;
+            for j = 1 : indexSegmentSino-1
+                indiceBaseSino = indiceBaseSino + structSizeSino.sinogramsPerSegment(j);
+            end
+            indicesSino = (indiceBaseSino+1) : (indiceBaseSino+ structSizeSino.sinogramsPerSegment(indexSegmentSino));
+            sinogram_stir_thisSegment = sinogram(:,:,indicesSino);
+            % Interchange 2nd and 3rd dimensions to go from sinograms to viewgrams:
+            sinogram_stir_thisSegment = permute(sinogram_stir_thisSegment, [1 3 2]);
+            % Write to a file:
+            fwrite(fid, sinogram_stir_thisSegment, 'single'); % Write in single.
         end
-        sinogram_stir_thisSegment = zeros([structSizeSino.numR structSizeSino.numTheta sinogramsPerSegment_stir(i)], 'single');
-        % Get the index of sinos for this segment counting the sinograms:
-        indiceBaseSino = 0;
-        for j = 1 : indexSegmentSino-1
-            indiceBaseSino = indiceBaseSino + structSizeSino.sinogramsPerSegment(j);
-        end
-        indicesSino = (indiceBaseSino+1) : (indiceBaseSino+ structSizeSino.sinogramsPerSegment(indexSegmentSino));
-        sinogram_stir_thisSegment = sinogram(:,:,indicesSino);
-        % Interchange 2nd and 3rd dimensions to go from sinograms to viewgrams:
-        sinogram_stir_thisSegment = permute(sinogram_stir_thisSegment, [1 3 2]);
-        % Write to a file:
-        fwrite(fid, sinogram_stir_thisSegment, 'single'); % Write in single.
+    else
+        % 2d:
+        fwrite(fid, sinogram, 'single'); % Write in single.
     end
 end
 fclose(fid);
