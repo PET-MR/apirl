@@ -7,7 +7,7 @@
 %  pixels in x and y. Example, pixel(1,1) it has the coordinates
 %  [coordX(1):coordX(2),coordY(1):coordY(2)]. 
 
-function [systemMatrix, TiempoSimulacion, emissionMap] = generateSystemMatrix2dMmr(outputPath, structSimu, structSizeSino2D, coordX, coordY, graficarOnline)
+function [systemMatrix, TiempoSimulacion, emissionMap] = generateSystemMatrix2dMmr(outputPath, structSimu, structSizeSino2D, coordX, coordY, removeScatter)
 
 %%  VARIABLES PARA GENERACIÓN DE SINOGRAMAS 3D
 sinogram = single(zeros(structSizeSino2D.numR,structSizeSino2D.numTheta, sum(structSizeSino2D.numZ)));
@@ -177,33 +177,26 @@ for i = 1 : structSimu.numSplits
                 % En la cadena de procesamiento lo primero que hago es el
                 % filtrado en energía.
                 HistEnergias = HistEnergias + hist([coincidenceMatrix(:,colEnergy1); coincidenceMatrix(:,colEnergy2)], CanalesEnergia);
-                if(graficarOnline)
-                    figure(1);
-                    bar(CanalesEnergia, HistEnergias);
-                    title('Energy Spectrum');
-                end
 
                 % Histogram of detection position:
                 histDetectionXY = histDetectionXY + hist3([coincidenceMatrix(:,colDetectionY1),coincidenceMatrix(:,colDetectionX1);...
                     coincidenceMatrix(:,colDetectionY2),coincidenceMatrix(:,colDetectionX2)], valoresYX);
-                if(graficarOnline)
-                    figure(2);
-                    imshow(histDetectionXY, []);
-                    title('Histogram of Detections in Plane XY');
-                end
+
                 % Remove randoms because they are not part of the system
                 % matrix:
                 indiceRandomsEvents = (coincidenceMatrix(:,colEventId1) ~= coincidenceMatrix(:,colEventId2));
                 coincidenceMatrix(indiceRandomsEvents,:) = [];
                 
+                % If e want to remove the scatter, do it now:
+                if removeScatter
+                    indiceScatterEvents = coincidenceMatrix(:,colCompton1)>0 | coincidenceMatrix(:,colCompton2)>0;
+                    coincidenceMatrix(indiceScatterEvents,:) = [];
+                end
+                
                 % Emission map:
                 emissionMap = emissionMap + hist3([coincidenceMatrix(:,colEmisionY1), coincidenceMatrix(:,colEmisionX1)],...
                     {coordY_center_mm, coordX_center_mm});
-                if(graficarOnline)
-                    figure(3);
-                    imshow(emissionMap,[]);
-                    title(sprintf('Slice %d of the Emission Map', slice));
-                end
+
                 %% GENERATE SYSTEM MATRIX
                 for y = 1 : size(systemMatrix,1)
                     for x = 1 : size(systemMatrix,2)
@@ -267,10 +260,17 @@ TiempoSimulacion = TiempoSplitsAnteriores;
 %% COMPLETE SINOGRAMS
 for y = 1 : size(systemMatrix,1)
     for x = 1 : size(systemMatrix,2)
-        interfileWriteSino(single(systemMatrix{y,x}), [outputPath sprintf('sinogram_y%d_x%d',y,x)], structSizeSino2D);
+        if removeScatter
+            interfileWriteSino(single(systemMatrix{y,x}), [outputPath sprintf('sinogram_no_scatter_y%d_x%d',y,x)], structSizeSino2D);
+        else
+            interfileWriteSino(single(systemMatrix{y,x}), [outputPath sprintf('sinogram_y%d_x%d',y,x)], structSizeSino2D);
+        end
     end
 end
 %% WRITE EMISSION
-interfilewrite(emissionMap, [outputPath 'emissionMap'], pixelSize_mm);
-
+if removeScatter
+    interfilewrite(emissionMap, [outputPath 'emissionMap_no_scatter'], pixelSize_mm);
+else
+    interfilewrite(emissionMap, [outputPath 'emissionMap'], pixelSize_mm);        
+end
 

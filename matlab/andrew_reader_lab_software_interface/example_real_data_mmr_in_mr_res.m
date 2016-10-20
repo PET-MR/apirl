@@ -11,7 +11,7 @@ scatterBinaryFilename = '/media/mab15/DATA_BACKUP/Scans/PatientData/FDG_Patient_
 t1DicomPath = '/media/mab15/DATA_BACKUP/Scans/PatientData/FDG_Patient_01/T1/';
 %% INIT CLASS GPET
 PET.scanner = 'mMR';
-PET.method =  'otf_siddon_cpu';
+PET.method =  'otf_siddon_gpu';
 PET.PSF.type = 'none';
 PET.radialBinTrim = 0;
 PET.Geom = '';
@@ -54,7 +54,8 @@ end
 % set from any interfile header of the scan, for example the attenuation
 % map:
 PET.setBedPosition(attenuationMap_filename);
-[MrInPet, refMr] = PET.getMrInPetImageSpace(t1DicomPath);
+% Read Mr image:
+[imageMr, refImageMr, refImagePet] = PET.getMrInNativeImageSpace(t1DicomPath);
 %% NORM
 ncfs = PET.NCF(); % time-invariant.
 %ncfs = PET.NCF('PETSinoPlusUmap-norm.n'); % time-variant.
@@ -81,13 +82,6 @@ sensImage = PET.Sensitivity(anf);
 %% OP-OSEM
 % additive term:
 additive = (randoms + scatter).*ncfs.*acfs; % (randoms +scatter)./(afs*nfs) = (randoms+scatter)+
-%additive = zeros(size(additive));
+additive = zeros(size(additive));
 initial_image = PET.ones();
-recon = PET.OPOSEM(sino_span, additive, sensImage, initial_image, ceil(60/PET.nSubsets));
-% %%
-% figure(1);
-% recon = PET.ones();
-% for i = 1 : 60
-%     recon = recon.*PET.PT(sino_span./(PET.P(recon)+ additive + 1e-10))./(sensImage+1e-10);
-%     imagesc(recon), axis equal,  drawnow;
-% end
+recon = PET.OPOSEM(sino_span,additive, sensImage,initial_image, ceil(60/PET.nSubsets));

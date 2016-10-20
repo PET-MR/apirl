@@ -25,7 +25,7 @@ function [X refImage] = interfileread (varargin)
 %   $Revision: 1.1.6.1 $   $Date: 2008/05/12 21:30:29 $
 
 % check number of inputs
-error(nargchk(1, 2, nargin));
+narginchk(1, 2);
 % get file parameters
 [filename, window] = parse_inputs(varargin{:});
 
@@ -169,9 +169,9 @@ catch
     catch
         % No specified, use cero:
         offset = 0;
-        err_id = 'Images:interfileread:missingKey';
-        err_msg = 'Missing required key ''data starting block'' or ''data offset in bytes''.';
-        warning(err_id, err_msg);
+        %err_id = 'Images:interfileread:missingKey';
+        %err_msg = 'Missing required key ''data starting block'' or ''data offset in bytes''.';
+        %warning(err_id, err_msg);
     end
 end
 
@@ -596,7 +596,7 @@ if (err == 1)
     
     err_id = 'Images:interfileread:missingKey';
     err_msg = sprintf('Missing required key ''%s''.', err_key);
-    warning(err_id, err_msg);
+%    warning(err_id, err_msg);
     
 elseif (err == 2)
     if (nargin >= 5)

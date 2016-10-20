@@ -106,7 +106,7 @@ end
 if isempty(sinogram)
     % If empty its because we want to write an empty sinogram, just to read
     % the header:
-    warning('Writing empty binary file.');
+    %warning('Writing empty binary file.');
 else
     % Check the structure with the sinogram:
     if (structSizeSino.numR ~= size(sinogram,1)) || (structSizeSino.numTheta ~= size(sinogram,2))

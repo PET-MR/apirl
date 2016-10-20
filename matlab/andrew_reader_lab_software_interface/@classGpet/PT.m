@@ -65,10 +65,13 @@ function x = PT(objGpet,m, subset_i)
     else
         error('unkown scanner')
     end
+    
     % PSF convolution
     if strcmpi(objGpet.PSF.type,'shift-invar')
         x = Gauss3DFilter(objGpet, x, objGpet.PSF.Width);
-    else
+    elseif strcmpi(objGpet.PSF.type,'shift-var')
         disp('todo: shift-var')
+    else
+        % 'none'
     end
 end

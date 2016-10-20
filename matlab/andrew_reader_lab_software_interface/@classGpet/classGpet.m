@@ -20,6 +20,10 @@ classdef classGpet < handle
         sinogram_size     % Struct with the size of the sinogram, it can be 2d, multislice2d and 3d.
         % Image size:
         image_size
+        % Bed position (introduces an offset in the axial axis):
+        bed_position_mm
+        % Ref structure:
+        ref_image
         % Projector/Backrpojector. Options:
         % 'pre-computed_matlab','otf_matlab', 'otf_siddon_cpu','otf_siddon_gpu'
         method
@@ -112,6 +116,8 @@ classdef classGpet < handle
                     objGpet.image_size.matrixSize(1), objGpet.image_size.matrixSize(2), objGpet.image_size.matrixSize(3),...
                     objGpet.image_size.voxelSize_mm(1), objGpet.image_size.voxelSize_mm(2), objGpet.image_size.voxelSize_mm(3));
             end
+            objGpet.bed_position_mm = 0;
+            objGpet.init_ref_image();
         end
         
         function objGpet = readConfigFromFile(objGpet, strFilename)
@@ -250,6 +256,17 @@ classdef classGpet < handle
             else
                 objGpet.image_size.voxelSize_mm = [refImage.PixelExtentInWorldY refImage.PixelExtentInWorldX];
             end
+        end
+        
+        function objGpet =init_ref_image(objGpet)
+            % Image centred:
+            origin_mm = [-objGpet.image_size.voxelSize_mm(2)*objGpet.image_size.matrixSize(2)/2 -objGpet.image_size.voxelSize_mm(1)*objGpet.image_size.matrixSize(1)/2 ...
+                -objGpet.image_size.voxelSize_mm(3)*objGpet.image_size.matrixSize(3)/2];
+            XWorldLimits= [origin_mm(2) origin_mm(2)+objGpet.image_size.voxelSize_mm(2)*objGpet.image_size.matrixSize(2)];
+            YWorldLimits= [origin_mm(1) origin_mm(1)+objGpet.image_size.voxelSize_mm(1)*objGpet.image_size.matrixSize(1)];
+            ZWorldLimits= [-objGpet.image_size.voxelSize_mm(3)*objGpet.image_size.matrixSize(3)/2 objGpet.image_size.voxelSize_mm(3)*objGpet.image_size.matrixSize(3)/2] + [objGpet.bed_position_mm objGpet.bed_position_mm];
+            refImage = imref3d(objGpet.image_size.matrixSize, XWorldLimits, YWorldLimits, ZWorldLimits);
+            objGpet.ref_image = refImage;
         end
         
         % This functions get the field of the struct used in Apirl and
@@ -426,6 +443,32 @@ classdef classGpet < handle
         
         function sino_size = get_sinogram_size(objGpet)
             sino_size = objGpet.sinogram_size;
+        end
+        
+        function setBedPosition(objGpet, siemensInterfile)
+            [auxImage, auxRef, objGpet.bed_position_mm] = interfileReadSiemensImage(siemensInterfile);
+            objGpet.init_ref_image();
+        end
+        
+        % Function that maps MR into PET image space:
+        function [MrInPet, refResampledImage] = getMrInPetImageSpace(objGpet, pathMrDicom)
+            % Read dicom image:
+            [imageMr, refMrImage, affineMatrix, dicomInfo] = ReadDicomImage(pathMrDicom, '', 1);
+            % Convert into the nes image space
+            [MrInPet, refResampledImage] = ImageResample(imageMr, refMrImage, objGpet.ref_image);
+        end
+        
+        % Function that reads MR and  configures PET to reconstruct in that space:
+        function [imageMr, refImageMr, refImagePet] = getMrInNativeImageSpace(objGpet, pathMrDicom)
+            % Read dicom image:
+            [imageMr, refImageMr, affineMatrix, dicomInfo] = ReadDicomImage(pathMrDicom, '', 1);
+            % Update the ref_image to this pixel size:
+            newVoxelSize= [refImageMr.PixelExtentInWorldY refImageMr.PixelExtentInWorldX refImageMr.PixelExtentInWorldZ];
+            ratio = objGpet.image_size.voxelSize_mm ./ newVoxelSize;
+            objGpet.image_size.voxelSize_mm = newVoxelSize;
+            objGpet.image_size.matrixSize = round(objGpet.image_size.matrixSize .* ratio);
+            objGpet.init_ref_image();
+            refImagePet = objGpet.ref_image;
         end
         
         % Converts sinogram
