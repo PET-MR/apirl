@@ -55,7 +55,7 @@ end
 % map:
 PET.setBedPosition(attenuationMap_filename);
 % Read Mr image:
-[imageMr, refImageMr, refImagePet] = PET.getMrInNativeImageSpace(t1DicomPath);
+[imageMr, refImageMr, imageMrFullFov, refImagePet] = PET.getMrInNativeImageSpace(t1DicomPath); % Return two images, the original Mr image (imageMr), and the Mr with its original pixel size but for the full fov of the pet scanner (imageMrFullFov)
 %% NORM
 ncfs = PET.NCF(); % time-invariant.
 %ncfs = PET.NCF('PETSinoPlusUmap-norm.n'); % time-variant.

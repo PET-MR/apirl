@@ -459,7 +459,7 @@ classdef classGpet < handle
         end
         
         % Function that reads MR and  configures PET to reconstruct in that space:
-        function [imageMr, refImageMr, refImagePet] = getMrInNativeImageSpace(objGpet, pathMrDicom)
+        function [imageMr, refImageMr, MrInPetFov, refImagePet] = getMrInNativeImageSpace(objGpet, pathMrDicom)
             % Read dicom image:
             [imageMr, refImageMr, affineMatrix, dicomInfo] = ReadDicomImage(pathMrDicom, '', 1);
             % Update the ref_image to this pixel size:
@@ -469,6 +469,8 @@ classdef classGpet < handle
             objGpet.image_size.matrixSize = round(objGpet.image_size.matrixSize .* ratio);
             objGpet.init_ref_image();
             refImagePet = objGpet.ref_image;
+            % And finally complete the MR image into PET FOV:
+            [MrInPetFov, refImageMrFov] = ImageResample(imageMr, refImageMr, objGpet.ref_image);    
         end
         
         % Converts sinogram
