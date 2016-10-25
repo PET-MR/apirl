@@ -63,7 +63,7 @@ bool SiddonProjector::Backproject (Sinogram2D* InputSinogram, Image* outputImage
 	      {
 		indexPixel = MyWeightsList[l].IndexY * sizeImage.nPixelsX + MyWeightsList[l].IndexX;
 		newValue = MyWeightsList[l].Segment * InputSinogram->getSinogramBin(i,j)*geomFactor;
-		//#pragma omp atomic
+		#pragma omp atomic
 		  ptrPixels[indexPixel] += newValue;	
 		  if(ptrPixels[indexPixel]!=ptrPixels[indexPixel])
 		    printf("Nan: %d %d %f\n", i, j, newValue);
