@@ -91,10 +91,10 @@ tAct_2d_bigger_lesions(maskColdLesion) = tAct_2d_bigger_lesions(maskColdLesion)*
 disp('IMPORTANTE: Set .mac with a linear range scale of 1 kBq.');
 conversionFactor = 5./(1./(pixelSize_mm(1)/10).*(pixelSize_mm(2)/10).*(pixelSize_mm(3)/10));
 tAct_2d_small_lesions = tAct_2d_small_lesions.*conversionFactor;
-interfilewrite_gate(tAct_2d_small_lesions, [outputPath 'actMap_small_lesion'], [refImage.PixelExtentInWorldY refImage.PixelExtentInWorldX 0.5], 'BrainPhantomHighRes');
+interfilewrite(tAct_2d_small_lesions, [outputPath 'actMap_small_lesion'], [refImage.PixelExtentInWorldY refImage.PixelExtentInWorldX 0.5]);
 interfilewrite(tMu_2d, [outputPath 'muMap'], [refImage.PixelExtentInWorldY refImage.PixelExtentInWorldX]);
 tAct_2d_bigger_lesions = tAct_2d_bigger_lesions.*conversionFactor;
-interfilewrite_gate(tAct_2d_bigger_lesions, [outputPath 'actMap_bigger_lesion'], [refImage.PixelExtentInWorldY refImage.PixelExtentInWorldX 0.5], 'BrainPhantomHighRes');
+interfilewrite(tAct_2d_bigger_lesions, [outputPath 'actMap_bigger_lesion'], [refImage.PixelExtentInWorldY refImage.PixelExtentInWorldX 0.5]);
 
 % create a constant image.
 const = zeros(size(tAct_2d_small_lesions));
@@ -104,6 +104,7 @@ interfilewrite(uint16(tAct_2d_small_lesions), [outputPath 'actMap_small_lesion_u
 interfilewrite(uint16(tAct_2d_bigger_lesions), [outputPath 'actMap_bigger_lesion_uint16'], [refImage.PixelExtentInWorldY refImage.PixelExtentInWorldX]);
 interfilewrite(tMu_2d, [outputPath 'muMap'], [refImage.PixelExtentInWorldY refImage.PixelExtentInWorldX]);
 interfilewrite(tMu_for_recon, [outputPath 'muMap'], [refAtRecon.PixelExtentInWorldY refAtRecon.PixelExtentInWorldX]);
+
 %% MUMAP
 % I need to set the materials for each range of values:
 numMaterials = 3;
@@ -142,6 +143,13 @@ xLimits = [-size(caudateImage_small_lesions,2)/2*0.5 size(caudateImage_small_les
 yLimits = [-size(caudateImage_small_lesions,1)/2*0.5 size(caudateImage_small_lesions,1)/2*0.5];
 zLimits = 0;
 refCaudate = imref2d(size(caudateImage_small_lesions),xLimits,yLimits);
+% write for visualization the activity maps in flaots:
+interfilewrite_gate(caudateImage_small_lesions, [outputPath 'actMap_small_lesions'], [refCaudate.PixelExtentInWorldY refCaudate.PixelExtentInWorldX 0.5]);
+interfilewrite_gate(caudateImage_bigger_lesions, [outputPath 'actMap_bigger_lesions'], [refCaudate.PixelExtentInWorldY refCaudate.PixelExtentInWorldX 0.5]);
+% Convert in uint16 for gate:
+caudateImage_small_lesions = uint16(caudateImage_small_lesions);
+caudateImage_bigger_lesions = uint16(caudateImage_bigger_lesions);
+
 interfilewrite_gate(uint16(caudateImage_small_lesions), [outputPath 'actMap_small_lesions_uint16'], [refCaudate.PixelExtentInWorldY refCaudate.PixelExtentInWorldX 0.5], 'CaudatePhantomHighRes');
 interfilewrite_gate(uint16(caudateImage_bigger_lesions), [outputPath 'actMap_bigger_lesions_uint16'], [refCaudate.PixelExtentInWorldY refCaudate.PixelExtentInWorldX 0.5], 'CaudatePhantomHighRes');
 interfilewrite_gate(uint16(caudateImage_aten_gate), [outputPath 'muMap_uint16'], [refCaudate.PixelExtentInWorldY refCaudate.PixelExtentInWorldX 0.5], 'CaudatePhantomHighRes');
@@ -153,6 +161,7 @@ interfilewrite(uint16(const), [outputPath 'constMap_uint16'], [refCaudate.PixelE
 point = zeros(size(caudateImage_small_lesions));
 point(round(size(caudateImage_small_lesions,1)./2),1) = 1;
 interfilewrite(uint16(point), [outputPath 'pointMap_uint16'], [refCaudate.PixelExtentInWorldY refCaudate.PixelExtentInWorldX ]);
+
 %% SMALL REGION TO SIMULATE IN GATE BUT IN THE SAME SIZE
 outputPath = '/home/mab15/workspace/KCL/Biograph_mMr/GateModel/svn_2d/CaudatePhantomFullImageHighRes/';
 if ~isdir(outputPath)

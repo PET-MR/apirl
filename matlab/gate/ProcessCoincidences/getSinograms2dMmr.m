@@ -5,9 +5,11 @@
 %  *********************************************************************
 %  Generates a 2d sinogram from a 2d gate simulation of the mmr.
 
-function [sinogram, TiempoSimulacion, emissionMap] = getSinograms2dMmr(outputPath, structSimu, structSizeSino2D, pixelSize_mm, graficarOnline)
+function [sinogram, sinogram_without_scatter, TiempoSimulacion, emissionMap, emissionMapNoScatter] = getSinograms2dMmr(outputPath, structSimu, structSizeSino2D, pixelSize_mm, graficarOnline, removeRandoms)
 
-
+if nargin == 5
+    removeRandoms = 0;
+end
 %%  VARIABLES PARA GENERACIÓN DE SINOGRAMAS 3D
 sinogram = single(zeros(structSizeSino2D.numR,structSizeSino2D.numTheta, sum(structSizeSino2D.numZ)));
 sinogram_scatter = single(zeros(structSizeSino2D.numR,structSizeSino2D.numTheta, sum(structSizeSino2D.numZ)));
@@ -26,6 +28,7 @@ imageSize_pixels = [344 344].*[2.08625 2.08625]./pixelSize_mm;
 %pixelSize_mm = [2.08625 2.08625];
 coordX = -pixelSize_mm(2)*imageSize_pixels(2)/2+pixelSize_mm(2)/2:pixelSize_mm(2):pixelSize_mm(2)*imageSize_pixels(2)/2-pixelSize_mm(2)/2;
 emissionMap = zeros(imageSize_pixels);
+emissionMapScatter = zeros(imageSize_pixels);
 %% SCANNER PARAMETERS
 numberofAxialBlocks = 1;
 numberofTransverseBlocksPerRing = 56;
@@ -188,6 +191,14 @@ for i = 1 : structSimu.numSplits
                     imshow(emissionMap,[]);
                     title(sprintf('Slice %d of the Emission Map', slice));
                 end
+                
+                % Remove randoms because they are not part of the system
+                % matrix:
+                % If e want to remove the scatter, do it now:
+                if removeRandoms
+                    indiceRandomsEvents = (coincidenceMatrix(:,colEventId1) ~= coincidenceMatrix(:,colEventId2));
+                    coincidenceMatrix(indiceRandomsEvents,:) = [];
+                end
                 %% SINOGRAM 2D
                 % Need to convert the indexes in the simulation into the
                 % crystal indexes used by mmr. In the simulation, the
@@ -220,11 +231,16 @@ for i = 1 : structSimu.numSplits
                 histCrystalsComb(9:9:end,:) = 0;
                 histCrystalsComb(:,9:9:end) = 0;
                 % The same for scattered events:
-                indicesScatter = coincidenceMatrix(:,colCompton1)>0 | coincidenceMatrix(:,colCompton2)>0;
+                indicesScatter = coincidenceMatrix(indicesGaps,colCompton1)>0 | coincidenceMatrix(indicesGaps,colCompton2)>0;
                 if (sum(indicesScatter) > 0)
-                    histCrystalsCombScatter = histCrystalsCombScatter + hist3([globalCrystalId1(indicesScatter) globalCrystalId2(indicesScatter)], {1:numberOfCrystals 1:numberOfCrystals});
+                    histCrystalsCombScatter = histCrystalsCombScatter + hist3([globalCrystalId1(indicesGaps(indicesScatter)) globalCrystalId2(indicesGaps(indicesScatter))], {1:numberOfCrystals 1:numberOfCrystals});
                 end
-
+                % Gaps:
+                histCrystalsCombScatter(9:9:end,:) = 0;
+                histCrystalsCombScatter(:,9:9:end) = 0;
+                % first, get the emission map:
+                emissionMapScatter = emissionMapScatter + hist3([coincidenceMatrix((indicesGaps(indicesScatter)),colEmisionY1), coincidenceMatrix((indicesGaps(indicesScatter)),colEmisionX1)],...
+                    {coordY, coordX});
                 %% FIN DEL LOOP
             end
             fclose(FID);
@@ -252,5 +268,7 @@ interfileWriteSino(sinogram_scatter, [outputPath 'sinogram_scatter'], structSize
 interfileWriteSino(sinogram_without_scatter, [outputPath 'sinogram_without_scatter'], structSizeSino2D);
 %% WRITE EMISSION
 interfilewrite(emissionMap, [outputPath 'emissionMap'], pixelSize_mm);
-
+interfilewrite(emissionMapScatter, [outputPath 'emissionMapScatter'], pixelSize_mm);
+emissionMapNoScatter = emissionMap-emissionMapScatter;
+interfilewrite(emissionMapNoScatter, [outputPath 'emissionMapNoScatter'], pixelSize_mm);
 

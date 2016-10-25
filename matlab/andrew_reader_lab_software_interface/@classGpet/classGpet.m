@@ -37,6 +37,9 @@ classdef classGpet < handle
         radialBinTrim
         % Temporary files path:
         tempPath
+        % Flag to delete the temp folder when we're finished (SAM ELLIS,
+        % 24/08/2016)
+        deleteTemp
         % Asymmertic pre-computed sysetm matrix
         Geom
         % Method to estimate randoms:
@@ -78,9 +81,14 @@ classdef classGpet < handle
             objGpet.PSF.Width = 4; %mm
             objGpet.radialBinTrim = 0;
             objGpet.Geom = '';
-            objGpet.tempPath = ['.' objGpet.bar 'temp' objGpet.bar]; 
-            objGpet.method_for_randoms = 'from_ML_singles_matlab';  
-           if nargin == 1
+            % SAM ELLIS EDIT (25/08/2016): changed the '.' to pwd so that
+            % when deleting temp files, don't need to be in the original
+            % directory
+            objGpet.tempPath = [pwd objGpet.bar 'temp' objGpet.bar];
+            objGpet.deleteTemp = false; % SAM ELLIS 24/08/2016
+            objGpet.method_for_randoms = 'from_ML_singles_matlab';
+            
+            if nargin == 1
                 % Read configuration from file or from struct:
                 if isstruct(varargin{1})
                     if ~isfield(varargin{1}, 'scanner') || ~isfield(varargin{1}, 'method')
@@ -112,9 +120,12 @@ classdef classGpet < handle
             elseif objGpet.sinogram_size.span == -1
                 % Keep the voxel sizeobjGpet.image_size.voxelSize_mm(3)
                 objGpet.image_size.matrixSize(3)=objGpet.sinogram_size.nRings;
-                warning('Overriding the image size to the number of rings to work in multislice 2d. Now the image size is %dx%dx%d and voxel size is %fx%fx%f.', ...
-                    objGpet.image_size.matrixSize(1), objGpet.image_size.matrixSize(2), objGpet.image_size.matrixSize(3),...
-                    objGpet.image_size.voxelSize_mm(1), objGpet.image_size.voxelSize_mm(2), objGpet.image_size.voxelSize_mm(3));
+                
+                % SAM ELLIS EDIT: removed this warning, since span = -1
+                % gives nRings = 1 as desired, so no warning necessary
+%                 warning('Overriding the image size to the number of rings to work in multislice 2d. Now the image size is %dx%dx%d and voxel size is %fx%fx%f.', ...
+%                     objGpet.image_size.matrixSize(1), objGpet.image_size.matrixSize(2), objGpet.image_size.matrixSize(3),...
+%                     objGpet.image_size.voxelSize_mm(1), objGpet.image_size.voxelSize_mm(2), objGpet.image_size.voxelSize_mm(3));
             end
             objGpet.bed_position_mm = 0;
             objGpet.init_ref_image();
@@ -155,6 +166,11 @@ classdef classGpet < handle
                 objGpet.sinogram_size.nRadialBins = x(1);
                 objGpet.sinogram_size.nAnglesBins = x(2);
                 objGpet.sinogram_size.nSinogramPlanes = 1;
+                % EDIT: SAM ELLIS - 23/08/2016
+                % NEED TO ADD OTHER DEFAULTS FOR 2D RADON
+                objGpet.sinogram_size.span = -1;
+                objGpet.sinogram_size.nRings = 1;
+                objGpet.sinogram_size.maxRingDifference = 0;
             end
             if isempty(objGpet.nSubsets)
                 objGpet.nSubsets = 1;
@@ -298,6 +314,16 @@ classdef classGpet < handle
         lambda = Project_preComp(objGpet,X,g,Angles,RadialBins,dir);
         g = init_precomputed_G (objGpet);
         
+        % SAM ELLIS EDIT (18/07/2016): new method to allow easy division without
+        % using a small additive term to avoid div. by zero. 
+        function c = vecDivision(objGpet,a,b)
+            % element-by-element division of two vectors, a./b, BUT avoiding
+            % division by 0
+            c = a;
+            c(b~=0) = a(b~=0)./b(b~=0);
+            c(b==0) = 0;
+        end
+        
         function objGpet =  varargin_pair(objGpet, varargs)
             % example PET = classGpet('scanner','mMR',
             % 'nSubsets',14,'PSF.Width', 2);
@@ -429,9 +455,13 @@ classdef classGpet < handle
         osem_subsets(objGpet, nsub,nAngles);
         
         function x = ones(objGpet)
-            [x0,y0] = meshgrid(-objGpet.image_size.matrixSize(1)/2+1:objGpet.image_size.matrixSize(2)/2);
-            x = (x0.^2+y0.^2)<(objGpet.image_size.matrixSize(1)/2.5)^2;
-            x = repmat(x,[1,1,objGpet.image_size.matrixSize(3)]);
+            if objGpet.sinogram_size.span == -1
+                x = ones([objGpet.image_size.matrixSize(1) objGpet.image_size.matrixSize(2)]);
+            else
+                [x0,y0] = meshgrid(-objGpet.image_size.matrixSize(1)/2+1:objGpet.image_size.matrixSize(2)/2);
+                x = (x0.^2+y0.^2)<(objGpet.image_size.matrixSize(1)/2.5)^2;
+                x = repmat(x,[1,1,objGpet.image_size.matrixSize(3)]);
+            end
         end
         
         function x = zeros(objGpet)
@@ -495,8 +525,14 @@ classdef classGpet < handle
         end
         
         function SenseImg = Sensitivity(objGpet, AN)
-            SenseImg = zeros([objGpet.image_size.matrixSize, objGpet.nSubsets],'single') ;
-            fprintf('Subset: ');
+            % SAM ELLIS EDIT: IF AN IS DOUBLE, THEN LET THE SENSEIMG BE
+            % DOUBLE TOO
+            classAN = whos('AN');
+            classAN = classAN.class;
+            
+            SenseImg = zeros([objGpet.image_size.matrixSize, objGpet.nSubsets],classAN) ;
+            % SAM ELLIS EDIT (23/08/2016): only show messages if using more
+            % than one subset
             if objGpet.nSubsets > 1
                 for n = 1:objGpet.nSubsets
                     fprintf('%d, ',n);
@@ -545,11 +581,25 @@ classdef classGpet < handle
             if isfield(opt,'nSubsets')
                 objGpet.set_subsets(opt.nSubsets)
             end
+            
+            % SAM ELLIS EDIT (23/08/2016): for 2D radon, need to update
+            % sinogram size based on new image size
+            if any(strcmpi(vfields,'image_size')) && strcmpi(objGpet.scanner,'2D_radon')
+                x = radon(ones(objGpet.image_size.matrixSize(1:2)),0:179);
+                x = size(x);
+                objGpet.sinogram_size.nRadialBins = x(1);
+                objGpet.sinogram_size.nAnglesBins = x(2);
+                objGpet.sinogram_size.nSinogramPlanes = 1;
+                objGpet.sinogram_size.span = -1;
+                objGpet.sinogram_size.nRings = 1;
+                objGpet.sinogram_size.maxRingDifference = 0;
+            end
         end
         
         function Img = OPMLEM(objGpet,Prompts,RS, SensImg,Img, nIter)
             for i = 1:nIter
-                Img = Img.*objGpet.PT(Prompts./(objGpet.P(Img)+ RS + 1e-5))./(SensImg+1e-5);
+		% SAM ELLIS EDIT (18/07/2016): replaced vector divisions by vecDivision
+                Img = Img.*objGpet.vecDivision(objGpet.PT(objGpet.vecDivision(Prompts,objGpet.P(Img)+ RS)),SensImg);
                 Img = max(0,Img);
             end
         end
@@ -557,13 +607,67 @@ classdef classGpet < handle
         function Img = OPOSEM(objGpet,Prompts,RS, SensImg,Img, nIter)
             for i = 1:nIter
                 for j = 1:objGpet.nSubsets
-                    Img = Img.*objGpet.PT(Prompts./(objGpet.P(Img,j)+ RS + 1e-5),j)./(SensImg(:,:,:,j)+1e-5);
+                    % SAM ELLIS EDIT (18/07/2016): replaced vector divisions by vecDivision
+                    Img = Img.*objGpet.vecDivision(objGpet.PT(objGpet.vecDivision(Prompts,objGpet.P(Img,j)+ RS),j),SensImg(:,:,:,j));
+                    % Img = Img.*objGpet.PT(Prompts./(objGpet.P(Img,j)+ RS + 1e-5),j)./(SensImg(:,:,:,j)+1e-5);
                     Img = max(0,Img);
                 end
             end
         end
         
-
+        % SAM ELLIS EDIT: new sensitivity image for basis function
+        % coefficients
+        function alphSens = basisSensitivity(objGpet,AN,basisMat)
+            
+            % define function to multiply image by matrix and reshape
+            % (assuming numel(alph) ==  numel(Img))
+            multiplyByBases = @(alphIn,basisMat) reshape(basisMat*double(alphIn(:)),size(alphIn));
+            
+            % get sensitivity image, using input att.*norm factors
+            SensImg = Sensitivity(objGpet, AN);
+            
+            % calcuate new sens image in terms of the alpha coefficients
+            alphSens = multiplyByBases(SensImg,basisMat');
+        end
+        
+        % SAM ELLIS EDIT: new iterative method using a basis function matrix (full matrix required)
+        function [alph,Img] = BFEM(objGpet,basisMat,Prompts,RS, AN, alphSens, alph, nIter)
+            % assume the basisFcns are in a matrix for now..
+            
+            % define function to multiply image by matrix and reshape
+            % (assuming numel(alph) ==  numel(Img))
+            multiplyByBases = @(alphIn,basisMat) reshape(basisMat*double(alphIn(:)),size(alphIn));
+     
+            for ii = 1:nIter
+                
+                % forward model:
+                FP_guess = AN.*objGpet.P(multiplyByBases(alph,basisMat)) + RS;
+                
+               % ratio with measured data and backproject (including
+               % transpose basis function multiplication)
+               corr_fact = multiplyByBases(objGpet.PT(AN.*objGpet.vecDivision(Prompts,FP_guess)),basisMat');
+               
+               % divide by sens image and multiply by old alpha values
+               alph = alph.*objGpet.vecDivision(corr_fact,alphSens);
+            end
+            
+            Img = multiplyByBases(alph,basisMat);
+            
+        end
+        
+        % SAM ELLIS EDIT (24/08/2016): new method to delete the temp folder
+        % when we're done
+        function delete(objGpet)
+            if (objGpet.deleteTemp ~= false) && (objGpet.deleteTemp ~= 0)
+                % if the flag is not false, then it is true, and delete the
+                % temp folder and its contents if it exists
+                if exist(objGpet.tempPath,'dir') == 7 
+                    rmdir(objGpet.tempPath,'s');
+                end
+            else
+            end
+        end
+       
     end
     
 end
