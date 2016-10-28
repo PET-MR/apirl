@@ -377,8 +377,12 @@ classdef classGpet < handle
             
             a = (objGpet.sinogram_size.maxRingDifference -(objGpet.sinogram_size.span+1)/2);
             b = floor(a/objGpet.sinogram_size.span)+ floor(objGpet.sinogram_size.maxRingDifference/a);
-            nseg = 2*b+1;
-
+            if b > 0
+                nseg = 2*b+1;
+            else
+                nseg = 1;
+            end
+            
             a = ones(objGpet.sinogram_size.nRings);
             minRingDiff = [0,(objGpet.sinogram_size.span+1)/2:objGpet.sinogram_size.span:objGpet.sinogram_size.maxRingDifference];
 
@@ -456,7 +460,9 @@ classdef classGpet < handle
         
         function x = ones(objGpet)
             if objGpet.sinogram_size.span == -1
-                x = ones([objGpet.image_size.matrixSize(1) objGpet.image_size.matrixSize(2)]);
+                %x = ones([objGpet.image_size.matrixSize(1) objGpet.image_size.matrixSize(2)]);
+                [x0,y0] = meshgrid(-objGpet.image_size.matrixSize(1)/2+1:objGpet.image_size.matrixSize(2)/2);
+                x = (x0.^2+y0.^2)<(objGpet.image_size.matrixSize(1)/2.5)^2;
             else
                 [x0,y0] = meshgrid(-objGpet.image_size.matrixSize(1)/2+1:objGpet.image_size.matrixSize(2)/2);
                 x = (x0.^2+y0.^2)<(objGpet.image_size.matrixSize(1)/2.5)^2;

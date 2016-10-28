@@ -25,25 +25,26 @@ function r=R(varargin)
             % Generate a poisson distributed with contant mean value:
             r =poissrnd(r);
         elseif objGpet.sinogram_size.span >= 1
-            
-            if size(param) == [344 252 4084]% Sss simulation, need activty image and attenuation.
-                if strcmpi(objGpet.method_for_randoms,'e7_tools')
-                    % Call e7 tools:
-                elseif strcmpi(objGpet.method_for_randoms,'from_ML_singles_stir')
-                    structSizeSino3d = getSizeSino3dFromSpan(objGpet.sinogram_size.nRadialBins, objGpet.sinogram_size.nAnglesBins, ...
-                        objGpet.sinogram_size.nRings, 596/2, 260, ...
-                        objGpet.sinogram_size.span, objGpet.sinogram_size.maxRingDifference);
-                    % Call stir:
-                    [r, structSizeSino] = estimateRandomsWithStir(varargin{2}, structSizeSino3d, varargin{3}, structSizeSino3d, outputPath);
-                elseif strcmpi(objGpet.method_for_randoms,'from_ML_singles_matlab')
-                    structSizeSino = getSizeSino3dFromSpan(objGpet.sinogram_size.nRadialBins, objGpet.sinogram_size.nAnglesBins, ...
-                        objGpet.sinogram_size.nRings, 596/2, 260, 1, objGpet.sinogram_size.maxRingDifference); % delayeds are span 1.
-                    % Call matlab function in apirl:
-                            numIterations = 3;
-                            [r, singlesOut] = estimateRandomsFromDelayeds(varargin{2}, structSizeSino, numIterations, objGpet.sinogram_size.span);
-                end
+            if strcmpi(objGpet.method_for_randoms,'from_e7_binary_interfile')
+                disp('todo:');
             else
-                error('The delayed sinograms need to be span 1.');
+                if size(param) == [344 252 4084]% To estimate randoms frm delayed we need span 1:.
+                    if strcmpi(objGpet.method_for_randoms,'from_ML_singles_stir')
+                        structSizeSino3d = getSizeSino3dFromSpan(objGpet.sinogram_size.nRadialBins, objGpet.sinogram_size.nAnglesBins, ...
+                            objGpet.sinogram_size.nRings, 596/2, 260, ...
+                            objGpet.sinogram_size.span, objGpet.sinogram_size.maxRingDifference);
+                        % Call stir:
+                        [r, structSizeSino] = estimateRandomsWithStir(varargin{2}, structSizeSino3d, varargin{3}, structSizeSino3d, outputPath);
+                    elseif strcmpi(objGpet.method_for_randoms,'from_ML_singles_matlab')
+                        structSizeSino = getSizeSino3dFromSpan(objGpet.sinogram_size.nRadialBins, objGpet.sinogram_size.nAnglesBins, ...
+                            objGpet.sinogram_size.nRings, 596/2, 260, 1, objGpet.sinogram_size.maxRingDifference); % delayeds are span 1.
+                        % Call matlab function in apirl:
+                                numIterations = 3;
+                                [r, singlesOut] = estimateRandomsFromDelayeds(varargin{2}, structSizeSino, numIterations, objGpet.sinogram_size.span);
+                    end
+                else
+                    error('The delayed sinograms need to be span 1.');
+                end
             end
         elseif (objGpet.sinogram_size.span == 0) || (objGpet.sinogram_size.span == -1)
             structSizeSino = getSizeSino2dStruct(objGpet.sinogram_size.nRadialBins, objGpet.sinogram_size.nAnglesBins, ...
