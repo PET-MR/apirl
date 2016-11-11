@@ -58,7 +58,7 @@ function s=S(varargin)
                 % Convert into the sinogram size:
                 s = objGpet.iSSRB(s);
                 % Scale it:
-                s = objGpet.scatter_scaling(s, varargin{3}, varargin{4}, varargin{5}, varargin{6});
+                %s = objGpet.scatter_scaling(s, varargin{3}, varargin{4}, varargin{5}, varargin{6});
             elseif objGpet.sinogram_size.span == 0
                 rings = 1 : objGpet.sinogram_size.nRings;
                 planes = 1 : objGpet.sinogram_size.nRings/(127+1) : objGpet.sinogram_size.nRings;

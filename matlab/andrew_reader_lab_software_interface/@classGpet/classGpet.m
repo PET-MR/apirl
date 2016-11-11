@@ -194,8 +194,12 @@ classdef classGpet < handle
                 objGpet.sinogram_size.nPlanesPerSeg = [127   115   115    93    93    71    71    49    49    27    27];
                 objGpet.sinogram_size.span = 11;
                 objGpet.sinogram_size.nSeg = 11;
-                %add maxDiff
-                %                 objGpet.radialBinTrim = 0;
+                objGpet.scanner_properties.radius_mm = 328;
+                objGpet.scanner_properties.sinogramDepthOfInteraction_mm = 6.7;
+                objGpet.scanner_properties.LORDepthOfInteraction_mm = 9.6;
+                objGpet.scanner_properties.binSize_mm = 2.0445;
+                objGpet.scanner_properties.planeSep_mm = 2.03125;
+                objGpet.scanner_properties.nCrystalsPerRing = 504;
             else
                 
             end
@@ -309,7 +313,7 @@ classdef classGpet < handle
     
     % Methods in a separate file:
     methods (Access = private)
-        gf3d = Gauss3DFilter (objGpet, data, image_size, fwhm);
+        
         ii = bit_reverse(objGpet, mm);
         lambda = Project_preComp(objGpet,X,g,Angles,RadialBins,dir);
         g = init_precomputed_G (objGpet);
@@ -430,17 +434,18 @@ classdef classGpet < handle
             Trues(Trues<0) = 0;
             for i = 1: size(acf,3)
                 acf_i = acf(:,:,i);
-                mask = acf_i <= min(acf(:));
-                
+                %                 mask = acf_i <= min(acf(:));
+                mask = acf_i <1.03;
                 scatter_3D_tail = scatter_3D(:,:,i).*mask;
                 Trues_tail = Trues(:,:,i).*mask;
                 
                 scale_factor = sum(Trues_tail(:))./sum(scatter_3D_tail(:));
-                scatter_3D(:,:,i) = scatter_3D(:,:,i)*scale_factor;
+                scatter_3D(:,:,i) = scatter_3D(:,:,i)/scale_factor;
+                
             end
             
         end
-                       
+        
     end
     methods (Access = public)
         % Project:
@@ -673,7 +678,10 @@ classdef classGpet < handle
             else
             end
         end
-       
+        
+        gf3d = Gauss3DFilter (objGpet, data, fwhm);
+        [Img,info] = BQML(objGpet,Img,sinogramInterFileFilename,normalizationInterFileFilename);
+        Img = SUV(objGpet,Img,sinogramInterFileFilename,normalizationInterFileFilename);
     end
     
 end

@@ -26,7 +26,14 @@ function r=R(varargin)
             r =poissrnd(r);
         elseif objGpet.sinogram_size.span >= 1
             if strcmpi(objGpet.method_for_randoms,'from_e7_binary_interfile')
-                disp('todo:');
+                if objGpet.sinogram_size.span == 11
+                    fid = fopen(varargin{2},'r');
+                    r = fread(fid,inf,'float32');
+                    fclose(fid);
+                    r = reshape(r,objGpet.sinogram_size.nRadialBins,objGpet.sinogram_size.nAnglesBins,objGpet.sinogram_size.nSinogramPlanes);
+                else
+                    error('e7 supports only span 11. Consider PET.method_for_randoms = ''from_ML_singles_matlab'' ');
+                end
             else
                 if size(param) == [344 252 4084]% To estimate randoms frm delayed we need span 1:.
                     if strcmpi(objGpet.method_for_randoms,'from_ML_singles_stir')
