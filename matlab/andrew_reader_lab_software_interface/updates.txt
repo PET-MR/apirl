@@ -1,0 +1,18 @@
+
+
+ABOLFAZL: 10/11/2016 ------------------------------------------------
+
+1. Comparsion of 3D iSSRB scatter sinograms with those of e7 tools shows that scatter tail fitting is not necessary, the comparsion of the profiles of prompts versus the background counts confirms this.
+
+2. Update of the hardware mupmap to the one is being used in our PET-MR scanner for the datasets : FDG_Patients_01 to FDG_Patients_06.
+For each patient, uncompressed sinograms are in \\Bioeng139-pc\pet-m\FDG_Patient_03\e7\data-Converted\data-00\data-00-sino-uncom_00.s.hdr
+For each patient, the correction sinograms (span 11 and 2D scatters) are in \\Bioeng139-pc\pet-m\FDG_Patient_03\e7\data-Converted\data-00\rawdata_sino
+
+3. Adoption of a common nomenclature and addressing for the PET data e7\data-Converted\rawsino_data. demo in 'example_real_data_mmr_2.m'
+
+4. Addition of BQML and SUV functions to the classGpet for quantifaction. Validated against e7 recon images. demo in 'example_real_data_mmr_2.m'
+
+6. Minor updates of R, NCF methods of the classGpet
+
+5. Examples for mr-guided PET image reconstruction using the PriorsClass, demo in 'example_MR_guided_PET.m'
+-----------------------------------------------------------------------
