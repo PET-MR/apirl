@@ -14,7 +14,7 @@ opt.ReconUnderSampledkSpace = 0;
 opt.SENSE_niter =10;
 opt.display = 100;
 
-sense_f0 = MRI.SENSE_PCG2(opt);
+sense_f0 = MRI.SENSE_PCG(opt);
 [sense_f, RefSense_f ] = MRI.mapMrNativeSpaceToReferenceSpace(abs(sense_f0));
 %% SENSE-CG reconstruction of undersampled data
 opt.ReconUnderSampledkSpace = 1;
