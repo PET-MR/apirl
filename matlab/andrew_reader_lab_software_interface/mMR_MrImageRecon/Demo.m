@@ -4,7 +4,7 @@ addpath(genpath('mMR_MrImageRecon'))
 %% read MR rawdata, calculate coil sensitity maps, do retrospective undersampling
 opt.mri_DataPath = '\\bioeng202-pc\PET-M\FDG_Patient_02\rawMPRAGE\meas_MID00074_FID59555_Head_t1_mprage_sag_AC_Lyon.dat';
 opt.mri_DicomPath = '\\bioeng202-pc\PET-M\FDG_Patient_02\MPRAGE_image\'; % Dicom MRI imagea are used to calculate coordinates of the MRI space, using MRI rawdata for this is on progress 
-opt.PhaseUnderSamplingFactor = 3;
+opt.PhaseUnderSamplingFactor = 4;
 opt.SliceUnderSamplingFactor = 1;
 
 MRI = MRIReconClass(opt);
