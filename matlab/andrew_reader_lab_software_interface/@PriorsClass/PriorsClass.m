@@ -38,28 +38,8 @@ classdef PriorsClass < handle
                 ObjPrior.chunkSize = 5e6;
             end
             % get fields from user's input
-            ObjPrior = Revise(ObjPrior,varargin{1});
-            
-            [~,ObjPrior.CropedImageSize] = imCrop(ObjPrior);
-            
-            if ~rem(ObjPrior.sWindowSize,2)
-                error('The size of search window should be odd');
-            end
-            if ~rem(ObjPrior.lWindowSize,2)
-                error('The size of local window should be odd');
-            end
-            
-            if ObjPrior.ImageSize(3)>1
-                ObjPrior.nS = ObjPrior.sWindowSize^3;
-                ObjPrior.nL = ObjPrior.lWindowSize^3;
-            else
-                ObjPrior.nS = ObjPrior.sWindowSize^2;
-                ObjPrior.nL = ObjPrior.lWindowSize^2;
-            end
-            
-            [ObjPrior.SearchWindow, ObjPrior.Wd] = Neighborhood(ObjPrior,ObjPrior.sWindowSize);
-            ObjPrior.LocalWindow = Neighborhood(ObjPrior,ObjPrior.lWindowSize);
-            
+            ObjPrior = getFiledsFromUsersOpt(ObjPrior,varargin{1});
+            InitializePriors(ObjPrior);
         end
     end
     
@@ -112,7 +92,7 @@ classdef PriorsClass < handle
             D(isinf(D))= 0;
             D = D./repmat(sum(D,2),[1,nN]);
             
-%             for local first-order neighborhood 3x3x3
+            %             for local first-order neighborhood 3x3x3
             if ObjPrior.sWindowSize ==3 && ObjPrior.lWindowSize ==1 && size(N,2)>1
                 if h>1 %3D
                     nearsetVoxels = [5,11,13,14,15,17,23];
@@ -121,8 +101,8 @@ classdef PriorsClass < handle
                     nearsetVoxels = [2,4,5,6,8];
                     ObjPrior.nS = 5;
                 end
-            N = N(:,nearsetVoxels);
-            D = D(:,nearsetVoxels);
+                N = N(:,nearsetVoxels);
+                D = D(:,nearsetVoxels);
             end
         end
         
@@ -134,60 +114,128 @@ classdef PriorsClass < handle
             X(idx) = 2*n-X(idx);
             X=X(:);
         end
-                
+        
+        %         function ObjPrior = getFiledsFromUsersOpt(ObjPrior,opt)
+        %             vfields = fieldnames(opt);
+        %             prop = properties(ObjPrior);
+        %             for i = 1:length(vfields)
+        %                 field = vfields{i};
+        %                 if sum(strcmpi(prop, field )) > 0
+        %                     ObjPrior.(field) = opt.(field);
+        %                 end
+        %             end
+        %         end
     end
     methods (Access = public)
         
-        function [Img,newSize] = imCrop(ObjPrior,Img)
+        function InitializePriors(ObjPrior)
+            [~,ObjPrior.CropedImageSize] = imCrop(ObjPrior);
             
-            if ObjPrior.imCropFactor==0
+            if ~rem(ObjPrior.sWindowSize,2)
+                error('The size of search window should be odd');
+            end
+            if ~rem(ObjPrior.lWindowSize,2)
+                error('The size of local window should be odd');
+            end
+            
+            if ObjPrior.ImageSize(3)>1
+                ObjPrior.nS = ObjPrior.sWindowSize^3;
+                ObjPrior.nL = ObjPrior.lWindowSize^3;
+            else
+                ObjPrior.nS = ObjPrior.sWindowSize^2;
+                ObjPrior.nL = ObjPrior.lWindowSize^2;
+            end
+            
+            [ObjPrior.SearchWindow, ObjPrior.Wd] = Neighborhood(ObjPrior,ObjPrior.sWindowSize);
+            ObjPrior.LocalWindow = Neighborhood(ObjPrior,ObjPrior.lWindowSize);
+        end
+        
+        function [Img,newSize] = imCrop(ObjPrior,Img)
+            % 0, [0 0 0]
+            % 2,3,...
+            % [2, 2, 0]
+            if all(ObjPrior.imCropFactor==0)
                 newSize = ObjPrior.ImageSize;
                 if nargin==1
                     Img = [];
                 end
             else
-                ObjPrior.imCropFactor = max(3,ObjPrior.imCropFactor);
-                J = floor(ObjPrior.ImageSize(1)/ObjPrior.imCropFactor);
-                I = floor(ObjPrior.ImageSize(2)/ObjPrior.imCropFactor);
-                % Crop the matrix by imCropFactor in transverse plane
-                newSize = [length(J:(ObjPrior.ImageSize(1)-J)), ...
-                    length(I:(ObjPrior.ImageSize(1)-I)), ObjPrior.ImageSize(3)];
+                if length(ObjPrior.imCropFactor)== 1
+                    if ObjPrior.ImageSize(3)>1
+                        ObjPrior.imCropFactor = ObjPrior.imCropFactor*[1 1 1];
+                    else
+                        ObjPrior.imCropFactor = ObjPrior.imCropFactor*[1 1];
+                    end
+                end
+                
+                J = 0;
+                if ObjPrior.imCropFactor(1)
+                    ObjPrior.imCropFactor(1) = max(2.5, ObjPrior.imCropFactor(1));
+                    J = floor(ObjPrior.ImageSize(1)/ObjPrior.imCropFactor(1));
+                end
+                
+                I = 0;
+                if ObjPrior.imCropFactor(2)
+                    ObjPrior.imCropFactor(2) = max(2.5, ObjPrior.imCropFactor(2));
+                    I = floor(ObjPrior.ImageSize(2)/ObjPrior.imCropFactor(2));
+                end
+                
+                K = 0;
+                if ObjPrior.imCropFactor(3)
+                    ObjPrior.imCropFactor(2) = max(2.5, ObjPrior.imCropFactor(2));
+                    K = floor(ObjPrior.ImageSize(3)/ObjPrior.imCropFactor(3));
+                end
+                
+                newSize = [length((J:(ObjPrior.ImageSize(1)-J-1))+1),length((I:(ObjPrior.ImageSize(2)-I-1))+1),length((K:(ObjPrior.ImageSize(3)-K-1))+1)];
                 
                 if nargin==1
                     Img = [];
                 else
-                    Img = Img(J:(ObjPrior.ImageSize(1)-J),I:(ObjPrior.ImageSize(1)-I),:);
+                    Img = Img((J:(ObjPrior.ImageSize(1)-J-1))+1,(I:(ObjPrior.ImageSize(2)-I-1))+1,(K:(ObjPrior.ImageSize(3)-K-1))+1);
                 end
             end
         end
         
         function ImgNew = UndoImCrop(ObjPrior,Img)
-            if ObjPrior.imCropFactor==0
+            if all(ObjPrior.imCropFactor==0)
                 ImgNew = Img;
                 return
             end
             ImgNew = zeros(ObjPrior.ImageSize,'single');
-            J = floor(ObjPrior.ImageSize(1)/ObjPrior.imCropFactor);
-            I = floor(ObjPrior.ImageSize(2)/ObjPrior.imCropFactor);
             
-            ImgNew(J:(ObjPrior.ImageSize(1)-J),I:(ObjPrior.ImageSize(1)-I),:) = Img;
+            S = (ObjPrior.ImageSize - ObjPrior.CropedImageSize)/2;
+            J = S(1); I = S(2); K = S(3);
+            ImgNew((J:(ObjPrior.ImageSize(1)-S(1)-1))+1,(I:(ObjPrior.ImageSize(2)-I-1))+1,(K:(ObjPrior.ImageSize(3)-K-1))+1) = Img;
         end
         
-        function ObjPrior = Revise(ObjPrior,opt)
-            % to revise the properties of a given dictionary wihtout
-            % re-instantiation
-            vfields = fieldnames(opt);
-            prop = properties(ObjPrior);
-            for i = 1:length(vfields)
-                field = vfields{i};
-                if sum(strcmpi(prop, field )) > 0
-                    ObjPrior.(field) = opt.(field);
-                end
+        function ObjPrior = RevisePrior(ObjPrior,opt)
+            % to revise the properties of the object
+            
+            ObjPrior = getFiledsFromUsersOpt(ObjPrior,opt);
+            if isfield(opt,'sWindowSize') || isfield(opt,'lWindowSize') ...
+                    || isfield(opt,'imCropFactor') || isfield(opt,'ImageSize')
+                InitializePriors(ObjPrior);
             end
         end
-       
-        function imgGrad = GraphGrad(ObjPrior,Img)           
+        
+        function imgGrad = GraphGrad(ObjPrior,Img)
             imgGrad = (Img(ObjPrior.SearchWindow)-repmat(Img(:),[1,ObjPrior.nS]));
+        end
+        
+        function imgGrad = GraphGradCrop(ObjPrior,Img)
+            Img = imCrop(ObjPrior,single(Img));
+            imgGrad = (Img(ObjPrior.SearchWindow)-repmat(Img(:),[1,ObjPrior.nS]));
+        end
+        
+        function dP = TransGraphGradUndoCrop(ObjPrior,imgGrad)
+            dP = -2* sum(ObjPrior.Wd.*imgGrad,2);
+            dP = reshape(dP,ObjPrior.CropedImageSize);
+            dP = UndoImCrop(ObjPrior,dP);
+        end
+        
+        function imgGradW = TV_weights(ObjPrior,imgGrad,beta)
+            Norm = repmat(sqrt(sum(imgGrad.^2,2)+ beta),[1,ObjPrior.nS]);
+            imgGradW = imgGrad./Norm/2;
         end
         
         function dP = dPrior(ObjPrior,Img,opt)
@@ -196,7 +244,7 @@ classdef PriorsClass < handle
             
             %-------- Tikhonov or TV ----------
             % opt.weight_method:
-            % 'local','nl_self_similarity','nl_side_similarity','nl_joint_similarity'   
+            % 'local','nl_self_similarity','nl_side_similarity','nl_joint_similarity'
             % opt.nl_weights: Gaussian or Bowsher weights calculated from one/more anatomical images
             % opt.sigma_ker
             % opt.n_modalities: number of anatomical images +1 for 'nl_joint_similarity' method
@@ -205,13 +253,13 @@ classdef PriorsClass < handle
             % opt.sigma_x
             % opt.je_weights: weights calculated from one/more anatomical images
             %-------- joint_entropy ----------
-            % opt.imgA 
-            % opt.sigma_x 
-            % opt.sigma_y 
-            % opt.M 
+            % opt.imgA
+            % opt.sigma_x
+            % opt.sigma_y
+            % opt.M
             % opt.N
             %-------- Kiapio_prior, modified_LOT_prior,ParallelLevelSets_prior  ----------
-            % opt.normVectors 
+            % opt.normVectors
             % opt.alpha
             % opt.beta
             
@@ -267,19 +315,20 @@ classdef PriorsClass < handle
         x = normPDF(ObjPrior,x,y,sigma);
         N = normalVectors(ObjPrior,Img);
         n = L2Norm(ObjPrior,imgGrad);
-        [binCenter,nBins,binwidth,binBoundery,fB] = binCentersOfJointPDF(ObjPrior,f,nBins,maxbin,d);
+        %[binCenter,nBins,binwidth,binBoundery,fB] = binCentersOfJointPDF(ObjPrior,f,nBins,maxbin,d);
         plot_histogram(ObjPrior,f,M);
+        
         % neighborhood weights
         W = W_GaussianKernel(ObjPrior,Img,KernelSigma);
         W = W_Bowsher(ObjPrior,Img,B);
         W = W_JointEntropy(ObjPrior,Img,sigma);
-        W = W_PearsonCorrelation(ObjPrior,Img,T)
+        %W = W_PearsonCorrelation(ObjPrior,Img)
         % derivative of priors
-        dP = d_JointEntropy_prior(ObjPrior,imgF,imgA,sigma_f,sigma_a,M,N)
+        %dP = d_JointEntropy_prior(ObjPrior,imgF,imgA,sigma_f,sigma_a,M,N)
         dP = d_approx_JointEntropy_prior(ObjPrior,ImgF,sigma_f,Wje_imgA);
-        dP = d_modified_LOT_prior(ObjPrior,Img,normVectors,alpha,beta);
+        %dP = d_modified_LOT_prior(ObjPrior,Img,normVectors,alpha,beta);
         dP = d_Kiapio_prior(ObjPrior,Img,normVectors,alpha);
-        dP = d_ParallelLevelSets_prior(ObjPrior,Img,normVectors,alpha,beta);
+        %dP = d_ParallelLevelSets_prior(ObjPrior,Img,normVectors,alpha,beta);
         dP = d_smoothed_TV_prior(ObjPrior,Img,beta);
         dP = d_smoothed_nonlocal_TV_prior(ObjPrior,Img,beta,nl_weights);
         dP = d_Tikhonov_prior(ObjPrior,Img);
@@ -288,7 +337,7 @@ classdef PriorsClass < handle
         % reconstruction
         img = MAP_OSEM(ObjPrior,PET,Prompts,RS, SensImg,opt,Img)
         
-        function display(ObjPrior) %#ok<DISPLAY>
+        function display(ObjPrior)
             disp(ObjPrior)
             methods(ObjPrior)
         end

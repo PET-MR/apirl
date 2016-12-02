@@ -1,15 +1,13 @@
 
 function img = MAP_OSEM(ObjPrior,PET,Prompts,RS, SensImg,opt,Img )
-
-opt.PSF = PET.PSF.Width;
-opt.imgSize_1 = PET.image_size.matrixSize(1);
-opt.imgSize_2 = PET.image_size.matrixSize(2);
-opt.imgSize_3 = PET.image_size.matrixSize(3);
-
 if nargin==6
     Img = PET.ones;
 end
 % %
+if ~isfield(opt,'start')
+    opt.start = 0;
+end
+
 if opt.lambda==0
     fprintf('OP-MLEM\n');
 else
@@ -70,7 +68,6 @@ while (i <= opt.nIter) && ~converged
         end
 
         Img = max(0,Img);
-        
         if opt.display
             if PET.image_size.matrixSize(3)==1
                 drawnow,subplot(121),imshow(Img,[]),colorbar
@@ -92,7 +89,7 @@ while (i <= opt.nIter) && ~converged
             IMG(:,:,i) = Img;
         else
             if ~mod(i,3)
-                saveAt(Img,[opt.save_i '\Act_'  num2str(i) '.dat']);%
+                saveAt(Img,[opt.save_i '\Act_'  num2str(i + opt.start) '.dat']);%
             end
         end
     end

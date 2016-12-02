@@ -30,9 +30,8 @@ D = sum(imgPatch.*imgLocalWindow,2)./sqrt(sum(imgPatch.^2,2).*sum(imgLocalWindow
     clear D D_norm
 end
 % check for errors
-Wg = Wg>=T;
-% sumWg = sum(Wg,2);
-% i = sumWg==0 | isinf(sumWg) | isnan(sumWg);
-% Wg(i,:) = 1./ObjPrior.nS;
-
+sumWg = sum(Wg,2);
+i = isinf(sumWg) | isnan(sumWg);
+Wg(i,:) = 0;
+% Wg = Wg>=T;
 end
