@@ -46,6 +46,8 @@ classdef classGpet < handle
         method_for_randoms
         % Method to estimate scatter:
         method_for_scatter
+        % Method for normalization:
+        method_for_normalization    % 'cbn_expansion', 'from_e7_binary_interfile'
         % Operative system.
         os
         % bar for the paths.
@@ -87,7 +89,7 @@ classdef classGpet < handle
             objGpet.tempPath = [pwd objGpet.bar 'temp' objGpet.bar];
             objGpet.deleteTemp = false; % SAM ELLIS 24/08/2016
             objGpet.method_for_randoms = 'from_ML_singles_matlab';
-            
+            objGpet.method_for_normalization = 'cbn_expansion';
             if nargin == 1
                 % Read configuration from file or from struct:
                 if isstruct(varargin{1})
@@ -412,7 +414,11 @@ classdef classGpet < handle
             no =[[1;mo(1:end-1)+1],mo];            
 
             Scatter3D = zeros(objGpet.sinogram_size.matrixSize,'single');
-            Scatter3D(:,:,no(1,1):no(1,2),:) = Scatter2D;
+            if objGpet.sinogram_size.span == 1
+                Scatter3D(:,:,no(1,1):no(1,2),:) = Scatter2D(:,:,1:2:end);
+            else
+                Scatter3D(:,:,no(1,1):no(1,2),:) = Scatter2D;
+            end
             
             for i = 2:2:length(nPlanePerSeg)
                 
@@ -449,9 +455,9 @@ classdef classGpet < handle
     end
     methods (Access = public)
         % Project:
-        m = P(objGpet, x,subset_i);
+        m = P(objGpet, x,subset_i, localNumSubsets);
         % Backproject:
-        x = PT(objGpet,m, subset_i);
+        x = PT(objGpet,m, subset_i, localNumSubsets);
         % Normalization correction factors:
         [n, n_ti, n_tv] = NCF(varargin);
         % Attenuation correction factors:

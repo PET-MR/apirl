@@ -5,7 +5,7 @@
 % Date: 08/02/2016
 % *********************************************************************
 % Method that backprojects an image into a singoram.
-function x = PT(objGpet,m, subset_i)   
+function x = PT(objGpet,m, subset_i, localNumSubsets)    % If the fourth parameter is received we override the nSubsets of the object with this parameter.  
     %full/sub-backprojection
     if nargin <3
         angles = 1:objGpet.sinogram_size.nAnglesBins;
@@ -13,7 +13,11 @@ function x = PT(objGpet,m, subset_i)
         numSubsets = [];
     else
         angles = objGpet.sinogram_size.subsets(:,subset_i);
-        numSubsets = objGpet.nSubsets;  % Not use directly objGpet.nSubsets, because it canbe the case where there is a number of susbets configured but we still want to project the shile sinogram.
+        if nargin == 3
+            numSubsets = objGpet.nSubsets;  % Not use directly objGpet.nSubsets, because it canbe the case where there is a number of susbets configured but we still want to project the shile sinogram.
+        elseif nargin == 4
+            numSubsets = localNumSubsets;
+        end
     end
     % Check the image size:
     if size(m) == 1

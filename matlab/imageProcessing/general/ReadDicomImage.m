@@ -57,11 +57,18 @@ end
 
 [indexCol, indexRow] = meshgrid(double(0:0:dicomInfo.Width-1),double(dicomInfo.Height-1));
 
+% Identify the minim slice number because it can be 0 or 1:
+for i = 1 : numSlices
+    dicomInfo = dicominfo([path files(i).name]);
+    sliceIndices(i) = dicomInfo.InstanceNumber;
+end
+baseIndex = min(sliceIndices);
+% Now read:
 for i = 1 : numSlices
     dicomInfo = dicominfo([path files(i).name]);
     slice = dicomread([path files(i).name]);
     if isfield(dicomInfo, 'InstanceNumber') % If we have the number of slice use it.
-        sliceIndex = dicomInfo.InstanceNumber;
+        sliceIndex = dicomInfo.InstanceNumber - baseIndex + 1;
     else
         sliceIndex = i;
     end

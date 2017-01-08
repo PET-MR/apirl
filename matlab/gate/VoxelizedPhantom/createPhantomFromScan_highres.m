@@ -30,69 +30,71 @@ addpath(genpath([apirlPath pathBar 'matlab']));
 addpath(genpath(stirMatlabPath));
 setenv('PATH', [getenv('PATH') sepEnvironment apirlPath pathBar 'build' pathBar 'bin' ':' stirPath pathBar 'bin/']);
 setenv('LD_LIBRARY_PATH', [getenv('LD_LIBRARY_PATH') sepEnvironment apirlPath pathBar 'build' pathBar 'bin' ':' stirPath pathBar 'lib/' ]);
-%% READ SCAN
-slice_to_use = 54;
-direct_sinogram_to_use = round(slice_to_use/2);
-sinogramFilename = '/media/mab15/DATA_BACKUP/Scans/PatientData/Florbetaben/PETListPlusUmap-Converted/PETListPlusUmap-LM-00/PETListPlusUmap-LM-00-sino-0.s.hdr';
-reconstructedFilename = '/media/mab15/DATA_BACKUP/Scans/PatientData/Florbetaben/PETListPlusUmap-Converted/PETListPlusUmap-LM-00/PETListPlusUmap-LM-00-PSF_000_000.v.hdr';
-attenMapFilename_human = '/media/mab15/DATA_BACKUP/Scans/PatientData/Florbetaben/PETListPlusUmap-Converted/PETListPlusUmap-LM-00/PETListPlusUmap-LM-00-umap.v.hdr';
-attenMapFilename_hardware = '/media/mab15/DATA_BACKUP/Scans/PatientData/Florbetaben/PETListPlusUmap-Converted/PETListPlusUmap-LM-00/PETListPlusUmap-LM-00-umap.v.hdr';
-[sinogram, delayedSinogram, structSizeSino3d] = interfileReadSino(sinogramFilename);
-[reconstructedImage refMuMap] = interfileReadSiemensImage(reconstructedFilename);
-[attenuationMap refMuMap] = interfileReadSiemensImage(attenMapFilename_human);
-[attenuationMapHardware refMuMap] = interfileReadSiemensImage(attenMapFilename_hardware);
-attenuationMap = attenuationMap + attenuationMapHardware;
-%% LOAD BRAIN PHANTOM
-outputPath = '/home/mab15/workspace/KCL/Biograph_mMr/GateModel/svn_2d/BrainPhantomHighRes/';
+%% OUTPUTPATH
+realDataSet = 'FDG_Patient_06';
+outputPath = ['/home/mab15/workspace/KCL/Biograph_mMr/GateModel/svn/' realDataSet '/'];
+outputPath_roi = ['/home/mab15/workspace/KCL/Biograph_mMr/GateModel/svn/' realDataSet '_roi/'];
 if ~isdir(outputPath)
     mkdir(outputPath)
 end
-% Use the high res brain phantom:
-pixelSize_mm = [0.5 0.5 0.5];
-[phantom_rescaled, attenuationMap, refImage] = CreateBrainPhantom('/home/mab15/workspace/KCL/Phantoms/brain/brainweb/subject04_crisp_v.raws');
-
-%% GET AN SLICE
-slice = 166; % fOR THE CAUDATE.
-tAct_2d = phantom_rescaled(end:-1:1,:,slice);
-tMu_2d = attenuationMap(end:-1:1,:,slice);
+%% INIT CLASS GPET
+PET.scanner = 'mMR';
+PET.method =  'otf_siddon_gpu';
+PET.PSF.type = 'none';
+PET.radialBinTrim = 0;
+PET.Geom = '';
+PET.method_for_randoms = 'from_ML_singles_matlab'; %'from_e7_binary_interfile';
+PET.method_for_scatter = 'from_e7_binary_interfile';
+% To change span:
+PET.sinogram_size.span = 11; % Any span, 0 for multislice 2d, -1 for 2d.
+PET.nSubsets = 1;
+PET = classGpet(PET);
+%% READ SCAN
+patientPath = sprintf('/data/Scans/PatientData/%s/', realDataSet);
+petDataPath = [patientPath 'e7/data-Converted/data-00/'];
+sinogramFilename = [petDataPath 'data-00-sino-uncom_00.s.hdr'];
+reconstructedFilename = [petDataPath 'data-00-OP_000_000.v.hdr'];
+attenMapFilename_human = [petDataPath 'data-00-umap.v.hdr'];
+attenMapFilename_hardware = [petDataPath 'data-00-umap-hardware.v.hdr'];
+t1_filename = [patientPath '/MPRAGE_image/'];
+[sinogram, delayedSinogram, structSizeSino3d] = interfileReadSino(sinogramFilename);
+[reconstructedImage refMuMap] = interfileReadSiemensImage(reconstructedFilename);
+[attenuationMapHuman refMuMap] = interfileReadSiemensImage(attenMapFilename_human);
+[attenuationMapHardware refMuMap] = interfileReadSiemensImage(attenMapFilename_hardware);
+attenuationMap = attenuationMapHuman + attenuationMapHardware;
+pixelSize_mm = [refMuMap.PixelExtentInWorldX refMuMap.PixelExtentInWorldY refMuMap.PixelExtentInWorldZ];
+% Read mr:
+[MrInPet, refMr] = PET.getMrInPetImageSpace(t1_filename);
+% Read Mr image:
+[imageMr, refImageMr, imageMrFullFov, refImagePet] = PET.getMrInNativeImageSpace(t1_filename); % Return two images, the original Mr image (imageMr), and the Mr with its original pixel size but for the full fov of the pet scanner (imageMrFullFov)
+% CT based mumap based on t1:
+mumapAtlasCtDicomPath = '/data/Scans/PatientData/FDG_Patient_06/t1_nifty/LJF_25031962/_007_20161014/ct_umap_ucl_registered/mumap_ct/mumap_ct_dicom/DCM000/';
+[mumapAtlasCtOriginal, refImageAtlasCt, mumapAtlasCtFullFov, refImagePet] = PET.getMrInNativeImageSpace(mumapAtlasCtDicomPath);
+% For all the changes in format the mumap is upside down:
+%mumapAtlasCtOriginal(:,:,1:end) = mumapAtlasCtOriginal(:,:,end:-1:1);
+% For the same reason, I need to remap into pet space manually using the
+% ref structure of the MR.
+%[mumapAtlasCtInPet, refImageAtlasCtInPet] = PET.getMrInPetImageSpace(mumapAtlasCtDicomPath);
+[mumapAtlasCtInPet, refResampledImage] = ImageResample(mumapAtlasCtOriginal, refImageAtlasCt, refMuMap);
 %% SIZE OF THE SMALL ROI
 % System matrix of 58.415 mm x 70.9325 mm
-indicesRoiRows = 110:(110+58/0.5);
-indicesRoiCols = 110:(110+70/0.5);
+indicesRoiRows = 344/2-38:344/2-3;
+indicesRoiCols = 344/2-22:344/2+22;
+indicesSlices = 41:51;
+imageRoi = zeros(size(reconstructedImage));
+imageRoi(indicesRoiRows,indicesRoiCols,indicesSlices) = reconstructedImage(indicesRoiRows,indicesRoiCols,indicesSlices);
+interfilewrite(single(imageRoi), [outputPath 'reconRoi'], pixelSize_mm);
+% For the high res:
+indicesRoiRows_highres = indicesRoiRows;
+indicesRoiCols_highres = 344/2-22:344/2+22;
+indicesSlices_highres = 41:51;
 %% MU-MAP FOR RECONSTRUCTION
-tMu_for_recon = zeros(344,344);
-% The mu-map needs to have the size of the reconstruction
-xLimitsAt = [-size(tMu_2d,2)/2*0.5 size(tMu_2d,2)/2*0.5];
-yLimitsAt = [-size(tMu_2d,1)/2*0.5 size(tMu_2d,1)/2*0.5];
-%zLimitsAt = [-size(tMu_2d,3)/2*0.5 size(tMu_2d,3)/2*0.5];
-refAt  = imref2d(size(tMu_2d),xLimitsAt,yLimitsAt);
-xLimits = [-size(tMu_for_recon,2)/2*2.08625 size(tMu_for_recon,2)/2*2.08625];
-yLimits = [-size(tMu_for_recon,1)/2*2.08625 size(tMu_for_recon,1)/2*2.08625];
-%zLimits = [-size(tMu_for_recon,3)/2*2.03125 size(tMu_for_recon,3)/2*2.03125];
-refAtRecon = imref2d(size(tMu_for_recon),xLimits,yLimits);
-%pixelSize_mm = [2.08625 2.08625 0.5];
-%[tMu refAt] = imregister(tMu, refAt,tAct, refAct, 'affine', optimizer, metric);
-[tMu_for_recon, refAtRecon] = ImageResample(tMu_2d, refAt, refAtRecon);
-%% NOW I WILL CREATE TWO DATA SETS WITH DIFFERENT LESION IN THE CUADATE AND OTHER TWO WITH LESION IN THE GRAY MATTER
-% Add hot and cold spots:138:165,155:188
-tAct_2d_small_lesions = tAct_2d;
-tAct_2d_bigger_lesions = tAct_2d;
-% Hot spot:
-tAct_2d_small_lesions(157:159, 154:156) = tAct_2d_small_lesions(157:159, 154:156)*2;
-% Cold spot:
-tAct_2d_small_lesions(151:153, 203:205) = tAct_2d_small_lesions(151:153, 203:205)*0.2;
+% I need one for the reconstruction and another to translate into Gate
+% materials.
+interfilewrite(single(attenuationMapHuman), [outputPath 'muMap_human'], pixelSize_mm);
+interfilewrite(single(attenuationMapHardware), [outputPath 'muMap_hardware'], pixelSize_mm);
+interfilewrite(single(attenuationMap), [outputPath 'muMap'], pixelSize_mm);
 
-% Hot spot:
-[X, Y] = meshgrid(1:size(tAct_2d,2), 1:size(tAct_2d,1));
-centerHotLesion = [158 155];
-centerColdLesion = [152 204];
-radiusLesions_mm = 2;
-radiusLesions_pixels = radiusLesions_mm./pixelSize_mm(1);
-maskHotLesion = (X-centerHotLesion(2)).^2 + (Y-centerHotLesion(1)).^2 < radiusLesions_pixels.^2;
-maskColdLesion = (X-centerColdLesion(2)).^2 + (Y-centerColdLesion(1)).^2 < radiusLesions_pixels.^2;
-tAct_2d_bigger_lesions(maskHotLesion) = tAct_2d_bigger_lesions(maskHotLesion)*2;
-% Cold spot:
-tAct_2d_bigger_lesions(maskColdLesion) = tAct_2d_bigger_lesions(maskColdLesion)*0.2;
 %% CUT THE IMAGE
 % This is already reduced in size.
 %% CONVERSION OF IMAGES INTO GATE NEEDS
@@ -102,29 +104,29 @@ tAct_2d_bigger_lesions(maskColdLesion) = tAct_2d_bigger_lesions(maskColdLesion)*
 % have that activit concentration.
 disp('IMPORTANTE: Set .mac with a linear range scale of 1 kBq.');
 conversionFactor = 5./(1./(pixelSize_mm(1)/10).*(pixelSize_mm(2)/10).*(pixelSize_mm(3)/10));
-tAct_2d_small_lesions = tAct_2d_small_lesions.*conversionFactor;
-interfilewrite_gate(tAct_2d_small_lesions, [outputPath 'actMap_small_lesion'], [refImage.PixelExtentInWorldY refImage.PixelExtentInWorldX 0.5], 'BrainPhantomHighRes');
-interfilewrite(tMu_2d, [outputPath 'muMap'], [refImage.PixelExtentInWorldY refImage.PixelExtentInWorldX]);
-tAct_2d_bigger_lesions = tAct_2d_bigger_lesions.*conversionFactor;
-interfilewrite_gate(tAct_2d_bigger_lesions, [outputPath 'actMap_bigger_lesion'], [refImage.PixelExtentInWorldY refImage.PixelExtentInWorldX 0.5], 'BrainPhantomHighRes');
+imageMr = imageMr.*conversionFactor;
+interfilewrite_gate(single(imageMr), [outputPath 'actMap'], [refImageMr.PixelExtentInWorldY refImageMr.PixelExtentInWorldX refImageMr.PixelExtentInWorldZ], realDataSet);
 
 % create a constant image.
-const = zeros(size(tAct_2d_small_lesions));
-const(tMu_2d>0.01) = 1;
-interfilewrite(uint16(const), [outputPath 'constMap_uint16'], [refImage.PixelExtentInWorldY refImage.PixelExtentInWorldX ]);
-interfilewrite(uint16(tAct_2d_small_lesions), [outputPath 'actMap_small_lesion_uint16'], [refImage.PixelExtentInWorldY refImage.PixelExtentInWorldX]);
-interfilewrite(uint16(tAct_2d_bigger_lesions), [outputPath 'actMap_bigger_lesion_uint16'], [refImage.PixelExtentInWorldY refImage.PixelExtentInWorldX]);
-interfilewrite(tMu_2d, [outputPath 'muMap'], [refImage.PixelExtentInWorldY refImage.PixelExtentInWorldX]);
-interfilewrite(tMu_for_recon, [outputPath 'muMap'], [refAtRecon.PixelExtentInWorldY refAtRecon.PixelExtentInWorldX]);
+const = zeros(size(attenuationMap));
+const(attenuationMap>0.01) = 1;
+interfilewrite(uint16(const), [outputPath 'constMap_uint16'], pixelSize_mm);
+interfilewrite(uint16(imageMr), [outputPath 'actMap_uint16'], [refImageMr.PixelExtentInWorldY refImageMr.PixelExtentInWorldX refImageMr.PixelExtentInWorldZ]);
 %% MUMAP
 % I need to set the materials for each range of values:
 numMaterials = 3;
-rangeMaterials = [-0.1 0.07;0.07 0.12; 0.12 0.18];
-nameMaterials = {'Air', 'Brain', 'Skull'};
-tMu_2d_uint16 = zeros(size(tMu_2d), 'uint16');
-tMu_2d_uint16(tMu_2d>rangeMaterials(1,1) & tMu_2d<rangeMaterials(1,2)) = 1;
-tMu_2d_uint16(tMu_2d>rangeMaterials(2,1) & tMu_2d<rangeMaterials(2,2)) = 2;
-tMu_2d_uint16(tMu_2d>rangeMaterials(3,1) & tMu_2d<rangeMaterials(3,2)) = 3;
+rangeMaterials = [-0.1 0.03;0.03 0.12; 0.12 0.18];
+nameMaterials = {'Air', 'Brain', 'Skull', 'Plastic', 'Aluminum'};
+tMu_uint16 = zeros(size(attenuationMapHuman), 'uint16');
+% First the human:
+tMu_uint16(attenuationMapHuman>rangeMaterials(1,1) & attenuationMapHuman<rangeMaterials(1,2)) = 1;
+tMu_uint16(attenuationMapHuman>rangeMaterials(2,1) & attenuationMapHuman<rangeMaterials(2,2)) = 2;
+tMu_uint16(attenuationMapHuman>rangeMaterials(3,1) & attenuationMapHuman<rangeMaterials(3,2)) = 3;
+% Then hardware:
+rangeMaterials = [-0.1 0.03;0.03 0.09; 0.09 0.18];
+%tMu_uint16(attenuationMapHardware>rangeMaterials(1,1) & attenuationMapHardware<rangeMaterials(1,2)) = 1;
+tMu_uint16(attenuationMapHardware>rangeMaterials(2,1) & attenuationMapHardware<rangeMaterials(2,2)) = 4;
+tMu_uint16(attenuationMapHardware>rangeMaterials(3,1) & attenuationMapHardware<rangeMaterials(3,2)) = 5;
 
 % Range atenuation:
 fid = fopen(sprintf('%s/RangeAttenuation.dat',outputPath), 'w');
@@ -139,17 +141,17 @@ for i = 1 : numMaterials
         rand(1),rand(1),rand(1));
 end
 fclose(fid);
-interfilewrite_gate(uint16(tMu_2d_uint16), [outputPath 'muMap_uint16'], [refImage.PixelExtentInWorldY refImage.PixelExtentInWorldX 0.5], 'BrainPhantomHighRes');
-%% SMALL REGION TO SIMULATE IN GATE
-outputPath = '/home/mab15/workspace/KCL/Biograph_mMr/GateModel/svn_2d/CaudatePhantomHighRes/';
+interfilewrite_gate(uint16(tMu_uint16), [outputPath 'muMap_uint16'], pixelSize_mm, '');%realDataSet);
+%% SMALL REGION TO SIMULATE IN GATE (ONLY ACTIVITY)
+outputPath = outputPath_roi;
 if ~isdir(outputPath)
     mkdir(outputPath);
 end
-caudateImage_small_lesions = uint16(tAct_2d_small_lesions(indicesRoiRows,indicesRoiCols));
-caudateImage_bigger_lesions = uint16(tAct_2d_bigger_lesions(indicesRoiRows,indicesRoiCols));
-caudateImage_aten = tMu_2d(indicesRoiRows,indicesRoiCols);
-caudateImage_aten_gate = tMu_2d_uint16(indicesRoiRows,indicesRoiCols);
-caudateImage_aten_gate(1,1) = 1; % Becuase it needs one pixel different.
+indicesRoiRows
+indicesRoiCols
+indicesSlices
+roiImage = uint16(imageMr(indicesRoiRows,indicesRoiCols, indicesSlices));
+
 xLimits = [-size(caudateImage_small_lesions,2)/2*0.5 size(caudateImage_small_lesions,2)/2*0.5];
 yLimits = [-size(caudateImage_small_lesions,1)/2*0.5 size(caudateImage_small_lesions,1)/2*0.5];
 zLimits = 0;
@@ -218,60 +220,3 @@ for i = 1 : numMaterials
         rand(1),rand(1),rand(1));
 end
 fclose(fid);
-%% CREATE MASKS
-% Convert the phantom into the grid size used in reconstruction:
-[tAct_2d_small_lesions_recon, refActRecon] = ImageResample(tAct_2d_small_lesions, refAt, refAtRecon);
-[tAct_2d_bigger_lesions_recon, refActRecon] = ImageResample(tAct_2d_bigger_lesions, refAt, refAtRecon);
-
-
-% Now the same for the striatum phantom:
-imageSize_recon = [344 344];
-pixelSize_mm = [2.08625 2.08625];
-indicesRoiRows_recon = 147:174;
-indicesRoiCols_recon = 156:189;
-imageSizeRoi_recon = [numel(indicesRoiRows_recon) numel(indicesRoiCols_recon)];
-% Coordinates of striatum roi:
-xLimitsAt_striatum = [-size(tMu_2d,2)/2*0.5+(indicesRoiCols(1)-1)*0.5  -size(tMu_2d,2)/2*0.5+indicesRoiCols(end)*0.5];
-yLimitsAt_striatum = [-size(tMu_2d,1)/2*0.5+(indicesRoiRows(1)-1)*0.5  -size(tMu_2d,1)/2*0.5+indicesRoiRows(end)*0.5];
-%zLimitsAt = [-size(tMu_2d,3)/2*0.5 size(tMu_2d,3)/2*0.5];
-refActRoi  = imref2d(size(tMu_2d),xLimitsAt,yLimitsAt);
-xLimits = [-imageSize_recon(2)/2*pixelSize_mm(2)+(indicesRoiCols_recon(1)-1)*pixelSize_mm(2)  -imageSize_recon(2)/2*pixelSize_mm(2)+indicesRoiCols_recon(end)*pixelSize_mm(2)];
-yLimits = [-imageSize_recon(1)/2*pixelSize_mm(1)+(indicesRoiRows_recon(1)-1)*pixelSize_mm(1)  -imageSize_recon(1)/2*pixelSize_mm(1)+indicesRoiRows_recon(end)*pixelSize_mm(1)];
-%zLimits = [-size(tMu_for_recon,3)/2*2.03125 size(tMu_for_recon,3)/2*2.03125];
-refActRecon = imref2d(imageSizeRoi_recon,xLimits,yLimits);
-[caudateFullImage_small_lesions_recon, refActRecon_roi] = ImageResample(caudateFullImage_small_lesions, refActRoi, refActRecon);
-[caudateFullImage_bigger_lesions_recon, refActRecon_roi] = ImageResample(caudateFullImage_bigger_lesions, refActRoi, refActRecon);
-
-% Create a folder for the masks:
-masksPath = [outputPath '/masks/'];
-if ~isdir(masksPath)
-    mkdir(masksPath)
-end
-interfilewrite(tAct_2d_small_lesions_recon, [masksPath 'actMap_small_lesions_recon_size'], [refAtRecon.PixelExtentInWorldY refAtRecon.PixelExtentInWorldX ]);
-interfilewrite(tAct_2d_bigger_lesions_recon, [masksPath 'muMactMap_bigger_lesions_recon_size'], [refAtRecon.PixelExtentInWorldY refAtRecon.PixelExtentInWorldX ]);
-interfilewrite(caudateFullImage_small_lesions_recon, [masksPath 'actMap_small_lesions_recon_size_roi'], [refActRecon_roi.PixelExtentInWorldY refActRecon_roi.PixelExtentInWorldX ]);
-interfilewrite(caudateFullImage_bigger_lesions_recon, [masksPath 'muMactMap_bigger_lesions_recon_size_roi'], [refActRecon_roi.PixelExtentInWorldY refActRecon_roi.PixelExtentInWorldX ]);
-
-% call Image segmenter to generate the mask:
-%imageSegmenter
-% I create segmentation function with it:
-[masks.Caudate,maskedImage] = segmentCaudate(caudateFullImage_small_lesions_recon);
-[masks.LateralVentricle,maskedImage] = segmentLateralVentricle(caudateFullImage_small_lesions_recon);
-[masks.Putamen,maskedImage] = segmentPutamen(caudateFullImage_small_lesions_recon);
-[masks.ColdSmallSpot,maskedImage] = segmentSmallColdSpot(caudateFullImage_small_lesions_recon);
-[masks.HotSmallSpot,maskedImage] = segmentSmallHotSpot(caudateFullImage_small_lesions_recon);
-[masks.CaudateWithBiggerSpots,maskedImage] = segmentCaudateWithBiggerSpots(caudateFullImage_small_lesions_recon);
-[masks.ColdBigSpot,maskedImage] = segmentBigColdSpot(caudateFullImage_small_lesions_recon);
-[masks.HotBigSpot,maskedImage] = segmentBigHotSpot(caudateFullImage_small_lesions_recon);
-[masks.WhiteMatter,maskedImage]  = segmentWhiteMatter(caudateFullImage_small_lesions_recon);
-
-save([masksPath 'masks_for_metrics'], 'masks');
-interfilewrite(single(masks.Caudate), [masksPath 'mask_caudate_roi'], [refActRecon_roi.PixelExtentInWorldY refActRecon_roi.PixelExtentInWorldX ]);
-interfilewrite(single(masks.LateralVentricle), [masksPath 'mask_lateral_ventricle_roi'], [refActRecon_roi.PixelExtentInWorldY refActRecon_roi.PixelExtentInWorldX ]);
-interfilewrite(single(masks.Putamen), [masksPath 'mask_putamen_roi'], [refActRecon_roi.PixelExtentInWorldY refActRecon_roi.PixelExtentInWorldX ]);
-interfilewrite(single(masks.ColdSmallSpot), [masksPath 'mask_cold_small_spot_roi'], [refActRecon_roi.PixelExtentInWorldY refActRecon_roi.PixelExtentInWorldX ]);
-interfilewrite(single(masks.HotSmallSpot), [masksPath 'mask_hot_small_spot_roi'], [refActRecon_roi.PixelExtentInWorldY refActRecon_roi.PixelExtentInWorldX ]);
-interfilewrite(single(masks.CaudateWithBiggerSpots), [masksPath 'mask_caudate_bigger_spot_roi'], [refActRecon_roi.PixelExtentInWorldY refActRecon_roi.PixelExtentInWorldX ]);
-interfilewrite(single(masks.ColdBigSpot), [masksPath 'mask_cold_big_spot_roi'], [refActRecon_roi.PixelExtentInWorldY refActRecon_roi.PixelExtentInWorldX ]);
-interfilewrite(single(masks.HotBigSpot), [masksPath 'mask_hot_big_spot_roi'], [refActRecon_roi.PixelExtentInWorldY refActRecon_roi.PixelExtentInWorldX ]);
-interfilewrite(single(masks.WhiteMatter), [masksPath 'mask_white_matter_roi'], [refActRecon_roi.PixelExtentInWorldY refActRecon_roi.PixelExtentInWorldX ]);

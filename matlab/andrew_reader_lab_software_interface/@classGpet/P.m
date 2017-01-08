@@ -5,7 +5,7 @@
 % Date: 08/02/2016
 % *********************************************************************
 % Method that projects an image into a singoram.
-function m = P(objGpet, x,subset_i)
+function m = P(objGpet, x,subset_i, localNumSubsets)    % If the fourth parameter is received we override the nSubsets of the object with this parameter.
     % full/sub-forward
     if nargin <3
         angles = 1:objGpet.sinogram_size.nAnglesBins;
@@ -54,8 +54,10 @@ function m = P(objGpet, x,subset_i)
             if nargin < 3
                 subset_i = [];
                 numSubsets = [];
-            else
+            elseif nargin == 3
                 numSubsets = objGpet.nSubsets;  % Not use directly objGpet.nSubsets, because it canbe the case where there is a number of susbets configured but we still want to project the shile sinogram.
+            elseif nargin == 4
+                numSubsets = localNumSubsets;
             end
 %             if strcmpi(objGpet.method, 'otf_siddon_cpu')
 %                 [m, structSizeSinogram] = ProjectMmr(x, objGpet.image_size.voxelSize_mm, objGpet.tempPath, objGpet.sinogram_size.span, numSubsets, subset_i, 0);
@@ -78,8 +80,10 @@ function m = P(objGpet, x,subset_i)
             if nargin < 3
                 subset_i = [];
                 numSubsets = [];
-            else
+            elseif nargin == 3
                 numSubsets = objGpet.nSubsets;  % Not use directly objGpet.nSubsets, because it canbe the case where there is a number of susbets configured but we still want to project the shile sinogram.
+            elseif nargin == 4
+                numSubsets = localNumSubsets;
             end
             structSizeSino = get_sinogram_size_for_apirl(objGpet);
             if strcmpi(objGpet.method, 'otf_siddon_cpu')

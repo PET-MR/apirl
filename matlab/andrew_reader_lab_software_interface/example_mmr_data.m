@@ -30,9 +30,10 @@ setenv('LD_LIBRARY_PATH', [getenv('LD_LIBRARY_PATH') sepEnvironment apirlPath pa
 % prompts a window to select rawdata folder and sets modifies the default parameters
 opt.span= 1;
 opt.MethodSinoData= 'e7';
+opt.FrameTimePoints = [0 240];
 % user provides the path
-PETData = PETDataClass('E:\BR1_010\raw');
-PETData.uncompress(PETData.DataPath.emission);
+PETData = PETDataClass('E:\FDG-Choline_Patient_01\Pt1\Scan1\Raw', opt);
+%PETData.uncompress(PETData.DataPath.emission);
 %PETData = PETDataClass('/media/mab15/DATA/PatientData/Florbetaben/PETListPlusUmap-Converted/PETListPlusUmap-LM-00/', opt);
 %timeFrame_sec = 200;
 %PETData.InitFramesConfig(timeFrame_sec);

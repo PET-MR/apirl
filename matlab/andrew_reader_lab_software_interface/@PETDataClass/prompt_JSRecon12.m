@@ -32,9 +32,9 @@ if ~isempty(LM)
     %         SD = strfind(w,'ImageDuration');
     %         PETData.ScanDuration_sec = str2double(w(SD+[18:23])); % search for lines instead of numbers
     PETData.NumberOfFrames = length(PETData.FrameTimePoints)-1;
-    if PETData.isListMode>1
-        error('%d list-mode files were found in %s, please seperate them into different folders\n',PETData.isListMode,FolderName)
-    end
+%     if PETData.isListMode>1
+%         error('%d list-mode files were found in %s, please seperate them into different folders\n',PETData.isListMode,FolderName)
+%     end
 else
     PETData.isListMode = 0;
 end

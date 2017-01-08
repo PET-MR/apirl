@@ -79,7 +79,7 @@ end
 PET.setBedPosition(attenuationMap_filename);
 [MrInPet, refMr] = PET.getMrInPetImageSpace(t1DicomPath);
 %% NORM
-ncfs = PET.NCF(); % time-invariant.
+ncfs = PET.NCF(normalizationFilename); % time-invariant.
 %ncfs = PET.NCF('PETSinoPlusUmap-norm.n'); % time-variant.
 %% ACFs
 acfs = PET.ACF(attenuationMap, refMuMap);

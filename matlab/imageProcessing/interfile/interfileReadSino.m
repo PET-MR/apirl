@@ -12,7 +12,7 @@
 %
 %  It returns the sinogram, the delayed sinogram and an struct with the
 %  sinogram size.
-function [sinograms, delayedSinograms, structSizeSino] = interfileReadSino(filenameHeader)
+function [sinograms, delayedSinograms, structSizeSino, info] = interfileReadSino(filenameHeader)
 
 [info, structSizeSino] = getInfoFromInterfile(filenameHeader);
 

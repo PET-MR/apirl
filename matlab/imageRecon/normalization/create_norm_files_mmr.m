@@ -346,7 +346,7 @@ end
 % Crystal dependent (crystal efficienies and crystal interference factors):
 crystal_dependant_ncf_3d =  scanner_time_variant_ncf_3d;
 for i = 1 : sum(structSizeSino3d.sinogramsPerSegment)
-    crystal_dependant_ncf_3d(:,:,i) =  (1./crystalInterfFactor) .* crystal_dependant_ncf_3d(:,:,i) ./ axialFactors_xtal_dependent(i);
+    crystal_dependant_ncf_3d(:,:,i) =  (1./crystalInterfFactor) .* crystal_dependant_ncf_3d(:,:,i);% ./ axialFactors_xtal_dependent(i);
 end
 
 % Normalize to the number of sino mashed (because that is taken into
