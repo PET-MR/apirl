@@ -13,7 +13,7 @@ function r=R(varargin)
     if ~strcmpi(objGpet.scanner,'mMR')&& ~strcmpi(objGpet.scanner,'cylindrical')
         error('Randoms are only available for mMR or cylindrical scanner.');
     end
-    if nargin == 2
+    if nargin >= 2
         param = varargin{2};
     end
     if strcmpi(objGpet.scanner,'mMR')
@@ -22,8 +22,17 @@ function r=R(varargin)
             r = ones(objGpet.sinogram_size.matrixSize);
             meanValue = counts./numel(r);
             r = r .* meanValue;
-            % Generate a poisson distributed with contant mean value:
+            % Generate a poisson distributed with constant mean value:
             r =poissrnd(r);
+            if nargin == 2
+                % normalize:
+                ncf = objGpet.NCF();
+                nf = ncf;
+                nf(nf~=0) = 1./nf(nf~=0);
+            elseif nargin == 3
+                nf = varargin{3};
+            end
+            r = r.*nf;
         elseif objGpet.sinogram_size.span >= 1
             if strcmpi(objGpet.method_for_randoms,'from_e7_binary_interfile')
                 if objGpet.sinogram_size.span == 11

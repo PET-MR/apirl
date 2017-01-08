@@ -63,8 +63,14 @@ function init_sinogram_size(objGpet, inSpan, numRings, maxRingDifference)
             % Si estoy en el primer segmento a agregar es -1, sino es -2 para ir
             % con el positivo:
             if objGpet.sinogram_size.nSeg == 2
-                objGpet.sinogram_size.minRingDiffs(objGpet.sinogram_size.nSeg) = objGpet.sinogram_size.minRingDiffs(objGpet.sinogram_size.nSeg-1) + objGpet.sinogram_size.span;
-                objGpet.sinogram_size.maxRingDiffs(objGpet.sinogram_size.nSeg) = objGpet.sinogram_size.maxRingDiffs(objGpet.sinogram_size.nSeg-1) + objGpet.sinogram_size.span;
+                % Si me paso de la máxima difrencia de anillos la trunco:
+                if (objGpet.sinogram_size.maxRingDiffs(objGpet.sinogram_size.nSeg-1) + objGpet.sinogram_size.span ) <= objGpet.sinogram_size.maxRingDifference
+                    objGpet.sinogram_size.minRingDiffs(objGpet.sinogram_size.nSeg) = objGpet.sinogram_size.minRingDiffs(objGpet.sinogram_size.nSeg-1) + objGpet.sinogram_size.span;
+                    objGpet.sinogram_size.maxRingDiffs(objGpet.sinogram_size.nSeg) = objGpet.sinogram_size.maxRingDiffs(objGpet.sinogram_size.nSeg-1) + objGpet.sinogram_size.span;
+                else
+                    objGpet.sinogram_size.minRingDiffs(objGpet.sinogram_size.nSeg) = objGpet.sinogram_size.minRingDiffs(objGpet.sinogram_size.nSeg-1) + objGpet.sinogram_size.span;
+                    objGpet.sinogram_size.maxRingDiffs(objGpet.sinogram_size.nSeg) = objGpet.sinogram_size.maxRingDifference;
+                end
             else
                 % Si me paso de la máxima difrencia de anillos la trunco:
                 if (objGpet.sinogram_size.maxRingDiffs(objGpet.sinogram_size.nSeg-2) + objGpet.sinogram_size.span ) <= objGpet.sinogram_size.maxRingDifference

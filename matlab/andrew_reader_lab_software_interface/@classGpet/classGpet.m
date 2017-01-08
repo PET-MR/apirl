@@ -473,6 +473,7 @@ classdef classGpet < handle
                 x = (x0.^2+y0.^2)<(objGpet.image_size.matrixSize(1)/2.5)^2;
                 x = repmat(x,[1,1,objGpet.image_size.matrixSize(3)]);
             end
+            x = single(x);
         end
         
         function x = zeros(objGpet)
