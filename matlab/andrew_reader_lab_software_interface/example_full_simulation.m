@@ -10,7 +10,7 @@ PET.PSF.type = 'none';
 PET.radialBinTrim = 0;
 PET.Geom = '';
 PET.random_algorithm = 'from_ML_singles_matlab';
-PET.sinogram_size.span = -1;
+PET.sinogram_size.span = 11;
 PET = classGpet(PET);
 %% SIMULATE A BRAIN PHANTOM WITH ATTENUATION, NORMALIZATION, RANDOMS AND SCATTER
 %[sinogram, delayedSinogram, structSizeSino3d] = interfileReadSino('E:\PatientData\FDG\PETSinoPlusUmap-Converted\PETSinoPlusUmap-00\PETSinoPlusUmap-00-sino-uncomp.s.hdr');
@@ -30,6 +30,7 @@ refAt  = imref3d(size(tMu),xLimits,yLimits,zLimits);
 T1 = permute(MultiMaps_Ref.T1, [2 1 3]);
 T1 = T1(end:-1:1,:,:);
 
+gaps = PET.gaps;
 
 % Change the image sie, to the one of the phantom:
 PET.init_image_properties(refAct);

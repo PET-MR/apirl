@@ -469,6 +469,15 @@ classdef classGpet < handle
         %
         osem_subsets(objGpet, nsub,nAngles);
         
+        function gaps = gaps(objGpet)
+            if strcmp(objGpet.scanner,'mMR')
+                crystalMasks = ones(504,64);
+                crystalMasks(9:9:end,:) = 0;
+                gaps = createSinogram3dFromDetectorsEfficency(crystalMasks, objGpet.get_sinogram_size_for_apirl(), 0);
+            else
+                gaps = ones(objGpet.sinogram_size.matrixSize);
+            end
+        end
         function x = ones(objGpet)
             if objGpet.sinogram_size.span == -1
                 %x = ones([objGpet.image_size.matrixSize(1) objGpet.image_size.matrixSize(2)]);
