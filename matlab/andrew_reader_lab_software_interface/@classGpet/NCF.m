@@ -5,7 +5,7 @@
 % Date: 08/02/2016
 % *********************************************************************
 
-function [n, n_ti, n_tv]=NCF(varargin)
+function [n, n_ti, n_tv, gaps]=NCF(varargin)
     n = []; n_ti = []; n_tv = [];
     objGpet = varargin{1};
     if nargin == 3 
@@ -33,10 +33,10 @@ function [n, n_ti, n_tv]=NCF(varargin)
         if objGpet.sinogram_size.span >= 1
             if nargin == 1
                 % Default normalization file:
-                [n, n_ti, n_tv, acquisition_dependant_ncf_3d, crystal_dependant_ncf_3d, used_xtal_efficiencies, used_deadtimefactors, used_axial_factors] = ...
+                [n, n_ti, n_tv, acquisition_dependant_ncf_3d, crystal_dependant_ncf_3d, gaps, used_xtal_efficiencies, used_deadtimefactors, used_axial_factors, structSizeSino3d] = ...
                     create_norm_files_mmr([], [], [], [], [], objGpet.sinogram_size.span);
             else
-                [n, n_ti, n_tv, acquisition_dependant_ncf_3d, crystal_dependant_ncf_3d, used_xtal_efficiencies, used_deadtimefactors, used_axial_factors] = ...
+                [n, n_ti, n_tv, acquisition_dependant_ncf_3d, crystal_dependant_ncf_3d, gaps, used_xtal_efficiencies, used_deadtimefactors, used_axial_factors, structSizeSino3d] = ...
                 create_norm_files_mmr(varargin{2}, [], [], [], singles_per_bucket, objGpet.sinogram_size.span);
             end
         else

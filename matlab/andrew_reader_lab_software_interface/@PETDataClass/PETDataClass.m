@@ -85,10 +85,10 @@ classdef PETDataClass < handle
             PETData.SoftwarePaths.WinePath      = [getenv('HOME') '/.wine/drive_c/'];
             PETData.DataType                    = '';
             
-            PETData.isListMode                  =[];
-            PETData.isSinogram                   =[];
-            PETData.ScanDuration_sec            =[];
-            PETData.FrameTimePoints             = [0,300,400,300];
+            PETData.isListMode                  = [];
+            PETData.isSinogram                  = [];
+            PETData.ScanDuration_sec            = [];
+            PETData.FrameTimePoints             = [];%0,300,400,300];
             PETData.NumberOfFrames              = length(PETData.FrameTimePoints)-1;
             
             if PETData.span~=11
@@ -146,6 +146,11 @@ classdef PETDataClass < handle
                             %  return PETData.DataPath structure
                             fprintf('Calling JSRecon12...');
                             PETData = prompt_JSRecon12(PETData, PETData.DataPath.path);
+                            fprintf('Done.\n');
+                            % After calling JSRecon12, we call e7_tools to
+                            % generate the correction sinograms:
+                            fprintf('Calling e7_recon...');
+                            status = e7_sino_rawdata(PETData,1);
                             fprintf('Done.\n');
                         otherwise %'list_mode_interfile', 'sinogram_uncompressed_interfile'
                             %
@@ -256,6 +261,10 @@ classdef PETDataClass < handle
             command = [PETData.SoftwarePaths.e7.siemens ' -e "' PETData.DataPath.emission(frame).n '"' ...
                 ' -u "' PETData.DataPath.umap(1).n '","' PETData.DataPath.hardware_umap(1).n '"' ...
                 ' -n "' PETData.DataPath.norm '" --os "' PETData.DataPath.scatters(1).n '" --rs --force -l 73,. -d "' PETData.DataPath.rawdata_sino(frame).n '"'];
+            % if it doesnt exit, create the debug folder:
+            if ~isdir(PETData.DataPath.rawdata_sino(frame).n)
+                mkdir(PETData.DataPath.rawdata_sino(frame).n)
+            end
             [status,message] = system(command);
             
         end

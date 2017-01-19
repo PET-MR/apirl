@@ -459,7 +459,7 @@ classdef classGpet < handle
         % Backproject:
         x = PT(objGpet,m, subset_i, localNumSubsets);
         % Normalization correction factors:
-        [n, n_ti, n_tv] = NCF(varargin);
+        [n, n_ti, n_tv, gaps] = NCF(varargin);
         % Attenuation correction factors:
         a=ACF(varargin);
         % Randoms:

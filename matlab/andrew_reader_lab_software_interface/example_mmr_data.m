@@ -20,7 +20,7 @@ cudaPath = '/usr/local/cuda/';
 setenv('PATH', [getenv('PATH') sepEnvironment cudaPath pathBar 'bin']);
 setenv('LD_LIBRARY_PATH', [getenv('LD_LIBRARY_PATH') sepEnvironment cudaPath pathBar 'lib64']);
 % APIRL PATH
-apirlPath = 'E:\workspace\apirl-code\';
+apirlPath = 'E:\workspace\apirl-code\trunk\';
 addpath(genpath([apirlPath pathBar 'matlab']));
 setenv('PATH', [getenv('PATH') sepEnvironment apirlPath pathBar 'build' pathBar 'bin']);
 setenv('LD_LIBRARY_PATH', [getenv('LD_LIBRARY_PATH') sepEnvironment apirlPath pathBar 'build' pathBar 'bin']);
@@ -30,10 +30,10 @@ setenv('LD_LIBRARY_PATH', [getenv('LD_LIBRARY_PATH') sepEnvironment apirlPath pa
 % prompts a window to select rawdata folder and sets modifies the default parameters
 opt.span= 1;
 opt.MethodSinoData= 'e7';
-opt.FrameTimePoints = [0 240];
+%opt.FrameTimePoints = [0 240];
 % user provides the path
-PETData = PETDataClass('E:\FDG-Choline_Patient_01\Pt1\Scan1\Raw', opt);
-%PETData.uncompress(PETData.DataPath.emission);
+PETData = PETDataClass('E:\FDG-Methionine_Patient_01\Pt1\Scan1\Raw', opt);
+PETData.uncompress(PETData.DataPath.emission);
 %PETData = PETDataClass('/media/mab15/DATA/PatientData/Florbetaben/PETListPlusUmap-Converted/PETListPlusUmap-LM-00/', opt);
 %timeFrame_sec = 200;
 %PETData.InitFramesConfig(timeFrame_sec);

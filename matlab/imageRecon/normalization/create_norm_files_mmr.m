@@ -45,7 +45,7 @@
 %  The size of each component matrix are hardcoded for the mMr scanner and
 %  are
 
-function [overall_ncf_3d, scanner_time_invariant_ncf_3d, scanner_time_variant_ncf_3d, acquisition_dependant_ncf_3d, crystal_dependant_ncf_3d, used_xtal_efficiencies, used_deadtimefactors, used_axial_factors, structSizeSino3d] = ...
+function [overall_ncf_3d, scanner_time_invariant_ncf_3d, scanner_time_variant_ncf_3d, acquisition_dependant_ncf_3d, crystal_dependant_ncf_3d, gaps, used_xtal_efficiencies, used_deadtimefactors, used_axial_factors, structSizeSino3d] = ...
    create_norm_files_mmr(cbn_filename, my_axial_factors, my_selection_of_xtal_efficiencies, my_choice_of_deadtimefactors, singles_rates_per_bucket, span_choice)
 
 
