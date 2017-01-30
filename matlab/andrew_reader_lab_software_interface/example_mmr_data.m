@@ -32,8 +32,9 @@ opt.span= 1;
 opt.MethodSinoData= 'e7';
 %opt.FrameTimePoints = [0 240];
 % user provides the path
-PETData = PETDataClass('E:\FDG-Methionine_Patient_01\Pt1\Scan1\Raw', opt);
-PETData.uncompress(PETData.DataPath.emission);
+PETData = PETDataClass('E:\CORONARIES_03_11_16\Raw\Raw');
+ncf = PETData.NCF();
+PETData.uncompress(PETData.Data.emission.n);
 %PETData = PETDataClass('/media/mab15/DATA/PatientData/Florbetaben/PETListPlusUmap-Converted/PETListPlusUmap-LM-00/', opt);
 %timeFrame_sec = 200;
 %PETData.InitFramesConfig(timeFrame_sec);

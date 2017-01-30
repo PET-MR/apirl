@@ -8,50 +8,97 @@ function out = ParseInterfileDataFile(directory,report)
 
 if nargin==1, report = 0; end
 
-nInterfileCompressedSinogramFiles = 0;
-nInterfileUncompressedSinogramFiles = 0;
-nInterfileListModeFiles = 0;
-nInterfileNormFiles = 0;
-nInterfileHumanUmaps = 0;
-nInterfileHardwareUmaps = 0;
+nCompressedSinogramFiles = 0;
+nUncompressedSinogramFiles = 0;
+nListModeFiles = 0;
+nNormFiles = 0;
+nHumanUmaps = 0;
+nHardwareUmaps = 0;
+nHardUmapMhdrs = 0;
+nHumanUmapMhdrs = 0;
+nCompressedSinogramMhdrs = 0;
+nUncompressedSinogramMhdrs = 0;
 %             Unclassified = 0;
-[CompressedSinogramHdrs,UncompressedSinogramHdrs,ListModeHdrs, NormFileHdrs,HumanUmapHdrs, HardwareUmapHdrs] = deal(struct('hdr',[]));
+[CompressedSinogramHdrs,CompressedSinogramMhdrs,UncompressedSinogramHdrs,UncompressedSinogramMhdrs,...
+    ListModeHdrs, NormFileHdrs, HumanUmapHdrs, HumanUmapMhdrs,HardwareUmapHdrs,HardwareUmapMhdrs] = deal(struct('hdr',[]));
+if(strcmp(computer(), 'GLNXA64'))
+    bar = '/';
+else
+    bar = '\';
+end
+% if directory already ends with a bar
+% if strcmp(directory(end),bar) 
+%     bar = '';
+% end
 
+directory = [directory bar];
 listing = dir(directory);
 for i = 3:length(listing)
     
     [~, name, ext] = fileparts(listing(i).name); % This name doesnt include the path.
     if ~isempty(name) && ~isempty(ext)
         if strcmpi(ext,'.l')
-            nInterfileListModeFiles = nInterfileListModeFiles + 1;
+            nListModeFiles = nListModeFiles + 1;
             hdrFilename = [directory name '.l.hdr'];
-            ListModeHdrs = getHeaderFiles(hdrFilename,ListModeHdrs,nInterfileListModeFiles);
+            ListModeHdrs = getHeaderFiles(hdrFilename,ListModeHdrs,nListModeFiles);
         elseif strcmpi(ext,'.s')
             hdrFilename = [directory name '.s.hdr'];
-            if ~isempty(strfind(name,'uncomp'))
-                nInterfileUncompressedSinogramFiles = nInterfileUncompressedSinogramFiles + 1;
-                UncompressedSinogramHdrs = getHeaderFiles(hdrFilename,UncompressedSinogramHdrs,nInterfileUncompressedSinogramFiles);
-            else
-                nInterfileCompressedSinogramFiles = nInterfileCompressedSinogramFiles + 1;
-                CompressedSinogramHdrs = getHeaderFiles(hdrFilename,CompressedSinogramHdrs,nInterfileCompressedSinogramFiles);
+            hdr = getInfoFromInterfile(hdrFilename);
+            % exclude the non-emission sinograms, i.e. norm, scatter sinograms
+            % with NumberOfBytesPerPixel==4
+            if strcmpi(hdr.PetDataType,'emission') && strcmpi(hdr.DataFormat,'sinogram') && hdr.NumberOfBytesPerPixel==2
+                if strcmpi(hdr.Compression,'on')
+                    nCompressedSinogramFiles = nCompressedSinogramFiles + 1;
+                    CompressedSinogramHdrs = getHeaderFiles(hdrFilename,CompressedSinogramHdrs,nCompressedSinogramFiles);
+                else
+                    nUncompressedSinogramFiles = nUncompressedSinogramFiles + 1;
+                    UncompressedSinogramHdrs = getHeaderFiles(hdrFilename,UncompressedSinogramHdrs,nUncompressedSinogramFiles);
+                end
             end
-            
         elseif strcmpi(ext,'.n')
             hdrFilename = [directory name '.n.hdr'];
-            nInterfileNormFiles = nInterfileNormFiles + 1;
-            NormFileHdrs = getHeaderFiles(hdrFilename,NormFileHdrs,nInterfileNormFiles);
+            nNormFiles = nNormFiles + 1;
+            NormFileHdrs = getHeaderFiles(hdrFilename,NormFileHdrs,nNormFiles);
         elseif strcmpi(ext,'.v')
             hdrFilename = [directory name '.v.hdr'];
-            if ~isempty(strfind(name,'hardware'))
-                nInterfileHardwareUmaps = nInterfileHardwareUmaps + 1;
-                HardwareUmapHdrs = getHeaderFiles(hdrFilename,HardwareUmapHdrs,nInterfileHardwareUmaps);
+            if ~isempty(strfind(name,'umap'))
+                if ~isempty(strfind(name,'hardware'))
+                    nHardwareUmaps = nHardwareUmaps + 1;
+                    HardwareUmapHdrs = getHeaderFiles(hdrFilename,HardwareUmapHdrs,nHardwareUmaps);
+                else
+                    nHumanUmaps = nHumanUmaps + 1;
+                    HumanUmapHdrs = getHeaderFiles(hdrFilename,HumanUmapHdrs,nHumanUmaps);
+                end
             end
-            if ~isempty(strfind(name,'human'))
-                nInterfileHumanUmaps = nInterfileHumanUmaps + 1;
-                HumanUmapHdrs = getHeaderFiles(hdrFilename,HumanUmapHdrs,nInterfileHumanUmaps);
+        elseif strcmpi(ext,'.mhdr')
+            MhdrFilename = [directory listing(i).name];
+            Mhdr = getInfoFromMhdrInterfile(MhdrFilename);
+            if strcmpi(Mhdr.DataDescription,'image')
+                % check if the file is for umap(_human) or umap_hardware
+                if ~isempty(strfind(Mhdr.NameOfDataFile,'umap'))
+                    if ~isempty(strfind(Mhdr.NameOfDataFile,'hardware'))
+                       nHardUmapMhdrs = nHardUmapMhdrs + 1; 
+                       HardwareUmapMhdrs(nHardUmapMhdrs).hdr = Mhdr;
+                    else
+                        nHumanUmapMhdrs = nHumanUmapMhdrs + 1;
+                        HumanUmapMhdrs(nHumanUmapMhdrs).hdr = Mhdr;
+                    end
+                end
+            elseif strcmpi(Mhdr.DataDescription,'sinogram')
+                % exclude those of scatters, norms
+                % NumberOfEmissionDataTypes ==1
+                if Mhdr.NumberOfEmissionDataTypes==2
+                    % check if the Mhdr.NameOfDataFile referes to compressed or uncompressed sinograms
+                    hdr = getInfoFromInterfile(Mhdr.NameOfDataFile);
+                    if strcmpi(hdr.Compression,'on')
+                        nCompressedSinogramMhdrs = nCompressedSinogramMhdrs + 1;
+                        CompressedSinogramMhdrs(nCompressedSinogramMhdrs).hdr = Mhdr;
+                    else
+                        nUncompressedSinogramMhdrs = nUncompressedSinogramMhdrs + 1;
+                        UncompressedSinogramMhdrs(nUncompressedSinogramMhdrs).hdr = Mhdr;
+                    end
+                end
             end
-        else
-            
         end
     else
         %         Unclassified = Unclassified + 1;
@@ -59,30 +106,36 @@ for i = 3:length(listing)
 end
 
 out.CompressedSinogramHdrs = CompressedSinogramHdrs;
-out.nInterfileCompressedSinogramFiles = nInterfileCompressedSinogramFiles;
+out.CompressedSinogramMhdrs = CompressedSinogramMhdrs;
+out.nCompressedSinogramFiles = nCompressedSinogramFiles;
 
 out.UncompressedSinogramHdrs = UncompressedSinogramHdrs;
-out.nInterfileUncompressedSinogramFiles = nInterfileUncompressedSinogramFiles;
+out.UncompressedSinogramMhdrs = UncompressedSinogramMhdrs;
+out.nUncompressedSinogramFiles = nUncompressedSinogramFiles;
 
 out.ListModeHdrs = ListModeHdrs;
-out.nInterfileListModeFiles = nInterfileListModeFiles;
+out.nListModeFiles = nListModeFiles;
 
 out.NormFileHdrs = NormFileHdrs;
-out.nInterfileNormFiles = nInterfileNormFiles;
+out.nNormFiles = nNormFiles;
 
 out.HumanUmapHdrs = HumanUmapHdrs;
-out.nInterfileHumanUmaps = nInterfileHumanUmaps;
+out.HumanUmapMhdrs = HumanUmapMhdrs;
+out.nHumanUmaps = nHumanUmaps;
 
 out.HardwareUmapHdrs = HardwareUmapHdrs;
-out.nInterfileHardwareUmaps = nInterfileHardwareUmaps;
+out.HardwareUmapMhdrs = HardwareUmapMhdrs;
+out.nHardwareUmaps = nHardwareUmaps;
 
 
 
 
 if report
+    
     fprintf('InterFiles: %d Compressed Sinograms, %d UnCompressed Sinograms,%d ListModeFiles, %d NormFiles, %d HumanUmaps, %d HardwareUmaps\n',...
-        nInterfileCompressedSinogramFiles, nInterfileUncompressedSinogramFiles,nInterfileListModeFiles, nInterfileNormFiles,...
-        nInterfileHumanUmaps, nInterfileHardwareUmaps);
+        nCompressedSinogramFiles, nUncompressedSinogramFiles,nListModeFiles, nNormFiles,...
+        nHumanUmaps, nHardwareUmaps);
+ 
 end
 end
 

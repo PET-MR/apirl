@@ -57,18 +57,11 @@ end
 
 [indexCol, indexRow] = meshgrid(double(0:0:dicomInfo.Width-1),double(dicomInfo.Height-1));
 
-% Identify the minim slice number because it can be 0 or 1:
-for i = 1 : numSlices
-    dicomInfo = dicominfo([path files(i).name]);
-    sliceIndices(i) = dicomInfo.InstanceNumber;
-end
-baseIndex = min(sliceIndices);
-% Now read:
 for i = 1 : numSlices
     dicomInfo = dicominfo([path files(i).name]);
     slice = dicomread([path files(i).name]);
     if isfield(dicomInfo, 'InstanceNumber') % If we have the number of slice use it.
-        sliceIndex = dicomInfo.InstanceNumber - baseIndex + 1;
+        sliceIndex = dicomInfo.InstanceNumber;
     else
         sliceIndex = i;
     end
@@ -138,7 +131,8 @@ if applyAffineTransform
     zLim = [posTopLeftPixel_1(3)-incZ.*sliceThickness/2 posTopLeftPixel_N(3)+incZ.*sliceThickness/2];
     inImageRef3d = imref3d(size(image), pixelSpacing_mm(1), pixelSpacing_mm(2), sliceThickness);  % The limits needs to be ascending values, thats why we use min and max.
     % This is a more practical implementation
-    [image imageRef3d] = imwarp(image, inImageRef3d, matlabAffine);
+    [image imageRef3d] = imwarp(image,inImageRef3d, matlabAffine);
+    
     % Add the displacemente to the reference:
     imageRef3d.XWorldLimits = imageRef3d.XWorldLimits + posTopLeftPixel_1(1);
     % If dirZ negative I need to add the pos of the N slice (because matlab
@@ -157,7 +151,10 @@ if applyAffineTransform
     end
     
 else
-    imageRef3d = imref3d(size(image), 1, 1, 1);
+    imageRef3d = imref3d(size(image), pixelSpacing_mm(1), pixelSpacing_mm(2), sliceThickness);
+%     imageRef3d.XWorldLimits = imageRef3d.XWorldLimits + posTopLeftPixel_1(1);
+%     imageRef3d.YWorldLimits = imageRef3d.YWorldLimits + posTopLeftPixel_1(2);
+%     imageRef3d.ZWorldLimits = imageRef3d.ZWorldLimits + posTopLeftPixel_1(3);
 end
 
 % Affine transformation matrix to go from image space to patient space. I

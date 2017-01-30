@@ -1,6 +1,7 @@
-function make_mhdr(PETData,filename)
+function make_mhdr(ObjData,filename)
 
 [~,Name] = fileparts(filename);
+
 fid = fopen(filename,'w');
 fprintf(fid,'%s\n','!INTERFILE:=',...
     '%comment:=SMS-MI sinogram common attributes',...

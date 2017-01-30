@@ -5,99 +5,131 @@
 % Date: 22/02/2016
 % *********************************************************************
 
-function PETData = read_histogram_interfiles(PETData, FolderName, reFraming)
+function ObjData = read_histogram_interfiles(ObjData, FolderName)
 
 
-if nargin ==2
-    reFraming = 0;
+if ObjData.Data.isSinogram
+    
+    for i = 1: ObjData.Data.IF.nUncompressedSinogramFiles
+        UncompMhdr = ObjData.Data.IF.UncompressedSinogramMhdrs(i).hdr.NameOfMhdrFile;
+        ObjData.Data.emission(i).n = UncompMhdr;
+        if ~exist(UncompMhdr,'file'), error('could not find %s\n',UncompMhdr); end
+        
+        No = num2str(i-1,'%1.2d');
+        ObjData.Data.rawdata_sino(i).n = [FolderName ObjData.bar 'rawdata_sino_' No ];
+        ObjData.Data.scatters(i).n = [FolderName '\' No '-scatter.mhdr'];
+    end
+    for i = 1: ObjData.Data.IF.nHumanUmaps
+        HuMapMhdr = ObjData.Data.IF.HumanUmapMhdrs(i).hdr.NameOfMhdrFile;
+        ObjData.Data.umap(i).n = HuMapMhdr;
+        if ~exist(HuMapMhdr,'file'), error('could not find %s\n',HuMapMhdr); end
+    end
+    for i = 1: ObjData.Data.IF.nHardwareUmaps
+        HardMapMhdr = ObjData.Data.IF.HardwareUmapMhdrs(i).hdr.NameOfMhdrFile;
+        ObjData.Data.hardware_umap(i).n = HardMapMhdr;
+        if ~exist(HardMapMhdr,'file'), error('could not find %s\n',HardMapMhdr); end
+    end
+    
+    if ObjData.Data.IF.nNormFiles> 1, error('more than one norm file were found\n'); end
+    NormHdr = [ObjData.Data.IF.NormFileHdrs.hdr.NameOfDataFile '.hdr'];
+    ObjData.Data.norm = NormHdr;
+    if ~exist(NormHdr,'file'), error('could not find %s\n',NormHdr); end
+     
 end
 
-isThis = @(inputFile,Type) ~isempty(strfind(inputFile,Type));
-d = dir(FolderName);
-file = {d(3:end).name}';
-js = 0;
-jl = 0;
-tag = [0 0 0];
-for i = 1:numel(file)
-    if isThis(file{i},'.n.hdr')
-        PETData.DataPath.norm = [FolderName PETData.bar file{i}];
-        tag(1)= 1;
-    end
-    
-    % Emission sinograms
-    if (isThis(file{i},'s.mhdr') || (isThis(file{i},'sino') && isThis(file{i},'.mhdr')) ) && ~isThis(file{i},'uncomp.s.mhdr')
-    js = js +1;
-        PETData.DataPath.emission(js).n = [FolderName PETData.bar file{i}];
-    end
-    % Attenuation maps
-    if isThis(file{i},'umap_hardware.mhdr') || isThis(file{i},'umap-hardware.mhdr')
-        PETData.DataPath.hardware_umap(1).n = [FolderName PETData.bar file{i}];
-        tag(2) = 1;
-    end
-    if isThis(file{i},'umap_human.mhdr') || isThis(file{i},'umap.mhdr')
-        PETData.DataPath.umap(1).n = [FolderName PETData.bar file{i}];
-        tag(3) = 1;
-    end
-    
-    if isThis(file{i},'uncomp.s.mhdr')
-        PETData.DataPath.emission_uncomp = [FolderName PETData.bar file{i}];
-    end
-    % List- mode interfile.
-    if isThis(file{i},'.l')
-        jl = jl +1;
-        PETData.DataPath.lmhd = [FolderName PETData.bar file{i}(1:end-1) 'hdr']; % The header is .hdr
-        PETData.DataPath.lmdat =[FolderName PETData.bar file{i}];
-        PETData.isListMode = 1;
-        if jl>1
-            error('There are more than one list-mode file, please provide one of them at a time\n');
+
+
+
+if ObjData.Data.isListMode
+    % The NameOfDataFile in list-mode interfile is often not correct, so
+    % need to find the correct filename
+    Dir = dir(ObjData.Data.path);
+    nListFiles = 0;
+    for i=2:length(Dir)
+        fileName = [ObjData.Data.path ObjData.bar Dir(i).name];
+        [~,~,ext] = fileparts(fileName);
+        if strcmpi(ext,'.l') && ~isempty(ext)
+            nListFiles = nListFiles + 1;
+            Hdr = ObjData.Data.IF.ListModeHdrs(nListFiles).hdr;
+            Hdr.NameOfDataFile = fileName;
+            ObjData.Data.IF.ListModeHdrs(nListFiles).hdr = Hdr;
         end
     end
-end
-PETData.isSinogram = js;
-PETData.isListMode = jl;
 
 
-if ~js && ~jl
-    error('neither sinograms nor list-mode data were found\n');
-end
-if any(tag==0),
-    msg = [];
-    if tag(1)==0, msg = ['Normalization ''.n.hdr'' ' msg];end
-    if tag(2)==0, msg = [' ''umap_hardware.mhdr'' ' msg];end
-    if tag(3)==0, msg = [' ''umap_human.mhdr'' ' msg];end
-    warning([ msg 'was not found in ' FolderName]);
-end
+    if ObjData.Data.isListMode>1
+        fprintf('%d list-mode files were found in %s\n',ObjData.Data.IF.nListModeFiles,FolderName)
+        fprintf ('Hence, only full frame histogramming are permitted. For dynamic frames, only one list-mode file is permitted in the data folder.\n')
+        
+        ObjData.NumberOfFrames = 1;
+        ObjData.FrameTimePoints = [];
+        for i = 1: ObjData.Data.isListMode
+            
+            ObjData.FrameTimePoints = [ObjData.FrameTimePoints;[0, ObjData.Data.IF.ListModeHdrs(i).hdr.ImageDurationSec]];
+            No = num2str(i-1,'%1.1d');
+            
+            ObjData.Data.emission(i).n = [ObjData.Data.IF.ListModeHdrs(i).hdr.NameOfDataFile(1:end-2) '-sino-0.mhdr'];
+            ObjData.Data.emission_listmode_hdr(i).n = [ObjData.Data.IF.ListModeHdrs(i).hdr.NameOfDataFile '.hdr'];
+            ObjData.Data.emission_listmode(i).n = ObjData.Data.IF.ListModeHdrs(i).hdr.NameOfDataFile;
+            % umap
+            HuMapMhdr = ObjData.Data.IF.HumanUmapMhdrs(1).hdr.NameOfMhdrFile;
+            ObjData.Data.umap(i).n = HuMapMhdr;
+            if ~exist(HuMapMhdr,'file'), error('could not find %s\n',HuMapMhdr); end
+            % hardware mumap
+            HardMapMhdr = ObjData.Data.IF.HardwareUmapMhdrs(1).hdr.NameOfMhdrFile;
+            ObjData.Data.hardware_umap(i).n = HardMapMhdr;
+            if ~exist(HardMapMhdr,'file'), error('could not find %s\n',HardMapMhdr); end
+            % scatters
+            ObjData.Data.scatters(i).n   = [ObjData.Data.path ObjData.bar No '-scatter.mhdr'];
+            ObjData.Data.rawdata_sino(i).n    = [ObjData.Data.path ObjData.bar  'rawdata_sino_' No ObjData.bar];
+            % make mhdr files
+            ObjData.make_mhdr(ObjData.Data.emission(i).n)
+        end
+        
+    else
+        if isempty(ObjData.FrameTimePoints)
+            ObjData.NumberOfFrames = 1;
+            ObjData.FrameTimePoints = [0,ObjData.Data.IF.ListModeHdrs(1).hdr.ImageDurationSec];
+        else
+            ObjData.NumberOfFrames = length(ObjData.FrameTimePoints)-1;
+            if sum(ObjData.FrameTimePoints) > ObjData.Data.IF.ListModeHdrs(1).hdr.ImageDurationSec
+                error('Total frame duration > ImageDuration')
+            end
+        end
+        
+        for i = 1: ObjData.NumberOfFrames
+            No = num2str(i-1,'%1.1d');
+            ObjData.Data.emission(i).n = [ObjData.Data.IF.ListModeHdrs(1).hdr.NameOfDataFile(1:end-2) '-sino-' No '.mhdr'];
+            ObjData.Data.emission_listmode_hdr(i).n = [ObjData.Data.IF.ListModeHdrs(1).hdr.NameOfDataFile '.hdr'];
+            ObjData.Data.emission_listmode(i).n = ObjData.Data.IF.ListModeHdrs(1).hdr.NameOfDataFile;
+           
+            % umap
+            HuMapMhdr = ObjData.Data.IF.HumanUmapMhdrs(1).hdr.NameOfMhdrFile;
+            ObjData.Data.umap(i).n = HuMapMhdr;
+            if ~exist(HuMapMhdr,'file'), error('could not find %s\n',HuMapMhdr); end
+            
+            % hardware mumap
+            HardMapMhdr = ObjData.Data.IF.HardwareUmapMhdrs(1).hdr.NameOfMhdrFile;
 
-PETData.DataPath.scatters(1).n = [FolderName '-00-scatter.mhdr'];
-if PETData.isSinogram
-    for i = 1: PETData.isSinogram
-        No = num2str(i-1,'%1.2d');
-        PETData.DataPath.rawdata_sino(i).n = [FolderName PETData.bar 'rawdata_sino_' No ];
+            ObjData.Data.hardware_umap(i).n = HardMapMhdr;
+            if ~exist(HardMapMhdr,'file'), error('could not find %s\n',HardMapMhdr); end
+            % scatters
+            ObjData.Data.scatters(i).n   = [ObjData.Data.path ObjData.bar No '-scatter.mhdr'];
+            ObjData.Data.rawdata_sino(i).n    = [ObjData.Data.path ObjData.bar  'rawdata_sino_' No ObjData.bar];
+            % make mhdr files
+            ObjData.make_mhdr(ObjData.Data.emission(i).n)
+        end
     end
-end
-
-% if PETData.isListMode
-%     [Dir,Name]=fileparts(PETData.DataPath.lmdat) ;
-%     if reFraming
-%         PETData.DataPath.Name  =[Dir PETData.bar Name '-sino-' num2str(reFraming) ];
-%     else
-%         PETData.DataPath.Name  =[Dir PETData.bar Name '-sino'];
-%     end
-%     
-%         %call Histogram_replay to generate the sinograms per frame
-%     fprintf('Histogram replay\n');
-%     PETData.histogram_data();
-%     
-%     for i = 1: PETData.NumberOfFrames
-%         PETData.DataPath.emission(i).n        = [PETData.DataPath.Name  '-'  num2str(i-1) '.mhdr'];
-%         if reFraming %avoid overwritting the data
-%             PETData.DataPath.rawdata_sino(i).n    = [Dir  PETData.bar 'rawdata_sino-' num2str(reFraming) '-' num2str(i-1)];
-%         else
-%             PETData.DataPath.rawdata_sino(i).n    = [Dir  PETData.bar 'rawdata_sino-' num2str(i-1)];
-%         end
-%         PETData.make_mhdr(PETData.DataPath.emission(i).n)
-%         
-%     end
-% end
-
+    
+    if ObjData.Data.IF.nNormFiles> 1, error('more than one norm file were found\n'); end
+    NormHdr = [ObjData.Data.IF.NormFileHdrs.hdr.NameOfDataFile '.hdr'];
+    ObjData.Data.norm = NormHdr;
+    if ~exist(NormHdr,'file'), error('could not find %s\n',NormHdr); end
+    
+    
+    %call Histogram_replay to generate the sinograms per frame
+    fprintf('Histogram replay\n');
+    ObjData.histogram_data();
+    
+    
 end

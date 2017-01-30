@@ -14,10 +14,19 @@ nSinograms = 0;
 nListModes = 0;
 nNormFiles = 0;
 Unclassified = 0;
-
+if(strcmp(computer(), 'GLNXA64'))
+    bar = '/';
+else
+    bar = '\';
+end
+% if directory already ends with a bar
+if strcmp(directory(end),bar) 
+    bar = '';
+end
+    
 for i= 3:length(d)
     
-    filename = [directory d(i).name];
+    filename = [directory bar d(i).name];
     [~,name,ext]=fileparts(filename);
     
     if ~isempty(name) && ~isempty(ext) && isdicom(filename)
