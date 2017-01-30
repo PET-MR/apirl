@@ -52,6 +52,8 @@ classdef classGpet < handle
         os
         % bar for the paths.
         bar
+        % number of Siddon rays be LOR
+        nRays
     end
     
     methods
@@ -78,6 +80,7 @@ classdef classGpet < handle
                 end
             end
             objGpet.initScanner();
+            objGpet.nRays = 1;
             objGpet.method =  'otf_siddon_cpu';
             objGpet.PSF.type = 'shift-invar';
             objGpet.PSF.Width = 4; %mm
@@ -199,9 +202,10 @@ classdef classGpet < handle
                 objGpet.scanner_properties.radius_mm = 328;
                 objGpet.scanner_properties.sinogramDepthOfInteraction_mm = 6.7;
                 objGpet.scanner_properties.LORDepthOfInteraction_mm = 9.6;
-                objGpet.scanner_properties.binSize_mm = 2.0445;
                 objGpet.scanner_properties.planeSep_mm = 2.03125;
-                objGpet.scanner_properties.nCrystalsPerRing = 504;
+                objGpet.scanner_properties.nCrystalsPerRing = 504;                
+                objGpet.scanner_properties.binSize_mm = pi*objGpet.scanner_properties.radius_mm/objGpet.scanner_properties.nCrystalsPerRing;%2.0445;
+
             else
                 
             end
@@ -696,7 +700,7 @@ classdef classGpet < handle
         end
         
         gf3d = Gauss3DFilter (objGpet, data, fwhm);
-        [Img,info] = BQML(objGpet,Img,sinogramInterFileFilename,normalizationInterFileFilename);
+        [Img,totalScaleFactor, info] = BQML(objGpet,Img,sinogramInterFileFilename,normalizationInterFileFilename);
         Img = SUV(objGpet,Img,sinogramInterFileFilename,normalizationInterFileFilename);
     end
     
