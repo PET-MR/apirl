@@ -66,9 +66,9 @@ function m = P(objGpet, x,subset_i, localNumSubsets)    % If the fourth paramete
 %             end
             structSizeSino = get_sinogram_size_for_apirl(objGpet);
             if strcmpi(objGpet.method, 'otf_siddon_cpu')
-                [m, structSizeSinogram] = Project(x, objGpet.image_size.voxelSize_mm, objGpet.tempPath, objGpet.scanner, objGpet.scanner_properties, structSizeSino, numSubsets, subset_i, 0);
+                [m, structSizeSinogram] = Project(x, objGpet.image_size.voxelSize_mm, objGpet.tempPath, objGpet.scanner, objGpet.scanner_properties, structSizeSino, numSubsets, subset_i, 0,objGpet.nRays);
             elseif strcmpi(objGpet.method, 'otf_siddon_gpu')
-                [m, structSizeSinogram] = Project(x, objGpet.image_size.voxelSize_mm, objGpet.tempPath, objGpet.scanner, objGpet.scanner_properties, structSizeSino, numSubsets, subset_i, 1);
+                [m, structSizeSinogram] = Project(x, objGpet.image_size.voxelSize_mm, objGpet.tempPath, objGpet.scanner, objGpet.scanner_properties, structSizeSino, numSubsets, subset_i, 1,objGpet.nRays);
             end
         end
         
