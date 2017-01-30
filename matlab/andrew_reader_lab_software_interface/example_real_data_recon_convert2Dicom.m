@@ -30,7 +30,7 @@ ImgInfo.nIter = PET.nIter;
 ImgInfo.nSubsets = PET.nSubsets;
 
 %% get Prompts, RS , AN
-if 1 %generate them from e7 tool sinograms
+if 0 %generate them from e7 tool sinograms
     data = PETDataClass(rawsinoName,'get_sino_rawdata');
     Prompts = data.Prompts;
     RS = data.RS;
