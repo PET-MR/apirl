@@ -56,17 +56,15 @@ ImgInfo.MinMaxImgCount = [min(Imgn(:)),max(Imgn(:))];
 ImgInfo.scaleFactor = scaleFactor;
 % write the interfile of the un-filtered image
 wrireSiemensImageIntefileHdrs(ImageInterFileName,sino_hdr_names,norm_hdr_dir,ImgInfo)
-
-[Path,Name,ext] = fileparts(ImageInterFileName);
-save_dat(permute(Imgn,[2,1,3]),[Name,ext],Path)
+writeBinaryFile(permute(Imgn,[2,1,3]),ImageInterFileName)
 
 % post-filter with 3 mm kernel, write interfiles and convert into dicom
 Img = PET.Gauss3DFilter(Imgn,3);
 ImgInfo.MinMaxImgCount = [min(Img(:)),max(Img(:))];
 ImageInterFileName = [imgSaveFolder ImgInfo.image_tag '-' ImgInfo.ReconMethod '-3mm.v'];
+
 wrireSiemensImageIntefileHdrs(ImageInterFileName,sino_hdr_names,norm_hdr_dir,ImgInfo)
-[Path,Name,ext] = fileparts(ImageInterFileName);
-save_dat(permute(Img,[2,1,3]),[Name,ext],Path)
+writeBinaryFile(permute(Img,[2,1,3]),ImageInterFileName)
 
 % populate DICOM files
 copyfile([dataPath IF2DICOM_txt],Path);
