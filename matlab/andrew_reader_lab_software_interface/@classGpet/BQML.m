@@ -1,14 +1,14 @@
-function [Img,info] = BQML(objGpet,Img,sinogramFilename,normalizationFilename)
+function [Img,totalScaleFactor, info] = BQML(objGpet,Img,sinogramFilename,normalizationFilename)
 
 info.S = getInfoFromInterfile(sinogramFilename);
 info.N = getInfoFromInterfile(normalizationFilename);
 
 
-proportionality_factor =  0.91; % Obtained by ROI-based SUV comparsions with e7 DICOM images
-counts_per_voxel = 1;
-corrected_pixel_size = objGpet.scanner_properties.binSize_mm ;
+proportionality_factor =  1.05; % Obtained by ROI-based SUV comparsions with e7 DICOM images
 
+counts_per_voxel = objGpet.image_size.matrixSize(1)/objGpet.sinogram_size.nRadialBins;
 
+corrected_pixel_size = objGpet.scanner_properties.binSize_mm ; % need to figure it out 
 
 LOR_DOI_correction = (objGpet.scanner_properties.radius_mm + objGpet.scanner_properties.sinogramDepthOfInteraction_mm)/ objGpet.scanner_properties.radius_mm ;
 
@@ -16,10 +16,14 @@ decay_correction_factor = decay_factor(info.S.ImageRelativeStartTimeSec, info.S.
 
 frame_length_correction = 1.0 / info.S.ImageDurationSec;
 
-scale_factor = frame_length_correction * decay_correction_factor;
+scale_factor = frame_length_correction .* decay_correction_factor;
 
+loss_correction_factors = info.S.GimLossFraction .* info.S.PdrLossFraction;
 
-Img = Img.*proportionality_factor.*(info.N.ScannerQuantificationFactorBqSEcatCounts/info.S.IsotopeBranchingFactor).*scale_factor.*LOR_DOI_correction *counts_per_voxel * corrected_pixel_size ;%
+totalScaleFactor = proportionality_factor.*(info.N.ScannerQuantificationFactorBqSEcatCounts*info.S.IsotopeBranchingFactor).*...
+    scale_factor.*LOR_DOI_correction *counts_per_voxel * corrected_pixel_size.*loss_correction_factors ;%
+
+Img = Img.*totalScaleFactor;
 
 function decay_factor1 = decay_factor(frame_start,frame_duration,thalf)
 
