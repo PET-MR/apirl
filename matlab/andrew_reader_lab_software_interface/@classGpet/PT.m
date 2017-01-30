@@ -51,10 +51,10 @@ function x = PT(objGpet,m, subset_i, localNumSubsets)    % If the fourth paramet
 %         end
         elseif strcmpi(objGpet.method, 'otf_siddon_cpu')
             structSizeSino = get_sinogram_size_for_apirl(objGpet);
-            [x, pixelSize] = Backproject(m, objGpet.image_size.matrixSize, objGpet.image_size.voxelSize_mm, objGpet.tempPath, objGpet.scanner, objGpet.scanner_properties, structSizeSino, numSubsets, subset_i, 0);
+            [x, pixelSize] = Backproject(m, objGpet.image_size.matrixSize, objGpet.image_size.voxelSize_mm, objGpet.tempPath, objGpet.scanner, objGpet.scanner_properties, structSizeSino, numSubsets, subset_i, 0,objGpet.nRays);
         elseif strcmpi(objGpet.method, 'otf_siddon_gpu')
             structSizeSino = get_sinogram_size_for_apirl(objGpet);
-            [x, pixelSize] = Backproject(m, objGpet.image_size.matrixSize, objGpet.image_size.voxelSize_mm, objGpet.tempPath, objGpet.scanner, objGpet.scanner_properties, structSizeSino, numSubsets, subset_i, 1);
+            [x, pixelSize] = Backproject(m, objGpet.image_size.matrixSize, objGpet.image_size.voxelSize_mm, objGpet.tempPath, objGpet.scanner, objGpet.scanner_properties, structSizeSino, numSubsets, subset_i, 1,objGpet.nRays);
         end
     elseif strcmpi(objGpet.scanner,'cylindrical')
         if strcmpi(objGpet.method, 'pre-computed_matlab')
