@@ -310,11 +310,10 @@ int main (int argc, char *argv[])
   // Inicializo el proyector a utilizar:
   if(strForwardprojector.compare("Siddon") == 0)
   {
-    int numSamples;
-    if(getSiddonProjectorParameters(parameterFileName, "OSEM", &numSamples))
-      forwardprojector = (Projector*)new SiddonProjector();
-    else
-      forwardprojector = (Projector*)new SiddonProjector(numSamples);
+    int numSamples, numAxialSamples;
+	if(getSiddonProjectorParameters(parameterFileName, "OSEM", &numSamples, &numAxialSamples))
+		return -1; // Return when is a big error, if the fields are not fouund they are already filled with the defaults.
+	forwardprojector = (Projector*)new SiddonProjector(numSamples, numAxialSamples);
   }
   else if(strForwardprojector.compare("RotationBasedProjector") == 0)
   {
@@ -333,12 +332,10 @@ int main (int argc, char *argv[])
   // Inicializo del backprojector a utilizar. 
   if(strBackprojector.compare("Siddon") == 0)
   {
-    int numSamples;
-    backprojector = (Projector*)new SiddonProjector();
-    if(getSiddonProjectorParameters(parameterFileName, "OSEM", &numSamples))
-      backprojector = (Projector*)new SiddonProjector();
-    else
-      backprojector = (Projector*)new SiddonProjector(numSamples);
+    int numSamples, numAxialSamples;
+	if(getSiddonProjectorParameters(parameterFileName, "OSEM", &numSamples, &numAxialSamples))
+		return -1; // Return when is a big error, if the fields are not fouund they are already filled with the defaults.
+	backprojector = (Projector*)new SiddonProjector(numSamples, numAxialSamples);
   }
   else if(strBackprojector.compare("RotationBasedProjector") == 0)
   {

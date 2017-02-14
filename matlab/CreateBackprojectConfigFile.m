@@ -23,12 +23,16 @@
 % scanner_properties: for cylindrical scanner_properties.radius_mm,
 % scanner_properties.axialFov_mm, scanner_properties.radiusFov_mm
 
-function CreateBackprojectConfigFile(configfilename, inputFile, outputSample, scanner, scanner_properties, outputFilename, numberOfSubsets, subsetIndex, useGpu, numSamples)
+function CreateBackprojectConfigFile(configfilename, inputFile, outputSample, scanner, scanner_properties, outputFilename, numberOfSubsets, subsetIndex, useGpu, numSamples, numAxialSamples)
 if nargin == 6
     useGpu = 0;
     numSamples = 1;
+    numAxialSamples = 1;
 elseif nargin == 7
     numSamples = 1;
+    numAxialSamples = 1;
+elseif nargin == 8
+    numAxialSamples = 1;
 end
 
 % Handle the number of subsets:
@@ -106,12 +110,13 @@ if strcmp(scanner, 'cylindrical')
 end
 if useGpu == 0
     fprintf(fid,'backprojector := Siddon\n');
-    fprintf(fid,'siddon number of samples on the detector := %d\n', numSamples);
 else
     fprintf(fid,'backprojector := CuSiddonProjector\n');
     fprintf(fid,'backprojector block size := {576,1,1}\n');
     fprintf(fid,'gpu id := 0\n');
 end
+fprintf(fid,'siddon number of samples on the detector := %d\n', numSamples);
+fprintf(fid,'siddon number of axial samples on the detector := %d\n', numAxialSamples);
 % If we have subsets put it in the config file:
 if numberOfSubsets ~= 0
     fprintf(fid,'number of subsets := %d\n', numberOfSubsets);

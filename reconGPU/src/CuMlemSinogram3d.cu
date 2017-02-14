@@ -40,6 +40,8 @@ __device__ __constant__ int d_numPixelsPerSlice;
 
 __device__ __constant__ int d_numBinsSino2d;
 
+__device__ __constant__ float d_ringSize_mm;
+
 extern texture<float, 3, cudaReadModeElementType> texImage;  // 3D texture
 
 extern surface<void, 3> surfImage;

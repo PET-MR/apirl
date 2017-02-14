@@ -27,6 +27,8 @@ extern __device__ __constant__ SizeImage d_imageSize;
 extern __device__ __constant__ int d_numPixelsPerSlice;
 
 extern __device__ __constant__ int d_numBinsSino2d;
+
+extern __device__ __constant__ float d_ringSize_mm;
   
 surface<void, cudaSurfaceType3D> surfImage;
 // This function calculates Siddon Wieghts for a lor. It gets as parameters, the LOR direction vector in

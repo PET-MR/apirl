@@ -39,7 +39,7 @@
 DLLEXPORT int getSaveIntermidiateIntervals (string mlemFilename, string cmd, int* saveIterationInterval, bool* saveIntermediateData);
 DLLEXPORT int getSensitivityFromFile (string mlemFilename, string cmd, bool* bSensitivityFromFile, string* sensitivityFilename);
 DLLEXPORT int getProjectorBackprojectorNames(string mlemFilename, string cmd, string* strForwardprojector, string* strBackprojector);
-DLLEXPORT int getSiddonProjectorParameters(string mlemFilename, string cmd, int* numSamples);
+DLLEXPORT int getSiddonProjectorParameters(string mlemFilename, string cmd, int* numSamples, int* numAxialSamples);
 DLLEXPORT int getRotationBasedProjectorParameters(string mlemFilename, string cmd, string *interpMethod);
 DLLEXPORT int getCylindricalScannerParameters(string mlemFilename, string cmd, float* radiusFov_mm, float* zFov_mm, float* radiusScanner_mm);
 DLLEXPORT int getNumberOfSubsets(string mlemFilename, string cmd, float* numberOfSubsets);

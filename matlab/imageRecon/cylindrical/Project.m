@@ -13,7 +13,7 @@
 % Examples:
 %   [sinogram, structSizeSinogram] = Project(image, pixelSize_mm, outputPath, scanner, scanner_parameters, structSizeSino3d_span, numberOfSubsets, subsetIndex, useGpu)
 
-function [sinogram, structSizeSino] = Project(image, pixelSize_mm, outputPath, scanner, scanner_parameters, structSizeSino, numberOfSubsets, subsetIndex, useGpu, numSamples)
+function [sinogram, structSizeSino] = Project(image, pixelSize_mm, outputPath, scanner, scanner_parameters, structSizeSino, numberOfSubsets, subsetIndex, useGpu, numSamples, numAxialSamples)
 
 if ~isdir(outputPath)
     mkdir(outputPath);
@@ -33,10 +33,14 @@ end
 if nargin == 8
     useGpu = 0;
     numSamples = 1;
+    numAxialSamples = 1;
 elseif nargin == 9
     numSamples = 1;
+    numAxialSamples = 1;
+elseif nargin == 10
+    numAxialSamples = 1;
 elseif nargin < 6
-    error('Invalid number of parameters: [sinogram, structSizeSinogram] = Project(image, pixelSize_mm, outputPath, scanner, scanner_parameters, structSizeSino3d_span, numberOfSubsets, subsetIndex, useGpu, numSamples)');
+    error('Invalid number of parameters: [sinogram, structSizeSinogram] = Project(image, pixelSize_mm, outputPath, scanner, scanner_parameters, structSizeSino3d_span, numberOfSubsets, subsetIndex, useGpu, numSamples, numAxialSamples)');
 end
 % Handle the number of subsets:
 if isempty(numberOfSubsets)||(numberOfSubsets<=1) % 1 subset is the same to not using any subset.
@@ -93,7 +97,7 @@ interfilewrite(single(image), filenameImage, pixelSize_mm);
 % Generate projecte sinogram:
 filenameProjectionConfig = [outputPath 'projectPhantom.par'];
 projectionFilename = [outputPath 'projectedSinogram'];
-CreateProjectConfigFile(filenameProjectionConfig, [filenameImage '.h33'], [sinogramSampleFilename '.h33'],  scanner, scanner_parameters, projectionFilename, numberOfSubsets, subsetIndex, useGpu, numSamples);
+CreateProjectConfigFile(filenameProjectionConfig, [filenameImage '.h33'], [sinogramSampleFilename '.h33'],  scanner, scanner_parameters, projectionFilename, numberOfSubsets, subsetIndex, useGpu, numSamples, numAxialSamples);
 status = system(['project ' filenameProjectionConfig])
 
 % Read the projected sinogram:

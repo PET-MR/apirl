@@ -59,6 +59,8 @@
   extern __device__ __constant__ int d_numPixelsPerSlice;
   
   extern __device__ __constant__ int d_numBinsSino2d;
+  
+  extern __device__ __constant__ float d_ringSize_mm;
 //#endif
 
   extern texture<float, 3, cudaReadModeElementType> texImage;  // 3D texture
@@ -201,7 +203,9 @@ bool CuProjectorInterface::InitGpuMemory(Sinogram3D* sinogram, Image* image, Tip
   checkCudaErrors(cudaMemcpyToSymbol(d_RadioFov_mm, &aux, sizeof(float)));
   aux = image->getFovHeight(); // Esto podría ser del sinograma.
   checkCudaErrors(cudaMemcpyToSymbol(d_AxialFov_mm, &aux, sizeof(float)));
-  
+  // copy also the ringSize in mmm used for multi rays in the axial direction:
+  aux = sinogram->getAxialFoV_mm()/sinogram->getNumRings();
+  //checkCudaErrors(cudaMemcpyToSymbol(d_ringSize_mm, &aux, sizeof(aux)));
   
   // Para el sinograma 3d tengo que cada sino 2d puede representar varios sinogramas asociados a distintas combinaciones de anillos.
   // En la versión con CPU proceso todas las LORs, ahora solo voy a considerar la del medio, que sería la ventaja de reducir el volumen de LORs.

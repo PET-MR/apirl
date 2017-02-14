@@ -52,8 +52,11 @@ classdef classGpet < handle
         os
         % bar for the paths.
         bar
-        % number of Siddon rays be LOR
+        % number of Siddon rays per LOR (Transverse direction)
         nRays
+        % number of Siddon rays per LOR in the axial direction
+        % (axialDirection)
+        nAxialRays
     end
     
     methods
@@ -81,6 +84,7 @@ classdef classGpet < handle
             end
             objGpet.initScanner();
             objGpet.nRays = 1;
+            objGpet.nAxialRays = 1;
             objGpet.method =  'otf_siddon_cpu';
             objGpet.PSF.type = 'shift-invar';
             objGpet.PSF.Width = 4; %mm

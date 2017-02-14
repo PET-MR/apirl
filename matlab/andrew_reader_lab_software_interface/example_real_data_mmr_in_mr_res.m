@@ -14,6 +14,8 @@ PET.scanner = 'mMR';
 PET.method =  'otf_siddon_gpu';
 PET.PSF.type = 'none';
 PET.radialBinTrim = 0;
+PET.nRays = 2;
+PET.nAxialRays = 1;
 PET.Geom = '';
 PET.method_for_randoms = 'from_ML_singles_matlab'; %'from_e7_binary_interfile';
 PET.method_for_scatter = 'from_e7_binary_interfile';
@@ -80,8 +82,10 @@ anf = acfs .* ncfs;
 anf(anf~=0) = 1./anf(anf~=0);
 sensImage = PET.Sensitivity(anf);
 %% OP-OSEM
+iterations = 10; % ceil(60/PET.nSubsets)
 % additive term:
 additive = (randoms + scatter).*ncfs.*acfs; % (randoms +scatter)./(afs*nfs) = (randoms+scatter)+
 additive = zeros(size(additive));
 initial_image = PET.ones();
-recon = PET.OPOSEM(sino_span,additive, sensImage,initial_image, ceil(60/PET.nSubsets));
+recon = PET.OPOSEM(sino_span,additive, sensImage,initial_image, iterations);
+interfilewrite(recon, 'test', PET.image_size.voxelSize_mm);

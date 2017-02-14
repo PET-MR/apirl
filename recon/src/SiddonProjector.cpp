@@ -15,14 +15,21 @@
 
 SiddonProjector::SiddonProjector()
 {
-  this->numSamplesOnDetector = 1;  
+  this->numSamplesOnDetector = 1; 
+  this->numAxialSamplesOnDetector = 1; 
 }
 
 SiddonProjector::SiddonProjector(int nSamplesOnDetector)
 {
   this->numSamplesOnDetector = nSamplesOnDetector;  
+  this->numAxialSamplesOnDetector = 1; 
 }
 
+SiddonProjector::SiddonProjector(int nSamplesOnDetector, int nAxialSamplesOnDetector)
+{
+  this->numSamplesOnDetector = nSamplesOnDetector;  
+  this->numAxialSamplesOnDetector = nAxialSamplesOnDetector; 
+}
 
 bool SiddonProjector::Backproject (Sinogram2D* InputSinogram, Image* outputImage)
 {
@@ -471,77 +478,77 @@ bool SiddonProjector::Backproject (Sinogram3D* inputProjection, Image* outputIma
 					inputProjection->getSegment(i)->getSinogram2D(j)->getAxialValue2FromList(inputProjection->getSegment(i)->getSinogram2D(j)->getNumZ()-1))/2;
 		}
 		#pragma omp parallel private(k, l, m, o, LOR, P1, P2, MyWeightsList, LengthList, n, newValue, indexPixel, geomFactor, lorOk) shared(inputProjection,ptrPixels, outputImage, sizeImage)
-	{
-	MyWeightsList = (SiddonSegment**)malloc(sizeof(SiddonSegment*));
+		{
+			MyWeightsList = (SiddonSegment**)malloc(sizeof(SiddonSegment*));
 			#pragma omp for    
 			for(k = 0; k < inputProjection->getSegment(i)->getSinogram2D(j)->getNumProj(); k++)
 			{
 	  
 				for(l = 0; l < inputProjection->getSegment(i)->getSinogram2D(j)->getNumR(); l++)
 				{
-				/// Cada Sinograma 2D me represnta múltiples LORs, según la mínima y máxima diferencia entre anillos.
-				/// Por lo que cada bin me va a sumar cuentas en lors con distintos ejes axiales.
-				if(inputProjection->getSegment(i)->getSinogram2D(j)->getSinogramBin(k,l) != 0)
-				{
-
-					for(m = 0; m < numZ; m++)
-					{
-				/// The siddon projector can use an oversampled verison with several lines per bin.
-				for(o = 0; o < numSamplesOnDetector; o++)
-				{
 					/// Cada Sinograma 2D me represnta múltiples LORs, según la mínima y máxima diferencia entre anillos.
 					/// Por lo que cada bin me va a sumar cuentas en lors con distintos ejes axiales.
-					/// El sinograma de salida lo incializo en cero antes de recorrer los distintos anillos de cada elemento del
-					/// sinograma, ya que varias LORS deben aportar al mismo bin del sinograma.
-					//int lorOk;
-					if(numSamplesOnDetector == 1)
+					if(inputProjection->getSegment(i)->getSinogram2D(j)->getSinogramBin(k,l) != 0)
 					{
-					lorOk = inputProjection->getSegment(i)->getSinogram2D(j)->getPointsFromLor(k,l,m, &P1, &P2, &geomFactor);
-					}
-					else
-					{
-					lorOk = inputProjection->getSegment(i)->getSinogram2D(j)->getPointsFromOverSampledLor(k,l,o,numSamplesOnDetector,m, &P1, &P2, &geomFactor);
-					}
-					// If use axial compression, use the average z coordinate:
-					if(!useMultipleLorsPerBin)
-					{
-					P1.Z = z1_mm;
-					P2.Z = z2_mm;
-					}
-					if(lorOk){
-					LOR.P0 = P1;
-					LOR.Vx = P2.X - P1.X;
-					LOR.Vy = P2.Y - P1.Y;
-					LOR.Vz = P2.Z - P1.Z;
 
-					// Then I look for the intersection between the 3D LOR and the lines that
-					// delimits the voxels
-					// Siddon	
-					float rayLength_mm = Siddon(LOR, outputImage, MyWeightsList, &LengthList,1);
-					//geomFactor = 1/rayLength_mm;
-					for(n = 0; n < LengthList; n++)
-					{
-						// for every element of the systema matrix different from zero,we do
-						// the sum(Aij*bi/Projected) for every i
-						if((MyWeightsList[0][n].IndexZ<sizeImage.nPixelsZ)&&(MyWeightsList[0][n].IndexY<sizeImage.nPixelsY)&&(MyWeightsList[0][n].IndexX<sizeImage.nPixelsX)&&
-							(MyWeightsList[0][n].IndexZ>=0)&&(MyWeightsList[0][n].IndexY>=0)&&(MyWeightsList[0][n].IndexX>=0))
+						for(m = 0; m < numZ; m++)
 						{
-						indexPixel = MyWeightsList[0][n].IndexZ*(sizeImage.nPixelsX*sizeImage.nPixelsY)+MyWeightsList[0][n].IndexY * sizeImage.nPixelsX + MyWeightsList[0][n].IndexX;
-						// Por ahora deshabilito el GeomFactor:
-						newValue = MyWeightsList[0][n].Segment * geomFactor * inputProjection->getSegment(i)->getSinogram2D(j)->getSinogramBin(k,l);
-						#pragma omp atomic 
-							ptrPixels[indexPixel] +=  newValue;	
+							/// The siddon projector can use an oversampled verison with several lines per bin.
+							for(o = 0; o < numSamplesOnDetector; o++)
+							{
+								/// Cada Sinograma 2D me represnta múltiples LORs, según la mínima y máxima diferencia entre anillos.
+								/// Por lo que cada bin me va a sumar cuentas en lors con distintos ejes axiales.
+								/// El sinograma de salida lo incializo en cero antes de recorrer los distintos anillos de cada elemento del
+								/// sinograma, ya que varias LORS deben aportar al mismo bin del sinograma.
+								//int lorOk;
+								if(numSamplesOnDetector == 1)
+								{
+									lorOk = inputProjection->getSegment(i)->getSinogram2D(j)->getPointsFromLor(k,l,m, &P1, &P2, &geomFactor);
+								}
+								else
+								{
+									lorOk = inputProjection->getSegment(i)->getSinogram2D(j)->getPointsFromOverSampledLor(k,l,o,numSamplesOnDetector,m, &P1, &P2, &geomFactor);
+								}
+								// If use axial compression, use the average z coordinate:
+								if(!useMultipleLorsPerBin)
+								{
+								P1.Z = z1_mm;
+								P2.Z = z2_mm;
+								}
+								if(lorOk){
+								LOR.P0 = P1;
+								LOR.Vx = P2.X - P1.X;
+								LOR.Vy = P2.Y - P1.Y;
+								LOR.Vz = P2.Z - P1.Z;
+
+								// Then I look for the intersection between the 3D LOR and the lines that
+								// delimits the voxels
+								// Siddon	
+								float rayLength_mm = Siddon(LOR, outputImage, MyWeightsList, &LengthList,1);
+								//geomFactor = 1/rayLength_mm;
+								for(n = 0; n < LengthList; n++)
+								{
+									// for every element of the systema matrix different from zero,we do
+									// the sum(Aij*bi/Projected) for every i
+									if((MyWeightsList[0][n].IndexZ<sizeImage.nPixelsZ)&&(MyWeightsList[0][n].IndexY<sizeImage.nPixelsY)&&(MyWeightsList[0][n].IndexX<sizeImage.nPixelsX)&&
+										(MyWeightsList[0][n].IndexZ>=0)&&(MyWeightsList[0][n].IndexY>=0)&&(MyWeightsList[0][n].IndexX>=0))
+									{
+									indexPixel = MyWeightsList[0][n].IndexZ*(sizeImage.nPixelsX*sizeImage.nPixelsY)+MyWeightsList[0][n].IndexY * sizeImage.nPixelsX + MyWeightsList[0][n].IndexX;
+									// Por ahora deshabilito el GeomFactor:
+									newValue = MyWeightsList[0][n].Segment * geomFactor * inputProjection->getSegment(i)->getSinogram2D(j)->getSinogramBin(k,l);
+									#pragma omp atomic 
+										ptrPixels[indexPixel] +=  newValue;	
+									}
+								}
+								if(LengthList != 0)
+								{
+									/// Solo libero memoria cuando se la pidió, si no hay una excepción.
+									free(MyWeightsList[0]);
+								}
+								}
+							}
 						}
 					}
-					if(LengthList != 0)
-					{
-						/// Solo libero memoria cuando se la pidió, si no hay una excepción.
-						free(MyWeightsList[0]);
-					}
-					}
-				}
-					}
-				}
 						// Now I have my estimated projection for LOR i
 				}
 			}

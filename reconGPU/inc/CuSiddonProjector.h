@@ -104,11 +104,20 @@ class DLLEXPORT CuSiddonProjector : virtual CuProjector
 		sobre el detector por cada bin del sinograma.
 		*/
 	int numSamplesOnDetector;
-	
+	/// Número de lors utilizadas axialmente en por bin del sinograma.
+	/** Número de lors utilizadas axialmente en por bin del sinograma. Por default es una lor sola
+		que sale del centro del anillo. Si se configuraran más son n líneas paralelas equiespaciadas
+		sobre ring correpsondiente a ese sinograma.
+		*/
+	int numAxialSamplesOnDetector;
   public:
 	/// Constructor base. 
 	/** El cosntructor base setea una lor por bin. */
 	CuSiddonProjector();
+	/** Este constructor setea la cantidad de lors por bin que se desea utilizar. */
+	CuSiddonProjector(int nSamplesOnDetector);
+	/** Este constructor setea la cantidad de lors por bin que se desea utilizar transversalmente y axial. */
+	CuSiddonProjector(int nSamplesOnDetector, int nAxialSamplesOnDetector);
 // 	/** Backprojection con Siddon para Sinogram2D. */
 // 	bool Backproject (Sinogram2D* InputSinogram, Image* outputImage);  
 // 	/** DivideAndBackprojection con Siddon para Sinogram2D. */

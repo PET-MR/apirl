@@ -247,19 +247,22 @@ int main (int argc, char *argv[])
 	// Inicializo el proyector a utilizar:
 	if(strForwardprojector.compare("Siddon") == 0)
 	{
-	  forwardprojector = (Projector*)new SiddonProjector();
-	  int numSamples;
-	  if(getSiddonProjectorParameters(parameterFileName, "Projection", &numSamples))
-	    forwardprojector = (Projector*)new SiddonProjector();
-	  else
-	    forwardprojector = (Projector*)new SiddonProjector(numSamples);
+	  int numSamples, numAxialSamples;
+	  if(getSiddonProjectorParameters(parameterFileName, "Projection", &numSamples, &numAxialSamples))
+	    return -1; // Return when is a big error, if the fields are not fouund they are already filled with the defaults.
+	  forwardprojector = (Projector*)new SiddonProjector(numSamples, numAxialSamples);
 	}
 	#ifdef __USE_CUDA__
 	  int gpuId;	// Id de la gpu a utilizar.
 	  dim3 projectorBlockSize;	// Parámetros de cuda.
 	  if(strForwardprojector.compare("CuSiddonProjector") == 0)
 	  {
-	    cuProjector = (CuProjector*)new CuSiddonProjector();
+		int numSamples, numAxialSamples;
+		// CuSiddonProjector now also admits multiple rays.
+		if(getSiddonProjectorParameters(parameterFileName, "Projection", &numSamples, &numAxialSamples))
+			return -1; // Return when is a big error, if the fields are not fouund they are already filled with the defaults.
+		cuProjector = (CuProjector*)new CuSiddonProjector(numSamples, numAxialSamples);
+		
 	    cuProjectorInterface = new CuProjectorInterface(cuProjector);
 	    // Get size of kernels:
 	    if(getProjectorBlockSize(parameterFileName, "Projection", &projectorBlockSize))

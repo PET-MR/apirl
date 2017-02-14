@@ -159,7 +159,7 @@ int getProjectorBackprojectorNames(string mlemFilename, string cmd, string* strF
 
 /* Función que obtiene los parámetros de los proyectores de siddon.
  */
-int getSiddonProjectorParameters(string mlemFilename, string cmd, int* numSamples)
+int getSiddonProjectorParameters(string mlemFilename, string cmd, int* numSamples, int* numAxialSamples)
 {
   int errorCode;
   char returnValue[256];	// string en el que se recibe el valor de un keyword en la lectura del archivo de parámetros.
@@ -171,8 +171,8 @@ int getSiddonProjectorParameters(string mlemFilename, string cmd, int* numSample
     // Hubo un error. Salgo del comando.
     if(errorCode == PMF_KEY_NOT_FOUND)
     {
-      cout<<"Siddon projector with default config: 1 line per sinogram bin."<<endl;
-      return -1;
+		*numSamples = 1;
+		cout<<"Siddon projector with default config: 1 line per sinogram bin."<<endl;
     }
     else
     {
@@ -181,6 +181,24 @@ int getSiddonProjectorParameters(string mlemFilename, string cmd, int* numSample
     }
   }
   *numSamples = atoi(returnValue);
+  
+  // Debo leer el parámetro que tiene: "siddon number of samples on the detector".
+  if((errorCode=parametersFile_read((char*)mlemFilename.c_str(), (char*)cmd.c_str(), "siddon number of axial samples on the detector", returnValue, errorMessage)) != 0)
+  {
+    // Hubo un error. Salgo del comando.
+    if(errorCode == PMF_KEY_NOT_FOUND)
+    {
+	  *numAxialSamples = 1;
+      cout<<"Siddon projector with default config: 1 axial line per sinogram bin."<<endl;
+    }
+    else
+    {
+      cout<<"Error number "<<errorCode<<" in the parameters file."<<endl;
+      return -1;
+    }
+  }
+  *numAxialSamples = atoi(returnValue);
+  
   return 0;
 }
 

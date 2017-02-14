@@ -16,9 +16,9 @@
 % It must be left empty or in zero for projecting the complete sinogram.
 
 % Examples:
-%   [image, pixelSize_mm] = Backproject(sinogram, imageSize_pixels, pixelSize_mm, outputPath, scanner, scanner_parameters, structSizeSino, numberOfSubsets, subsetIndex, useGpu, numSamples)
+%   [image, pixelSize_mm] = Backproject(sinogram, imageSize_pixels, pixelSize_mm, outputPath, scanner, scanner_parameters, structSizeSino, numberOfSubsets, subsetIndex, useGpu, numSamples, numAxialSamples)
 
-function [image, pixelSize_mm] = Backproject(sinogram, imageSize_pixels, pixelSize_mm, outputPath, scanner, scanner_parameters, structSizeSino, numberOfSubsets, subsetIndex, useGpu, numSamples)
+function [image, pixelSize_mm] = Backproject(sinogram, imageSize_pixels, pixelSize_mm, outputPath, scanner, scanner_parameters, structSizeSino, numberOfSubsets, subsetIndex, useGpu, numSamples, numAxialSamples)
 
 if ~isdir(outputPath)
     mkdir(outputPath);
@@ -38,8 +38,12 @@ end
 if nargin == 9
     useGpu = 0;
     numSamples = 1;
+    numAxialSamples = 1;
 elseif nargin == 10
     numSamples = 1;
+    numAxialSamples = 1;
+elseif nargin == 11
+    numAxialSamples = 1;
 elseif nargin < 9
     error('Invalid number of parameters: [image, pixelSize_mm] = BackprojectMmrSpan1(sinogram, imageSize_pixels, pixelSize_mm, outputPath, useGpu)');
 end
@@ -99,7 +103,7 @@ interfileWriteSino(single(sinogram), sinogramFilename, structSizeSino);
 % Generate backprojected image:
 filenameBackprojectionConfig = [outputPath 'backprojectSinogram.par'];
 backprojectionFilename = [outputPath 'backprojectedImage'];
-CreateBackprojectConfigFile(filenameBackprojectionConfig, [sinogramFilename '.h33'], [filenameImage '.h33'], scanner, scanner_parameters, backprojectionFilename, numberOfSubsets, subsetIndex, useGpu, numSamples);
+CreateBackprojectConfigFile(filenameBackprojectionConfig, [sinogramFilename '.h33'], [filenameImage '.h33'], scanner, scanner_parameters, backprojectionFilename, numberOfSubsets, subsetIndex, useGpu, numSamples, numAxialSamples);
 status = system(['backproject ' filenameBackprojectionConfig])
 
 % Remove the input sinogram:

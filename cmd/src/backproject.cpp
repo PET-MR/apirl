@@ -287,39 +287,39 @@ int main (int argc, char *argv[])
 	}
 	// La inicializo en cero:
 	outputImage->fillConstant(0);
-	
-	if((strBackprojector.compare("Siddon") == 0)||(strBackprojector.compare("SiddonWithAttenuation") == 0))
+	// Inicializo el proyector a utilizar:
+	if(strBackprojector.compare("Siddon") == 0)
 	{
-	  int numPointsOnDetector;
-	  // En el Siddon por default tengo un único rayo, pero agrego un parámetro
-	  // opcional para tener varias Lors por bin del sinograma.
-	  // Debo leer el parámetro que tiene: "number_of_points_on_detector".
-	  if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), (char*)"Backproject", (char*)"number_of_points_on_detector", (char*)returnValue, (char*)errorMessage)) != 0)
-	  {
-	    // Hubo un error. Salgo del comando.
-	    if(errorCode == PMF_KEY_NOT_FOUND)
-	    {
-	      // No se definió se utiliza el valor por default:
-	      numPointsOnDetector = 1;
-	    }
-	    else
-	    {
-	      cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
-	      return -1;
-	    }
-	  }
-	  else
-	  {
-	    numPointsOnDetector = atoi(returnValue);
-	  }
-	  if(strBackprojector.compare("Siddon") == 0)
-	  {
-	    backprojector = (Projector*)new SiddonProjector(numPointsOnDetector);
-	  }
-	  else
-	  {
-	    backprojector = (Projector*)new SiddonProjectorWithAttenuation(numPointsOnDetector, attenuationImage);
-	  }
+		int numSamples, numAxialSamples;
+		if(getSiddonProjectorParameters(parameterFileName, "Backproject", &numSamples, &numAxialSamples))
+			return -1; // Return when is a big error, if the fields are not fouund they are already filled with the defaults.
+		backprojector = (Projector*)new SiddonProjector(numSamples, numAxialSamples);
+	}
+	else if(strBackprojector.compare("SiddonWithAttenuation") == 0)
+	{
+		int numPointsOnDetector;
+		// En el Siddon por default tengo un único rayo, pero agrego un parámetro
+		// opcional para tener varias Lors por bin del sinograma.
+		// Debo leer el parámetro que tiene: "number_of_points_on_detector".
+		if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), (char*)"Backproject", (char*)"number_of_points_on_detector", (char*)returnValue, (char*)errorMessage)) != 0)
+		{
+			// Hubo un error. Salgo del comando.
+			if(errorCode == PMF_KEY_NOT_FOUND)
+			{
+				// No se definió se utiliza el valor por default:
+				numPointsOnDetector = 1;
+			}
+			else
+			{
+				cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
+				return -1;
+			}
+		}
+		else
+		{
+			numPointsOnDetector = atoi(returnValue);
+		}
+		backprojector = (Projector*)new SiddonProjectorWithAttenuation(numPointsOnDetector, attenuationImage);
 	}
 	else if((strBackprojector.compare("ConeOfResponse") == 0)||(strBackprojector.compare("ConeOfResponseWithAttenuation") == 0))
 	{
@@ -414,7 +414,11 @@ int main (int argc, char *argv[])
 	#ifdef __USE_CUDA__
 	  else if(strBackprojector.compare("CuSiddonProjector") == 0)
 	  {
-	    cuProjector = (CuProjector*)new CuSiddonProjector();
+		int numSamples, numAxialSamples;
+		if(getSiddonProjectorParameters(parameterFileName, "Backproject", &numSamples, &numAxialSamples))
+			return -1; // Return when is a big error, if the fields are not fouund they are already filled with the defaults.
+		cuProjector = (CuProjector*)new CuSiddonProjector(numSamples, numAxialSamples);
+
 	    cuProjectorInterface = new CuProjectorInterface(cuProjector);
 	    // Get size of kernels:
 	    if(getBackprojectorBlockSize(parameterFileName, "Backproject", &projectorBlockSize))
