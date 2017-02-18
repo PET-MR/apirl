@@ -280,11 +280,12 @@ bool Sinogram2DinCylindrical3Dpet::getPointsFromOverSampledLor (int indexAng, in
   return true;
 }
 
-bool Sinogram2DinCylindrical3Dpet::getPointsFromOverSampledLor (int indexAng, int indexR, int indexSubsample, int numSubsamples, int indexRingConfig, Point3D* p1, Point3D* p2, float* geomFactor)
+bool Sinogram2DinCylindrical3Dpet::getPointsFromOverSampledLor (int indexAng, int indexR, int indexSubsample, int numSubsamples, int indexRingConfig, float ringWidth_mm, int indexAxialSubsample, int numAxialSubsamples, Point3D* p1, Point3D* p2, float* geomFactor)
 {
   float r = this->getRValue(indexR);
   float rad_PhiAngle = this->getAngValue(indexAng) * DEG_TO_RAD;
   float incrementR = this->getDeltaR(indexAng, indexR);
+  float deltaZ = ringWidth_mm / numAxialSubsamples; // delta used for sampling the oversampled ring;
   r = r - (incrementR/2) + incrementR/numSubsamples * indexSubsample + (incrementR/(2*numSubsamples));
   float auxValue = sqrt(this->radioScanner_mm * this->radioScanner_mm - r * r);
   *geomFactor = 1;
@@ -292,7 +293,7 @@ bool Sinogram2DinCylindrical3Dpet::getPointsFromOverSampledLor (int indexAng, in
   p1->Y = r * sin(rad_PhiAngle) - cos(rad_PhiAngle) * auxValue;
   p2->X = r * cos(rad_PhiAngle) - sin(rad_PhiAngle) * auxValue;
   p2->Y = r * sin(rad_PhiAngle) + cos(rad_PhiAngle) * auxValue;
-  p1->Z = ptrListZ1_mm[indexRingConfig];
-  p2->Z = ptrListZ2_mm[indexRingConfig];
+  p1->Z = ptrListZ1_mm[indexRingConfig]-ringWidth_mm/2 +deltaZ/2+indexAxialSubsample*deltaZ;  // ptrListZ1_mm[indexRingConfig] is the coordinate for this ring. For the voersampled version I need samples between: ptrListZ1_mm[indexRingConfig]-ringWidth_mm/2 and ptrListZ1_mm[indexRingConfig]+ringWidth_mm/2
+  p2->Z = ptrListZ2_mm[indexRingConfig]-ringWidth_mm/2 +deltaZ/2+indexAxialSubsample*deltaZ;
   return true;
 }

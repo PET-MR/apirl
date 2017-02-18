@@ -253,11 +253,14 @@ class DLLEXPORT Sinogram2DinCylindrical3Dpet : public Sinogram2D
 		  @param numSubsamples número de submuestras por LOR.
 		  @param indexRingConfig índice de la combinación de anillos para obtener el ring1 y 2 de la lor. Con
 	    				este índice se recorre la lista de anillos (si es que hay más de uno).
+		  @param ringWidth_mm width in mm of the ring to 0versample.
+		  @param indexAxialSubsample índice de la submuestra axial para la LOR.
+		  @param numAxialSubsamples number of axial samples.
 		  @param p1 puntero donde devuelve el primer punto 3d que forma la lor.
 		  @param p2 puntero donde se deuelve el segundo punto.
 		  @return devuelve true si encontró los dos puntos sobre el detector, false en caso contrario. 
 	  */
-	  bool getPointsFromOverSampledLor (int indexAng, int indexR, int indexSubsample, int numSubsamples, int indexRingConfig, Point3D* p1, Point3D* p2, float* geomFactor);
+	  bool getPointsFromOverSampledLor (int indexAng, int indexR, int indexSubsample, int numSubsamples, int indexRingConfig, float ringWidth_mm, int indexAxialSubsample, int numAxialSubsamples, Point3D* p1, Point3D* p2, float* geomFactor);
 };
 
 #endif

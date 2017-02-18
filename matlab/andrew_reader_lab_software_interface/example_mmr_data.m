@@ -32,7 +32,7 @@ opt.span= 1;
 opt.MethodSinoData= 'e7';
 %opt.FrameTimePoints = [0 240];
 % user provides the path
-PETData = PETDataClass('E:\CORONARIES_03_11_16\Raw\Raw');
+PETData = PETDataClass('E:\NEMA_LONG\Scan2');
 ncf = PETData.NCF();
 PETData.uncompress(PETData.Data.emission.n);
 %PETData = PETDataClass('/media/mab15/DATA/PatientData/Florbetaben/PETListPlusUmap-Converted/PETListPlusUmap-LM-00/', opt);

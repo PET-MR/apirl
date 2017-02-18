@@ -52,7 +52,10 @@ bool CuSiddonProjector::Project (float* d_image, float* d_projection, float *d_r
 	if ((this->numSamplesOnDetector == 1)&&(this->numAxialSamplesOnDetector == 1))
 		cuSiddonProjection<<<gridSize, blockSize>>>(d_image, d_projection, d_ring1, d_ring2, outputSinogram->getNumR(), outputSinogram->getNumProj(), outputSinogram->getNumRings(), outputSinogram->getNumSinograms());
 	else
-		cuSiddonOversampledProjection<<<gridSize, blockSize>>>(d_image, d_projection, d_ring1, d_ring2, outputSinogram->getNumR(), outputSinogram->getNumProj(), outputSinogram->getNumRings(), outputSinogram->getNumSinograms(), this->numSamplesOnDetector, this->numAxialSamplesOnDetector);
+	{
+		float ringWidth_mm = outputSinogram->getAxialFoV_mm()/outputSinogram->getNumRings();
+		cuSiddonOversampledProjection<<<gridSize, blockSize>>>(d_image, d_projection, d_ring1, d_ring2, ringWidth_mm, outputSinogram->getNumR(), this->numSamplesOnDetector, this->numAxialSamplesOnDetector);
+	}
 	/// Sincronización de todos los threads.
 	checkCudaErrors(cudaThreadSynchronize());
 	return true;
@@ -68,8 +71,11 @@ bool CuSiddonProjector::DivideAndBackproject (float* d_inputSinogram, float* d_e
 		cuSiddonDivideAndBackproject<<<gridSize, blockSize>>>(d_inputSinogram, d_estimatedSinogram, d_outputImage, 
 					     d_ring1, d_ring2, inputSinogram->getNumR(), inputSinogram->getNumProj(), inputSinogram->getNumRings(), inputSinogram->getNumSinograms());
 	else
+	{
+		float ringWidth_mm = inputSinogram->getAxialFoV_mm()/inputSinogram->getNumRings();
 		cuSiddonOversampledDivideAndBackproject<<<gridSize, blockSize>>>(d_inputSinogram, d_estimatedSinogram, d_outputImage, 
-					     d_ring1, d_ring2, inputSinogram->getNumR(), inputSinogram->getNumProj(), inputSinogram->getNumRings(), inputSinogram->getNumSinograms(), this->numSamplesOnDetector, this->numAxialSamplesOnDetector);
+					     d_ring1, d_ring2, ringWidth_mm, inputSinogram->getNumR(), this->numSamplesOnDetector, this->numAxialSamplesOnDetector);
+	}
   /// Sincronización de todos los threads.
   checkCudaErrors(cudaThreadSynchronize());
   return true;
@@ -85,8 +91,11 @@ bool CuSiddonProjector::Backproject (float * d_inputSinogram, float* d_outputIma
 		cuSiddonBackprojection<<<gridSize, blockSize>>>(d_inputSinogram, d_outputImage, d_ring1_mm, d_ring2_mm, 
 							inputSinogram->getNumR(), inputSinogram->getNumProj(), inputSinogram->getNumRings(), inputSinogram->getNumSinograms());
 	else
-		cuSiddonOversampledBackprojection<<<gridSize, blockSize>>>(d_inputSinogram, d_outputImage, d_ring1_mm, d_ring2_mm, 
-							inputSinogram->getNumR(), inputSinogram->getNumProj(), inputSinogram->getNumRings(), inputSinogram->getNumSinograms(), this->numSamplesOnDetector, this->numAxialSamplesOnDetector);	
+	{
+		float ringWidth_mm = inputSinogram->getAxialFoV_mm()/inputSinogram->getNumRings();
+		cuSiddonOversampledBackprojection<<<gridSize, blockSize>>>(d_inputSinogram, d_outputImage, d_ring1_mm, d_ring2_mm, ringWidth_mm,
+							inputSinogram->getNumR(), this->numSamplesOnDetector, this->numAxialSamplesOnDetector);	
+	}
   /// Sincronización de todos los threads.
   checkCudaErrors(cudaThreadSynchronize());
   return true;
