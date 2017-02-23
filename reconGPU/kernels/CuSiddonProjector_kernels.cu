@@ -38,8 +38,6 @@ __global__ void cuSiddonProjection (float* volume, float* michelogram, float *d_
   float4 P2;
   float4 LOR;
   iBin = iBin + blockIdx.y * d_numBinsSino2d;
-  if (iProj>numProj/2)
-	  iR = iR-1;
   //CUDA_GetPointsFromLOR(d_thetaValues_deg[iProj], d_RValues_mm[iR], d_ring1[blockIdx.y], d_ring2[blockIdx.y], d_RadioScanner_mm, &P1, &P2);
   CUDA_GetPointsFromBinsMmr (d_thetaValues_deg[iProj], iR, numR, d_ring1[blockIdx.y], d_ring2[blockIdx.y], d_RadioScanner_mm, &P1, &P2);
   LOR.x = P2.x - P1.x;
@@ -65,8 +63,6 @@ __global__ void cuSiddonDivideAndBackproject(float* d_inputSinogram, float* d_es
   int iR = iBin % numR;
   int iProj = (int)((float)iBin / (float)numR);
   iBin = iBin + blockIdx.y * d_numBinsSino2d;
-if (iProj>numProj/2)
-	  iR = iR-1;
   // Primero hago la división:
   if(d_estimatedSinogram[iBin]!=0)
   {
@@ -105,8 +101,6 @@ __global__ void cuSiddonBackprojection(float* d_inputSinogram, float* d_outputIm
   int iR = iBin % numR;
   int iProj = (int)((float)iBin / (float)numR);
   iBin = iBin + blockIdx.y * d_numBinsSino2d;
-  if (iProj>numProj/2)
-	  iR = iR-1;
   if(d_inputSinogram[iBin] != 0)
   {
     //CUDA_GetPointsFromLOR(d_thetaValues_deg[iProj], d_RValues_mm[iR], d_ring1_mm[blockIdx.y], d_ring2_mm[blockIdx.y], d_RadioScanner_mm, &P1, &P2);
@@ -157,7 +151,6 @@ __global__ void cuSiddonOversampledProjection (float* volume, float* michelogram
 	  {
 		// The r coordinate is in rLimInf  
 		CUDA_GetPointsFromLOR(d_thetaValues_deg[iProj], rLimInf, d_ring1[blockIdx.y]-ringWidth_mm/2+deltaZ/2+j*deltaZ, d_ring2[blockIdx.y]-ringWidth_mm/2+deltaZ/2+j*deltaZ, d_RadioScanner_mm, &P1, &P2);
-		//CUDA_GetPointsFromLOR(d_thetaValues_deg[iProj], rLimInf, d_ring1[blockIdx.y], d_ring2[blockIdx.y], d_RadioScanner_mm, &P1, &P2);
 		LOR.x = P2.x - P1.x;
 		LOR.y = P2.y - P1.y;
 		LOR.z = P2.z - P1.z;
@@ -297,14 +290,22 @@ __global__ void cuSiddonOversampledBackprojection(float* d_inputSinogram, float*
 __device__ void CUDA_GetPointsFromLOR (float PhiAngle, float r, float Z1, float Z2, float cudaRscanner, float4* P1, float4* P2)
 {
   float sinValue, cosValue;
+  // First correct the r value, for the mMR when Phi greater than 90 a half bin needs to be substracted:
+  if (PhiAngle > 90)
+	r = r - d_binSize_mm/2;
   sincosf(PhiAngle*DEG_TO_RAD, &sinValue, &cosValue);
   float auxValue = sqrtf((cudaRscanner) * (cudaRscanner) - r * r);
   P1->x = r * cosValue + sinValue * auxValue;
   P1->y = r * sinValue - cosValue * auxValue;
-  P1->z = (Z1+Z2)/2.0f - (Z2-Z1)/(2.0f*cudaRscanner+d_crystalElementLength_mm)*cudaRscanner - (Z2-Z1)/(2.0f*cudaRscanner+d_crystalElementLength_mm)*d_meanDOI_mm;
+  // Z1 entry point in the scanner : Z0 - (Z2-Z1)/(2.0f*cudaRscanner+d_crystalElementLength_mm)*cudaRscanner;
+  // Angle alpha = atand((cudaRscanner+d_crystalElementLength_mm/2)/((Z2-Z1)/2)
+  float alpha = atan2((2.0f*cudaRscanner+d_crystalElementLength_mm*2),(Z2-Z1));
+  //P1->z = (Z1+Z2)/2.0f - (Z2-Z1)/(2.0f*cudaRscanner+d_crystalElementLength_mm)*cudaRscanner - (Z2-Z1)/(2.0f*cudaRscanner+d_crystalElementLength_mm)*d_meanDOI_mm;
+  P1->z = (Z1+Z2)/2.0f - (Z2-Z1)/(2.0f*cudaRscanner+d_crystalElementLength_mm*2)*cudaRscanner - cos(alpha)*d_meanDOI_mm;
   P2->x = r * cosValue - sinValue * auxValue;
   P2->y = r * sinValue + cosValue * auxValue;
-  P2->z = (Z1+Z2)/2.0f + (Z2-Z1)/(2.0f*cudaRscanner+d_crystalElementLength_mm)*cudaRscanner + (Z2-Z1)/(2.0f*cudaRscanner+d_crystalElementLength_mm)*d_meanDOI_mm;
+  //P2->z = (Z1+Z2)/2.0f + (Z2-Z1)/(2.0f*cudaRscanner+d_crystalElementLength_mm)*cudaRscanner + (Z2-Z1)/(2.0f*cudaRscanner+d_crystalElementLength_mm)*d_meanDOI_mm;
+  P2->z = (Z1+Z2)/2.0f + (Z2-Z1)/(2.0f*cudaRscanner+d_crystalElementLength_mm*2)*cudaRscanner + cos(alpha)*d_meanDOI_mm;
 }
 
 /// El ángulo de GetPointsFromLOR debe estar en radianes.
@@ -312,18 +313,23 @@ __device__ void CUDA_GetPointsFromBinsMmr (float PhiAngle, int iR, int numR, flo
 {
   float sinValue, cosValue, r, lr;
   if (PhiAngle < 90)
-	lr = -d_binSize_mm/2 + (d_binSize_mm*(iR+1-(float)(numR/2)));
+	lr = d_binSize_mm/2 + (d_binSize_mm*(iR-(float)(numR/2)));
   else
-	lr = (d_binSize_mm*(iR+1-(float)(numR/2)));  
+	lr = (d_binSize_mm*(iR-(float)(numR/2)));  
   r = (cudaRscanner + d_meanDOI_mm* cos(lr/cudaRscanner)) * sin(lr/cudaRscanner);
   sincosf(PhiAngle*DEG_TO_RAD, &sinValue, &cosValue);
   float auxValue = sqrtf((cudaRscanner) * (cudaRscanner) - r * r);
   P1->x = r * cosValue + sinValue * auxValue;
   P1->y = r * sinValue - cosValue * auxValue;
-  P1->z = (Z1+Z2)/2.0f - (Z2-Z1)/(2.0f*cudaRscanner+d_crystalElementLength_mm)*cudaRscanner - (Z2-Z1)/(2.0f*cudaRscanner+d_crystalElementLength_mm)*d_meanDOI_mm;
+  // Z1 entry point in the scanner : Z0 - (Z2-Z1)/(2.0f*cudaRscanner+d_crystalElementLength_mm)*cudaRscanner;
+  // Angle alpha = atand((cudaRscanner+d_crystalElementLength_mm/2)/((Z2-Z1)/2)
+  float alpha = atan2((2.0f*cudaRscanner+d_crystalElementLength_mm*2),(Z2-Z1));
+  //P1->z = (Z1+Z2)/2.0f - (Z2-Z1)/(2.0f*cudaRscanner+d_crystalElementLength_mm)*cudaRscanner - (Z2-Z1)/(2.0f*cudaRscanner+d_crystalElementLength_mm)*d_meanDOI_mm;
+  P1->z = (Z1+Z2)/2.0f - (Z2-Z1)/(2.0f*cudaRscanner+d_crystalElementLength_mm*2)*cudaRscanner - cos(alpha)*d_meanDOI_mm;
   P2->x = r * cosValue - sinValue * auxValue;
   P2->y = r * sinValue + cosValue * auxValue;
-  P2->z = (Z1+Z2)/2.0f + (Z2-Z1)/(2.0f*cudaRscanner+d_crystalElementLength_mm)*cudaRscanner + (Z2-Z1)/(2.0f*cudaRscanner+d_crystalElementLength_mm)*d_meanDOI_mm;
+  //P2->z = (Z1+Z2)/2.0f + (Z2-Z1)/(2.0f*cudaRscanner+d_crystalElementLength_mm)*cudaRscanner + (Z2-Z1)/(2.0f*cudaRscanner+d_crystalElementLength_mm)*d_meanDOI_mm;
+  P2->z = (Z1+Z2)/2.0f + (Z2-Z1)/(2.0f*cudaRscanner+d_crystalElementLength_mm*2)*cudaRscanner + cos(alpha)*d_meanDOI_mm;
 }
 
 #endif

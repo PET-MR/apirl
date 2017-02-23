@@ -81,6 +81,7 @@ extern __device__ __constant__ float d_crystalElementLength_mm;
 /// Mean depth of interaction:
 extern __device__ __constant__ float d_meanDOI_mm;
 
+extern __device__ __constant__ float d_ringWidth_mm; 
 // Kernels en la biblioteca.
 __global__ void cuSiddonProjection (float* volume, float* michelogram, float *d_ring1, float *d_ring2, int numR, int numProj, int numRings, int numSinos);
 

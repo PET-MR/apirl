@@ -45,29 +45,31 @@
   // Memoria constante con los valores de la coordenada axial o z.
   //extern __device__ __constant__ float d_AxialValues_mm[MAX_Z_VALUES];
 
-  // Memoria constante con el radio del scanner (solo para scanner cilíndricos).
-  extern __device__ __constant__ float d_RadioScanner_mm;
+// Memoria constante con el radio del scanner (solo para scanner cilíndricos).
+extern __device__ __constant__ float d_RadioScanner_mm;
 
-  extern __device__ __constant__ float d_AxialFov_mm;
+extern __device__ __constant__ float d_AxialFov_mm;
 
-  extern __device__ __constant__ float d_RadioFov_mm;
+extern __device__ __constant__ float d_RadioFov_mm;
 
-  extern __device__ __constant__ SizeImage d_imageSize;
+extern __device__ __constant__ SizeImage d_imageSize;
+
+extern __device__ __constant__ int d_numPixels;
+
+extern __device__ __constant__ int d_numPixelsPerSlice;
+
+extern __device__ __constant__ int d_numBinsSino2d;
   
-  extern __device__ __constant__ int d_numPixels;
+/// Size of each crystal element.
+extern __device__ __constant__ float d_crystalElementSize_mm;
+/// Size of each sinogram's bin.
+extern __device__ __constant__ float d_binSize_mm;
+/// Depth or length og each crystal.
+extern __device__ __constant__ float d_crystalElementLength_mm;
+/// Mean depth of interaction:
+extern __device__ __constant__ float d_meanDOI_mm;
 
-  extern __device__ __constant__ int d_numPixelsPerSlice;
-  
-  extern __device__ __constant__ int d_numBinsSino2d;
-  
-	/// Size of each crystal element.
-	extern __device__ __constant__ float d_crystalElementSize_mm;
-	/// Size of each sinogram's bin.
-	extern __device__ __constant__ float d_binSize_mm;
-	/// Depth or length og each crystal.
-	extern __device__ __constant__ float d_crystalElementLength_mm;
-	/// Mean depth of interaction:
-	extern __device__ __constant__ float d_meanDOI_mm;
+extern __device__ __constant__ float d_ringWidth_mm; 
 
 //#endif
 
@@ -220,7 +222,9 @@ bool CuProjectorInterface::InitGpuMemory(Sinogram3D* sinogram, Image* image, Tip
   checkCudaErrors(cudaMemcpyToSymbol(d_crystalElementLength_mm, &aux, sizeof(float)));
   aux = sinogram->getMeanDOI_mm();
   checkCudaErrors(cudaMemcpyToSymbol(d_meanDOI_mm, &aux, sizeof(float)));
-
+  aux = sinogram->getWidthRings_mm();
+  checkCudaErrors(cudaMemcpyToSymbol(d_ringWidth_mm, &aux, sizeof(float)));
+  
   // Para el sinograma 3d tengo que cada sino 2d puede representar varios sinogramas asociados a distintas combinaciones de anillos.
   // En la versión con CPU proceso todas las LORs, ahora solo voy a considerar la del medio, que sería la ventaja de reducir el volumen de LORs.
   // Entonces genero un array con las coordenadas de anillos de cada sinograma.

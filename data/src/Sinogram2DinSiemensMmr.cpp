@@ -33,7 +33,7 @@ Sinogram2DinSiemensMmr::Sinogram2DinSiemensMmr(char* fileHeaderPath): Sinogram2D
   {
     // ptrRvalues initialization is necesary just one time
     // 1) Get the length on the cylindrical surface for each bin (from x=0 to the center of the crystal element):
-	lr = -binSize_mm/2 + (binSize_mm*(j+1-(float)(numR/2)));
+	lr = binSize_mm/2 + (binSize_mm*(j-(float)(numR/2)));
     // 2) Now I get the x coordinate for that r.
     ptrRvalues_mm[j] = (radioScanner_mm + meanDOI_mm* cos(lr/radioScanner_mm)) * sin(lr/radioScanner_mm);
   }
@@ -69,7 +69,7 @@ Sinogram2DinSiemensMmr::Sinogram2DinSiemensMmr(unsigned int nProj, unsigned int 
       {
 		// ptrRvalues initialization is necesary just one time
 		// 1) Get the length on the cylindrical surface for each bin (from x=0 to the center of the crystal element):
-		lr = -binSize_mm/2 + (binSize_mm*(j+1-(float)(numR/2)));
+		lr = binSize_mm/2 + (binSize_mm*(j-(float)(numR/2)));
 		// 2) Now I get the x coordinate for that r.
 		ptrRvalues_mm[j] = (radioScanner_mm + meanDOI_mm* cos(lr/radioScanner_mm)) * sin(lr/(radioScanner_mm));
 	// 	#ifdef __DEBUG__
@@ -113,7 +113,7 @@ Sinogram2DinSiemensMmr::Sinogram2DinSiemensMmr(const Sinogram2DinSiemensMmr* src
   {
     // ptrRvalues initialization is necesary just one time
     // 1) Get the length on the cylindrical surface for each bin (from x=0 to the center of the crystal element):
-	lr = -binSize_mm/2 + (binSize_mm*(j+1-(float)(numR/2)));
+	lr = binSize_mm/2 + (binSize_mm*(j-(float)(numR/2)));
     // 2) Now I get the x coordinate for that r.
     ptrRvalues_mm[j] = (radioScanner_mm + meanDOI_mm* cos(lr/radioScanner_mm)) * sin(lr/radioScanner_mm);
   }
@@ -160,19 +160,27 @@ bool Sinogram2DinSiemensMmr::getFovLimits(Line2D lor, Point2D* limitPoint1, Poin
 
 bool Sinogram2DinSiemensMmr::getPointsFromLor(int indexProj, int indexR, int indexRingConfig, Point3D* p1, Point3D* p2, float* geomFactor)
 {
-  float r = this->getRValue(indexR);
-  float rad_PhiAngle = this->getAngValue(indexProj) * DEG_TO_RAD;
-  float lr = (binSize_mm/2 + binSize_mm*(indexR-(float)(numR/2)));
-  float effRadioScanner_mm = (radioScanner_mm + meanDOI_mm* cos(lr/radioScanner_mm));
-  float auxValue = sqrt(effRadioScanner_mm * effRadioScanner_mm - r * r);
+  float r, rad_PhiAngle, lr, effRadioScanner_mm, auxValue;
+  // r is already arc corrected in the constructor:
+  r = this->getRValue(indexR);
+  //float lr = (binSize_mm/2 + binSize_mm*(indexR-(float)(numR/2)));
+  //float effRadioScanner_mm = (radioScanner_mm + meanDOI_mm* cos(lr/radioScanner_mm));
+  rad_PhiAngle = this->getAngValue(indexProj) * DEG_TO_RAD;
+  if (this->getAngValue(indexProj) > 90)
+	  r = r - binSize_mm/2;
+  auxValue = sqrt(radioScanner_mm * radioScanner_mm - r * r);
   *geomFactor = 1;
   p1->X = r * cos(rad_PhiAngle) + sin(rad_PhiAngle) * auxValue;
   p1->Y = r * sin(rad_PhiAngle) - cos(rad_PhiAngle) * auxValue;
   p2->X = r * cos(rad_PhiAngle) - sin(rad_PhiAngle) * auxValue;
   p2->Y = r * sin(rad_PhiAngle) + cos(rad_PhiAngle) * auxValue;
-  p1->Z = ptrListZ1_mm[indexRingConfig] - meanDOI_mm/(effRadioScanner_mm) * (ptrListZ2_mm[indexRingConfig]-ptrListZ1_mm[indexRingConfig]);
-  p2->Z = ptrListZ2_mm[indexRingConfig] - meanDOI_mm/(effRadioScanner_mm) * (ptrListZ1_mm[indexRingConfig]-ptrListZ2_mm[indexRingConfig]);
-  return true;
+  float alpha = atan2((2.0f*radioScanner_mm+crystalElementLength_mm*2),(ptrListZ2_mm[indexRingConfig]-ptrListZ1_mm[indexRingConfig]));
+  //p1->Z = ptrListZ1_mm[indexRingConfig] - meanDOI_mm/(effRadioScanner_mm) * (ptrListZ2_mm[indexRingConfig]-ptrListZ1_mm[indexRingConfig]);
+  //p2->Z = ptrListZ2_mm[indexRingConfig] - meanDOI_mm/(effRadioScanner_mm) * (ptrListZ1_mm[indexRingConfig]-ptrListZ2_mm[indexRingConfig]);
+  p1->Z = (ptrListZ2_mm[indexRingConfig]+ptrListZ1_mm[indexRingConfig])/2 - 
+	(ptrListZ2_mm[indexRingConfig]-ptrListZ1_mm[indexRingConfig])/(2.0f*radioScanner_mm+crystalElementLength_mm*2)*radioScanner_mm - cos(alpha)*meanDOI_mm;
+  p2->Z = (ptrListZ2_mm[indexRingConfig]+ptrListZ1_mm[indexRingConfig])/2 + 
+	(ptrListZ2_mm[indexRingConfig]-ptrListZ1_mm[indexRingConfig])/(2.0f*radioScanner_mm+crystalElementLength_mm*2)*radioScanner_mm + cos(alpha)*meanDOI_mm;
 }
   
   

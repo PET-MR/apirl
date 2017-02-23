@@ -1,9 +1,6 @@
 % Función que procesa las imágenes para evaluar la performance de la
 % reconstrucción y armar gráficos comaprativos:
 function [contrastRecovery, desvioBackground, desvioNormBackground, meanLungRoi, relativeLungError] = procImagesQualityPhantom(volumen, sizePixel_mm, relacionHotBackground, sliceCentral, mostrarResultadosParciales)
-% Necesito algunas funciones generales:
-addpath('/sources/MATLAB/WorkingCopy/ImageProcessing');
-addpath('/sources/MATLAB/WorkingCopy/export_fig');
 if nargin == 3
     sliceCentral = round(size(volumen,3)/2);
     mostrarResultadosParciales = 0;
