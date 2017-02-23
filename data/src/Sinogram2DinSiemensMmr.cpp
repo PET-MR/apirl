@@ -20,7 +20,7 @@ const float Sinogram2DinSiemensMmr::binSize_mm = 4.0891f/2.0f;
 /// Depth or length og each crystal.
 const float Sinogram2DinSiemensMmr::crystalElementLength_mm = 20;
 /// Mean depth of interaction:
-const float Sinogram2DinSiemensMmr::meanDOI_mm = 9.6;
+const float Sinogram2DinSiemensMmr::meanDOI_mm = 9.6; //In e7_tools 6.7;
 
 Sinogram2DinSiemensMmr::Sinogram2DinSiemensMmr(char* fileHeaderPath): Sinogram2DinCylindrical3Dpet(fileHeaderPath, 297, 328)
 {
@@ -33,9 +33,16 @@ Sinogram2DinSiemensMmr::Sinogram2DinSiemensMmr(char* fileHeaderPath): Sinogram2D
   {
     // ptrRvalues initialization is necesary just one time
     // 1) Get the length on the cylindrical surface for each bin (from x=0 to the center of the crystal element):
-    lr = (binSize_mm/2 + binSize_mm*(j-(float)(numR/2)));
+	lr = -binSize_mm/2 + (binSize_mm*(j+1-(float)(numR/2)));
     // 2) Now I get the x coordinate for that r.
     ptrRvalues_mm[j] = (radioScanner_mm + meanDOI_mm* cos(lr/radioScanner_mm)) * sin(lr/radioScanner_mm);
+  }
+  // To correct the phi angle (it looks like mmr starts with -PhiIncrement instad of 0 based on the detector ids, but starting with 0 fits better the e7 tools projector)
+  float PhiIncrement = (float)maxAng_deg / numProj;
+  for(int i = 0; i < numProj; i ++)
+  {
+    // Initialization of Phi Values
+    ptrAngValues_deg[i] =  i * PhiIncrement;	// Modification now goes from 0, phiincrement, ...180-phiincrement.
   }
 }
 
@@ -54,21 +61,20 @@ Sinogram2DinSiemensMmr::Sinogram2DinSiemensMmr(unsigned int nProj, unsigned int 
   for(int i = 0; i < numProj; i ++)
   {
     // Initialization of Phi Values
+	// To correct the phi angle (it looks like mmr starts with -PhiIncrement instad of 0 based on the detector ids, but starting with 0 fits better the e7 tools projector)
     ptrAngValues_deg[i] = i * PhiIncrement;	// Modification now goes from 0, phiincrement, ...180-phiincrement.
-    //ptrAngValues_deg[i] = PhiIncrement/2 + i * PhiIncrement;
     for(int j = 0; j < numR; j++)
     {
       if(i == 0)
       {
-	// ptrRvalues initialization is necesary just one time
-	// 1) Get the length on the cylindrical surface for each bin (from x=0 to the center of the crystal element):
-	lr = (binSize_mm/2 + binSize_mm*(j-(float)(numR/2)));
-	//lr = (binSize_mm/4 + binSize_mm*(j-(float)(numR/2))); // PAreciera andar un poco mejor esta.
-	// 2) Now I get the x coordinate for that r.
-	ptrRvalues_mm[j] = (radioScanner_mm + meanDOI_mm* cos(lr/radioScanner_mm)) * sin(lr/(radioScanner_mm));
-// 	#ifdef __DEBUG__
-// 	  printf("\t%f", ptrRvalues_mm[j]);
-// 	#endif
+		// ptrRvalues initialization is necesary just one time
+		// 1) Get the length on the cylindrical surface for each bin (from x=0 to the center of the crystal element):
+		lr = -binSize_mm/2 + (binSize_mm*(j+1-(float)(numR/2)));
+		// 2) Now I get the x coordinate for that r.
+		ptrRvalues_mm[j] = (radioScanner_mm + meanDOI_mm* cos(lr/radioScanner_mm)) * sin(lr/(radioScanner_mm));
+	// 	#ifdef __DEBUG__
+	// 	  printf("\t%f", ptrRvalues_mm[j]);
+	// 	#endif
       }
       ptrSinogram[i * numR + j] = 0;
     }
@@ -107,9 +113,16 @@ Sinogram2DinSiemensMmr::Sinogram2DinSiemensMmr(const Sinogram2DinSiemensMmr* src
   {
     // ptrRvalues initialization is necesary just one time
     // 1) Get the length on the cylindrical surface for each bin (from x=0 to the center of the crystal element):
-    lr = (binSize_mm/2 + binSize_mm*(j-(float)(numR/2)));
+	lr = -binSize_mm/2 + (binSize_mm*(j+1-(float)(numR/2)));
     // 2) Now I get the x coordinate for that r.
     ptrRvalues_mm[j] = (radioScanner_mm + meanDOI_mm* cos(lr/radioScanner_mm)) * sin(lr/radioScanner_mm);
+  }
+  // To correct the phi angle (it looks like mmr starts with -PhiIncrement instad of 0 based on the detector ids, but starting with 0 fits better the e7 tools projector)
+  float PhiIncrement = (float)maxAng_deg / numProj;
+  for(int i = 0; i < numProj; i ++)
+  {
+    // Initialization of Phi Values
+    ptrAngValues_deg[i] = i * PhiIncrement;	// Modification now goes from 0, phiincrement, ...180-phiincrement.
   }
 }
 

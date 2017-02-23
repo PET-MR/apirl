@@ -97,6 +97,9 @@ class DLLEXPORT Sinogram3D : public Sinogram2D
 	/** Largo axial del Field of View en mm, o sea el largo útil del cilindro. */
 	float axialFov_mm;
 	
+	/** Ring size in mm. */
+	float widthRings_mm;
+	
 	/** Vector con el valor de la coordenada axial (Z) de cada anillo (punto medio del mismo). */
 	float* ptrAxialvalues_mm;	 
 	  
@@ -206,13 +209,17 @@ class DLLEXPORT Sinogram3D : public Sinogram2D
 	*/
 	float getAxialFoV_mm(){ return axialFov_mm;};
 	
+	/** Método que deveulve el largo axial del Field of View del sinograma3d. 
+		@return largo axial del field of view en mm.
+	*/
+	float getWidthRings_mm(){ return widthRings_mm;};
 	
 	/** Método que devuelve el valor de de la coordenada axial del anillo pedido. */
 	float getAxialValue(int indexRing){ return ptrAxialvalues_mm[indexRing];};
 	
 	/** Método que devuelve un puntero a los valores de las coordenadas de cada anillo.*/
 	float* getAxialPtr(){ return ptrAxialvalues_mm;};
-	
+
 	using Projection::getLikelihoodValue; // To avoid the warning on possible unintended override.
 	/** Método que calcula el likelihood de esta proyección respecto de una de referencia. */
 	float getLikelihoodValue(Sinogram3D* referenceProjection);
@@ -276,6 +283,19 @@ class DLLEXPORT Sinogram3D : public Sinogram2D
 	  
 	  */
 	void inverseDivideBinToBin(Sinogram3D* sinogramDividend);
+	
+	/** Functions that returns some geomtrical parameters. Temporarily this is not implemented for a generic 3d sinogram but it is done in each
+	 * derivate class for each scanner. For that reason they are virtual */
+	virtual float getCrystalElementSize_mm() {return 0;}
+	/** Functions that returns some geomtrical parameters. Temporarily this is not implemented for a generic 3d sinogram but it is done in each
+	 * derivate class for each scanner. For that reason they are virtual */
+	virtual float getCrystalElementLength_mm() {return 0;}
+	/** Functions that returns some geomtrical parameters. Temporarily this is not implemented for a generic 3d sinogram but it is done in each
+	 * derivate class for each scanner. For that reason they are virtual */
+	virtual float getRadialBinSize_mm() {return 0;}	
+	/** Functions that returns some geomtrical parameters. Temporarily this is not implemented for a generic 3d sinogram but it is done in each
+	 * derivate class for each scanner. For that reason they are virtual */
+	virtual float getMeanDOI_mm() {return 0;}
 };
 
 

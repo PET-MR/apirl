@@ -20,7 +20,7 @@ cudaPath = '/usr/local/cuda/';
 setenv('PATH', [getenv('PATH') sepEnvironment cudaPath pathBar 'bin']);
 setenv('LD_LIBRARY_PATH', [getenv('LD_LIBRARY_PATH') sepEnvironment cudaPath pathBar 'lib64']);
 % APIRL PATH
-apirlPath = 'E:\workspace\apirl-code\trunk\';
+apirlPath = 'F:\workspace\apirl-code\trunk\';
 addpath(genpath([apirlPath pathBar 'matlab']));
 setenv('PATH', [getenv('PATH') sepEnvironment apirlPath pathBar 'build' pathBar 'bin']);
 setenv('LD_LIBRARY_PATH', [getenv('LD_LIBRARY_PATH') sepEnvironment apirlPath pathBar 'build' pathBar 'bin']);
@@ -32,9 +32,11 @@ opt.span= 1;
 opt.MethodSinoData= 'e7';
 %opt.FrameTimePoints = [0 240];
 % user provides the path
-PETData = PETDataClass('E:\NEMA_LONG\Scan2');
+PETData = PETDataClass('F:\NEMA_LONG\Scan2');
 ncf = PETData.NCF();
 PETData.uncompress(PETData.Data.emission.n);
+PETData.Reconstruct(21, 3, 0);
+PETData.Reconstruct(21, 3, 1);
 %PETData = PETDataClass('/media/mab15/DATA/PatientData/Florbetaben/PETListPlusUmap-Converted/PETListPlusUmap-LM-00/', opt);
 %timeFrame_sec = 200;
 %PETData.InitFramesConfig(timeFrame_sec);

@@ -54,9 +54,9 @@ Sinogram2DinCylindrical3Dpet::Sinogram2DinCylindrical3Dpet(unsigned int nProj, u
     {
       if(i == 0)
       {
-	// ptrRvalues initialization is necesary just one time
-	
-	ptrRvalues_mm[j] = RIncrement/2 + j * RIncrement - radioFov_mm;
+		// ptrRvalues initialization is necesary just one time
+		
+		ptrRvalues_mm[j] = RIncrement/2 + j * RIncrement - radioFov_mm;
       }
       ptrSinogram[i * numR + j] = 0;
     }

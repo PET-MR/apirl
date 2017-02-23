@@ -23,13 +23,13 @@ const float Sinograms2DinSiemensMmr::radioScanner_mm = 656.0f/2.0f;
 const float Sinograms2DinSiemensMmr::radioFov_mm = 594.0f/2.0f;
 
 /** Largo axial del FOV en mm. */
-const float Sinograms2DinSiemensMmr::axialFov_mm = 258.0f;
+const float Sinograms2DinSiemensMmr::axialFov_mm = 257.96875f;
 
 /// Size of each pixel element.
 const float Sinograms2DinSiemensMmr::crystalElementSize_mm = 4.0891f;
 
 /// Width of each rings.
-const float Sinograms2DinSiemensMmr::widthRings_mm = 4.03125f; //axialFov_mm / numRings;
+const float Sinograms2DinSiemensMmr::widthRings_mm = 4.0625f; // 4 mm crystal + a gap between crystal rings of 0.0625 (in the e7 documentation says 0.40625, but that must be wrong)
 
 
 /// Constructor de copia

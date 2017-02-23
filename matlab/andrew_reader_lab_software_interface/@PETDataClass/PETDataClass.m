@@ -317,6 +317,20 @@ classdef PETDataClass < handle
             
         end
         
+        function [status, message] = e7_recon(ObjData, frame, numSubsets, numIterations, enablePsf)
+            if enablePsf
+                strPsf = ' --psf ' ;
+                outputTag = 'PSF';
+            else
+                strPsf = ' ';
+                outputTag = '';
+            end
+            command = [ObjData.SoftwarePaths.e7.siemens ' --algo op-osem --is '  num2str(numIterations) ',' num2str(numSubsets) strPsf ' -e "' ObjData.Data.emission '"' ...
+                ' --oi "' ObjData.Data.emission(1:end-9) outputTag ' "' ' -u "' ObjData.Data.umap(1).n '","' ObjData.Data.hardware_umap(1).n '"' ...
+                ' -n "' ObjData.Data.norm '"' ' --gf --quant 1 -w 344 -l 73,. --fl --ecf --izoom 1 --force --cvrg 97 --rs '];
+            [status,message] = system(command);            
+        end
+        
         function status = uncompress_emission(ObjData)
             % calls e7 intfcompr.exe to uncompress data
             pathstr = fileparts(ObjData.SoftwarePaths.e7.siemens);
@@ -543,6 +557,13 @@ classdef PETDataClass < handle
             mul = 1./mul;
             mul(isinf(mul)) = 0;
 
+        end
+        
+        function Reconstruct(ObjData, numSubsets, numIterations, enablePsf)
+            for frame = 1 : ObjData.NumberOfFrames
+                [status, message] = e7_recon(ObjData, frame, numSubsets, numIterations, enablePsf);
+            end
+        
         end
         
         function add = RS(ObjData,frame)

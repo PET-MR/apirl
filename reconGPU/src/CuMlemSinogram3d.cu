@@ -40,6 +40,14 @@ __device__ __constant__ int d_numPixelsPerSlice;
 
 __device__ __constant__ int d_numBinsSino2d;
 
+__device__ __constant__ float d_crystalElementSize_mm;
+/// Size of each sinogram's bin.
+__device__ __constant__ float d_binSize_mm;
+/// Depth or length og each crystal.
+__device__ __constant__ float d_crystalElementLength_mm;
+/// Mean depth of interaction:
+__device__ __constant__ float d_meanDOI_mm; //
+
 extern texture<float, 3, cudaReadModeElementType> texImage;  // 3D texture
 
 extern surface<void, 3> surfImage;

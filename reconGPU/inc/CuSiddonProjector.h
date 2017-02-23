@@ -72,7 +72,14 @@ extern __device__ __constant__ float d_AxialValues_mm[MAX_Z_VALUES];
 // Memoria constante con el radio del scanner (solo para scanner cilíndricos).
 extern __device__ __constant__ float d_RadioScanner_mm;
 
-
+/// Size of each crystal element.
+extern __device__ __constant__ float d_crystalElementSize_mm;
+/// Size of each sinogram's bin.
+extern __device__ __constant__ float d_binSize_mm;
+/// Depth or length og each crystal.
+extern __device__ __constant__ float d_crystalElementLength_mm;
+/// Mean depth of interaction:
+extern __device__ __constant__ float d_meanDOI_mm;
 
 // Kernels en la biblioteca.
 __global__ void cuSiddonProjection (float* volume, float* michelogram, float *d_ring1, float *d_ring2, int numR, int numProj, int numRings, int numSinos);
@@ -85,6 +92,8 @@ __global__ void cuSiddonBackprojection(float* d_inputSinogram, float* d_outputIm
 
 // Funciones de device en la bilbioteca.
 __device__ void CUDA_GetPointsFromLOR (float PhiAngle, float r, float Z1, float Z2, float cudaRscanner, float4* P1, float4* P2);
+
+__device__ void CUDA_GetPointsFromBinsMmr (float PhiAngle, int iR, int numR, float Z1, float Z2, float cudaRscanner, float4* P1, float4* P2);
 
 typedef enum
 {

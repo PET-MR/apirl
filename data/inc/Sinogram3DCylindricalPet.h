@@ -160,12 +160,25 @@ class DLLEXPORT Sinogram3DCylindricalPet : public Sinogram3D
 	/** Método que deveulve el radio del scanner cilíndrico. 
 		@return radio del cílindro detector del scanner en mm.
 	*/
-	float getRadioScanner_mm(){ return radioScanner_mm;};
+	virtual float getRadioScanner_mm(){ return radioScanner_mm;};
 	
 	/** Method that returns the effective radio scanner (takes into account the depth of interction). */
 	virtual float getEffectiveRadioScanner_mm(){ return radioScanner_mm;};
 	
 	bool ReadInterfileDiscoverySTE(char* fileDataPath);
+	
+	/** Functions that returns some geomtrical parameters. Temporarily this is not implemented for a generic 3d sinogram but it is done in each
+	 * derivate class for each scanner. For that reason they are virtual */
+	virtual float getCrystalElementSize_mm() {return 0;}
+	/** Functions that returns some geomtrical parameters. Temporarily this is not implemented for a generic 3d sinogram but it is done in each
+	 * derivate class for each scanner. For that reason they are virtual */
+	virtual float getCrystalElementLength_mm() {return 0;}
+	/** Functions that returns some geomtrical parameters. Temporarily this is not implemented for a generic 3d sinogram but it is done in each
+	 * derivate class for each scanner. For that reason they are virtual */
+	virtual float getRadialBinSize_mm() {return 0;}	
+	/** Functions that returns some geomtrical parameters. Temporarily this is not implemented for a generic 3d sinogram but it is done in each
+	 * derivate class for each scanner. For that reason they are virtual */
+	virtual float getMeanDOI_mm() {return 0;}
 	
 };
 

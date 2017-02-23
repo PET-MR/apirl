@@ -53,8 +53,7 @@ bool CuSiddonProjector::Project (float* d_image, float* d_projection, float *d_r
 		cuSiddonProjection<<<gridSize, blockSize>>>(d_image, d_projection, d_ring1, d_ring2, outputSinogram->getNumR(), outputSinogram->getNumProj(), outputSinogram->getNumRings(), outputSinogram->getNumSinograms());
 	else
 	{
-		float ringWidth_mm = outputSinogram->getAxialFoV_mm()/outputSinogram->getNumRings();
-		cuSiddonOversampledProjection<<<gridSize, blockSize>>>(d_image, d_projection, d_ring1, d_ring2, ringWidth_mm, outputSinogram->getNumR(), this->numSamplesOnDetector, this->numAxialSamplesOnDetector);
+		cuSiddonOversampledProjection<<<gridSize, blockSize>>>(d_image, d_projection, d_ring1, d_ring2, outputSinogram->getWidthRings_mm(), outputSinogram->getNumR(), this->numSamplesOnDetector, this->numAxialSamplesOnDetector);
 	}
 	/// Sincronización de todos los threads.
 	checkCudaErrors(cudaThreadSynchronize());
@@ -72,9 +71,8 @@ bool CuSiddonProjector::DivideAndBackproject (float* d_inputSinogram, float* d_e
 					     d_ring1, d_ring2, inputSinogram->getNumR(), inputSinogram->getNumProj(), inputSinogram->getNumRings(), inputSinogram->getNumSinograms());
 	else
 	{
-		float ringWidth_mm = inputSinogram->getAxialFoV_mm()/inputSinogram->getNumRings();
 		cuSiddonOversampledDivideAndBackproject<<<gridSize, blockSize>>>(d_inputSinogram, d_estimatedSinogram, d_outputImage, 
-					     d_ring1, d_ring2, ringWidth_mm, inputSinogram->getNumR(), this->numSamplesOnDetector, this->numAxialSamplesOnDetector);
+					     d_ring1, d_ring2, inputSinogram->getWidthRings_mm(), inputSinogram->getNumR(), this->numSamplesOnDetector, this->numAxialSamplesOnDetector);
 	}
   /// Sincronización de todos los threads.
   checkCudaErrors(cudaThreadSynchronize());
@@ -92,8 +90,7 @@ bool CuSiddonProjector::Backproject (float * d_inputSinogram, float* d_outputIma
 							inputSinogram->getNumR(), inputSinogram->getNumProj(), inputSinogram->getNumRings(), inputSinogram->getNumSinograms());
 	else
 	{
-		float ringWidth_mm = inputSinogram->getAxialFoV_mm()/inputSinogram->getNumRings();
-		cuSiddonOversampledBackprojection<<<gridSize, blockSize>>>(d_inputSinogram, d_outputImage, d_ring1_mm, d_ring2_mm, ringWidth_mm,
+		cuSiddonOversampledBackprojection<<<gridSize, blockSize>>>(d_inputSinogram, d_outputImage, d_ring1_mm, d_ring2_mm, inputSinogram->getWidthRings_mm(),
 							inputSinogram->getNumR(), this->numSamplesOnDetector, this->numAxialSamplesOnDetector);	
 	}
   /// Sincronización de todos los threads.

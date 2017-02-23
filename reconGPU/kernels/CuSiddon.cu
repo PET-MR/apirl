@@ -185,7 +185,7 @@ __device__ void CuSiddon (float4* LOR, float4* P0, float* Input, float* Result, 
 	  + ((P0->y + LOR->y) - P0->y) * ((P0->y + LOR->y) - P0->y)
 	  + ((P0->z + LOR->z) - P0->z) * ((P0->z + LOR->z) - P0->z));
   
-  float offsetZ_mm = 0;//(SCANNER_ZFOV - cudaZFOV)/2;
+  float offsetZ_mm = d_imageSize.sizePixelZ_mm/2;//(SCANNER_ZFOV - cudaZFOV)/2;
   #ifdef __DEBUG__
     if((z_1_mm < offsetZ_mm)||(z_1_mm > (d_AxialFov_mm-offsetZ_mm)) || (z_2_mm < offsetZ_mm)||(z_2_mm > (d_AxialFov_mm-offsetZ_mm)))
     {
@@ -475,7 +475,7 @@ __device__ void CuSiddonBackprojection (float4* LOR, float4* P0, float* image, f
 	  + ((P0->y + LOR->y) - P0->y) * ((P0->y + LOR->y) - P0->y)
 	  + ((P0->z + LOR->z) - P0->z) * ((P0->z + LOR->z) - P0->z));
   
-  float offsetZ_mm = 0;//(SCANNER_ZFOV - cudaZFOV)/2;
+  float offsetZ_mm = d_imageSize.sizePixelZ_mm/2;//(SCANNER_ZFOV - cudaZFOV)/2;
   #ifdef __DEBUG__
     if((z_1_mm < offsetZ_mm)||(z_1_mm > (d_AxialFov_mm-offsetZ_mm)) || (z_2_mm < offsetZ_mm)||(z_2_mm > (d_AxialFov_mm-offsetZ_mm)))
     {

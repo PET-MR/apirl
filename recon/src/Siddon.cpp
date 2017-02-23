@@ -159,7 +159,7 @@ float Siddon (Line3D LOR, Image* image, SiddonSegment** weightsList, int* length
   /// Ente el offsetZ lo calculaba en base al FOV del sinograma, ahora que fov es el de la imagen adquirida. Debo
   /// centrar dicho FOV en el FOV del sinograma y calcular el offsetZ relativo. Esto sería el valor mínimo de Z de la
   /// imagen a reconstruir. Lo puedo obtener del zFOV de la imagen o del sizePixelZ_mm.
-  float offsetZ_mm = 0;//(SCANNER_ZFOV - zFov_mm)/2;
+  float offsetZ_mm = sizeImage.sizePixelZ_mm/2;//(SCANNER_ZFOV - zFov_mm)/2;
 
   if((z_1_mm < offsetZ_mm)||(z_1_mm > (SCANNER_ZFOV-offsetZ_mm)) || (z_2_mm < offsetZ_mm)||(z_2_mm > (SCANNER_ZFOV-offsetZ_mm)))
   {

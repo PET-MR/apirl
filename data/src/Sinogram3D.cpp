@@ -354,6 +354,8 @@ bool Sinogram3D::readFromInterfile(string headerFilename, float radioScanner_mm)
     // No estaba la leyenda por lo que calculo para un segmento distinto de 1:
     numRings = (int)floor((numSinogramsPerSegment[0]+1)/2);
   }
+  // Ring iwdth:
+  this->widthRings_mm = this->axialFov_mm/numRings;
   
   // Con la cantidad de anillos genero las coordenadas de los anillos:
   ptrAxialvalues_mm = (float*) malloc(numRings*sizeof(float));
