@@ -317,17 +317,29 @@ classdef PETDataClass < handle
             
         end
         
-        function [status, message] = e7_recon(ObjData, frame, numSubsets, numIterations, enablePsf)
+        function [status, message] = e7_recon(ObjData, frame, numSubsets, numIterations, enablePsf, saveIterations)
             if enablePsf
                 strPsf = ' --psf ' ;
-                outputTag = 'PSF';
+                outputTag = '-PSF';
             else
                 strPsf = ' ';
                 outputTag = '';
             end
+            if saveIterations
+                strIntermediateIters = ' --d2 ' ;
+            else
+                strIntermediateIters = ' ';
+            end
+            lastSlash = strfind(ObjData.Data.emission,ObjData.bar);
+            filename = [ObjData.Data.emission(lastSlash(end)+1:end-10) outputTag];
+            outputPath = [ObjData.Data.emission(1:lastSlash(end)) ObjData.bar 'recon' outputTag ObjData.bar];
+            if ~isdir(outputPath)
+                mkdir(outputPath);
+            end
+            fullFilename = [outputPath filename];
             command = [ObjData.SoftwarePaths.e7.siemens ' --algo op-osem --is '  num2str(numIterations) ',' num2str(numSubsets) strPsf ' -e "' ObjData.Data.emission '"' ...
-                ' --oi "' ObjData.Data.emission(1:end-9) outputTag ' "' ' -u "' ObjData.Data.umap(1).n '","' ObjData.Data.hardware_umap(1).n '"' ...
-                ' -n "' ObjData.Data.norm '"' ' --gf --quant 1 -w 344 -l 73,. --fl --ecf --izoom 1 --force --cvrg 97 --rs '];
+                ' --oi "' fullFilename ' "' ' -u "' ObjData.Data.umap(1).n '","' ObjData.Data.hardware_umap(1).n '"' ...
+                ' -n "' ObjData.Data.norm '"' ' --gf --quant 1 -w 344 -l 73,. --fl --ecf --izoom 1 --force --cvrg 97 --rs ' strIntermediateIters];
             [status,message] = system(command);            
         end
         
@@ -559,9 +571,9 @@ classdef PETDataClass < handle
 
         end
         
-        function Reconstruct(ObjData, numSubsets, numIterations, enablePsf)
+        function Reconstruct(ObjData, numSubsets, numIterations, enablePsf, saveIterations)
             for frame = 1 : ObjData.NumberOfFrames
-                [status, message] = e7_recon(ObjData, frame, numSubsets, numIterations, enablePsf);
+                [status, message] = e7_recon(ObjData, frame, numSubsets, numIterations, enablePsf, saveIterations);
             end
         
         end

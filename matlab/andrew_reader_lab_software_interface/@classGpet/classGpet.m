@@ -639,6 +639,21 @@ classdef classGpet < handle
             end
         end
         
+        function image = OPMLEMsaveIter(objGpet,Prompts, AN, RS, SensImg, initialEstimate, nIter, outputPath, saveInterval)
+            if ~isdir(outputPath)
+                mkdir(outputPath);
+            end
+            image{1} = initialEstimate;
+            for i = 1:nIter
+		% SAM ELLIS EDIT (18/07/2016): replaced vector divisions by vecDivision
+                image{i+1} = image{i}.*objGpet.vecDivision(objGpet.PT(AN.*objGpet.vecDivision(Prompts,AN.*objGpet.P(image{i})+ RS)),SensImg);
+                image{i+1} = max(0,image{i+1});
+                if rem(i-1,saveInterval) == 0 % -1 to save the first iteration
+                    interfilewrite(single(image{i+1}), [outputPath 'mlem_iter_' num2str(i)], objGpet.image_size.voxelSize_mm); % i use i instead of i+1 because i=1 is the inital estimate
+                end
+            end
+        end
+        
         function Img = OPOSEM(objGpet,Prompts,RS, SensImg,Img, nIter)
             for i = 1:nIter
                 for j = 1:objGpet.nSubsets

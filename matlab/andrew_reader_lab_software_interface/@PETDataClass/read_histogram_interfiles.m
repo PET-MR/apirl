@@ -69,7 +69,7 @@ if ObjData.Data.isListMode
             No = num2str(i-1,'%1.1d');
             
             ObjData.Data.emission(i).n = [ObjData.Data.IF.ListModeHdrs(i).hdr.NameOfDataFile(1:end-2) '-sino-0.mhdr'];
-            ObjData.Data.emission_listmode_hdr(i).n = [ObjData.Data.IF.ListModeHdrs(i).hdr.NameOfDataFile '.hdr'];
+            ObjData.Data.emission_listmode_hdr(i).n = [ObjData.Data.IF.ListModeHdrs(i).hdr.NameOfDataFile(1:end-2) '.hdr']; % remove the .l
             ObjData.Data.emission_listmode(i).n = ObjData.Data.IF.ListModeHdrs(i).hdr.NameOfDataFile;
             % umap
             HuMapMhdr = ObjData.Data.IF.HumanUmapMhdrs(1).hdr.NameOfMhdrFile;
@@ -121,11 +121,14 @@ if ObjData.Data.isListMode
         end
     end
     
-    if ObjData.Data.IF.nNormFiles> 1, error('more than one norm file were found\n'); end
-    NormHdr = [ObjData.Data.IF.NormFileHdrs.hdr.NameOfDataFile '.hdr'];
-    ObjData.Data.norm = NormHdr;
-    if ~exist(NormHdr,'file'), error('could not find %s\n',NormHdr); end
-    
+    if ObjData.Data.IF.nNormFiles> 0
+        if ObjData.Data.IF.nNormFiles> 1
+            warning('more than one norm file were found\n');
+        end
+        NormHdr = [ObjData.Data.IF.NormFileHdrs.hdr.NameOfDataFile '.hdr'];
+        ObjData.Data.norm = NormHdr;
+        if ~exist(NormHdr,'file'), warning('could not find %s\n',NormHdr); end
+    end
     
     %call Histogram_replay to generate the sinograms per frame
     fprintf('Histogram replay\n');

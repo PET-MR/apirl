@@ -39,7 +39,7 @@ for i = 3:length(listing)
     if ~isempty(name) && ~isempty(ext)
         if strcmpi(ext,'.l')
             nListModeFiles = nListModeFiles + 1;
-            hdrFilename = [directory name '.l.hdr'];
+            hdrFilename = [directory name '.hdr'];
             ListModeHdrs = getHeaderFiles(hdrFilename,ListModeHdrs,nListModeFiles);
         elseif strcmpi(ext,'.s')
             hdrFilename = [directory name '.s.hdr'];
@@ -88,14 +88,18 @@ for i = 3:length(listing)
                 % exclude those of scatters, norms
                 % NumberOfEmissionDataTypes ==1
                 if Mhdr.NumberOfEmissionDataTypes==2
+                    % check theat the .s is available, sometimes is only
+                    % the mhdr when the list mode is used:
                     % check if the Mhdr.NameOfDataFile referes to compressed or uncompressed sinograms
-                    hdr = getInfoFromInterfile(Mhdr.NameOfDataFile);
-                    if strcmpi(hdr.Compression,'on')
-                        nCompressedSinogramMhdrs = nCompressedSinogramMhdrs + 1;
-                        CompressedSinogramMhdrs(nCompressedSinogramMhdrs).hdr = Mhdr;
-                    else
-                        nUncompressedSinogramMhdrs = nUncompressedSinogramMhdrs + 1;
-                        UncompressedSinogramMhdrs(nUncompressedSinogramMhdrs).hdr = Mhdr;
+                    if exist(Mhdr.NameOfDataFile)
+                        hdr = getInfoFromInterfile(Mhdr.NameOfDataFile);
+                        if strcmpi(hdr.Compression,'on')
+                            nCompressedSinogramMhdrs = nCompressedSinogramMhdrs + 1;
+                            CompressedSinogramMhdrs(nCompressedSinogramMhdrs).hdr = Mhdr;
+                        else
+                            nUncompressedSinogramMhdrs = nUncompressedSinogramMhdrs + 1;
+                            UncompressedSinogramMhdrs(nUncompressedSinogramMhdrs).hdr = Mhdr;
+                        end
                     end
                 end
             end
