@@ -14,12 +14,9 @@
  *************************************************************************/
 
 
-#ifndef __OMP_CORE_H__
-#define __OMP_CORE_H__
-
+#pragma once
 
 #include "mex.h"
-
 
 
 /**************************************************************************
@@ -75,6 +72,3 @@
  **************************************************************************/
 mxArray* ompcore(double D[], double x[], double DtX[], double XtX[], double G[], mwSize n, mwSize m, mwSize L,
                  int T, double eps, int gamma_mode, int profile, double msg_delta, int erroromp);
-
-
-#endif

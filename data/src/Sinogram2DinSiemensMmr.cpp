@@ -20,7 +20,7 @@ const float Sinogram2DinSiemensMmr::binSize_mm = 4.0891f/2.0f;
 /// Depth or length og each crystal.
 const float Sinogram2DinSiemensMmr::crystalElementLength_mm = 20;
 /// Mean depth of interaction:
-const float Sinogram2DinSiemensMmr::meanDOI_mm = 9.6; //In e7_tools 6.7;
+const float Sinogram2DinSiemensMmr::meanDOI_mm = 9.6f; //In e7_tools 6.7;
 
 Sinogram2DinSiemensMmr::Sinogram2DinSiemensMmr(char* fileHeaderPath): Sinogram2DinCylindrical3Dpet(fileHeaderPath, 297, 328)
 {
@@ -33,7 +33,7 @@ Sinogram2DinSiemensMmr::Sinogram2DinSiemensMmr(char* fileHeaderPath): Sinogram2D
   {
     // ptrRvalues initialization is necesary just one time
     // 1) Get the length on the cylindrical surface for each bin (from x=0 to the center of the crystal element):
-	lr = binSize_mm/2 + (binSize_mm*(j-(float)(numR/2)));
+    lr = binSize_mm/2 + (binSize_mm*(j-(float)(numR/2)));
     // 2) Now I get the x coordinate for that r.
     ptrRvalues_mm[j] = (radioScanner_mm + meanDOI_mm* cos(lr/radioScanner_mm)) * sin(lr/radioScanner_mm);
   }
@@ -113,7 +113,7 @@ Sinogram2DinSiemensMmr::Sinogram2DinSiemensMmr(const Sinogram2DinSiemensMmr* src
   {
     // ptrRvalues initialization is necesary just one time
     // 1) Get the length on the cylindrical surface for each bin (from x=0 to the center of the crystal element):
-	lr = binSize_mm/2 + (binSize_mm*(j-(float)(numR/2)));
+    lr = binSize_mm/2 + (binSize_mm*(j-(float)(numR/2)));
     // 2) Now I get the x coordinate for that r.
     ptrRvalues_mm[j] = (radioScanner_mm + meanDOI_mm* cos(lr/radioScanner_mm)) * sin(lr/radioScanner_mm);
   }
@@ -160,7 +160,7 @@ bool Sinogram2DinSiemensMmr::getFovLimits(Line2D lor, Point2D* limitPoint1, Poin
 
 bool Sinogram2DinSiemensMmr::getPointsFromLor(int indexProj, int indexR, int indexRingConfig, Point3D* p1, Point3D* p2, float* geomFactor)
 {
-  float r, rad_PhiAngle, lr, effRadioScanner_mm, auxValue;
+  float r, rad_PhiAngle/*, lr, effRadioScanner_mm*/, auxValue;
   // r is already arc corrected in the constructor:
   r = this->getRValue(indexR);
   //float lr = (binSize_mm/2 + binSize_mm*(indexR-(float)(numR/2)));
@@ -181,6 +181,7 @@ bool Sinogram2DinSiemensMmr::getPointsFromLor(int indexProj, int indexR, int ind
 	(ptrListZ2_mm[indexRingConfig]-ptrListZ1_mm[indexRingConfig])/(2.0f*radioScanner_mm+crystalElementLength_mm*2)*radioScanner_mm - cos(alpha)*meanDOI_mm;
   p2->Z = (ptrListZ2_mm[indexRingConfig]+ptrListZ1_mm[indexRingConfig])/2 + 
 	(ptrListZ2_mm[indexRingConfig]-ptrListZ1_mm[indexRingConfig])/(2.0f*radioScanner_mm+crystalElementLength_mm*2)*radioScanner_mm + cos(alpha)*meanDOI_mm;
+  return true;
 }
   
   

@@ -2,25 +2,10 @@
 clear all 
 close all
 %% CONFIGURE PATHS
-% Check what OS I am running on:
-if(strcmp(computer(), 'GLNXA64'))
-    os = 'linux';
-    pathBar = '/';
-    sepEnvironment = ':';
-elseif(strcmp(computer(), 'PCWIN') || strcmp(computer(), 'PCWIN64'))
-    os = 'windows';
-    pathBar = '\';
-    sepEnvironment = ';';
-else
-    disp('OS not compatible');
-    return;
-end
-
-% APIRL PATH
-apirlPath = '/home/mab15/workspace/apirl-code/trunk/';
-addpath(genpath([apirlPath pathBar 'matlab']));
-setenv('PATH', [getenv('PATH') sepEnvironment apirlPath pathBar 'build' pathBar 'bin']);
-setenv('LD_LIBRARY_PATH', [getenv('LD_LIBRARY_PATH') sepEnvironment apirlPath pathBar 'build' pathBar 'bin']);
+apirlPath = [fileparts(mfilename('fullpath')) filesep '..' filesep '..'];
+addpath(genpath([apirlPath filesep 'matlab']));
+setenv('PATH', [getenv('PATH') pathsep apirlPath filesep 'build' filesep 'bin']);
+setenv('LD_LIBRARY_PATH', [getenv('LD_LIBRARY_PATH') pathsep apirlPath filesep 'build' filesep 'bin']);
 %% INIT CLASS GPET
 PET.scanner = 'cylindrical';
 PET.method =  'otf_siddon_gpu';

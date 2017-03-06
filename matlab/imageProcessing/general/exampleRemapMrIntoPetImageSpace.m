@@ -1,23 +1,11 @@
 clear all
 close all
-apirlPath = '/workspaces/Martin/KCL/apirl-code/trunk/';
-% Check what OS I am running on:
-if(strcmp(computer(), 'GLNXA64'))
-    os = 'linux';
-    pathBar = '/';
-    sepEnvironment = ':';
-elseif(strcmp(computer(), 'PCWIN') || strcmp(computer(), 'PCWIN64'))
-    os = 'windows';
-    pathBar = '\';
-    sepEnvironment = ';';
-else
-    disp('OS not compatible');
-    return;
-end
+
+apirlPath = [fileparts(mfilename('fullpath')) filesep '..' filesep '..' filesep '..'];
 % SET ENVIRONMENT AND MATLAB PATHS
-addpath(genpath([apirlPath pathBar 'matlab']));
-setenv('PATH', [getenv('PATH') sepEnvironment apirlPath pathBar 'build' pathBar 'bin']);
-setenv('LD_LIBRARY_PATH', [getenv('LD_LIBRARY_PATH') sepEnvironment apirlPath pathBar 'build' pathBar 'bin']);
+addpath(genpath([apirlPath filesep 'matlab']));
+setenv('PATH', [getenv('PATH') pathsep apirlPath filesep 'build' filesep 'bin']);
+setenv('LD_LIBRARY_PATH', [getenv('LD_LIBRARY_PATH') pathsep apirlPath filesep 'build' filesep 'bin']);
 %% OUTPUT PATH
 % Save all the resampled images in interfile format in an output path:
 outputPath = '/workspaces/Martin/KCL/mixed_pet_mr_reconstruction/TestRemapImages/';

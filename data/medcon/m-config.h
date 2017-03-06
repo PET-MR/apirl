@@ -28,8 +28,7 @@
    with this program; if not, write to the Free Software Foundation, Inc.,
    59 Place - Suite 330, Boston, MA 02111-1307, USA.  */
 
-#ifndef __M_CONFIG_H__
-#define __M_CONFIG_H__
+#pragma once
 
 /* Define if format enabled */
 #define MDC_INCLUDE_INTF  1
@@ -81,7 +80,9 @@
 //		#define MDC_WORDS_BIGENDIAN  @mdc_cv_bigendian@
 		#define MDC_SIZEOF_SHORT     2
 		#define MDC_SIZEOF_INT       4
+		#ifndef MDC_SIZEOF_LONG
 		#define MDC_SIZEOF_LONG      4
+		#endif
 		#define MDC_SIZEOF_LONG_LONG 8
 	#endif
 #endif
@@ -91,9 +92,3 @@
 #if MDC_ENABLE_LONG_LONG
 #define MDC_SIZEOF_LONG_LONG @ac_cv_sizeof_long_long@
 #endif
-
-
-
-
-#endif
-

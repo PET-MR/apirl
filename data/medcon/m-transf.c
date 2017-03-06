@@ -61,6 +61,7 @@
 #endif
 
 #include "medcon.h"
+#include "m-qmedian.h"  // MdcReduceColor
 
 /****************************************************************************
                             F U N C T I O N S

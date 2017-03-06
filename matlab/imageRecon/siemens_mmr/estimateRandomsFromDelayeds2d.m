@@ -7,20 +7,6 @@ function [randoms, singles] = estimateRandomsFromDelayeds2d(delayedSinogram2d, s
 disp('estimate Randoms with Delayeds Sinogram...'); 
 
 timeWindows_nseg = 8;
-% Check what OS I am running on:
-if(strcmp(computer(), 'GLNXA64'))
-    os = 'linux';
-    pathBar = '/';
-    sepEnvironment = ':';
-elseif(strcmp(computer(), 'PCWIN') || strcmp(computer(), 'PCWIN64'))
-    os = 'windows';
-    pathBar = '\';
-    sepEnvironment = ';';
-else
-    disp('OS not compatible');
-    return;
-end
-
 
 % Method from Panin 2008. Maximices likelihood:
 %L = sum(r_measured*log(r_estimated)-r_estimated);

@@ -19,9 +19,8 @@ function michelogram = getMichelogramFromCoincidenceMatrix(filenameCoincidenceMa
 
 
 addpath('/workspaces/Martin/PET/Coincidencia/trunk/matlab/LibreriaCoincidencia')
-addpath('/sources/MATLAB/WorkingCopy/ImageRecon');
-addpath('/sources/MATLAB/WorkingCopy/ImageProcessing');
-addpath('/sources/MATLAB/WorkingCopy/utils');
+apirlPath = [fileparts(mfilename('fullpath')) filesep '..' filesep '..' filesep '..'];
+addpath(genpath([apirlPath filesep 'matlab']));
 
 %% CONSTANTES DEL PROCESAMIENTO
 % Cantidad de Eventos Por Lectura:

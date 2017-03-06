@@ -29,8 +29,7 @@
    with this program; if not, write to the Free Software Foundation, Inc.,
    59 Place - Suite 330, Boston, MA 02111-1307, USA.  */
 
-#ifndef __M_INTF_H__
-#define __M_INTF_H__
+#pragma once
 
 /****************************************************************************
                               D E F I N E S 
@@ -158,6 +157,3 @@ char *MdcWriteIntfPET(FILEINFO *fi);
 char *MdcWriteIntfHeader(FILEINFO *fi);
 char *MdcWriteIntfImages(FILEINFO *fi);
 const char *MdcWriteINTF(FILEINFO *fi);
- 
-#endif
-

@@ -10,8 +10,7 @@
 	\date 2010.11.11
 	\version 1.1.0
 */
-#ifndef _MLEM2DTGS_H_
-#define _MLEM2DTGS_H_
+#pragma once
 
 #include <Mlem.h>
 #include <Sinogram2Dtgs.h>
@@ -102,5 +101,3 @@ class DLLEXPORT Mlem2dTgs : public Mlem
 		bool Reconstruct();
 		
 };
-
-#endif

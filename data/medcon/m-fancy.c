@@ -235,13 +235,13 @@ int MdcPrintValue(FILE *fp, Uint8 *pvalue, Uint16 type)
    case BIT64_S:
     {
       Int64 *val = (Int64 *) pvalue;
-      fprintf(fp,"%ld",val[0]);
+      fprintf(fp,"%lld",val[0]);
     }
     break;
    case BIT64_U:
     {
       Uint64 *val = (Uint64 *) pvalue;
-      fprintf(fp,"%lu",val[0]);
+      fprintf(fp,"%llu",val[0]);
     }
     break;
 #endif
@@ -1021,13 +1021,13 @@ char *MdcGetStrHHMMSS(float msecs)
 {
   unsigned int s, ms, hrs, mins, secs;
 
-  s = (unsigned int)(msecs / 1000.);
+  s = (unsigned int)(msecs / 1000.0f);
 
-  ms = (unsigned int)(msecs - (s * 1000.));
+  ms = (unsigned int)(msecs - (s * 1000));
 
   hrs  = s / 3600; s -= hrs  * 3600;
 
-  mins = (unsigned int)( s / 60.0f);   s -= (unsigned int) mins * 60.0f;
+  mins = s / 60;   s -= mins * 60;
 
   secs = s;
 

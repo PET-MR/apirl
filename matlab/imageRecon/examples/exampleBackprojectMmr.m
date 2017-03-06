@@ -6,28 +6,17 @@
 %  Example of how to use OsemMmrSpan1:
 clear all 
 close all
-% Check what OS I am running on:
-if(strcmp(computer(), 'GLNXA64'))
-    os = 'linux';
-    pathBar = '/';
-    sepEnvironment = ':';
-elseif(strcmp(computer(), 'PCWIN') || strcmp(computer(), 'PCWIN64'))
-    os = 'windows';
-    pathBar = '\';
-    sepEnvironment = ';';
-else
-    disp('OS not compatible');
-    return;
-end
+
+apirlPath = [fileparts(mfilename('fullpath')) filesep '..' filesep '..' filesep '..'];
 %% CUDA PATH
 cudaPath = '/usr/local/cuda/';
-setenv('PATH', [getenv('PATH') sepEnvironment cudaPath pathBar 'bin']);
-setenv('LD_LIBRARY_PATH', [getenv('LD_LIBRARY_PATH') sepEnvironment cudaPath pathBar 'lib64']);
+setenv('PATH', [getenv('PATH') pathsep cudaPath filesep 'bin']);
+setenv('LD_LIBRARY_PATH', [getenv('LD_LIBRARY_PATH') pathsep cudaPath filesep 'lib64']);
 %% APIRL PATH
 apirlPath = '/home/mab15/workspace/apirl-code/trunk/';
-addpath(genpath([apirlPath pathBar 'matlab']));
-setenv('PATH', [getenv('PATH') sepEnvironment apirlPath pathBar 'build' pathBar 'bin']);
-setenv('LD_LIBRARY_PATH', [getenv('LD_LIBRARY_PATH') sepEnvironment apirlPath pathBar 'build' pathBar 'bin']);
+addpath(genpath([apirlPath filesep 'matlab']));
+setenv('PATH', [getenv('PATH') pathsep apirlPath filesep 'build' filesep 'bin']);
+setenv('LD_LIBRARY_PATH', [getenv('LD_LIBRARY_PATH') pathsep apirlPath filesep 'build' filesep 'bin']);
 %% READ SINOGRAM
 % Read the sinograms:
 % sinogramFilename = '/home/mab15/workspace/KCL/Biograph_mMr/Mediciones/LineSources/Line_Source_sinograms/PET_ACQ_91_20150313115152-0uncomp.s.hdr';

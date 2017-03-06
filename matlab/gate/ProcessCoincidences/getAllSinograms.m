@@ -53,9 +53,10 @@ function getAllSinograms(outputPath, structSimu, structSizeSino2D, structSizeSin
 % hist4.
 addpath('/sources/MATLAB/FuncionesGenerales');
 addpath('/sources/MATLAB/VersionesFinales');
-addpath('/sources/MATLAB/WorkingCopy/ImageProcessing')
-addpath('/sources/MATLAB/WorkingCopy/ImageRecon')
-addpath('/sources/MATLAB/WorkingCopy/utils')
+
+apirlPath = [fileparts(mfilename('fullpath')) filesep '..' filesep '..' filesep '..'];
+addpath(genpath([apirlPath filesep 'matlab']));
+
 %% CONSTANTES GEOMÉTRICAS DEL CRISTAL
 cantCabezales = 6;
 cristalSizeY_mm = 304.8;   % Ancho del cristal 304.8mm.

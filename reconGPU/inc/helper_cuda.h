@@ -1,6 +1,5 @@
 /** @file helper_cuda.h */
-#ifndef _HELPER_CUDA_H_
-#define _HELPER_CUDA_H_
+#pragma once
 
 /** @brief Tama#o del warp de la GPU */
 #define CUDA_WARP_SIZE 32
@@ -83,5 +82,3 @@ _getLastCudaError(const char *errorMessage, const char *file, const int line) {
 #define DEVICEFUNCTION
 
 #endif /* __CUDACC__ */
-
-#endif /* _HELPER_CUDA_H_ */

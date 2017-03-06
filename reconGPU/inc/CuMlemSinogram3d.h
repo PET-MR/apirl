@@ -10,8 +10,7 @@
 	\date 2010.11.11
 	\version 1.1.0
 */
-#ifndef _CU_MLEMSINOGRAM3D_H_
-#define _CU_MLEMSINOGRAM3D_H_
+#pragma once
 
 #include <Mlem.h>
 #include <OsemSinogram3d.h>
@@ -280,5 +279,3 @@ class CuMlemSinogram3d : public MlemSinogram3d
     /// Método que realiza la reconstrucción y permite al usuario establecer el índice de GPU a utilizar
     virtual bool Reconstruct(TipoProyector tipoProy, int indexGpu);
 };
-
-#endif

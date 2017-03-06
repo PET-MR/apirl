@@ -81,34 +81,6 @@ class DLLEXPORT Sinogram3DSiemensMmr : public Sinogram3DCylindricalPet
 	static const unsigned char sizeBin_bytes = sizeof(float);	// Size in bytes of each element of the Michelogram. float -> 4
   protected:	
 	static const struct ScannerParameters scannerParameters;
-// 	/** Radio del Scanner en mm. */
-// 	static const float radioScanner_mm;
-// 	
-// 	/** Radio del FOV en mm. */
-// 	static const float radioFov_mm;
-// 
-// 	/** Largo axial del FOV en mm. */
-// 	static const float axialFov_mm;
-// 	
-// 	/// Number of cryatl elements including gaps.
-// 	/** This is amount of crystal elements in the sinogram. The real crystals are 448 gut there are 56 gaps
-// 	 * counted in the sinograms as crystal elements (1 gap per block). */
-// 	static const int numCrystalElements = 504;
-// 	
-// 	/// Size of each pixel element.
-// 	static const float crystalElementSize_mm;
-// 	
-// 	/** Length of the crystal element. */
-// 	static const float crystalElementLength_mm;
-// 	
-// 	/// Mean depth of interaction:
-// 	static const float meanDOI_mm;
-// 	
-// 	/// Size of num rings.
-// 	static const int numRings = 64;
-
-	/// Width of each rings.
-//	static const float widthRings_mm; //axialFov_mm / numRings;
 
 	/// Función que inicializa los segmentos.
 	void inicializarSegmentos();

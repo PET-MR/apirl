@@ -34,17 +34,7 @@ narginchk(1, 2);
 % mismo path, pero que se puedan leer y crear desde otro path. Cuando el
 % nombre del interfile a leer tiene un path además del nombre, dicho path
 % también debo agregarselo al "data file name" que figura en el h33:
-if(strcmp(computer(), 'GLNXA64'))
-    os = 'linux';
-    pathBar = '/';
-elseif(strcmp(computer(), 'PCWIN') || strcmp(computer(), 'PCWIN64'))
-    os = 'windows';
-    pathBar = '\';
-else
-    disp('OS not compatible');
-    return;
-end
-barras = strfind(filename, pathBar);
+barras = strfind(filename, filesep);
 relativePath = '';
 filenameOnly = '';
 if ~isempty(barras)
@@ -70,7 +60,7 @@ if (fid == -1)
     if (fid == -1)
         %Finaly try getting only the fileme from e header d using e
         %currentath:
-        barras = strfind(params.data_file, pathBar);
+        barras = strfind(params.data_file, filesep);
         relativePathBinary = '';
         filenameOnlyBinary = '';
         if ~isempty(barras)

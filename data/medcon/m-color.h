@@ -29,8 +29,7 @@
    59 Place - Suite 330, Boston, MA 02111-1307, USA.  */
 
 
-#ifndef __M_COLOR_H__
-#define __M_COLOR_H__
+#pragma once
 
 /****************************************************************************
                             F U N C T I O N S
@@ -43,6 +42,3 @@ void MdcCombinedScale(Uint8 *palette);
 void MdcHotmetalScale(Uint8 *palette);
 void MdcGetColorMap(int map, Uint8 palette[]);
 int MdcSetPresentMap(Uint8 palette[]);
-
-#endif
-

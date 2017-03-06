@@ -28,8 +28,7 @@
    with this program; if not, write to the Free Software Foundation, Inc.,
    59 Place - Suite 330, Boston, MA 02111-1307, USA.  */
 
-#ifndef __M_STRUCTS_H__
-#define __M_STRUCTS_H__
+#pragma once
 
 /****************************************************************************
                               D E F I N E S
@@ -373,5 +372,3 @@ void MdcFreeODs(FILEINFO *fi);
 void MdcResetIDs(FILEINFO *fi);
 char *MdcResetODs(FILEINFO *fi);
 void MdcCleanUpFI(FILEINFO *fi);
-
-#endif

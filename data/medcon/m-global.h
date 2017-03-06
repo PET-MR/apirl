@@ -28,8 +28,7 @@
    with this program; if not, write to the Free Software Foundation, Inc.,
    59 Place - Suite 330, Boston, MA 02111-1307, USA.  */
 
-#ifndef __M_GLOBAL_H__
-#define __M_GLOBAL_H__
+#pragma once
 
 /****************************************************************************
                               D E F I N E S 
@@ -123,6 +122,3 @@ extern Int8 MDC_FALLBACK_FRMT;
 extern char *mdc_comments;
 
 extern Int8 XMDC_GUI, XMDC_WRITE_FRMT;
-
-#endif
-

@@ -22,7 +22,6 @@ Sensi = PET.PT(1);
 x = PET.ones;
 figure
 for i = 1:p.nIter
-    
     x = x./(Sensi).*PET.PT(y./(PET.P(x)+eps));
     drawnow, imagesc(x), axis image, colormap gray
 end
@@ -70,28 +69,14 @@ end
 %% EXAMPLE MLEM MARTIN PROJECTOR (DEFAULT SPAN 11)
 clear all 
 close all
-% Check what OS I am running on:
-if(strcmp(computer(), 'GLNXA64'))
-    os = 'linux';
-    pathBar = '/';
-    sepEnvironment = ':';
-elseif(strcmp(computer(), 'PCWIN') || strcmp(computer(), 'PCWIN64'))
-    os = 'windows';
-    pathBar = '\';
-    sepEnvironment = ';';
-else
-    disp('OS not compatible');
-    return;
-end
+apirlPath = [fileparts(mfilename('fullpath')) filesep '..' filesep '..'];
+addpath(genpath([apirlPath filesep 'matlab']));
+setenv('PATH', [getenv('PATH') pathsep apirlPath filesep 'build' filesep 'bin']);
+setenv('LD_LIBRARY_PATH', [getenv('LD_LIBRARY_PATH') pathsep apirlPath filesep 'build' filesep 'bin']);
 % CUDA PATH
 cudaPath = '/usr/local/cuda/';
-setenv('PATH', [getenv('PATH') sepEnvironment cudaPath pathBar 'bin']);
-setenv('LD_LIBRARY_PATH', [getenv('LD_LIBRARY_PATH') sepEnvironment cudaPath pathBar 'lib64']);
-% APIRL PATH
-apirlPath = '/home/mab15/workspace/apirl-code/trunk/';
-addpath(genpath([apirlPath pathBar 'matlab']));
-setenv('PATH', [getenv('PATH') sepEnvironment apirlPath pathBar 'build' pathBar 'bin']);
-setenv('LD_LIBRARY_PATH', [getenv('LD_LIBRARY_PATH') sepEnvironment apirlPath pathBar 'build' pathBar 'bin']);
+setenv('PATH', [getenv('PATH') pathsep cudaPath filesep 'bin']);
+setenv('LD_LIBRARY_PATH', [getenv('LD_LIBRARY_PATH') pathsep cudaPath filesep 'lib64']);
 
 fullFilename = '/home/mab15/workspace/KCL/Biograph_mMr/Mediciones/BRAIN_PETMR/SINOGRAMS/PET_ACQ_68_20150610155347_ima_AC_000_000.v.hdr';
 [g_truth, refImage, bedPosition_mm, info]  = interfileReadSiemensImage(fullFilename); 
@@ -119,7 +104,6 @@ x = PET.ones;
 sliceToShow = 50;
 figure
 for i = 1:PET.nIter
-    
     x = x./(Sensi).*PET.PT(y./(PET.P(x)+eps));
     drawnow, imagesc(x(:,:,sliceToShow)), axis image, colormap gray
 end
@@ -129,25 +113,25 @@ close all
 % Check what OS I am running on:
 if(strcmp(computer(), 'GLNXA64'))
     os = 'linux';
-    pathBar = '/';
-    sepEnvironment = ':';
+    filesep = '/';
+    pathsep = ':';
 elseif(strcmp(computer(), 'PCWIN') || strcmp(computer(), 'PCWIN64'))
     os = 'windows';
-    pathBar = '\';
-    sepEnvironment = ';';
+    filesep = '\';
+    pathsep = ';';
 else
     disp('OS not compatible');
     return;
 end
 % CUDA PATH
 cudaPath = '/usr/local/cuda/';
-setenv('PATH', [getenv('PATH') sepEnvironment cudaPath pathBar 'bin']);
-setenv('LD_LIBRARY_PATH', [getenv('LD_LIBRARY_PATH') sepEnvironment cudaPath pathBar 'lib64']);
+setenv('PATH', [getenv('PATH') pathsep cudaPath filesep 'bin']);
+setenv('LD_LIBRARY_PATH', [getenv('LD_LIBRARY_PATH') pathsep cudaPath filesep 'lib64']);
 % APIRL PATH
 apirlPath = '/workspaces/Martin/apirl-code/trunk/';
-addpath(genpath([apirlPath pathBar 'matlab']));
-setenv('PATH', [getenv('PATH') sepEnvironment apirlPath pathBar 'build' pathBar 'bin']);
-setenv('LD_LIBRARY_PATH', [getenv('LD_LIBRARY_PATH') sepEnvironment apirlPath pathBar 'build' pathBar 'bin']);
+addpath(genpath([apirlPath filesep 'matlab']));
+setenv('PATH', [getenv('PATH') pathsep apirlPath filesep 'build' filesep 'bin']);
+setenv('LD_LIBRARY_PATH', [getenv('LD_LIBRARY_PATH') pathsep apirlPath filesep 'build' filesep 'bin']);
 
 [g_truth, refImage]  = interfileRead('phantom.h33'); 
 

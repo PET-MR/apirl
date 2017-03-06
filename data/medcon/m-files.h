@@ -28,8 +28,7 @@
    with this program; if not, write to the Free Software Foundation, Inc.,
    59 Place - Suite 330, Boston, MA 02111-1307, USA.  */
 
-#ifndef __M_FILES_H__
-#define __M_FILES_H__
+#pragma once
 
 /****************************************************************************
                               D E F I N E S 
@@ -49,7 +48,7 @@
 ****************************************************************************/
 
 int MdcOpenFile(FILEINFO *fi, const char *path);
-int MdcReadFile(FILEINFO *fi, int filenr, char *(*ReadFunc)());
+int MdcReadFile(FILEINFO *fi, int filenr, char *(*ReadFunc)(FILEINFO *fi));
 int MdcWriteFile(FILEINFO *fi, int format, int prefixnr, char *(*WriteFunc)());
 int MdcLoadFile(FILEINFO *fi);
 int MdcSaveFile(FILEINFO *fi, int format, int prefixnr);
@@ -84,5 +83,3 @@ Int8 MdcGetPatSliceOrient(FILEINFO *fi, Uint32 i);
 Int8 MdcTryPatSliceOrient(char *pat_orient);
 Int8 MdcCheckQuantitation(FILEINFO *fi);
 float MdcGetHeartRate(GATED_DATA *gd, Int16 type);
-#endif
-

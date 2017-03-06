@@ -34,17 +34,6 @@
 function [volume randoms scatter] = MatlabMlemMmr(sinogramInputFilename, span, normFilename, attMapBaseFilename, correctRandoms, correctScatter, outputPath, pixelSize_mm, numIterations, saveInterval, useGpu, stirMatlabPath)
 
 mkdir(outputPath);
-% Check what OS I am running on:
-if(strcmp(computer(), 'GLNXA64'))
-    os = 'linux';
-    pathBar = '/';
-elseif(strcmp(computer(), 'PCWIN') || strcmp(computer(), 'PCWIN64'))
-    os = 'windows';
-    pathBar = '\';
-else
-    disp('OS not compatible');
-    return;
-end
 
 % Check if we have received pixel size:
 if nargin ~= 12
@@ -59,14 +48,14 @@ disp('Read input sinogram...');
 [sinograms, delayedSinograms, structSizeSino3dSpan1] = interfileReadSino(sinogramInputFilename);
 % Convert to span:
 [sinograms, structSizeSino3d] = convertSinogramToSpan(sinograms, structSizeSino3dSpan1, span);
-sinogramFilename = [outputPath pathBar 'sinogram'];
+sinogramFilename = [outputPath filesep 'sinogram'];
 % Write the input sinogram:
 interfileWriteSino(single(sinograms), sinogramFilename, structSizeSino3d);
 %% CREATE INITIAL ESTIMATE FOR RECONSTRUCTION
 disp('Creating inital image...');
 % Inititial estimate:
 initialEstimate = ones(imageSize_pixels, 'single');
-%filenameInitialEstimate = [outputPath pathBar 'initialEstimate'];
+%filenameInitialEstimate = [outputPath filesep 'initialEstimate'];
 %interfilewrite(initialEstimate, filenameInitialEstimate, pixelSize_mm);
 %% NORMALIZATION FACTORS
 if isstr(normFilename)
@@ -177,7 +166,7 @@ else
     % them:
     if(correctRandoms)
         % Stir computes randoms that are already normalized:
-        [randoms, structSizeSino] = estimateRandomsWithStir(delayedSinograms, structSizeSino3dSpan1, overall_ncf_3d, structSizeSino3d, [outputPath pathBar 'stirRandoms' pathBar]);
+        [randoms, structSizeSino] = estimateRandomsWithStir(delayedSinograms, structSizeSino3dSpan1, overall_ncf_3d, structSizeSino3d, [outputPath filesep 'stirRandoms' filesep]);
         interfileWriteSino(single(randoms), [outputPath 'randoms'], structSizeSino3d);
         
         [detector1SystemMatrix, detector2SystemMatrix] = createDetectorSystemMatrix3d(span, 1);
@@ -224,7 +213,7 @@ end
 % If I need to compute the scatter, I need the acfs of only the human
 % attenuation map:
 if computeScatter == 1
-    stirScriptsPath = [stirMatlabPath pathBar 'scripts'];
+    stirScriptsPath = [stirMatlabPath filesep 'scripts'];
     % The scatter needs the image but also the acf to scale, and in the case of
     % the mr is better if this acf include the human?
     if ~strcmp(attMapBaseFilename(end-3:end),'.h33')
@@ -245,7 +234,7 @@ disp('Compute sensitivity image...');
 anfSino = overall_ncf_3d .* acfsSinogram; % ancf.
 anfSino(anfSino~= 0) = 1./anfSino(anfSino~= 0); % anf.
 % Backproject sinogram in other path:
-sensitivityPath = [outputPath 'SensitivityImage' pathBar];
+sensitivityPath = [outputPath 'SensitivityImage' filesep];
 mkdir(sensitivityPath);
 [sensImage, pixelSize_mm] = BackprojectMmr(anfSino, imageSize_pixels, pixelSize_mm, sensitivityPath, structSizeSino3d.span, [],[], useGpu);
 % Generate update threshold:
@@ -265,10 +254,10 @@ for iterScatter = 1 : numItersScatter
         disp(sprintf('Iteration %d...', iter));
         % 2.a) Create working directory:
         if rem(iter,saveInterval) == 0
-            iterationPath = [outputPath pathBar sprintf('Iteration%d', iter) pathBar];
+            iterationPath = [outputPath filesep sprintf('Iteration%d', iter) filesep];
             mkdir(iterationPath);
         else
-            iterationPath = [outputPath 'temp' pathBar];
+            iterationPath = [outputPath 'temp' filesep];
             mkdir(iterationPath);
         end
         % 2.b) Project current image:
@@ -286,7 +275,7 @@ for iterScatter = 1 : numItersScatter
         emRecon(sensImage > updateThreshold) = emRecon(sensImage > updateThreshold) .* backprojImage(sensImage > updateThreshold)./ sensImage(sensImage > updateThreshold);
         emRecon(sensImage <= updateThreshold) = 0;
         if rem(iter,saveInterval) == 0
-            interfilewrite(emRecon, [outputPath pathBar sprintf('emImage_iter%d', iter)], pixelSize_mm);
+            interfilewrite(emRecon, [outputPath filesep sprintf('emImage_iter%d', iter)], pixelSize_mm);
         end
     end
     if iterScatter < numItersScatter    % For the last iteration is not necessary to estimate the scatter, because the scatter is used in the next iteration.
@@ -294,7 +283,7 @@ for iterScatter = 1 : numItersScatter
         if computeScatter
             % SCATTER ESTIMATE
             % It also uses stir:
-            outputPathScatter = [outputPath pathBar sprintf('scatter_%d', iterScatter) pathBar];
+            outputPathScatter = [outputPath filesep sprintf('scatter_%d', iterScatter) filesep];
             [scatterEstimates{iterScatter}, structSizeSino, mask] = estimateScatterWithStir(emRecon, attenMap, pixelSize_mm, sinograms, randoms, overall_ncf_3d, acfsOnlyHuman, structSizeSino3d, outputPathScatter, stirScriptsPath, thresholdForTail);
             % Save old scatter to average them.
             % Average:
@@ -303,10 +292,10 @@ for iterScatter = 1 : numItersScatter
                 scatter = scatter + scatterEstimates{iterScatter};
             end
             scatter = scatter ./ iterScatter;
-            interfileWriteSino(single(scatter), [outputPath pathBar sprintf('scatterEstimate_iter%d', iterScatter)], structSizeSino);
+            interfileWriteSino(single(scatter), [outputPath filesep sprintf('scatterEstimate_iter%d', iterScatter)], structSizeSino);
         end
     end
 end
 %% OUTPUT PARAMETER
-interfilewrite(emRecon, [outputPath pathBar 'emImage_final'], pixelSize_mm);
+interfilewrite(emRecon, [outputPath filesep 'emImage_final'], pixelSize_mm);
 volume = emRecon;

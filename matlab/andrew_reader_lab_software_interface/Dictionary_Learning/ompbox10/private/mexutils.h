@@ -13,9 +13,7 @@
  *
  *************************************************************************/
 
-
-#ifndef __MEX_UTILS_H__
-#define __MEX_UTILS_H__
+#pragma once
 
 #include "mex.h"
 
@@ -97,7 +95,3 @@ void checksparse(const mxArray *param, char *fname, char *pname);
  *
  **************************************************************************/
 void checkcell_1d(const mxArray *param, char *fname, char *pname);
-
-
-#endif
-

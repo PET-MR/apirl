@@ -10,19 +10,6 @@ end
 disp('estimate Randoms with Delayeds Sinogram...'); 
 
 timeWindows_nseg = 8;
-% Check what OS I am running on:
-if(strcmp(computer(), 'GLNXA64'))
-    os = 'linux';
-    pathBar = '/';
-    sepEnvironment = ':';
-elseif(strcmp(computer(), 'PCWIN') || strcmp(computer(), 'PCWIN64'))
-    os = 'windows';
-    pathBar = '\';
-    sepEnvironment = ';';
-else
-    disp('OS not compatible');
-    return;
-end
 
 % The input sinogram must be span 1:
 if structSizeSino3dSpan1.span ~= 1

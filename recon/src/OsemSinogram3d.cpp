@@ -245,7 +245,7 @@ bool OsemSinogram3d::Reconstruct()
 	  outputFilename.assign(c_string);
 	  reconstructionImage->writeInterfile((char*)outputFilename.c_str());
 	  // Tengo que guardar la backprojected image.
-	  sprintf(c_string, "%s_backprojected_iter_%d_subset_%d", outputFilenamePrefix.c_str(), t); /// La extensión se le agrega en write interfile.
+	  sprintf(c_string, "%s_backprojected_iter_%d_subset_%d", outputFilenamePrefix.c_str(), t, s); /// La extensión se le agrega en write interfile.
 	  outputFilename.assign(c_string);
 	  backprojectedImage->writeInterfile((char*)outputFilename.c_str());
 	}

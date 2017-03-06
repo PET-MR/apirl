@@ -1,35 +1,21 @@
 %% EXAMPLE MLEM MARTIN PROJECTOR (ANY SPAN)
 clear all 
 close all
-%% APIRL PATH
-apirlPath = '/home/mab15/workspace/apirl-code/trunk/';
-% Check what OS I am running on:
-if(strcmp(computer(), 'GLNXA64'))
-    os = 'linux';
-    pathBar = '/';
-    sepEnvironment = ':';
-elseif(strcmp(computer(), 'PCWIN') || strcmp(computer(), 'PCWIN64'))
-    os = 'windows';
-    pathBar = '\';
-    sepEnvironment = ';';
-else
-    disp('OS not compatible');
-    return;
-end
 
+apirlPath = [fileparts(mfilename('fullpath')) filesep '..' filesep '..' filesep '..'];
 %% CUDA PATH
 cudaPath = '/usr/local/cuda/';
-setenv('PATH', [getenv('PATH') sepEnvironment cudaPath pathBar 'bin']);
-setenv('LD_LIBRARY_PATH', [getenv('LD_LIBRARY_PATH') sepEnvironment cudaPath pathBar 'lib64']);
+setenv('PATH', [getenv('PATH') pathsep cudaPath filesep 'bin']);
+setenv('LD_LIBRARY_PATH', [getenv('LD_LIBRARY_PATH') pathsep cudaPath filesep 'lib64']);
 %% STIR PATH
 stirPath = '/usr/local/stir3.0/';
 stirMatlabPath = '/home/mab15/workspace/KCL/apirl-kcl/trunk/stir/';
 scriptsPath = [stirMatlabPath 'scripts/'];
 %% SET ENVIRONMENT AND MATLAB PATHS
-addpath(genpath([apirlPath pathBar 'matlab']));
+addpath(genpath([apirlPath filesep 'matlab']));
 addpath(genpath(stirMatlabPath));
-setenv('PATH', [getenv('PATH') sepEnvironment apirlPath pathBar 'build' pathBar 'bin' ':' stirPath pathBar 'bin/']);
-setenv('LD_LIBRARY_PATH', [getenv('LD_LIBRARY_PATH') sepEnvironment apirlPath pathBar 'build' pathBar 'bin' ':' stirPath pathBar 'lib/' ]);
+setenv('PATH', [getenv('PATH') pathsep apirlPath filesep 'build' filesep 'bin' pathsep stirPath filesep 'bin/']);
+setenv('LD_LIBRARY_PATH', [getenv('LD_LIBRARY_PATH') pathsep apirlPath filesep 'build' filesep 'bin' pathsep stirPath filesep 'lib/']);
 %% LOAD BRAIN PHANTOM
 outputPath = '/home/mab15/workspace/KCL/Biograph_mMr/GateModel/svn/BrainPhantom/';
 if ~isdir(outputPath)

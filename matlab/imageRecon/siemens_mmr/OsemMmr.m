@@ -29,18 +29,6 @@
 function [volume overall_ncf_3d acfsSinogram randoms scatter] = OsemMmr(sinogramFilename, span, normFilename, attMapHumanFilename, attMapHardwareFilename, correctRandoms, correctScatter, outputPath, pixelSize_mm, numSubsets, numIterations, saveInterval, useGpu, stirMatlabPath, removeTempFiles)
 
 mkdir(outputPath);
-% Check what OS I am running on:
-if(strcmp(computer(), 'GLNXA64'))
-    os = 'linux';
-    pathBar = '/';
-elseif(strcmp(computer(), 'PCWIN') || strcmp(computer(), 'PCWIN64'))
-    os = 'windows';
-    pathBar = '\';
-else
-    disp('OS not compatible');
-    return;
-end
-
 % Check if we have received pixel size:
 if nargin ~= 15
     error('Wrong number of parameters: [volume randoms scatter] = OsemMmr(sinogramFilename, span, normFilename, attMapHumanFilename, attMapHardwareFilename, correctRandoms, correctScatter, outputPath, pixelSize_mm, numSubsets, numIterations, saveInterval, useGpu, stirMatlabPath, removeTempFiles)');
@@ -80,14 +68,14 @@ else
         end
     end
 end
-sinogramFilename = [outputPath pathBar 'sinogram'];
+sinogramFilename = [outputPath filesep 'sinogram'];
 % Write the input sinogram:
 interfileWriteSino(single(sinograms), sinogramFilename, structSizeSino3d);
 %% CREATE INITIAL ESTIMATE FOR RECONSTRUCTION
 disp('Creating inital image...');
 % Inititial estimate:
 initialEstimate = ones(imageSize_pixels, 'single');
-filenameInitialEstimate = [outputPath pathBar 'initialEstimate'];
+filenameInitialEstimate = [outputPath filesep 'initialEstimate'];
 interfilewrite(initialEstimate, filenameInitialEstimate, pixelSize_mm);
 %% NORMALIZATION FACTORS
 if isstr(normFilename)
@@ -249,7 +237,7 @@ end
 if (numel(correctScatter) == 1) 
     if (correctScatter == 1)
         thresholdForTail = 1.01;
-        stirScriptsPath = [stirMatlabPath pathBar 'scripts'];
+        stirScriptsPath = [stirMatlabPath filesep 'scripts'];
         % The scatter needs the image but also the acf to scale, and in the case of
         % the mr is better if this acf include the human?
         if isstr(attMapHumanFilename)
@@ -262,7 +250,7 @@ if (numel(correctScatter) == 1)
         end
 
         % The emission sinogram needs to be normalized and corrected for randoms:
-        outputPathScatter = [outputPath pathBar 'Scatter1' pathBar];
+        outputPathScatter = [outputPath filesep 'Scatter1' filesep];
         if ~isdir(outputPathScatter)
             mkdir(outputPathScatter);
         end
@@ -293,7 +281,7 @@ if (numel(correctScatter) == 1)
         plot([profileSinogram profileRandoms profileNormScatter (profileRandoms+profileNormScatter) profileMask]);
         legend('Sinogram', 'Randoms', 'Scatter', 'Randoms+Scatter', 'Mask');
 
-        outputPathScatter = [outputPath pathBar 'Scatter2' pathBar];
+        outputPathScatter = [outputPath filesep 'Scatter2' filesep];
         if ~isdir(outputPathScatter)
             mkdir(outputPathScatter);
         end
@@ -348,7 +336,7 @@ if (numel(correctScatter) == 1)
         plot([profileSinogram profileRandoms profileNormScatter (profileRandoms+profileNormScatter)]);
         legend('Sinogram', 'Randoms', 'Scatter', 'Randoms+Scatter');
         
-        outputPathScatter = [outputPath pathBar 'ScatterFinal' pathBar];
+        outputPathScatter = [outputPath filesep 'ScatterFinal' filesep];
         if ~isdir(outputPathScatter)
             mkdir(outputPathScatter);
         end

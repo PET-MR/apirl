@@ -28,8 +28,7 @@
    with this program; if not, write to the Free Software Foundation, Inc.,
    59 Place - Suite 330, Boston, MA 02111-1307, USA.  */
 
-#ifndef __M_TRANSF_H__
-#define __M_TRANSF_H__
+#pragma once
 
 /****************************************************************************
                                 D E F I N E S 
@@ -70,5 +69,3 @@ char *MdcCropImages(FILEINFO *fi, MDC_CROP_INFO *ecrop);
 char *MdcMakeGray(FILEINFO *fi);
 char *MdcHandleColor(FILEINFO *fi);
 char *MdcContrastRemap(FILEINFO *fi);
-#endif
-

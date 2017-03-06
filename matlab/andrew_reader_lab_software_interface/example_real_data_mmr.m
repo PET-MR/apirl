@@ -11,7 +11,7 @@ scatterBinaryFilename = '/media/mab15/DATA_BACKUP/Scans/PatientData/FDG_Patient_
 t1DicomPath = '/media/mab15/DATA_BACKUP/Scans/PatientData/FDG_Patient_01/T1/';
 %% INIT CLASS GPET
 PET.scanner = 'mMR';
-PET.method =  'otf_siddon_gpu';
+PET.method =  'otf_siddon_gpu';  % 'otf_siddon_gpu'
 PET.PSF.type = 'none';
 PET.radialBinTrim = 0;
 PET.Geom = '';

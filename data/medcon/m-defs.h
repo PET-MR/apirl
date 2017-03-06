@@ -28,8 +28,7 @@
    with this program; if not, write to the Free Software Foundation, Inc.,
    59 Place - Suite 330, Boston, MA 02111-1307, USA.  */
 
-#ifndef __M_DEFS_H__
-#define __M_DEFS_H__
+#pragma once
 
 #include "m-config.h"
 
@@ -379,6 +378,3 @@ typedef enum {
 
 }
 MDC_MODALITY;
-
-
-#endif /* __M_DEFS_H__ */

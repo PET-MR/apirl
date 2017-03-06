@@ -10,8 +10,7 @@
 	\date 2010.11.11
 	\version 1.1.0
 */
-#ifndef _MLEM2DTGSINSEGMENT_H_
-#define _MLEM2DTGSINSEGMENT_H_
+#pragma once
 
 #include <Mlem.h>
 #include <SiddonProjector.h>
@@ -111,5 +110,3 @@ class DLLEXPORT Mlem2dTgsInSegment : public Mlem
 	  bool Reconstruct();
 		
 };
-
-#endif

@@ -13,8 +13,7 @@
 	\date 2010.11.11
 	\version 1.0.0
 */
-#ifndef _MLEM_H_
-#define _MLEM_H_
+#pragma once
 
 #include <Images.h>
 #include <Geometry.h>
@@ -295,5 +294,3 @@ class DLLEXPORT Mlem
 	  virtual bool Reconstruct() {return false;};
 		
 };
-
-#endif
