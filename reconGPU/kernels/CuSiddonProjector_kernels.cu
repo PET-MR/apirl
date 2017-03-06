@@ -113,7 +113,7 @@ __global__ void cuSiddonBackprojection(float* d_inputSinogram, float* d_outputIm
 }
 
 // Al version with oversample, it could have been done all in one. But I didn't want to add any overhead or bug to the standard version.
-__global__ void cuSiddonOversampledProjection (float* volume, float* michelogram, float *d_ring1, float *d_ring2, float ringWidth_mm, int numR, int numSamples, int numAxialSamples)
+__global__ void cuSiddonOversampledProjection (float* volume, float* michelogram, float *d_ring1, float *d_ring2, int numR, int numSamples, int numAxialSamples)
 {
   int iBin =  threadIdx.x + (blockIdx.x * blockDim.x);
   // First compare inside the sinogram:
@@ -127,7 +127,7 @@ __global__ void cuSiddonOversampledProjection (float* volume, float* michelogram
   float4 LOR;
   iBin = iBin + blockIdx.y * d_numBinsSino2d;
   // axial step:
-  float deltaZ = ringWidth_mm/numAxialSamples;
+  float deltaZ = d_ringWidth_mm/numAxialSamples;
   // Repeat the Siddon for all the samples, I need to establish the limits for each LOR that are not evenly separated, for that I use the midpoint with the neighourgh samples on each side:
   float rLimInf, rLimSup;
   // Lower limit for this LOR
@@ -150,7 +150,7 @@ __global__ void cuSiddonOversampledProjection (float* volume, float* michelogram
 	  for(int j = 0; j < numAxialSamples; j++)
 	  {
 		// The r coordinate is in rLimInf  
-		CUDA_GetPointsFromLOR(d_thetaValues_deg[iProj], rLimInf, d_ring1[blockIdx.y]-ringWidth_mm/2+deltaZ/2+j*deltaZ, d_ring2[blockIdx.y]-ringWidth_mm/2+deltaZ/2+j*deltaZ, d_RadioScanner_mm, &P1, &P2);
+		CUDA_GetPointsFromLOR(d_thetaValues_deg[iProj], rLimInf, d_ring1[blockIdx.y]-d_ringWidth_mm/2+deltaZ/2+j*deltaZ, d_ring2[blockIdx.y]-d_ringWidth_mm/2+deltaZ/2+j*deltaZ, d_RadioScanner_mm, &P1, &P2);
 		LOR.x = P2.x - P1.x;
 		LOR.y = P2.y - P1.y;
 		LOR.z = P2.z - P1.z;
@@ -162,7 +162,7 @@ __global__ void cuSiddonOversampledProjection (float* volume, float* michelogram
 }
 
 __global__ void cuSiddonOversampledDivideAndBackproject(float* d_inputSinogram, float* d_estimatedSinogram, float* d_outputImage, 
-					     float *d_ring1, float *d_ring2, float ringWidth_mm, int numR, int numSamples, int numAxialSamples)
+					     float *d_ring1, float *d_ring2, int numR, int numSamples, int numAxialSamples)
 {
   float4 P1;
   float4 P2;
@@ -175,7 +175,7 @@ __global__ void cuSiddonOversampledDivideAndBackproject(float* d_inputSinogram, 
   int iR = iBin % numR;
   int iProj = (int)((float)iBin / (float)numR);
   // axial step:
-  float deltaZ = ringWidth_mm/numAxialSamples;
+  float deltaZ = d_ringWidth_mm/numAxialSamples;
   iBin = iBin + blockIdx.y * d_numBinsSino2d;
 
   // Primero hago la división:
@@ -207,7 +207,7 @@ __global__ void cuSiddonOversampledDivideAndBackproject(float* d_inputSinogram, 
 		for(int j = 0; j < numAxialSamples; j++)
 		{
 			// The r coordinate is in rLimInf  
-			CUDA_GetPointsFromLOR(d_thetaValues_deg[iProj], rLimInf, d_ring1[blockIdx.y]-ringWidth_mm/2+deltaZ/2+j*deltaZ, d_ring2[blockIdx.y]-ringWidth_mm/2+deltaZ/2+j*deltaZ, d_RadioScanner_mm, &P1, &P2);
+			CUDA_GetPointsFromLOR(d_thetaValues_deg[iProj], rLimInf, d_ring1[blockIdx.y]-d_ringWidth_mm/2+deltaZ/2+j*deltaZ, d_ring2[blockIdx.y]-d_ringWidth_mm/2+deltaZ/2+j*deltaZ, d_RadioScanner_mm, &P1, &P2);
 			//CUDA_GetPointsFromLOR(d_thetaValues_deg[iProj], rLimInf, d_ring1[blockIdx.y], d_ring2[blockIdx.y], d_RadioScanner_mm, &P1, &P2);
 			LOR.x = P2.x - P1.x;
 			LOR.y = P2.y - P1.y;
@@ -230,11 +230,12 @@ __global__ void cuSiddonOversampledDivideAndBackproject(float* d_inputSinogram, 
 }
 
 __global__ void cuSiddonOversampledBackprojection(float* d_inputSinogram, float* d_outputImage, 
-				       float *d_ring1_mm, float *d_ring2_mm, float ringWidth_mm, int numR, int numSamples, int numAxialSamples)
+				       float *d_ring1_mm, float *d_ring2_mm, int numR, int numSamples, int numAxialSamples)
 {
   float4 P1;
   float4 P2;
   float4 LOR;
+  int i,j;
   /// Calculo dentro del sinograma 2D, se obtiene con threadIdx.x y blockIdx.x.
   int iBin =  threadIdx.x + (blockIdx.x * blockDim.x);
   // First compare inside the sinogram:
@@ -243,7 +244,7 @@ __global__ void cuSiddonOversampledBackprojection(float* d_inputSinogram, float*
   int iR = iBin % numR;
   int iProj = (int)((float)iBin / (float)numR);
   // axial step:
-  float deltaZ = ringWidth_mm/numAxialSamples;
+  float deltaZ = d_ringWidth_mm/numAxialSamples;//d_ringWidth_mm/numAxialSamples;
   iBin = iBin + blockIdx.y * d_numBinsSino2d;
   
   if(d_inputSinogram[iBin] != 0)
@@ -265,13 +266,15 @@ __global__ void cuSiddonOversampledBackprojection(float* d_inputSinogram, float*
 	// rLimInf: is now r, the current  sample value.
 	rLimSup = (rLimSup - rLimInf)/numSamples; //float deltaR = (rLimSup - rLimInf)/numSamples;
 	rLimInf = rLimInf + rLimSup/2; // float r = rLimInf + deltaR/2;
-	for(int i = 0; i < numSamples; i++)
+	for(i = 0; i < numSamples; i++)
 	{
-		for(int j = 0; j < numAxialSamples; j++)
+		for(j = 0; j < numAxialSamples; j++)
 		{
 			// The r coordinate is in rLimInf  
-			CUDA_GetPointsFromLOR(d_thetaValues_deg[iProj], rLimInf, d_ring1_mm[blockIdx.y]-ringWidth_mm/2+deltaZ/2+j*deltaZ, d_ring2_mm[blockIdx.y]-ringWidth_mm/2+deltaZ/2+j*deltaZ, d_RadioScanner_mm, &P1, &P2);
+			CUDA_GetPointsFromLOR(d_thetaValues_deg[iProj], rLimInf, d_ring1_mm[blockIdx.y]-d_ringWidth_mm/2+deltaZ/2+j*deltaZ, d_ring2_mm[blockIdx.y]-d_ringWidth_mm/2+deltaZ/2+j*deltaZ, d_RadioScanner_mm, &P1, &P2);
 			//CUDA_GetPointsFromLOR(d_thetaValues_deg[iProj], rLimInf, d_ring1_mm[blockIdx.y], d_ring2_mm[blockIdx.y], d_RadioScanner_mm, &P1, &P2);
+			//CUDA_GetPointsFromBinsMmr (d_thetaValues_deg[iProj], iR, numR, d_ring1_mm[blockIdx.y], d_ring2_mm[blockIdx.y], d_RadioScanner_mm, &P1, &P2);
+    
 			LOR.x = P2.x - P1.x;
 			LOR.y = P2.y - P1.y;
 			LOR.z = P2.z - P1.z;
@@ -291,8 +294,8 @@ __device__ void CUDA_GetPointsFromLOR (float PhiAngle, float r, float Z1, float 
 {
   float sinValue, cosValue;
   // First correct the r value, for the mMR when Phi greater than 90 a half bin needs to be substracted:
-  if (PhiAngle > 90)
-	r = r - d_binSize_mm/2;
+  //if (PhiAngle > 90)
+  //r = r - d_binSize_mm/2;
   sincosf(PhiAngle*DEG_TO_RAD, &sinValue, &cosValue);
   float auxValue = sqrtf((cudaRscanner) * (cudaRscanner) - r * r);
   P1->x = r * cosValue + sinValue * auxValue;

@@ -422,19 +422,25 @@ classdef classGpet < handle
             no =[[1;mo(1:end-1)+1],mo];            
 
             Scatter3D = zeros(objGpet.sinogram_size.matrixSize,'single');
-            if objGpet.sinogram_size.span == 1
-                Scatter3D(:,:,no(1,1):no(1,2),:) = Scatter2D(:,:,1:2:end);
-            else
+            % For span 1 this method fails, we use the other available in
+            % the library for any span conversion:
+            if objGpet.sinogram_size.span > 1
+
                 Scatter3D(:,:,no(1,1):no(1,2),:) = Scatter2D;
-            end
             
-            for i = 2:2:length(nPlanePerSeg)
-                
-                delta = (nPlanePerSeg(1)- nPlanePerSeg(i))/2;
-                indx = nPlanePerSeg(1) - delta;
-                
-                Scatter3D (:,:,no(i,1):no(i,2),:) = Scatter2D(:,:,delta+1:indx,:);
-                Scatter3D (:,:,no(i+1,1):no(i+1,2),:) = Scatter2D(:,:,delta+1:indx,:);
+                for i = 2:2:length(nPlanePerSeg)
+
+                    delta = (nPlanePerSeg(1)- nPlanePerSeg(i))/2;
+                    indx = nPlanePerSeg(1) - delta;
+
+                    Scatter3D (:,:,no(i,1):no(i,2),:) = Scatter2D(:,:,delta+1:indx,:);
+                    Scatter3D (:,:,no(i+1,1):no(i+1,2),:) = Scatter2D(:,:,delta+1:indx,:);
+                end
+            else
+                % issrb is for an input sinogram span of span 121
+                structSizeSino3d = getSizeSino3dFromSpan(objGpet.sinogram_size.nRadialBins, objGpet.sinogram_size.nAnglesBins, objGpet.sinogram_size.nRings, ...
+                    0, 0, 121, objGpet.sinogram_size.maxRingDifference);
+                [Scatter3D, structSizeSino3dSpanN] = convertSinogramToSpan(Scatter2D, structSizeSino3d,  objGpet.sinogram_size.span);
             end
         end
         
@@ -650,6 +656,22 @@ classdef classGpet < handle
                 image{i+1} = max(0,image{i+1});
                 if rem(i-1,saveInterval) == 0 % -1 to save the first iteration
                     interfilewrite(single(image{i+1}), [outputPath 'mlem_iter_' num2str(i)], objGpet.image_size.voxelSize_mm); % i use i instead of i+1 because i=1 is the inital estimate
+                end
+            end
+        end
+        
+        function image = OPOSEMsaveIter(objGpet,Prompts, AN, RS, SensImg, initialEstimate, nIter, outputPath, saveInterval)
+            k=1;
+            image{k} = initialEstimate;
+            for i = 1:nIter
+                for j = 1:objGpet.nSubsets
+                    % SAM ELLIS EDIT (18/07/2016): replaced vector divisions by vecDivision
+                    image{k+1} = image{k}.*objGpet.vecDivision(objGpet.PT(AN.*objGpet.vecDivision(Prompts,AN.*objGpet.P(image{k},j)+ RS),j),SensImg(:,:,:,j));
+                    image{k+1} = max(0,image{k+1});
+                    if rem(k-1,saveInterval) == 0 % -1 to save the first iteration
+                        interfilewrite(single(image{k+1}), [outputPath 'opmlem_iter_' num2str(k)], objGpet.image_size.voxelSize_mm); % i use i instead of i+1 because i=1 is the inital estimate
+                    end
+                    k = k + 1;
                 end
             end
         end

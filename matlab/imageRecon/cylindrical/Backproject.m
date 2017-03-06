@@ -104,8 +104,8 @@ interfileWriteSino(single(sinogram), sinogramFilename, structSizeSino);
 filenameBackprojectionConfig = [outputPath 'backprojectSinogram.par'];
 backprojectionFilename = [outputPath 'backprojectedImage'];
 CreateBackprojectConfigFile(filenameBackprojectionConfig, [sinogramFilename '.h33'], [filenameImage '.h33'], scanner, scanner_parameters, backprojectionFilename, numberOfSubsets, subsetIndex, useGpu, numSamples, numAxialSamples);
-status = system(['backproject ' filenameBackprojectionConfig])
-
+[status, message] = system(['backproject ' filenameBackprojectionConfig]);
+disp(message);
 % Remove the input sinogram:
 delete([sinogramFilename '.*']);
 

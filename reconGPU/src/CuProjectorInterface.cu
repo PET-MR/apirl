@@ -224,7 +224,7 @@ bool CuProjectorInterface::InitGpuMemory(Sinogram3D* sinogram, Image* image, Tip
   checkCudaErrors(cudaMemcpyToSymbol(d_meanDOI_mm, &aux, sizeof(float)));
   aux = sinogram->getWidthRings_mm();
   checkCudaErrors(cudaMemcpyToSymbol(d_ringWidth_mm, &aux, sizeof(float)));
-  
+
   // Para el sinograma 3d tengo que cada sino 2d puede representar varios sinogramas asociados a distintas combinaciones de anillos.
   // En la versión con CPU proceso todas las LORs, ahora solo voy a considerar la del medio, que sería la ventaja de reducir el volumen de LORs.
   // Entonces genero un array con las coordenadas de anillos de cada sinograma.

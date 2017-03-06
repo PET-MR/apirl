@@ -46,9 +46,10 @@ __device__ __constant__ float d_binSize_mm;
 /// Depth or length og each crystal.
 __device__ __constant__ float d_crystalElementLength_mm;
 /// Mean depth of interaction:
-__device__ __constant__ float d_meanDOI_mm; //
-/// Mean depth of interaction:
 __device__ __constant__ float d_ringWidth_mm; //
+/// Mean depth of interaction:
+__device__ __constant__ float d_meanDOI_mm; //
+
 
 extern texture<float, 3, cudaReadModeElementType> texImage;  // 3D texture
 

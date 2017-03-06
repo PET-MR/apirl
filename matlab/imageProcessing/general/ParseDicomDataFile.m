@@ -29,7 +29,7 @@ for i= 3:length(d)
     filename = [directory bar d(i).name];
     [~,name,ext]=fileparts(filename);
     
-    if ~isempty(name) && ~isempty(ext) && isdicom(filename)
+    if ~isempty(name) && ~isempty(ext) && isdicom(filename) && ~strcmp(ext, '.s')  && ~strcmp(ext, '.l') % I sclude known extension of binary files because the first bytes can be consdered as headers of adicom
         dicomHdr = dicominfo(filename);
         if ~isempty(dicomHdr.Private_0029_1008)
             dataType = dicomHdr.Private_0029_1008;

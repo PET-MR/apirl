@@ -30,11 +30,14 @@ if ObjData.Data.isSinogram
         if ~exist(HardMapMhdr,'file'), error('could not find %s\n',HardMapMhdr); end
     end
     
-    if ObjData.Data.IF.nNormFiles> 1, error('more than one norm file were found\n'); end
-    NormHdr = [ObjData.Data.IF.NormFileHdrs.hdr.NameOfDataFile '.hdr'];
-    ObjData.Data.norm = NormHdr;
-    if ~exist(NormHdr,'file'), error('could not find %s\n',NormHdr); end
-     
+    if ObjData.Data.IF.nNormFiles> 0
+        if ObjData.Data.IF.nNormFiles> 1, error('more than one norm file were found\n'); end
+        NormHdr = [ObjData.Data.IF.NormFileHdrs.hdr.NameOfDataFile '.hdr'];
+        ObjData.Data.norm = NormHdr;
+        if ~exist(NormHdr,'file'), error('could not find %s\n',NormHdr); end
+    else
+        warning('No norm file was found.');
+    end
 end
 
 
@@ -100,7 +103,7 @@ if ObjData.Data.isListMode
         for i = 1: ObjData.NumberOfFrames
             No = num2str(i-1,'%1.1d');
             ObjData.Data.emission(i).n = [ObjData.Data.IF.ListModeHdrs(1).hdr.NameOfDataFile(1:end-2) '-sino-' No '.mhdr'];
-            ObjData.Data.emission_listmode_hdr(i).n = [ObjData.Data.IF.ListModeHdrs(1).hdr.NameOfDataFile '.hdr'];
+            ObjData.Data.emission_listmode_hdr(i).n = [ObjData.Data.IF.ListModeHdrs(1).hdr.NameOfDataFile(1:end-2) '.hdr'];
             ObjData.Data.emission_listmode(i).n = ObjData.Data.IF.ListModeHdrs(1).hdr.NameOfDataFile;
            
             % umap

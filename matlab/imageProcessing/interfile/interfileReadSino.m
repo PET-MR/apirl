@@ -31,12 +31,41 @@ else
     numSinograms = structSizeSino.numZ; % sinogram2d.
 end
 
+% Sometimes the sinogram has the path where it was originally generated, in
+% that case I  also try to read it relative to the header file:
+
+slash = strfind(filenameHeader, '\');
+slash = [slash strfind(filenameHeader, '/')];
+slash = sort(slash);
+relativePath = '';
+filenameOnly = '';
+if ~isempty(slash)
+    relativePath = filenameHeader(1 : slash(end));
+    filenameOnly = filenameHeader(slash(end)+1:end);
+end
+
 % Check if is an siemens sinogram (mmr):
 if isfield(info, 'ScanDataTypeDescription2')
     % Read raw data from uncomrpessed sinogram:
     [fid, message] = fopen(info.NameOfDataFile,'r');
-    if fid == -1
-        disp(ferror(fid));
+    if (fid == -1)
+        %Finaly try getting only the fileme from e header d using e
+        %currentath:
+        slash = strfind(info.NameOfDataFile, '\');
+        slash = [slash strfind(info.NameOfDataFile, '/')];
+        slash = sort(slash);
+        relativePathBinary = '';
+        filenameOnlyBinary = '';
+        if ~isempty(slash)
+            relativePathBinary = info.NameOfDataFile(1 : slash(end));
+            filenameOnlyBinary = info.NameOfDataFile(slash(end)+1:end);
+        end
+        fid = fopen([relativePath filenameOnlyBinary], 'r');
+        if (fid == -1)
+           error(ferror(fid));
+        end
+    else
+        error(ferror(fid));
     end
     % First the prompts:
     [sinograms, count] = fread(fid, structSizeSino.numTheta*structSizeSino.numR*numSinograms, readingFormat);

@@ -270,21 +270,34 @@ classdef PETDataClass < handle
             % If all data types are present in the path, the prefered type
             % is as following, otherwise, the data should be seperated
             
+            % Load all the filenames that were found, then select the data
+            % type based on priorities:
             if outDCM.nSinograms
                 ObjData.Data.Type = 'dicom_sinogram';
                 ObjData.Data.isSinogram = ObjData.Data.DCM.nSinograms;
+            end
+            if outDCM.nListModes
+                ObjData.Data.isListMode = ObjData.Data.DCM.nListModes;
+            end
+            if outIF.nUncompressedSinogramFiles
+                ObjData.Data.isSinogram = ObjData.Data.IF.nUncompressedSinogramFiles;
+            end
+            if outIF.nCompressedSinogramFiles
+                ObjData.Data.isSinogram = ObjData.Data.IF.nCompressedSinogramFiles;
+            end
+            if outIF.nListModeFiles
+                ObjData.Data.isListMode = ObjData.Data.IF.nListModeFiles;
+            end
+            if outDCM.nSinograms
+                ObjData.Data.Type = 'dicom_sinogram';
             elseif outDCM.nListModes
                 ObjData.Data.Type = 'dicom_listmode';
-                ObjData.Data.isListMode = ObjData.Data.DCM.nListModes;
             elseif outIF.nUncompressedSinogramFiles
                 ObjData.Data.Type = 'sinogram_uncompressed_interfile';
-                ObjData.Data.isSinogram = ObjData.Data.IF.nUncompressedSinogramFiles;
             elseif outIF.nCompressedSinogramFiles
                 ObjData.Data.Type = 'sinogram_interfile';
-                ObjData.Data.isSinogram = ObjData.Data.IF.nCompressedSinogramFiles;
             elseif outIF.nListModeFiles
                 ObjData.Data.Type = 'list_mode_interfile';
-                ObjData.Data.isListMode = ObjData.Data.IF.nListModeFiles;
             end
             type = ObjData.Data.Type;
             fprintf('Selected data type: %s\n',ObjData.Data.Type)
@@ -330,14 +343,14 @@ classdef PETDataClass < handle
             else
                 strIntermediateIters = ' ';
             end
-            lastSlash = strfind(ObjData.Data.emission,ObjData.bar);
-            filename = [ObjData.Data.emission(lastSlash(end)+1:end-10) outputTag];
-            outputPath = [ObjData.Data.emission(1:lastSlash(end)) ObjData.bar 'recon' outputTag ObjData.bar];
+            lastSlash = strfind(ObjData.Data.emission.n,ObjData.bar);
+            filename = [ObjData.Data.emission.n(lastSlash(end)+1:end-11) outputTag];
+            outputPath = [ObjData.Data.emission.n(1:lastSlash(end)) ObjData.bar 'recon' outputTag ObjData.bar];
             if ~isdir(outputPath)
                 mkdir(outputPath);
             end
             fullFilename = [outputPath filename];
-            command = [ObjData.SoftwarePaths.e7.siemens ' --algo op-osem --is '  num2str(numIterations) ',' num2str(numSubsets) strPsf ' -e "' ObjData.Data.emission '"' ...
+            command = [ObjData.SoftwarePaths.e7.siemens ' --algo op-osem --is '  num2str(numIterations) ',' num2str(numSubsets) strPsf ' -e "' ObjData.Data.emission.n '"' ...
                 ' --oi "' fullFilename ' "' ' -u "' ObjData.Data.umap(1).n '","' ObjData.Data.hardware_umap(1).n '"' ...
                 ' -n "' ObjData.Data.norm '"' ' --gf --quant 1 -w 344 -l 73,. --fl --ecf --izoom 1 --force --cvrg 97 --rs ' strIntermediateIters];
             [status,message] = system(command);            
@@ -515,7 +528,7 @@ classdef PETDataClass < handle
     
     methods (Access = public)
         
-        [totalPrompts,totalRandoms, totalWords] = undersample_mMR_listmode_data(ObjData,input_listmode_file,countReductionFractor,chunk_size_events)
+        [totalPrompts,totalRandoms, totalWords, outFileHdr, output_listmode_file] = undersample_mMR_listmode_data(ObjData,input_listmode_file,countReductionFractor,chunk_size_events)
         % Initialize sinogram size struct.
         sino_size_out = init_sinogram_size(ObjData, inspan, numRings, maxRingDifference);
         % Change span sinogram.
