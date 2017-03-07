@@ -14,11 +14,6 @@ ENDIF()
 message(STATUS "data_SOURCE_DIR: ${data_SOURCE_DIR}")
 message(STATUS "data_BINARY_DIR: ${data_BINARY_DIR}")
 
-option(USE_STDLIB_H "whether stdlib.h exists" ON)
-IF(USE_STDLIB_H)
-  ADD_DEFINITIONS(-DHAVE_STDLIB_H)
-ENDIF(USE_STDLIB_H)
-
 ###################### SOURCES CONFIGURATION ########################## 
 # Códigos fuente, directorios de Include.
 SET(data_Sources)

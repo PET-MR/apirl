@@ -175,11 +175,6 @@ void MdcCombinedScale(Uint8 *palette)
   }
 }
 
-static inline Uint8 toByte(const float f)
-{
-  return (Uint8)(f * 255.0f);
-}
-
 void MdcHotmetalScale(Uint8 *palette)
 {
   int i, p=0;
@@ -188,7 +183,7 @@ void MdcHotmetalScale(Uint8 *palette)
   intensity = 0.0;
   delta_intensity = 1.0f/182.0f;
   for (p=0, i=0;i<182;i++,p+=3) {               /* red */
-     palette[p]=toByte(intensity);
+     palette[p]=(Uint8)255*intensity;
      intensity+=delta_intensity;
   }
   for (i=182;i<256;i++,p+=3) palette[p]=255;
@@ -196,7 +191,7 @@ void MdcHotmetalScale(Uint8 *palette)
   intensity = 0.0;
   delta_intensity = 1.0f/91.0f;
   for (i=128;i<219; i++,p+=3) {
-     palette[p]=toByte(intensity);
+     palette[p]=(Uint8)255*intensity;
      intensity+=delta_intensity; 
   }
   for (i=219;i<256;i++,p+=3) palette[p]=255;   
@@ -204,7 +199,7 @@ void MdcHotmetalScale(Uint8 *palette)
   intensity=0.0;
   delta_intensity = 1.0/64;
   for (i=192;i<256;i++,p+=3) {
-     palette[p]=toByte(intensity);
+     palette[p]=(Uint8)255*intensity;
      intensity += delta_intensity; 
   }
 }

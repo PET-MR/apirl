@@ -28,7 +28,9 @@
    with this program; if not, write to the Free Software Foundation, Inc.,
    59 Place - Suite 330, Boston, MA 02111-1307, USA.  */
 
-#pragma once
+
+#ifndef __M_RAW_H__
+#define __M_RAW_H__
 
 /****************************************************************************
                               D E F I N E S 
@@ -65,3 +67,5 @@ char *MdcWriteRAW(FILEINFO *fi);
 int MdcCheckPredef(const char *fname);
 char *MdcReadPredef(const char *fname);
 char *MdcWritePredef(const char *fname);
+
+#endif

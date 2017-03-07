@@ -13,7 +13,10 @@
  *
  *************************************************************************/
 
-#pragma once
+
+#ifndef __OMP_UTILS_H__
+#define __OMP_UTILS_H__
+
 #include "mex.h"
 
 
@@ -68,3 +71,7 @@ void secs2hms(double sectot, int *hrs, int *mins, double *secs);
  *
  **************************************************************************/
 void quicksort(mwIndex vals[], double data[], mwIndex n);
+
+
+#endif
+

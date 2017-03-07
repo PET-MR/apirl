@@ -28,7 +28,8 @@
    with this program; if not, write to the Free Software Foundation, Inc.,
    59 Place - Suite 330, Boston, MA 02111-1307, USA.  */
 
-#pragma once
+#ifndef __M_PROGRESS_H__
+#define __M_PROGRESS_H__
 
 #define MDC_PROGRESS_BEGIN 1
 #define MDC_PROGRESS_SET   2
@@ -38,3 +39,6 @@
 extern int MDC_PROGRESS;
 
 extern void (*MdcProgress)(int type, float value, char *label);
+
+#endif
+

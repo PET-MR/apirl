@@ -60,11 +60,10 @@
 #include <string>
 #include <readParameters.h>
 
-constexpr int FOV_axial = 160;
-constexpr int FOV_radial = 400;
-constexpr int SCANNER_RADIUS = 700;
-constexpr int FIXED_KEYS = 6;
-
+#define FOV_axial 160
+#define FOV_radial 400
+#define SCANNER_RADIUS	700
+#define FIXED_KEYS 6
 using namespace std;
 using	std::string;
 
@@ -378,7 +377,7 @@ int main (int argc, char *argv[])
       return -1;
     Sinograms2Din3DArPet* inputProjection = new Sinograms2Din3DArPet(inputFilename, radiusFov_mm, zFov_mm);
     inputProjection->setLengthOfBlindArea(blindDistance_mm);
-    inputProjection->setMinDiffDetectors(float(minDetDiff));
+    inputProjection->setMinDiffDetectors(minDetDiff);
     mlem = new Mlem2dMultiple((Sinograms2DinCylindrical3Dpet*)inputProjection, initialEstimate, "", outputPrefix, numIterations, saveIterationInterval, saveIntermediateData, bSensitivityFromFile, forwardprojector, backprojector);
     if(bSensitivityFromFile)
     {
@@ -434,7 +433,7 @@ int main (int argc, char *argv[])
       return -1;
     Sinogram3DArPet* inputProjection = new Sinogram3DArPet((char*)inputFilename.c_str(),radiusFov_mm, zFov_mm); 
     inputProjection->setLengthOfBlindArea(blindArea_mm);
-    inputProjection->setMinDiffDetectors(float(minDetDiff));
+    inputProjection->setMinDiffDetectors(minDetDiff);
     mlem = new OsemSinogram3d((Sinogram3D*)inputProjection, initialEstimate, "", outputPrefix, numIterations, saveIterationInterval, saveIntermediateData, bSensitivityFromFile, forwardprojector, backprojector,numberOfSubsets);
     if(bSensitivityFromFile)
     {

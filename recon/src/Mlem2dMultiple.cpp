@@ -1,6 +1,5 @@
 
 #include <Mlem2dMultiple.h>
-#include <algorithm>
 
 Mlem2dMultiple::Mlem2dMultiple(Sinograms2DmultiSlice* cInputProjection, Image* cInitialEstimate, string cPathSalida, string cOutputPrefix, int cNumIterations, int cSaveIterationInterval, bool cSaveIntermediate, bool cSensitivityImageFromFile, Projector* cForwardprojector, Projector* cBackprojector) : Mlem(cInitialEstimate, cPathSalida, cOutputPrefix, cNumIterations, cSaveIterationInterval, cSaveIntermediate, cSensitivityImageFromFile, cForwardprojector,  cBackprojector)
 {

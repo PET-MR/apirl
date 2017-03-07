@@ -59,10 +59,9 @@
   #include <readCudaParameters.h>
 #endif
 
-constexpr int FOV_axial = 162;
-constexpr int FOV_radial = 582;
-constexpr int FIXED_KEYS = 5;
-
+#define FOV_axial 162
+#define FOV_radial 582
+#define FIXED_KEYS 5
 using namespace std;
 using	std::string;
 /**
@@ -157,15 +156,15 @@ int main (int argc, char *argv[])
 	char** keyWords;  // múltiples keywords para la función de lectura de múltiples keys.
 	char** multipleReturnValue; // array de strings para la función de multples keys.
 	int	errorCode;
-	// int nx, ny, nz, n_voxels, resolution, numIterations, file, Recon;
-	// unsigned int hTimer;
-	// const char* pathSensImage;
-	// double timerValue;
-	// SizeImage MySizeVolume;
-	float RFOV = float(FOV_radial / 2);
+	int nx, ny, nz, n_voxels, resolution, numIterations, file, Recon;
+	unsigned int hTimer;
+	const char* pathSensImage;
+	double timerValue;
+	SizeImage MySizeVolume;
+	float RFOV = FOV_radial / 2;
 	float ZFOV = FOV_axial;
 	float rFov_mm,axialFov_mm,rScanner_mm;
-	// char NombreRecon[50];
+	char NombreRecon[50];
 	string parameterFileName;	// string para el Nombre de Archivo de parámetros.
 	string inputType;
 	string inputFilename;	// string para el Nombre del archivo de header del sinograma.
@@ -186,8 +185,7 @@ int main (int argc, char *argv[])
 	#endif
 	  
 	// Variables para sinogram2Dtgs y Sinogram2DtgsInSegment:
-	  // float widthSegment_mm;
-	  float diameterFov_mm, distCrystalToCenterFov, lengthColimator_mm, widthCollimator_mm, widthHoleCollimator_mm;
+	float widthSegment_mm, diameterFov_mm, distCrystalToCenterFov, lengthColimator_mm, widthCollimator_mm, widthHoleCollimator_mm;
 	// Asigno la memoria para los punteros dobles, para el array de strings.
 	keyWords = (char**)malloc(sizeof(*keyWords)*FIXED_KEYS);
 	multipleReturnValue = (char**)malloc(sizeof(*multipleReturnValue)*FIXED_KEYS);
@@ -403,7 +401,7 @@ int main (int argc, char *argv[])
 	      return -1;
 	    }
 	  }
-	  float attenuationCoef_cm = static_cast<float>(atof(returnValue));
+	  float attenuationCoef_cm = atof(returnValue);
 	  if(strBackprojector.compare("ConeOfResponseWithPenetration") == 0)
 	  {
 	    backprojector = (Projector*)new ConeOfResponseWithPenetrationProjector(numPointsOnDetector, numPointsOnCollimator, attenuationCoef_cm);
@@ -474,7 +472,7 @@ int main (int argc, char *argv[])
 	      return -1;
 	    }
 	  }
-	  diameterFov_mm = static_cast<float>(atoi(returnValue));
+	  diameterFov_mm = atoi(returnValue);
 	  
 	  // "distance_cristal_to_center_of_fov (in mm)"
 	  if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), (char*)"Backproject", (char*)"distance_cristal_to_center_of_fov (in mm)", (char*)returnValue, (char*)errorMessage)) != 0)
@@ -492,7 +490,7 @@ int main (int argc, char *argv[])
 	      return -1;
 	    }
 	  }
-	  distCrystalToCenterFov = static_cast<float>(atoi(returnValue));
+	  distCrystalToCenterFov = atoi(returnValue);
 	  
 	  // "length_of_colimator (in mm)"
 	  if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), (char*)"Backproject", (char*)"length_of_colimator (in mm)", (char*)returnValue, (char*)errorMessage)) != 0)
@@ -510,7 +508,7 @@ int main (int argc, char *argv[])
 	      return -1;
 	    }
 	  }
-	  lengthColimator_mm = static_cast<float>(atoi(returnValue));
+	  lengthColimator_mm = atoi((char*)returnValue);
 	  
 	  // "diameter_of_colimator (in mm)"
 	  if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), (char*)"Backproject", (char*)"diameter_of_colimator (in mm)", (char*)returnValue, (char*)errorMessage)) != 0)
@@ -528,7 +526,7 @@ int main (int argc, char *argv[])
 	      return -1;
 	    }
 	  }
-	  widthCollimator_mm = static_cast<float>(atoi(returnValue));
+	  widthCollimator_mm = atoi((char*)returnValue);
 	  
 	  // "diameter_of_colimator (in mm)"
 	  if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), (char*)"Backproject", (char*)"diameter_of_hole_colimator (in mm)", (char*)returnValue, (char*)errorMessage)) != 0)
@@ -546,7 +544,7 @@ int main (int argc, char *argv[])
 	      return -1;
 	    }
 	  }
-	  widthHoleCollimator_mm = static_cast<float>(atoi(returnValue));
+	  widthHoleCollimator_mm = atoi(returnValue);
 	}
 	// Sección solo valída para sinogram2Dtgs
 	if(inputType.compare("Sinogram2D")==0)
@@ -619,7 +617,7 @@ int main (int argc, char *argv[])
 	      return -1;
 	    }
 	  }
-	  float widthSegment_mm = static_cast<float>(atoi(returnValue));
+	  float widthSegment_mm = atoi(returnValue);
 	  
 	  Sinogram2DtgsInSegment* inputProjection = new Sinogram2DtgsInSegment();
 	  if(!inputProjection->readFromInterfile(inputFilename))
@@ -659,9 +657,9 @@ int main (int argc, char *argv[])
 	    }
 	    inputProjection = new Sinograms2Din3DArPet((char*)inputFilename.c_str(), rFov_mm, axialFov_mm); 
 	    ((Sinograms2Din3DArPet*)inputProjection)->setLengthOfBlindArea(blindDistance_mm);
-	    ((Sinograms2Din3DArPet*)inputProjection)->setMinDiffDetectors(float(minDetDiff));
+	    ((Sinograms2Din3DArPet*)inputProjection)->setMinDiffDetectors(minDetDiff);    
 	  }
-	  // float x_mm, y_mm, z_mm;
+	  float x_mm, y_mm, z_mm;
 	  if(inputProjection->getNumSinograms() != outputImage->getSize().nPixelsZ)
 	  {
 	    cout<<"Warning: Backproject of sinograms2D with different number of sinograms that slices in the output image. Ignoring the number of slices." <<endl;

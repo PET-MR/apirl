@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _TRISIDDON_H_
+#define _TRISIDDON_H_
 
 #include <Images.h>
 #include <Geometry.h>
@@ -44,3 +45,5 @@
 #endif
 
 void TriSiddon (float Phi, float R, float Z1, float Z2, SizeImage FOVSize, SiddonSegment** WeightsList, unsigned int* LengthList);
+
+#endif

@@ -23,6 +23,17 @@ function [image, pixelSize_mm] = BackprojectMmr(sinogram, imageSize_pixels, pixe
 if ~isdir(outputPath)
     mkdir(outputPath);
 end
+% Check what OS I am running on:
+if(strcmp(computer(), 'GLNXA64'))
+    os = 'linux';
+    pathBar = '/';
+elseif(strcmp(computer(), 'PCWIN') || strcmp(computer(), 'PCWIN64'))
+    os = 'windows';
+    pathBar = '\';
+else
+    disp('OS not compatible');
+    return;
+end
 
 if nargin == 7
     useGpu = 0;

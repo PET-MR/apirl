@@ -10,7 +10,8 @@
 	\date 2010.11.11
 	\version 1.1.0
 */
-#pragma once
+#ifndef _OSEMSINOGRAM3D_H_
+#define _OSEMSINOGRAM3D_H_
 
 #include <Mlem.h>
 #include <MlemSinogram3d.h>
@@ -95,3 +96,5 @@ class DLLEXPORT OsemSinogram3d : public MlemSinogram3d
     bool Reconstruct();
 		
 };
+
+#endif

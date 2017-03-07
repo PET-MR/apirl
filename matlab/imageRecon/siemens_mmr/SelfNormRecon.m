@@ -16,6 +16,17 @@
 function [volume, crystalEfficiencies] = SelfNormRecon(sinogramFilename, normFilename, attMapBaseFilename, correctRandoms, correctScatter, outputPath, pixelSize_mm, numOsemSubsets, numOsemIterations, numXtalIterations, filenameSystemMatrix1, filenameSystemMatrix2, stirMatlabPath, applyNormMask)
 
 mkdir(outputPath);
+% Check what OS I am running on:
+if(strcmp(computer(), 'GLNXA64'))
+    os = 'linux';
+    pathBar = '/';
+elseif(strcmp(computer(), 'PCWIN') || strcmp(computer(), 'PCWIN64'))
+    os = 'windows';
+    pathBar = '\';
+else
+    disp('OS not compatible');
+    return;
+end
 
 useGpu = 1;
 %% READING THE SINOGRAMS
@@ -46,7 +57,7 @@ else
         end
     end
 end
-sinogramFilename = [outputPath filesep 'sinogram'];
+sinogramFilename = [outputPath pathBar 'sinogram'];
 % Write the input sinogram:
 interfileWriteSino(single(sinograms), sinogramFilename, structSizeSino3d);
 %% PROCESS INPUT PARAMETERS
@@ -57,8 +68,8 @@ imageSize_pixels = ceil(imageSize_mm./pixelSize_mm);
 if isempty(filenameSystemMatrix1) || isempty(filenameSystemMatrix2)
     disp('Computing detector system matrix...');
     [detector1SystemMatrix, detector2SystemMatrix] = createDetectorSystemMatrix3d(structSizeSino3d.span, 1);
-    save([outputPath filesep 'detector1SystemMatrix'],'detector1SystemMatrix', '-v7.3');
-    save([outputPath filesep 'detector2SystemMatrix'],'detector2SystemMatrix', '-v7.3');
+    save([outputPath pathBar 'detector1SystemMatrix'],'detector1SystemMatrix', '-v7.3');
+    save([outputPath pathBar 'detector2SystemMatrix'],'detector2SystemMatrix', '-v7.3');
 else
     disp('Loading detector system matrix...');
     detector1SystemMatrix = load(filenameSystemMatrix1);
@@ -74,7 +85,7 @@ end
 disp('Creating inital image...');
 % Inititial estimate:
 initialEstimate = ones(imageSize_pixels, 'single');
-filenameInitialEstimate = [outputPath filesep 'initialEstimate'];
+filenameInitialEstimate = [outputPath pathBar 'initialEstimate'];
 interfilewrite(initialEstimate, filenameInitialEstimate, pixelSize_mm);
 %% ATTENUATION FACTORS
 % Norm factors are generated in each iteration during reconstruction.
@@ -137,7 +148,7 @@ if numel(size(correctRandoms)) == numel(size(sinograms))
         % The input is the random estimate:
         randoms = correctRandoms;
     else
-        [randoms, structSizeSino] = estimateRandomsWithStir(delayedSinogramSpan1, structSizeSino3dSpan1, overall_ncf_3d, structSizeSino3d, [outputPath filesep 'stirRandoms' filesep]);
+        [randoms, structSizeSino] = estimateRandomsWithStir(delayedSinogramSpan1, structSizeSino3dSpan1, overall_ncf_3d, structSizeSino3d, [outputPath pathBar 'stirRandoms' pathBar]);
     end
 else
     % If not, we expect a 1 to estimate randoms or a 0 to not cprrect for
@@ -199,7 +210,7 @@ for iteration = 1 : numXtalIterations
     mask = volume > 0;
     mask = imerode(mask, strel('disk',7));
     volume = volume .* mask;
-    [projectedImage, structSizeSinogram] = ProjectMmr(volume, pixelSize_mm, [outputPathIter filesep sprintf('temp_projection/',iteration)], structSizeSino3d.span, 0,0, useGpu);
+    [projectedImage, structSizeSinogram] = ProjectMmr(volume, pixelSize_mm, [outputPathIter pathBar sprintf('temp_projection/',iteration)], structSizeSino3d.span, 0,0, useGpu);
     % 4) Ratio between sinogram and projected:
     % Apply normalization and attenuation without crystal efficiencies:
 %     overall_nf_3d = overall_ncf_3d;
@@ -211,7 +222,7 @@ for iteration = 1 : numXtalIterations
     atteNormFactors(atteNormFactors==0) = 0;
     projectedImage_nf = projectedImage;
     projectedImage_nf = projectedImage_nf .*atteNormFactors + randoms + scatter .* xtal_dependant_nf_3d; % additive = (randoms + scatter.* overall_nf_3d_scatter);
-    interfileWriteSino(projectedImage_nf, [outputPathIter filesep 'ProjectedSino_Corrected'], structSizeSinogram);
+    interfileWriteSino(projectedImage_nf, [outputPathIter pathBar 'ProjectedSino_Corrected'], structSizeSinogram);
     
     % Compute likelihood:
     log_likelihood(iteration) = sum(sinograms(:).*log(projectedImage(:))-projectedImage(:));
@@ -232,7 +243,7 @@ for iteration = 1 : numXtalIterations
         mask = imerode(mask, strel('disk',7));
         meanVolume = mean(mean(mean(volume>0)));
         maskVolume = volume > meanVolume*0.7;
-        [projectedMask, structSizeSinogram] = ProjectMmr(mask.*maskVolume, pixelSize_mm, [outputPathIter filesep sprintf('temp_projection/mask/',iteration)], structSizeSino3d.span, 0,0, useGpu);
+        [projectedMask, structSizeSinogram] = ProjectMmr(mask.*maskVolume, pixelSize_mm, [outputPathIter pathBar sprintf('temp_projection/mask/',iteration)], structSizeSino3d.span, 0,0, useGpu);
         projMask = projectedMask>0;
         useOfDetectorsInSinogram = detector1SystemMatrix'*double(sinograms(:).*projMask(:)) + detector2SystemMatrix'*double(sinograms(:).*projMask(:));
         useOfDetectorsInProjection = detector1SystemMatrix'*double(projectedImage_nf(:).*projMask(:)) + detector2SystemMatrix'*double(projectedImage_nf(:).*projMask(:));

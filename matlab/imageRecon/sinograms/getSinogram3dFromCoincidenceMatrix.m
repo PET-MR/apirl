@@ -19,8 +19,9 @@ function sinogram3D = getSinogram3DFromCoincidenceMatrix(filenameCoincidenceMatr
 
 
 addpath('/workspaces/Martin/PET/Coincidencia/trunk/matlab/LibreriaCoincidencia')
-apirlPath = [fileparts(mfilename('fullpath')) filesep '..' filesep '..' filesep '..'];
-addpath(genpath([apirlPath filesep 'matlab']));
+addpath('/sources/MATLAB/WorkingCopy/ImageRecon');
+addpath('/sources/MATLAB/WorkingCopy/ImageProcessing');
+addpath('/sources/MATLAB/WorkingCopy/utils');
 
 %% CONSTANTES DEL PROCESAMIENTO
 % Cantidad de Eventos Por Lectura:

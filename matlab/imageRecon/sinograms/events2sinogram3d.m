@@ -10,10 +10,8 @@
 % Sinograma3D en la estructura que se genera con getSizeSino3Dstruct. Esta
 % función además utiliza la función ReduceMichelgram.
 function sinogram3D = Events2Sinogram3D(MatrizCoincidencias, structSizeSino3D)
-
-apirlPath = [fileparts(mfilename('fullpath')) filesep '..' filesep '..' filesep '..'];
-addpath(genpath([apirlPath filesep 'matlab']));
-
+addpath('/sources/MATLAB/WorkingCopy/ImageRecon');
+addpath('/sources/MATLAB/WorkingCopy/utils');
 % Creo el sinograma 3d.
 sinogram3D = single(zeros(structSizeSino3D.numR, structSizeSino3D.numTheta, sum(structSizeSino3D.sinogramsPerSegment)));
 

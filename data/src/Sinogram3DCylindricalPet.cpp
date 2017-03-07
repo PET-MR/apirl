@@ -1,7 +1,7 @@
 
 
 #include <Sinogram3DCylindricalPet.h>
-#include <algorithm>
+
 
 using namespace::std;
 std::ostringstream os;

@@ -10,7 +10,8 @@
 	\date 2010.11.11
 	\version 1.1.0
 */
-#pragma once
+#ifndef _MLEMSINOGRAM3D_H_
+#define _MLEMSINOGRAM3D_H_
 
 #include <Mlem.h>
 #include <Sinogram3D.h>
@@ -108,3 +109,5 @@ class DLLEXPORT MlemSinogram3d : public Mlem
     bool Reconstruct();
 		
 };
+
+#endif

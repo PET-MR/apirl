@@ -59,8 +59,7 @@
   #include <readCudaParameters.h>
 #endif
 
-constexpr int FIXED_KEYS = 5;
-
+#define FIXED_KEYS 5
 using namespace std;
 using	std::string;
 /**
@@ -384,10 +383,10 @@ int main (int argc, char *argv[])
 	    }
 	    outputProjection = new Sinograms2Din3DArPet((char*)sampleProjection.c_str(), rFov_mm, axialFov_mm); 
 	    ((Sinograms2Din3DArPet*)outputProjection)->setLengthOfBlindArea(blindDistance_mm);
-	    ((Sinograms2Din3DArPet*)outputProjection)->setMinDiffDetectors(float(minDetDiff));
+	    ((Sinograms2Din3DArPet*)outputProjection)->setMinDiffDetectors(minDetDiff);    
 	  }
 	  outputProjection->FillConstant(0);
-	  // float x_mm, y_mm, z_mm;
+	  float x_mm, y_mm, z_mm;
 	  if(outputProjection->getNumSinograms() != inputImage->getSize().nPixelsZ)
 	  {
 	    cout<<"Error: Projection of an image into a sinograms2D with different number of sinograms that slices." <<endl;
@@ -445,7 +444,7 @@ int main (int argc, char *argv[])
 	  /*if (numberOfSubsets != 0)
 	    outputProjection = outputProjection->getSubset(subsetIndex, numberOfSubsets);*/
 	  outputProjection->setLengthOfBlindArea(blindArea_mm);
-	  outputProjection->setMinDiffDetectors(float(minDetDiff));
+	  outputProjection->setMinDiffDetectors(minDetDiff);
 	  //outputProjection->setGeometryDim(rFov_mm,axialFov_mm,rScanner_mm);
 	  forwardprojector->Project(inputImage, outputProjection);
 	  outputProjection->writeInterfile(outputFilename);

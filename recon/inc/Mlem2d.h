@@ -11,7 +11,8 @@
 	\date 2010.11.11
 	\version 1.1.0
 */
-#pragma once
+#ifndef _MLEM2D_H_
+#define _MLEM2D_H_
 
 #include <Mlem.h>
 #include <Sinogram2D.h>
@@ -117,3 +118,5 @@ class DLLEXPORT Mlem2d : public Mlem
     bool Reconstruct();
 		
 };
+
+#endif

@@ -10,7 +10,7 @@
 #include <string>
 #include <math.h>
 
-// constexpr int FIXED_KEYS = 5;
+#define FIXED_KEYS 5
 
 // DLL export/import declaration: visibility of objects
 #ifndef LINK_STATIC

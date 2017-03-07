@@ -28,7 +28,8 @@
    with this program; if not, write to the Free Software Foundation, Inc.,
    59 Place - Suite 330, Boston, MA 02111-1307, USA.  */
 
-#pragma once
+#ifndef __M_QMEDIAN_H__
+#define __M_QMEDIAN_H__
 
 /****************************************************************************
                               D E F I N E S 
@@ -39,3 +40,6 @@
 ****************************************************************************/
 char *MdcReduceColor(FILEINFO *fi);
 char *MdcRgb2Indexed(Uint8 *srcRGB, Uint8 *dest8, Uint32 width, Uint32 height, Uint8 *palette, int dither);
+
+#endif
+

@@ -1,6 +1,5 @@
 
 #include <Siddon.h>
-#include <algorithm>
 
 /// ZFOV del sino de GE, despu�s hay que cambiar esto. Ver cuerpo de la funci�n.
 #define SCANNER_ZFOV	260.0f
@@ -364,7 +363,7 @@ float Siddon (Line2D LOR, Image* image, SiddonSegment** weightsList, int* length
   //float minValueX_mm, minValueY_mm, maxValueX_mm, maxValueY_mm;
   
   // Variables relacionadas con el parámetro alpha de la recta de la lor.
-  // float alpha_xy_1, alpha_xy_2;	// Valores de alpha para la intersección de la recta con el círculo del fov.
+  float alpha_xy_1, alpha_xy_2;	// Valores de alpha para la intersección de la recta con el círculo del fov.
   float alpha_x_1, alpha_y_1, alpha_x_2, alpha_y_2; // Valores de alpha para el punto de salida y entrada al fov.
   float alpha_x_min, alpha_y_min, alpha_x_max, alpha_y_max;	// Valores de alpha de ambos puntos por coordenada, pero ahora separados por menor y mayor.
   float alpha_min, alpha_max;	// Valores de alpha mínimo y máximo finales, o sea de entrada y salida al fov de la lor.

@@ -28,7 +28,8 @@
    with this program; if not, write to the Free Software Foundation, Inc.,
    59 Place - Suite 330, Boston, MA 02111-1307, USA.  */
 
-#pragma once
+#ifndef __M_FANCY_H__
+#define __M_FANCY_H__
 
 /****************************************************************************
                               H E A D E R S
@@ -109,3 +110,5 @@ void MdcFlushInput(void);
 int MdcWhichDecompress(void);
 int MdcWhichCompression(const char *fname);
 void MdcAddCompressionExt(int ctype, char *fname);
+#endif
+

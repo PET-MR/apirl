@@ -15,7 +15,11 @@
  *
  *************************************************************************/
 
-#pragma once
+
+
+#ifndef __MY_BLAS_H__
+#define __MY_BLAS_H__
+
 
 #include "mex.h"
 #include <math.h>
@@ -482,3 +486,7 @@ void printmat(double A[], int n, int m, char* matname);
  *
  **************************************************************************/
 void printspmat(mxArray *A, char* matname);
+
+
+#endif
+

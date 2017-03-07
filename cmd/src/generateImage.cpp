@@ -65,9 +65,7 @@
 		  tener cada shape, y luego clases derivadas para cada shape aceptada. Por ahora no tengo tiempo para esto, y es algo accesorio.
 	\author Martín Belzunce (martin.a.belzunce@gmail.com)
 	\date 2010.09.09
-	\author Casper da Costa-Luis <casper.dcl@physics.org>
-	\date 2016
-	\version 1.1.0
+	\version 1.0.0
 */
 
 
@@ -80,11 +78,8 @@
 #include <ParametersFile.h>
 #include <Images.h>
 #include <Geometry.h>
-#include <array>
-#include "castd.h"
-
-// using namespace std;
-using std::string;
+using	namespace std;
+using	std::string;
 
 //#include <generateImage.h>
 
@@ -132,10 +127,10 @@ using std::string;
 int main (int argc, char *argv[]) 
 {
 	// Comando generateImage
-	// short int  i, pos;
+	short int  i, pos;
 	short int  count=0;    /* counter: How often appears keyword in the header? */
-	// int        n;
-	// char       *c[1];
+	int        n;
+	char       *c[1];
 	char errorMessage[300];	// string de error para la función de lectura de archivo de parámetros.
 	char returnValue[256];	// string en el que se recibe el valor de un keyword en la lectura del archivo de parámetros.
 	///char       line[512];  /* max length of a line accepted in interfile header */
@@ -219,7 +214,7 @@ int main (int argc, char *argv[])
 		cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
 		return -1;
 	}
-	sizeImage.sizePixelX_mm = static_cast<float>(atof(returnValue));
+	sizeImage.sizePixelX_mm = atof(returnValue);
 	// Tamaño de Píxeles en Y.
 	if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), (char*)"generateImage", (char*)"Y voxel size (in mm)", (char*)returnValue, (char*)errorMessage)) != 0)
 	{
@@ -227,7 +222,7 @@ int main (int argc, char *argv[])
 		cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
 		return -1;
 	}
-	sizeImage.sizePixelY_mm = static_cast<float>(atof(returnValue));
+	sizeImage.sizePixelY_mm = atof(returnValue);
 	// Tamaño de Píxeles en Z.
 	if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), (char*)"generateImage", (char*)"Z voxel size (in mm)", (char*)returnValue,(char*) errorMessage)) != 0)
 	{
@@ -235,7 +230,7 @@ int main (int argc, char *argv[])
 		cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
 		return -1;
 	}
-	sizeImage.sizePixelZ_mm = static_cast<float>(atof(returnValue));
+	sizeImage.sizePixelZ_mm = atof(returnValue);
 
 	// Ahora genero la imagen incial.
 	image = new Image(sizeImage);
@@ -259,34 +254,44 @@ int main (int argc, char *argv[])
 			cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
 			return -1;
 		}
-		radius_mm = static_cast<float>(atof(returnValue));
+		radius_mm = atof(returnValue);
 		if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), (char*)"generateImage", (char*)"length-z (in mm)", (char*)returnValue, (char*)errorMessage)) != 0)
 		{
 			// Hubo un error. Salgo del comando.
 			cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
 			return -1;
 		}
-		lengthZ_mm = static_cast<float>(atof(returnValue));
+		lengthZ_mm = atof(returnValue);
 		if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), (char*)"generateImage", (char*)"value", (char*)returnValue, (char*)errorMessage)) != 0)
 		{
 			// Hubo un error. Salgo del comando.
 			cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
 			return -1;
 		}
-		value = static_cast<float>(atof(returnValue));
+		value = atof(returnValue);
 		if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), (char*)"generateImage", (char*)"origin (in mm)", (char*)returnValue, (char*)errorMessage)) != 0)
 		{
 			// Hubo un error. Salgo del comando.
 			cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
 			return -1;
 		}
-		// Extract 3 floats from "{x,y,z}"
-		{
-			auto coords = cas::str2coords<float, 3>(returnValue);
-			origin_mm.X = coords[0];
-			origin_mm.Y = coords[1];
-			origin_mm.Z = coords[2];
-		}
+		// Tengo {x,y,z}
+		// Primero elimino las dos llaves:
+		string aux = returnValue;
+		aux = aux.substr(1, aux.length()-2);
+		// Ahora me voy quedando con los números
+		int pos = aux.find(",",0);
+		string num = aux.substr(0,pos-1);
+		// Convierto a numero.
+		origin_mm.X = atof(num.c_str());
+		// Segunda coordenada.
+		int pos2 = aux.find(",", pos+1);
+		num = aux.substr(pos+1, pos2-1);
+		origin_mm.Y = atof(num.c_str());
+		// Tercera coordenada
+		pos = aux.find(",", pos2+1);
+		num = aux.substr(pos2+1, pos-1);
+		origin_mm.Z = atof(num.c_str());
 
 		// Ahora genero la imagen
 		ptrPixels = image->getPixelsPtr();
@@ -337,41 +342,51 @@ int main (int argc, char *argv[])
 			cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
 			return -1;
 		}
-		lengthX_mm = static_cast<float>(atof(returnValue));
+		lengthX_mm = atof(returnValue);
 		if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), "generateImage", "length-y (in mm)", returnValue, errorMessage)) != 0)
 		{
 			// Hubo un error. Salgo del comando.
 			cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
 			return -1;
 		}
-		lengthY_mm = static_cast<float>(atof(returnValue));
+		lengthY_mm = atof(returnValue);
 		if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), "generateImage", "length-z (in mm)", returnValue, errorMessage)) != 0)
 		{
 			// Hubo un error. Salgo del comando.
 			cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
 			return -1;
 		}
-		lengthZ_mm = static_cast<float>(atof(returnValue));
+		lengthZ_mm = atof(returnValue);
 		if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), "generateImage", "value", returnValue, errorMessage)) != 0)
 		{
 			// Hubo un error. Salgo del comando.
 			cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
 			return -1;
 		}
-		value = static_cast<float>(atof(returnValue));
+		value = atof(returnValue);
 		if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), "generateImage", "origin (in mm)", returnValue, errorMessage)) != 0)
 		{
 			// Hubo un error. Salgo del comando.
 			cout<<"Error "<<errorCode<<" en el archivo de parámetros. Mirar la documentación de los códigos de errores."<<endl;
 			return -1;
 		}
-
-		{
-			auto coords = cas::str2coords<float, 3>(returnValue);
-			origin_mm.X = coords[0];
-			origin_mm.Y = coords[1];
-			origin_mm.Z = coords[2];
-		}
+		// Tengo {x,y,z}
+		// Primero elimino las dos llaves:
+		string aux = returnValue;
+		aux = aux.substr(1, aux.length()-2);
+		// Ahora me voy quedando con los números
+		int pos = aux.find(",",0);
+		string num = aux.substr(0,pos-1);
+		// Convierto a numero.
+		origin_mm.X = atof(num.c_str());
+		// Segunda coordenada.
+		int pos2 = aux.find(",", pos+1);
+		num = aux.substr(pos+1, pos2-1);
+		origin_mm.Y = atof(num.c_str());
+		// Tercera coordenada
+		pos = aux.find(",", pos2+1);
+		num = aux.substr(pos2+1, pos-1);
+		origin_mm.Z = atof(num.c_str());
 
 		// Ahora genero la imagen
 		ptrPixels = image->getPixelsPtr();
@@ -401,7 +416,7 @@ int main (int argc, char *argv[])
 						// x_mm = (i-(int)(sizeImage.nPixelsX/2)) * sizeImage.sizePixelX_mm + (sizeImage.nPixelsX%2);
 						x_mm = (i-(int)(sizeImage.nPixelsX/2)) * sizeImage.sizePixelX_mm + (1-sizeImage.nPixelsX%2) * sizeImage.sizePixelX_mm/2;
 						y_mm = (j-(int)(sizeImage.nPixelsY/2)) * sizeImage.sizePixelY_mm + (1-sizeImage.nPixelsY%2) * sizeImage.sizePixelY_mm/2;
-						if((fabs(x_mm-origin_mm.X)<(lengthX_mm/2)) && (fabs(y_mm-origin_mm.Y)<(lengthY_mm/2)))
+						if((abs(x_mm-origin_mm.X)<(lengthX_mm/2)) && (abs(y_mm-origin_mm.Y)<(lengthY_mm/2)))
 						{
 							// Estoy dentro del cilindro!
 							ptrPixels[k*pixelsSlice + j * sizeImage.nPixelsX + i] = value;

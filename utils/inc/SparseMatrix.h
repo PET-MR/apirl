@@ -1,4 +1,6 @@
-#pragma once
+#ifndef _SPARSE_MATRIX_H_
+#define _SPARSE_MATRIX_H_
+
 
 class SparseMatrix
 {
@@ -98,3 +100,5 @@ private:
 		}
 	}
 };
+
+   #endif

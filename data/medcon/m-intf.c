@@ -99,10 +99,6 @@
 #include <unistd.h>
 #endif
 
-#ifndef _unlink
-#define _unlink unlink
-#endif
-
 #include "medcon.h"
 
 /****************************************************************************
@@ -2002,7 +1998,7 @@ const char *MdcReadINTF(FILEINFO *fi)
   }
 
   if (WAS_COMPRESSED == MDC_YES) { 
-    _unlink(fi->ipath); /* delete after use */
+    unlink(fi->ipath); /* delete after use */
 
     if (MDC_PROGRESS) MdcProgress(MDC_PROGRESS_BEGIN,0.,"Reading InterFile:");
   }
@@ -2414,8 +2410,8 @@ char *MdcWriteIntfPET(FILEINFO *fi)
 	  fprintf(fp,"!number of slices := %u\r\n",fi->dim[3]);
 	  fprintf(fp,"number of reference frame := 0\r\n");
 	  fprintf(fp,"slice orientation := %s\r\n", MdcGetStrSliceOrient(fi->pat_slice_orient));
-	  fprintf(fp,"slice thickness (pixels) := %+e\r\n", 1.0);
-	  fprintf(fp,"centre-centre slice separation (pixels) := %+e\r\n", 1.0);
+	  fprintf(fp,"slice thickness (pixels) := %+e\r\n",1);
+	  fprintf(fp,"centre-centre slice separation (pixels) := %+e\r\n", 1);
 	  fprintf(fp,"filter name := %s\r\n",fi->filter_type);
 	  fprintf(fp,"filter parameters := Cutoff\r\n");
 	  /*fprintf(fp,"z-axis filter :=\r\n");*/

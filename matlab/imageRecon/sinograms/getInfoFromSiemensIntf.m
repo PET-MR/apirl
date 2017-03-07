@@ -25,6 +25,17 @@ if isempty(ext)
     filename = [filename '.hdr'];
 end
 
+if(strcmp(computer(), 'GLNXA64'))
+    os = 'linux';
+    pathBar = '/';
+elseif(strcmp(computer(), 'PCWIN') || strcmp(computer(), 'PCWIN64'))
+    os = 'windows';
+    pathBar = '\';
+else
+    disp('OS not compatible');
+    return;
+end
+
 % open file for parsing
 fid = fopen(filename);
 if fid == -1
@@ -37,7 +48,7 @@ end
 % nombre del interfile a leer tiene un path además del nombre, dicho path
 % también debo agregarselo al "data file name" que figura en el h33:
 relativePath = '';
-barras = strfind(filename, filesep);
+barras = strfind(filename, pathBar);
 if ~isempty(barras)
     relativePath = filename(1 : barras(end));
 end

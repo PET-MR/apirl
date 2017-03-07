@@ -89,10 +89,6 @@
 #include <unistd.h>
 #endif
 
-#ifndef _unlink
-#define _unlink unlink
-#endif
-
 #include "medcon.h"
 
 /****************************************************************************
@@ -131,7 +127,7 @@ int MdcOpenFile(FILEINFO *fi, const char *path)
     fi->ifp = stdin; strcpy(fi->ipath,"stdin");
   }
 
-  if (ctype != MDC_NO) _unlink(path);
+  if (ctype != MDC_NO) unlink(path);
 
   MdcSplitPath(fi->ipath,fi->idir,fi->ifname);
  
@@ -599,7 +595,7 @@ int MdcDecompressFile(const char *path)
 
     if (MDC_PROGRESS) MdcProgress(MDC_PROGRESS_END,0.,NULL);
 
-    _unlink(path);
+    unlink(path);
 
     /* no gunzip? restore orig path */
     *ext = '.';

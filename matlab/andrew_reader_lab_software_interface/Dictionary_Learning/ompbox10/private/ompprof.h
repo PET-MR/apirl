@@ -14,7 +14,8 @@
  *************************************************************************/
 
 
-#pragma once
+#ifndef __OMP_PROF_H__
+#define __OMP_PROF_H__
 
 #include "mex.h"
 #include <time.h>
@@ -99,3 +100,7 @@ void addproftime(profdata *pd, int comptype);
  *
  **************************************************************************/
 void printprofinfo(profdata *pd, int erroromp, int batchomp, int signum);
+
+
+#endif
+

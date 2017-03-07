@@ -105,7 +105,7 @@ int getSaveIntermidiateIntervals (string mlemFilename, string cmd, int* saveIter
     }
     else
     {
-	  *saveIntermediateData = atoi(returnValue) != 0;
+	  *saveIntermediateData = (bool)atoi(returnValue);
     }
     return 0;
   }

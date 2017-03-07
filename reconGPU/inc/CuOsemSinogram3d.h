@@ -10,7 +10,9 @@
 	\date 2010.11.11
 	\version 1.1.0
 */
-#pragma once
+#ifndef _CU_OSEMSINOGRAM3D_H_
+#define _CU_OSEMSINOGRAM3D_H_
+
 #include <Mlem.h>
 #include <CuMlemSinogram3d.h>
 #include <Sinogram3D.h>
@@ -143,3 +145,5 @@ class DLLEXPORT CuOsemSinogram3d : public CuMlemSinogram3d
     virtual bool Reconstruct(TipoProyector tipoProy, int indexGpu);
     
 };
+
+#endif

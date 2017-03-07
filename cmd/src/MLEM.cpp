@@ -64,13 +64,12 @@
 #include <string>
 #include <readParameters.h>
 
-constexpr int FOV_axial = 160;
-constexpr int FOV_radial = 400;
-constexpr int SCANNER_RADIUS = 700;
-constexpr int FIXED_KEYS = 5;
-
+#define FOV_axial 160
+#define FOV_radial 400
+#define SCANNER_RADIUS	700
+#define FIXED_KEYS 5
 using namespace std;
-using std::string;
+using	std::string;
 
 /**
 	\fn void main (int argc, char *argv[])
@@ -177,14 +176,13 @@ int main (int argc, char *argv[])
   char** keyWords;  // múltiples keywords para la función de lectura de múltiples keys.
   char** multipleReturnValue; // array de strings para la función de multples keys.
   int	errorCode;
-  // int nx, ny, nz, n_voxels, resolution, file, Recon;
-  int numIterations;
-  // unsigned int hTimer;
-  // const char* pathSensImage;
-  // double timerValue;
-  // SizeImage MySizeVolume;
+  int nx, ny, nz, n_voxels, resolution, numIterations, file, Recon;
+  unsigned int hTimer;
+  const char* pathSensImage;
+  double timerValue;
+  SizeImage MySizeVolume;
   float radiusFov_mm, zFov_mm, radiusScanner_mm;
-  // char NombreRecon[50];
+  char NombreRecon[50];
   string parameterFileName;	// string para el Nombre de Archivo de parámetros.
   string inputType;
   string inputFilename;	// string para el Nombre del archivo de header del sinograma.
@@ -424,7 +422,7 @@ int main (int argc, char *argv[])
       return -1;
     Sinograms2Din3DArPet* inputProjection = new Sinograms2Din3DArPet(inputFilename, radiusFov_mm, zFov_mm);
     inputProjection->setLengthOfBlindArea(blindDistance_mm);
-    inputProjection->setMinDiffDetectors(float(minDetDiff));
+    inputProjection->setMinDiffDetectors(minDetDiff);
     mlem = new Mlem2dMultiple((Sinograms2DmultiSlice*)inputProjection, initialEstimate, "", outputPrefix, numIterations, saveIterationInterval, saveIntermediateData, bSensitivityFromFile, forwardprojector, backprojector);
     if(bSensitivityFromFile)
     {
@@ -458,7 +456,7 @@ int main (int argc, char *argv[])
       return -1;
     Sinogram3DArPet* inputProjection = new Sinogram3DArPet((char*)inputFilename.c_str(),radiusFov_mm, zFov_mm); 
     inputProjection->setLengthOfBlindArea(blindArea_mm);
-    inputProjection->setMinDiffDetectors(float(minDetDiff));
+    inputProjection->setMinDiffDetectors(minDetDiff);
     mlem = new MlemSinogram3d(inputProjection, initialEstimate, "", outputPrefix, numIterations, saveIterationInterval, saveIntermediateData, bSensitivityFromFile, forwardprojector, backprojector);
     if(bSensitivityFromFile)
     {

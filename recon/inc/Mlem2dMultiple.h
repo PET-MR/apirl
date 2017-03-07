@@ -10,7 +10,8 @@
 	\date 2010.11.11
 	\version 1.1.0
 */
-#pragma once
+#ifndef _MLEM2DMULTIPLE_H_
+#define _MLEM2DMULTIPLE_H_
 
 #include <Mlem.h>
 #include <Mlem2d.h>
@@ -108,3 +109,5 @@ class DLLEXPORT Mlem2dMultiple : public Mlem
 	  bool NormalizeVolume();
 		
 };
+
+#endif

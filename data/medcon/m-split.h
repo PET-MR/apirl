@@ -28,7 +28,8 @@
    with this program; if not, write to the Free Software Foundation, Inc.,
    59 Place - Suite 330, Boston, MA 02111-1307, USA.  */
 
-#pragma once
+#ifndef __M_SPLIT_H__
+#define __M_SPLIT_H__
 
 /****************************************************************************
                               D E F I N E S 
@@ -49,3 +50,6 @@ char *MdcCopySlice(FILEINFO *ofi, FILEINFO *ifi, Uint32 slice0);
 char *MdcCopyFrame(FILEINFO *ofi, FILEINFO *ifi, Uint32 frame0);
 char *MdcSplitSlices(FILEINFO *fi, int format, int prefixnr);
 char *MdcSplitFrames(FILEINFO *fi, int format, int prefixnr);
+
+#endif
+

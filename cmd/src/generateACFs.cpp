@@ -56,10 +56,9 @@
   #include <readCudaParameters.h>
 #endif
 
-constexpr int FOV_axial = 162;
-constexpr int FOV_radial = 582;
-constexpr int FIXED_KEYS = 4;
-
+#define FOV_axial 162
+#define FOV_radial 582
+#define FIXED_KEYS 4
 using namespace std;
 using	std::string;
 /**

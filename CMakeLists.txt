@@ -19,10 +19,6 @@ endif()
 # Disable secure Warnings for stdc functions.
 add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 
-if(NOT MSVC)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -Wall -std=c++11")
-endif()
-
 ###################### OPENMP CONFIGURATION #############################
 INCLUDE(FindOpenMP)
 IF(OPENMP_FOUND)
@@ -69,30 +65,30 @@ if(CMAKE_HOST_UNIX)
   endif()
 endif()
 
-OPTION(ENABLE_GPU "Whether to use CUDA" OFF)
-
 if(ENABLE_GPU)
-  # Seteo en ON CUDA_VERBOSE_BUILD para visualizar todos los resultados del nvcc.
-  SET(CUDA_VERBOSE_BUILD ON)
-  SET(CUDA_BUILD_CUBIN ON)
-  # Defino una variable que me indice si las librería para cuda son dinámicas o estáticas. Esto lo hago
-  # así porque he tenido algún problema para hacerlas dinámicas.
-  SET(CUDA_LIBRARIES_BUILD	STATIC)
-  #SET(CUDA_LIBRARIES_BUILD	SHARED)
-  # Seteo las compute capabilities con las que quiero compilar (Por default es la más baja: 1.0):
-  SET(CUDA_COMPUTE_CAPABILITY 3.5)
-  # Algunas opciones adicionales para cuda.
-  #SET(CUDA_USE_FAST_MATH ON)
-  OPTION(CUDA_USE_FAST_MATH "Whether to faster, less accurate CUDA math" OFF)
-  # Tipo de Cache que se habilita:
-  OPTION(CUDA_USE_CACHE_L1_L2 "CUDA L1_L2 cache" OFF)
-  OPTION(CUDA_USE_CACHE_ONLY_L2 "CUDA L2 cache only" ON)
-  #SET(CUDA_MAX_REG_COUNT 32)
-  #set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -rdc=true -lineinfo")
+	# Seteo en ON CUDA_VERBOSE_BUILD para visualizar todos los resultados del nvcc.
+	SET(CUDA_VERBOSE_BUILD ON)
+	SET(CUDA_BUILD_CUBIN ON)
+	# Defino una variable que me indice si las librería para cuda son dinámicas o estáticas. Esto lo hago
+	# así porque he tenido algún problema para hacerlas dinámicas.
+	SET(CUDA_LIBRARIES_BUILD	STATIC)
+	#SET(CUDA_LIBRARIES_BUILD	SHARED)
+	# Seteo las compute capabilities con las que quiero compilar (Por default es la más baja: 1.0):
+	SET(CUDA_COMPUTE_CAPABILITY 3.5)
+	# Algunas opciones adicionales para cuda.
+	#SET(CUDA_USE_FAST_MATH ON)
+	# Tipo de Cache que se habilita:
+	#SET(CUDA_USE_CACHE_L1_L2 ON)
+	SET(CUDA_USE_CACHE_ONLY_L2 ON)
+	#SET(CUDA_MAX_REG_COUNT 32)
+	#set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -rdc=true -lineinfo")
 endif(ENABLE_GPU)
 
 #set(CUDA_NVCC_FLAGS_RELEASE ${CUDA_NVCC_FLAGS_RELEASE} ";-03")
 set(CUDA_NVCC_FLAGS_DEBUG ${CUDA_NVCC_FLAGS_DEBUG} ";-G")
+if(NOT CUDA_COMPUTE_CAPABILITY)
+	set(CUDA_COMPUTE_CAPABILITY 1.0)
+endif()
 if(CUDA_COMPUTE_CAPABILITY STREQUAL 1.0)
 	set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} ";-arch=sm_10")
 elseif(CUDA_COMPUTE_CAPABILITY STREQUAL 1.1)
@@ -135,19 +131,19 @@ MESSAGE(STATUS "NVCC FLAGS: ${CUDA_NVCC_FLAGS}")
 ################## CHECK IF CUDA AVAILABLE ############################
 # Directorio donde se encuentra el FindCUDA:
 if(ENABLE_GPU)
-  # In cmake 3.0 there is a findcuda embedded in cmake, for previous version use our findcuda.
-  if(CMAKE_MAJOR_VERSION LESS 3)
-    set(CUDA_NVCC_FLAGS "") # Our findcuda set the flags based on the variables on the top. To avoid redefinition clean it.
-    SET(FindCUDA_Dir ${CMAKE_SOURCE_DIR}/FindCUDA)
-    set(CMAKE_MODULE_PATH "${FindCUDA_Dir}/CMake/cuda" ${CMAKE_MODULE_PATH})
-  endif()
-  find_package(CUDA)
-  if (CUDA_FOUND)
-    SET(ENABLE_GPU ON)
-    add_definitions(-D__USE_CUDA__)
-  else (CUDA_FOUND)
-    SET(ENABLE_GPU OFF)	
-  endif (CUDA_FOUND)
+	# In cmake 3.0 there is a findcuda embedded in cmake, for previous version use our findcuda.
+	if(CMAKE_MAJOR_VERSION LESS 3)
+		set(CUDA_NVCC_FLAGS "") # Our findcuda set the flags based on the variables on the top. To avoid redefinition clean it.
+		SET(FindCUDA_Dir ${CMAKE_SOURCE_DIR}/FindCUDA)
+		set(CMAKE_MODULE_PATH "${FindCUDA_Dir}/CMake/cuda" ${CMAKE_MODULE_PATH})
+	endif()
+	find_package(CUDA)
+	if (CUDA_FOUND)
+		SET(ENABLE_GPU ON)
+		add_definitions(-D__USE_CUDA__)
+	else (CUDA_FOUND)
+		SET(ENABLE_GPU OFF)	
+	endif (CUDA_FOUND)
 endif(ENABLE_GPU)
 #######################################################################
 
@@ -157,8 +153,8 @@ add_subdirectory(data)
 add_subdirectory(utils)
 add_subdirectory(cmd)
 if(ENABLE_GPU)
-  add_subdirectory(reconGPU)
-  add_subdirectory(cmdGPU)
+	add_subdirectory(reconGPU)
+	add_subdirectory(cmdGPU)
 endif(ENABLE_GPU)
 
 # Configuraciones Adicionales de CUDA. En windows compilo en 32 bits al menos que obtenga un
@@ -177,16 +173,18 @@ else()
 	else(CMAKE_SIZEOF_VOID_P EQUAL 4)
 	  set(CUDA_64_BIT_DEVICE_CODE OFF)
 	endif(CMAKE_SIZEOF_VOID_P EQUAL 8)
+	
 endif()
 
 # Check if Doxygen is available
-#find_package(Doxygen REQUIRED)
-find_package(Doxygen)
+find_package(Doxygen REQUIRED)
+#find_package(Doxygen)
 
 OPTION(INSTALL_DOC "Set to OFF to skip build/install Documentation" OFF)
 OPTION(USE_DOT "Set to ON to perform diagram generation with graphviz" OFF)
 OPTION(USE_LATEX "Set to ON to build latex documentation" OFF)
 OPTION(USE_CHM "Set to ON to build CHM Windows documentation" OFF)
+SET(INSTALL_DOC ON)
 IF (INSTALL_DOC)
 	INCLUDE("${CMAKE_SOURCE_DIR}/Doxygen/generateDOC.cmake" )
 	GENERATE_DOCUMENTATION(${CMAKE_SOURCE_DIR}/${PROJECT_NAME}.dox.in)

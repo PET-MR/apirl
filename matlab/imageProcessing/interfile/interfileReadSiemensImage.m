@@ -12,6 +12,18 @@
 
 function [image, refImage, bedPosition_mm, info]  = interfileReadSiemensImage(headerFilename)
  
+% Check what OS I am running on:
+if(strcmp(computer(), 'GLNXA64'))
+    os = 'linux';
+    pathBar = '/';
+elseif(strcmp(computer(), 'PCWIN') || strcmp(computer(), 'PCWIN64'))
+    os = 'windows';
+    pathBar = '\';
+else
+    disp('OS not compatible');
+    return;
+end
+
 % Read header:
 [info] = getInfoFromSiemensIntf(headerFilename);
 
@@ -39,7 +51,7 @@ fid = fopen(info.NameOfDataFile, 'r');
 if(fid == -1)
     % Try adding the path:
     [pathstr,name,ext] = fileparts(headerFilename);
-    fid = fopen([pathstr filesep info.NameOfDataFile], 'r');
+    fid = fopen([pathstr pathBar info.NameOfDataFile], 'r');
     if(fid == -1)
         error(sprintf('The binary data file: %s couldn''t be opened.', info.NameOfDataFile));
     end

@@ -10,7 +10,9 @@
 	\date 2010.11.11
 	\version 1.1.0
 */
-#pragma once
+#ifndef _CU_PROJECTSINOGRAM3D_H_
+#define _CU_PROJECTSINOGRAM3D_H_
+
 #include <Mlem.h>
 #include <OsemSinogram3d.h>
 #include <Sinogram3D.h>
@@ -240,3 +242,5 @@ class DLLEXPORT CuProjectSinogram3d
     /// Método que realiza la reconstrucción y permite al usuario establecer el índice de GPU a utilizar
     bool Reconstruct(TipoProyector tipoProy, int indexGpu);
 };
+
+#endif

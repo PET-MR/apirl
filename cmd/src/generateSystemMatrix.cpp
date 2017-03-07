@@ -45,10 +45,9 @@
 #include <Geometry.h>
 #include <string>
 
-constexpr int FOV_axial = 162;
-constexpr int FOV_radial = 582;
-constexpr int FIXED_KEYS = 5;
-
+#define FOV_axial 162
+#define FOV_radial 582
+#define FIXED_KEYS 5
 using namespace std;
 using	std::string;
 /**
@@ -123,7 +122,7 @@ int main (int argc, char *argv[])
 	unsigned int hTimer;
 	const char* pathSensImage;
 	double timerValue;
-	// SizeImage MySizeVolume;
+	SizeImage MySizeVolume;
 	char NombreRecon[50];
 	string parameterFileName;	// string para el Nombre de Archivo de parámetros.
 	string projectionType;
@@ -238,8 +237,8 @@ int main (int argc, char *argv[])
 			return -1;
 		  }
 	  }
-	  float diameterFov_mm = static_cast<float>(atoi(returnValue));
-
+	  float diameterFov_mm = atoi(returnValue);
+	  
 	  // "distance_cristal_to_center_of_fov (in mm)"
 	  if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), (char*)"generateSystemMatrix", (char*)"distance_cristal_to_center_of_fov (in mm)", (char*)returnValue, (char*)errorMessage)) != 0)
 	  {
@@ -256,7 +255,7 @@ int main (int argc, char *argv[])
 			return -1;
 		  }
 	  }
-	  float distCrystalToCenterFov = static_cast<float>(atoi(returnValue));
+	  float distCrystalToCenterFov = atoi(returnValue);
 	  
 	  // "length_of_colimator (in mm)"
 	  if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), (char*)"generateSystemMatrix", (char*)"length_of_colimator (in mm)", (char*)returnValue, (char*)errorMessage)) != 0)
@@ -274,7 +273,7 @@ int main (int argc, char *argv[])
 			return -1;
 		  }
 	  }
-	  float lengthColimator_mm = static_cast<float>(atoi(returnValue));
+	  float lengthColimator_mm = atoi(returnValue);
 	  
 	  // "diameter_of_colimator (in mm)"
 	  if((errorCode=parametersFile_read((char*)parameterFileName.c_str(), (char*)"generateSystemMatrix", (char*)"diameter_of_colimator (in mm)", (char*)returnValue, (char*)errorMessage)) != 0)
@@ -292,7 +291,7 @@ int main (int argc, char *argv[])
 			return -1;
 		  }
 	  }
-	  float widthHoleCollimator_mm = static_cast<float>(atoi(returnValue));
+	  float widthHoleCollimator_mm = atoi(returnValue);
 		
 	  // Cargo la imagen de initial estimate, que esta en formato interfile, y de ella obtengo 
 	  // los tamaños de la imagen.
