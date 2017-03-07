@@ -163,11 +163,9 @@ bool Sinogram2DinSiemensMmr::getPointsFromLor(int indexProj, int indexR, int ind
   float r, rad_PhiAngle, lr, effRadioScanner_mm, auxValue;
   // r is already arc corrected in the constructor:
   r = this->getRValue(indexR);
-  //float lr = (binSize_mm/2 + binSize_mm*(indexR-(float)(numR/2)));
-  //float effRadioScanner_mm = (radioScanner_mm + meanDOI_mm* cos(lr/radioScanner_mm));
   rad_PhiAngle = this->getAngValue(indexProj) * DEG_TO_RAD;
-  if (this->getAngValue(indexProj) > 90)
-	  r = r - binSize_mm/2;
+//   if (this->getAngValue(indexProj) > 90)
+// 	  r = r - binSize_mm/2;
   auxValue = sqrt(radioScanner_mm * radioScanner_mm - r * r);
   *geomFactor = 1;
   p1->X = r * cos(rad_PhiAngle) + sin(rad_PhiAngle) * auxValue;

@@ -485,9 +485,15 @@ classdef classGpet < handle
         
         function gaps = gaps(objGpet)
             if strcmp(objGpet.scanner,'mMR')
-                crystalMasks = ones(504,64);
-                crystalMasks(9:9:end,:) = 0;
-                gaps = createSinogram3dFromDetectorsEfficency(crystalMasks, objGpet.get_sinogram_size_for_apirl(), 0);
+                if objGpet.sinogram_size.span > 0
+                    crystalMasks = ones(504,64);
+                    crystalMasks(9:9:end,:) = 0;
+                    gaps = createSinogram3dFromDetectorsEfficency(crystalMasks, objGpet.get_sinogram_size_for_apirl(), 0);
+                else
+                    crystalMasks = ones(504);
+                    crystalMasks(9:9:end,:) = 0;
+                    gaps = createSinogram2dFromDetectorsEfficency(crystalMasks, objGpet.get_sinogram_size_for_apirl(), 1, 0);
+                end
             else
                 gaps = ones(objGpet.sinogram_size.matrixSize);
             end

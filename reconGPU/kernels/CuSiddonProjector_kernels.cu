@@ -315,10 +315,10 @@ __device__ void CUDA_GetPointsFromLOR (float PhiAngle, float r, float Z1, float 
 __device__ void CUDA_GetPointsFromBinsMmr (float PhiAngle, int iR, int numR, float Z1, float Z2, float cudaRscanner, float4* P1, float4* P2)
 {
   float sinValue, cosValue, r, lr;
-  if (PhiAngle < 90)
+//  if (PhiAngle < 90)
 	lr = d_binSize_mm/2 + (d_binSize_mm*(iR-(float)(numR/2)));
-  else
-	lr = (d_binSize_mm*(iR-(float)(numR/2)));  
+//  else
+//	lr = (d_binSize_mm*(iR-(float)(numR/2)));  
   r = (cudaRscanner + d_meanDOI_mm* cos(lr/cudaRscanner)) * sin(lr/cudaRscanner);
   sincosf(PhiAngle*DEG_TO_RAD, &sinValue, &cosValue);
   float auxValue = sqrtf((cudaRscanner) * (cudaRscanner) - r * r);

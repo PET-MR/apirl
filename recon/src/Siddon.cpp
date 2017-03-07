@@ -593,8 +593,8 @@ float Siddon (Line2D LOR, Image* image, SiddonSegment** weightsList, int* length
 	  alpha_x = ( -rFov_mm + i_min * sizeImage.sizePixelX_mm - LOR.P0.X ) / LOR.Vx;	// Limit to the left
   else
 	  alpha_x = numeric_limits<float>::max();;
-  if	(alpha_x <0)		// If its outside the FOV que get to the maximum value so it doesn't bother
-	  alpha_x = numeric_limits<float>::max();
+  if	(alpha_x <0)		// If its a negative value ti might be an small error or out of the field of view, force to the starting point
+	  alpha_x = alpha_min;
   
   if(LOR.Vy > 0)
 	  alpha_y = ( -rFov_mm + (j_min + j_incr) * sizeImage.sizePixelY_mm - LOR.P0.Y ) / LOR.Vy;
@@ -603,7 +603,7 @@ float Siddon (Line2D LOR, Image* image, SiddonSegment** weightsList, int* length
   else
 	  alpha_y = numeric_limits<float>::max();
   if(alpha_y <0)
-	  alpha_y = numeric_limits<float>::max();
+	  alpha_y = alpha_min;
 
   // En alpha_c voy guardando el valor de alpha con el que voy recorriendo los píxeles.
   alpha_c = alpha_min;	

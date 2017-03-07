@@ -51,35 +51,35 @@ bool SiddonProjector::Backproject (Sinogram2D* InputSinogram, Image* outputImage
     {
       for(j = 0; j < InputSinogram->getNumR(); j++)
       {
-	// Obtengo puntos de entrada y salida de la lor:
-	if(InputSinogram->getPointsFromLor(i, j, &P1, &P2, &geomFactor))
-	{
-	  LOR.P0 = P1;
-	  LOR.Vx = P2.X - P1.X;
-	  LOR.Vy = P2.Y - P1.Y;
-	  //Siddon(P1, P2, outputImage, &MyWeightsList, &LengthList,1);
-	  float rayLength = Siddon (LOR, outputImage, &MyWeightsList, &LengthList,1);
-	  if(LengthList>0)
-	  {
-	    for(l = 0; l < LengthList; l++)
-	    {
-	      // for every element of the systema matrix different from zero,we do
-	      // the sum(Aij*bi/Projected) for every i
-	      if((MyWeightsList[l].IndexY>=0) && (MyWeightsList[l].IndexX>=0) && 
-		(MyWeightsList[l].IndexY<sizeImage.nPixelsY) && (MyWeightsList[l].IndexX<sizeImage.nPixelsX))
-	      {
-		indexPixel = MyWeightsList[l].IndexY * sizeImage.nPixelsX + MyWeightsList[l].IndexX;
-		newValue = MyWeightsList[l].Segment * InputSinogram->getSinogramBin(i,j)*geomFactor;
-		#pragma omp atomic
-		  ptrPixels[indexPixel] += newValue;	
-		  if(ptrPixels[indexPixel]!=ptrPixels[indexPixel])
-		    printf("Nan: %d %d %f\n", i, j, newValue);
-	      }
-	    }
-	    // Now I have my estimated projection for LOR i
-	    free(MyWeightsList);
-	  }
-	}
+				// Obtengo puntos de entrada y salida de la lor:
+				if(InputSinogram->getPointsFromLor(i, j, &P1, &P2, &geomFactor))
+				{
+					LOR.P0 = P1;
+					LOR.Vx = P2.X - P1.X;
+					LOR.Vy = P2.Y - P1.Y;
+					//Siddon(P1, P2, outputImage, &MyWeightsList, &LengthList,1);
+					float rayLength = Siddon (LOR, outputImage, &MyWeightsList, &LengthList,1);
+					if(LengthList>0)
+					{
+						for(l = 0; l < LengthList; l++)
+						{
+							// for every element of the systema matrix different from zero,we do
+							// the sum(Aij*bi/Projected) for every i
+							if((MyWeightsList[l].IndexY>=0) && (MyWeightsList[l].IndexX>=0) && 
+								(MyWeightsList[l].IndexY<sizeImage.nPixelsY) && (MyWeightsList[l].IndexX<sizeImage.nPixelsX))
+							{
+								indexPixel = MyWeightsList[l].IndexY * sizeImage.nPixelsX + MyWeightsList[l].IndexX;
+								newValue = MyWeightsList[l].Segment * InputSinogram->getSinogramBin(i,j)*geomFactor;
+								#pragma omp atomic
+									ptrPixels[indexPixel] += newValue;	
+									if(ptrPixels[indexPixel]!=ptrPixels[indexPixel])
+										printf("Nan: %d %d %f\n", i, j, newValue);
+							}
+						}
+						// Now I have my estimated projection for LOR i
+						free(MyWeightsList);
+					}
+				}
       }
     }
   }
@@ -107,40 +107,39 @@ bool SiddonProjector::DivideAndBackproject (Sinogram2D* InputSinogram, Sinogram2
     {
       for(j = 0; j < InputSinogram->getNumR(); j++)
       {
-	if((EstimatedSinogram->getSinogramBin(i,j)!=0)&&(InputSinogram->getSinogramBin(i,j)!=0))
-	{
-	  if(InputSinogram->getPointsFromLor(i, j, &P1, &P2, &geomFactor))
-	  {
-	    LOR.P0 = P1;
-	    LOR.Vx = P2.X - P1.X;
-	    LOR.Vy = P2.Y - P1.Y;
-	    //Siddon(P1, P2, outputImage, &MyWeightsList, &LengthList,1);
-	    float rayLength = Siddon (LOR, outputImage, &MyWeightsList, &LengthList,1);
-	    if(LengthList>0)
-	    {
-	      for(l = 0; l < LengthList; l++)
-	      {
-		// for every element of the systema matrix different from zero,we do
-		// the sum(Aij*bi/Projected) for every i
-		if((MyWeightsList[l].IndexY>=0) && (MyWeightsList[l].IndexX>=0) && 
-		  (MyWeightsList[l].IndexY<sizeImage.nPixelsY) && (MyWeightsList[l].IndexX<sizeImage.nPixelsX))
-		{
-		  indexPixel = MyWeightsList[l].IndexY * sizeImage.nPixelsX + MyWeightsList[l].IndexX;
-		    newValue = geomFactor * MyWeightsList[l].Segment * InputSinogram->getSinogramBin(i,j) / EstimatedSinogram->getSinogramBin(i,j);
-		    
-		  #pragma omp atomic
-		    ptrPixels[indexPixel] += newValue;	
+				if((EstimatedSinogram->getSinogramBin(i,j)!=0)&&(InputSinogram->getSinogramBin(i,j)!=0))
+				{
+					if(InputSinogram->getPointsFromLor(i, j, &P1, &P2, &geomFactor))
+					{
+						LOR.P0 = P1;
+						LOR.Vx = P2.X - P1.X;
+						LOR.Vy = P2.Y - P1.Y;
+						//Siddon(P1, P2, outputImage, &MyWeightsList, &LengthList,1);
+						float rayLength = Siddon (LOR, outputImage, &MyWeightsList, &LengthList,1);
+						if(LengthList>0)
+						{
+							for(l = 0; l < LengthList; l++)
+							{
+								// for every element of the systema matrix different from zero,we do
+								// the sum(Aij*bi/Projected) for every i
+								if((MyWeightsList[l].IndexY>=0) && (MyWeightsList[l].IndexX>=0) && 
+									(MyWeightsList[l].IndexY<sizeImage.nPixelsY) && (MyWeightsList[l].IndexX<sizeImage.nPixelsX))
+								{
+									indexPixel = MyWeightsList[l].IndexY * sizeImage.nPixelsX + MyWeightsList[l].IndexX;
+										newValue = geomFactor * MyWeightsList[l].Segment * InputSinogram->getSinogramBin(i,j) / EstimatedSinogram->getSinogramBin(i,j);
+									#pragma omp atomic
+										ptrPixels[indexPixel] += newValue;	
+								}
+							}
+							// Now I have my estimated projection for LOR i
+							if(MyWeightsList!=NULL)
+								free(MyWeightsList);
+						}
+					}
+				}
+			}
 		}
-	      }
-	      // Now I have my estimated projection for LOR i
-	      if(MyWeightsList!=NULL)
-		free(MyWeightsList);
-	    }
-	  }
 	}
-      }
-    }
-  }
   return true;
 }
 
@@ -164,29 +163,29 @@ bool SiddonProjector::Project (Image* inputImage, Sinogram2D* outputProjection)
     {
       for(j = 0; j < outputProjection->getNumR(); j++)
       {
-	if(outputProjection->getPointsFromLor(i, j, &P1, &P2, &geomFactor))
-	{
-	  LOR.P0 = P1;
-	  LOR.Vx = P2.X - P1.X;
-	  LOR.Vy = P2.Y - P1.Y;
-	  //Siddon(P1, P2, inputImage, MyWeightsList, &LengthList,1); // Este se usa cuando los puntos son los límites del fov.
-	  float rayLength = Siddon (LOR, inputImage, MyWeightsList, &LengthList,1);
-	  outputProjection->setSinogramBin(i,j,0);
-	  if(LengthList > 0)
-	  {
-	    for(l = 0; l < LengthList; l++)
-	    {
-	      if((MyWeightsList[0][l].IndexY>=0) && (MyWeightsList[0][l].IndexX>=0))
-		outputProjection->incrementSinogramBin(i,j, geomFactor * MyWeightsList[0][l].Segment * 
-		  ptrPixels[MyWeightsList[0][l].IndexY * sizeImage.nPixelsX + MyWeightsList[0][l].IndexX]);		  
-	    }
-	    #ifdef __DEBUG__
-	    if(outputProjection->getSinogramBin(i,j) != outputProjection->getSinogramBin(i,j))
-	      printf("Warnign: NaN.\n");
-	    #endif
-	    free(MyWeightsList[0]);
-	  }
-	}
+				if(outputProjection->getPointsFromLor(i, j, &P1, &P2, &geomFactor))
+				{
+					LOR.P0 = P1;
+					LOR.Vx = P2.X - P1.X;
+					LOR.Vy = P2.Y - P1.Y;
+					//Siddon(P1, P2, inputImage, MyWeightsList, &LengthList,1); // Este se usa cuando los puntos son los límites del fov.
+					float rayLength = Siddon (LOR, inputImage, MyWeightsList, &LengthList,1);
+					outputProjection->setSinogramBin(i,j,0);
+					if(LengthList > 0)
+					{
+						for(l = 0; l < LengthList; l++)
+						{
+							if((MyWeightsList[0][l].IndexY>=0) && (MyWeightsList[0][l].IndexX>=0))
+								outputProjection->incrementSinogramBin(i,j, geomFactor * MyWeightsList[0][l].Segment * 
+									ptrPixels[MyWeightsList[0][l].IndexY * sizeImage.nPixelsX + MyWeightsList[0][l].IndexX]);		  
+						}
+						#ifdef __DEBUG__
+							if(outputProjection->getSinogramBin(i,j) != outputProjection->getSinogramBin(i,j))
+								printf("Warnign: NaN.\n");
+						#endif
+						free(MyWeightsList[0]);
+					}
+				}
       }
     }
   }
