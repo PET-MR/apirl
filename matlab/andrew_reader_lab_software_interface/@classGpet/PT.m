@@ -51,20 +51,32 @@ function x = PT(objGpet,m, subset_i, localNumSubsets)    % If the fourth paramet
 %         end
         elseif strcmpi(objGpet.method, 'otf_siddon_cpu')
             structSizeSino = get_sinogram_size_for_apirl(objGpet);
-            [x, pixelSize] = Backproject(m, objGpet.image_size.matrixSize, objGpet.image_size.voxelSize_mm, objGpet.tempPath, objGpet.scanner, objGpet.scanner_properties, structSizeSino, numSubsets, subset_i, 0, objGpet.nRays, objGpet.nAxialRays);
+            [x, pixelSize, output_message] = Backproject(m, objGpet.image_size.matrixSize, objGpet.image_size.voxelSize_mm, objGpet.tempPath, objGpet.scanner, objGpet.scanner_properties, structSizeSino, numSubsets, subset_i, 0, objGpet.nRays, objGpet.nAxialRays);
+            if objGpet.verbosity > 1
+                disp(output_message);
+            end
         elseif strcmpi(objGpet.method, 'otf_siddon_gpu')
             structSizeSino = get_sinogram_size_for_apirl(objGpet);
-            [x, pixelSize] = Backproject(m, objGpet.image_size.matrixSize, objGpet.image_size.voxelSize_mm, objGpet.tempPath, objGpet.scanner, objGpet.scanner_properties, structSizeSino, numSubsets, subset_i, 1,objGpet.nRays, objGpet.nAxialRays);
+            [x, pixelSize, output_message] = Backproject(m, objGpet.image_size.matrixSize, objGpet.image_size.voxelSize_mm, objGpet.tempPath, objGpet.scanner, objGpet.scanner_properties, structSizeSino, numSubsets, subset_i, 1,objGpet.nRays, objGpet.nAxialRays);
+            if objGpet.verbosity > 1
+                disp(output_message);
+            end
         end
     elseif strcmpi(objGpet.scanner,'cylindrical')
         if strcmpi(objGpet.method, 'pre-computed_matlab')
             disp('todo: is the precomputed version compatible with any cylindrical geometry?.')
         elseif strcmpi(objGpet.method, 'otf_siddon_cpu')
             structSizeSino = get_sinogram_size_for_apirl(objGpet);
-            [x, pixelSize] = Backproject(m, objGpet.image_size.matrixSize, objGpet.image_size.voxelSize_mm, objGpet.tempPath, objGpet.scanner, objGpet.scanner_properties, structSizeSino, numSubsets, subset_i, 0,objGpet.nRays);
+            [x, pixelSize, output_message] = Backproject(m, objGpet.image_size.matrixSize, objGpet.image_size.voxelSize_mm, objGpet.tempPath, objGpet.scanner, objGpet.scanner_properties, structSizeSino, numSubsets, subset_i, 0,objGpet.nRays);
+            if objGpet.verbosity > 1
+                disp(output_message);
+            end
         elseif strcmpi(objGpet.method, 'otf_siddon_gpu')
             structSizeSino = get_sinogram_size_for_apirl(objGpet);
-            [x, pixelSize] = Backproject(m, objGpet.image_size.matrixSize, objGpet.image_size.voxelSize_mm, objGpet.tempPath, objGpet.scanner, objGpet.scanner_properties, structSizeSino, numSubsets, subset_i, 1,objGpet.nRays, objGpet.nAxialRays);
+            [x, pixelSize, output_message] = Backproject(m, objGpet.image_size.matrixSize, objGpet.image_size.voxelSize_mm, objGpet.tempPath, objGpet.scanner, objGpet.scanner_properties, structSizeSino, numSubsets, subset_i, 1,objGpet.nRays, objGpet.nAxialRays);
+            if objGpet.verbosity > 1
+                disp(output_message);
+            end
         end
     else
         error('unkown scanner')

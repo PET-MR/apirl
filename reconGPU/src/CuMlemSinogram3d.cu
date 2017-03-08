@@ -616,7 +616,7 @@ bool CuMlemSinogram3d::Reconstruct(TipoProyector tipoProy, int indexGpu)
   int nBins = estimatedProjection->getBinCount();
   int nBinsSino2d = estimatedProjection->getSegment(0)->getSinogram2D(0)->getNumProj()*estimatedProjection->getSegment(0)->getSinogram2D(0)->getNumR();
   
-  for(unsigned int t = 0; t < this->numIterations; t++)
+  for(int t = 0; t < this->numIterations; t++)
   {
     clock_t initialClockIteration = clock();
     printf("Iteración Nº: %d\n", t);

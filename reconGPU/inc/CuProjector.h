@@ -28,7 +28,7 @@
 #define _CUPROJECTOR_H
 
 // DLL export/import declaration: visibility of objects
-/*#ifndef LINK_STATIC
+#ifndef LINK_STATIC
 	#ifdef WIN32               // Win32 build
 		#pragma warning( disable: 4251 )
 		#ifdef DLL_BUILD    // this applies to DLL building
@@ -52,12 +52,12 @@
 	#endif
 	#define DLLEXPORT
 	#define DLLLOCAL
-#endif*/
+#endif
 
-#ifdef WIN32               // Win32 build
+/*#ifdef WIN32               // Win32 build
 	#pragma warning( disable: 4251 )
 #endif
-#define DLLEXPORT
+#define DLLEXPORT*/
 
 /** Clase abstracta CuProjector. */
 class DLLEXPORT CuProjector

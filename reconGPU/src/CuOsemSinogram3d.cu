@@ -280,7 +280,6 @@ bool CuOsemSinogram3d::Reconstruct(TipoProyector tipoProy, int indexGpu)
   int nPixels = reconstructionImage->getPixelCount();
   /// Proyección auxiliar, donde guardo el sinograma proyectado:
   Sinogram3D* estimatedProjection; // = new Sinogram3D(inputProjection);
-  Sinogram3D *inputSubset;
   estimatedProjection=inputProjection->getSubset(0,numSubsets);
   int nBins = estimatedProjection->getBinCount();	// The number of bins that we use in the projection and backrpojection is the one of the subset.
   int nBinsSino2d = estimatedProjection->getNumProj() * estimatedProjection->getNumR();

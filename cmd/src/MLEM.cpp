@@ -176,13 +176,7 @@ int main (int argc, char *argv[])
   char** keyWords;  // múltiples keywords para la función de lectura de múltiples keys.
   char** multipleReturnValue; // array de strings para la función de multples keys.
   int	errorCode;
-  int nx, ny, nz, n_voxels, resolution, numIterations, file, Recon;
-  unsigned int hTimer;
-  const char* pathSensImage;
-  double timerValue;
-  SizeImage MySizeVolume;
   float radiusFov_mm, zFov_mm, radiusScanner_mm;
-  char NombreRecon[50];
   string parameterFileName;	// string para el Nombre de Archivo de parámetros.
   string inputType;
   string inputFilename;	// string para el Nombre del archivo de header del sinograma.
@@ -195,7 +189,7 @@ int main (int argc, char *argv[])
   string multiplicativeFilename, additiveFilename;
   Projector* forwardprojector;
   Projector* backprojector;
-  int saveIterationInterval;
+  int saveIterationInterval, numIterations;
   bool saveIntermediateData = false, bSensitivityFromFile = 0;
   Image* initialEstimate;
   unsigned int nIterations = 0;	// Número de iteraciones.

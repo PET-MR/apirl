@@ -18,7 +18,7 @@
 % Examples:
 %   [image, pixelSize_mm] = Backproject(sinogram, imageSize_pixels, pixelSize_mm, outputPath, scanner, scanner_parameters, structSizeSino, numberOfSubsets, subsetIndex, useGpu, numSamples, numAxialSamples)
 
-function [image, pixelSize_mm] = Backproject(sinogram, imageSize_pixels, pixelSize_mm, outputPath, scanner, scanner_parameters, structSizeSino, numberOfSubsets, subsetIndex, useGpu, numSamples, numAxialSamples)
+function [image, pixelSize_mm, output_message] = Backproject(sinogram, imageSize_pixels, pixelSize_mm, outputPath, scanner, scanner_parameters, structSizeSino, numberOfSubsets, subsetIndex, useGpu, numSamples, numAxialSamples)
 
 if ~isdir(outputPath)
     mkdir(outputPath);
@@ -104,8 +104,10 @@ interfileWriteSino(single(sinogram), sinogramFilename, structSizeSino);
 filenameBackprojectionConfig = [outputPath 'backprojectSinogram.par'];
 backprojectionFilename = [outputPath 'backprojectedImage'];
 CreateBackprojectConfigFile(filenameBackprojectionConfig, [sinogramFilename '.h33'], [filenameImage '.h33'], scanner, scanner_parameters, backprojectionFilename, numberOfSubsets, subsetIndex, useGpu, numSamples, numAxialSamples);
-[status, message] = system(['backproject ' filenameBackprojectionConfig]);
-disp(message);
+[status, output_message] = system(['backproject ' filenameBackprojectionConfig]);
+if status > 0
+    error(output_message);
+end
 % Remove the input sinogram:
 delete([sinogramFilename '.*']);
 

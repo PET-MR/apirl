@@ -57,6 +57,8 @@ classdef classGpet < handle
         % number of Siddon rays per LOR in the axial direction
         % (axialDirection)
         nAxialRays
+        % Verbosity level: 0, 1, 2. (0 silent)
+        verbosity
     end
     
     methods
@@ -95,6 +97,7 @@ classdef classGpet < handle
             % directory
             objGpet.tempPath = [pwd objGpet.bar 'temp' objGpet.bar];
             objGpet.deleteTemp = false; % SAM ELLIS 24/08/2016
+            objGpet.verbosity = 0;
             objGpet.method_for_randoms = 'from_ML_singles_matlab';
             objGpet.method_for_normalization = 'cbn_expansion';
             if nargin == 1

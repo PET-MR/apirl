@@ -4,8 +4,27 @@
 
 
 //using namespace::iostream;
-const struct ScannerParameters Sinogram3DSiemensMmr::scannerParameters;
-
+//const struct ScannerParameters Sinogram3DSiemensMmr::scannerParameters;
+/** Radio del Scanner en mm. */
+const float Sinogram3DSiemensMmr::radioScannerMmr_mm = 656.0f/2.0f;
+ 	
+/** Radio del FOV en mm. */
+const float Sinogram3DSiemensMmr::radioFovMmr_mm = 594.0f/2.0f;
+ 
+/** Largo axial del FOV en mm. */
+const float Sinogram3DSiemensMmr::axialFovMmr_mm = 260.0f;
+ 	
+/// Size of each pixel element.
+const float Sinogram3DSiemensMmr::crystalElementSize_mm = 4.0891f;
+ 	
+/** Length of the crystal element. */
+const float Sinogram3DSiemensMmr::crystalElementLength_mm = 20;
+ 	
+/// Mean depth of interaction:
+const float Sinogram3DSiemensMmr::meanDOI_mm = 9.6f;
+ 	
+/// Width of each rings.
+const float Sinogram3DSiemensMmr::widthRingsMmr_mm = 4.0625f; //axialFov_mm / numRings;
 
 
 
@@ -14,10 +33,10 @@ Sinogram3DSiemensMmr::Sinogram3DSiemensMmr(int numProj, int numR, int numRings, 
 					   numProj, numR, numRings, radioFov_mm, axialFov_mm, radioScanner_mm, numSegments, numSinogramsPerSegment, minRingDiffPerSegment, maxRingDiffPerSegment)
 {
 	// Override the generic parameters of sinogram 3d with the fixed parameters for the mmr:
-	this->radioScanner_mm = Sinogram3DSiemensMmr::scannerParameters.radioScanner_mm;
-	this->widthRings_mm = Sinogram3DSiemensMmr::scannerParameters.widthRings_mm;
-	this->axialFov_mm = Sinogram3DSiemensMmr::scannerParameters.axialFov_mm;
-	this->radioFov_mm = Sinogram3DSiemensMmr::scannerParameters.radioFov_mm;
+	this->radioScanner_mm = Sinogram3DSiemensMmr::radioScannerMmr_mm;
+	this->widthRings_mm = Sinogram3DSiemensMmr::widthRingsMmr_mm;
+	this->axialFov_mm = Sinogram3DSiemensMmr::axialFovMmr_mm;
+	this->radioFov_mm = Sinogram3DSiemensMmr::radioFovMmr_mm;
 	// Redefine the axial values to the specific crystal size:
 	if (ptrAxialvalues_mm == NULL)
 		ptrAxialvalues_mm = (float*) malloc(sizeof(float)*numRings);
@@ -33,10 +52,10 @@ Sinogram3DSiemensMmr::Sinogram3DSiemensMmr(int numProj, int numR, int numRings, 
 Sinogram3DSiemensMmr::Sinogram3DSiemensMmr(char* fileHeaderPath):Sinogram3DCylindricalPet(this->radioFov_mm, this->axialFov_mm, this->radioScanner_mm)
 {
 	// Override the generic parameters of sinogram 3d with the fixed parameters for the mmr:
-	this->radioScanner_mm = Sinogram3DSiemensMmr::scannerParameters.radioScanner_mm;
-	this->widthRings_mm = Sinogram3DSiemensMmr::scannerParameters.widthRings_mm;
-	this->axialFov_mm = Sinogram3DSiemensMmr::scannerParameters.axialFov_mm;
-	this->radioFov_mm = Sinogram3DSiemensMmr::scannerParameters.radioFov_mm;
+	this->radioScanner_mm = Sinogram3DSiemensMmr::radioScannerMmr_mm;
+	this->widthRings_mm = Sinogram3DSiemensMmr::widthRingsMmr_mm;
+	this->axialFov_mm = Sinogram3DSiemensMmr::axialFovMmr_mm;
+	this->radioFov_mm = Sinogram3DSiemensMmr::radioFovMmr_mm;
 	if(!readFromInterfile(fileHeaderPath, this->radioScanner_mm))
 	{
 		cout << "Error reading the sinogram in interfile format." << endl;
@@ -53,10 +72,10 @@ Sinogram3DSiemensMmr::Sinogram3DSiemensMmr(char* fileHeaderPath):Sinogram3DCylin
 Sinogram3DSiemensMmr::Sinogram3DSiemensMmr(Sinogram3DSiemensMmr* srcSinogram3D):Sinogram3DCylindricalPet(srcSinogram3D,0)
 {
 	// Override the generic parameters of sinogram 3d with the fixed parameters for the mmr:
-	this->radioScanner_mm = Sinogram3DSiemensMmr::scannerParameters.radioScanner_mm;
-	this->widthRings_mm = Sinogram3DSiemensMmr::scannerParameters.widthRings_mm;
-	this->axialFov_mm = Sinogram3DSiemensMmr::scannerParameters.axialFov_mm;
-	this->radioFov_mm = Sinogram3DSiemensMmr::scannerParameters.radioFov_mm;
+	this->radioScanner_mm = Sinogram3DSiemensMmr::radioScannerMmr_mm;
+	this->widthRings_mm = Sinogram3DSiemensMmr::widthRingsMmr_mm;
+	this->axialFov_mm = Sinogram3DSiemensMmr::axialFovMmr_mm;
+	this->radioFov_mm = Sinogram3DSiemensMmr::radioFovMmr_mm;
 	// Como uso el constructor que inicializa los segemntos, lo hago acá.
 	inicializarSegmentos();
 	// Copy the content of all the sinograms.
@@ -81,10 +100,10 @@ Sinogram3DSiemensMmr::~Sinogram3DSiemensMmr()
 Sinogram3DSiemensMmr::Sinogram3DSiemensMmr(Sinogram3DSiemensMmr* srcSinogram3D, int indexSubset, int numSubsets):Sinogram3DCylindricalPet(srcSinogram3D)
 {
 	// Override the generic parameters of sinogram 3d with the fixed parameters for the mmr:
-	this->radioScanner_mm = Sinogram3DSiemensMmr::scannerParameters.radioScanner_mm;
-	this->widthRings_mm = Sinogram3DSiemensMmr::scannerParameters.widthRings_mm;
-	this->axialFov_mm = Sinogram3DSiemensMmr::scannerParameters.axialFov_mm;
-	this->radioFov_mm = Sinogram3DSiemensMmr::scannerParameters.radioFov_mm;
+	this->radioScanner_mm = Sinogram3DSiemensMmr::radioScannerMmr_mm;
+	this->widthRings_mm = Sinogram3DSiemensMmr::widthRingsMmr_mm;
+	this->axialFov_mm = Sinogram3DSiemensMmr::axialFovMmr_mm;
+	this->radioFov_mm = Sinogram3DSiemensMmr::radioFovMmr_mm;
   // Genero un nuevo sinograma 3d que sea un subset del sinograma principal. La cantidad de segmentos, y sinogramas
   // por segmento la mantengo. Lo único que cambia es que cada sinograma 2D, lo reduzco en ángulo numSubsets veces.
   // Para esto me quedo solo con los ángulos equiespaciados en numSubsets partiendo desde indexSubsets.

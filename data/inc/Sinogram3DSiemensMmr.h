@@ -54,22 +54,22 @@
 	extern "C" 
 #endif*/ 
 
-struct ScannerParameters{
-	/** Radio del Scanner en mm. */
-	const float radioScanner_mm = 656.0f/2.0f;
-	/** Radio del FOV en mm. */
-	const float radioFov_mm = 594.0f/2.0f;
-	/// Size of each pixel element.
-	const float crystalElementSize_mm = 4.0891f;
-	/// Depth or length og each crystal.
-	const float crystalElementLength_mm = 20;
-	/// Mean depth of interaction:
-	const float meanDOI_mm = 9.6f;
-	/// Width of each rings.
-	const float widthRings_mm = 4.0625f; //axialFov_mm / numRings;
-	/** Largo axial del FOV en mm. */
-	const float axialFov_mm = 260.0f; /// widthRings_mm*numRings
-};
+//struct ScannerParameters{
+//	/** Radio del Scanner en mm. */
+//	const float radioScanner_mm = 656.0f/2.0f;
+//	/** Radio del FOV en mm. */
+//	const float radioFov_mm = 594.0f/2.0f;
+//	/// Size of each pixel element.
+//	const float crystalElementSize_mm = 4.0891f;
+//	/// Depth or length og each crystal.
+//	const float crystalElementLength_mm = 20;
+//	/// Mean depth of interaction:
+//	const float meanDOI_mm = 9.6f;
+//	/// Width of each rings.
+//	const float widthRings_mm = 4.0625f; //axialFov_mm / numRings;
+//	/** Largo axial del FOV en mm. */
+//	const float axialFov_mm = 260.0f; /// widthRings_mm*numRings
+//};
 
 /// Clase que define un sinograma de adquisición 3d para el siemens mmr que tiene muchas similtudes que un scanner cilíndrico genérico.
 /**Esta clase define un Sinograma 3D practicamente igual al Sinogram3DCylindricalPet, pero reemplazaz las funciones de
@@ -81,34 +81,34 @@ class DLLEXPORT Sinogram3DSiemensMmr : public Sinogram3DCylindricalPet
 	static const unsigned char sizeBin_bytes = sizeof(float);	// Size in bytes of each element of the Michelogram. float -> 4
   protected:	
 	static const struct ScannerParameters scannerParameters;
-// 	/** Radio del Scanner en mm. */
-// 	static const float radioScanner_mm;
-// 	
-// 	/** Radio del FOV en mm. */
-// 	static const float radioFov_mm;
-// 
-// 	/** Largo axial del FOV en mm. */
-// 	static const float axialFov_mm;
-// 	
-// 	/// Number of cryatl elements including gaps.
-// 	/** This is amount of crystal elements in the sinogram. The real crystals are 448 gut there are 56 gaps
-// 	 * counted in the sinograms as crystal elements (1 gap per block). */
-// 	static const int numCrystalElements = 504;
-// 	
-// 	/// Size of each pixel element.
-// 	static const float crystalElementSize_mm;
-// 	
-// 	/** Length of the crystal element. */
-// 	static const float crystalElementLength_mm;
-// 	
-// 	/// Mean depth of interaction:
-// 	static const float meanDOI_mm;
-// 	
-// 	/// Size of num rings.
-// 	static const int numRings = 64;
+ 	/** Radio del Scanner en mm. */
+ 	static const float radioScannerMmr_mm;
+ 	
+ 	/** Radio del FOV en mm. */
+ 	static const float radioFovMmr_mm;
+ 
+ 	/** Largo axial del FOV en mm. */
+ 	static const float axialFovMmr_mm;
+ 	
+ 	/// Number of cryatl elements including gaps.
+ 	/** This is amount of crystal elements in the sinogram. The real crystals are 448 gut there are 56 gaps
+ 	 * counted in the sinograms as crystal elements (1 gap per block). */
+ 	static const int numCrystalElements = 504;
+ 	
+ 	/// Size of each pixel element.
+ 	static const float crystalElementSize_mm;
+ 	
+ 	/** Length of the crystal element. */
+ 	static const float crystalElementLength_mm;
+ 	
+ 	/// Mean depth of interaction:
+ 	static const float meanDOI_mm;
+ 	
+ 	/// Size of num rings.
+ 	static const int numRings = 64;
 
 	/// Width of each rings.
-//	static const float widthRings_mm; //axialFov_mm / numRings;
+	static const float widthRingsMmr_mm; //axialFov_mm / numRings;
 
 	/// Función que inicializa los segmentos.
 	void inicializarSegmentos();
@@ -168,13 +168,13 @@ class DLLEXPORT Sinogram3DSiemensMmr : public Sinogram3DCylindricalPet
 	  virtual float getEffectiveRadioScanner_mm(){ return radioScanner_mm;}; //{ return radioScanner_mm + Sinogram3DSiemensMmr::scannerParameters.crystalElementLength_mm/2;};
 	  
 	/** Gets the crystal size in the transverse direction in mm. */
-	virtual float getCrystalElementSize_mm() {return scannerParameters.crystalElementSize_mm;}
+	virtual float getCrystalElementSize_mm() {return Sinogram3DSiemensMmr::crystalElementSize_mm;}
 	/** Gets the length or depth of each crystal in mm. */
-	virtual float getCrystalElementLength_mm() {return scannerParameters.crystalElementLength_mm;}
+	virtual float getCrystalElementLength_mm() {return Sinogram3DSiemensMmr::crystalElementLength_mm;}
 	/** Gets the radial bin size in mm. */
-	virtual float getRadialBinSize_mm() {return scannerParameters.crystalElementSize_mm/2;}	
+	virtual float getRadialBinSize_mm() {return Sinogram3DSiemensMmr::crystalElementSize_mm/2;}	
 	/** Gets the mean depth of interactions in mm. */
-	virtual float getMeanDOI_mm() {return scannerParameters.meanDOI_mm;}
+	virtual float getMeanDOI_mm() {return Sinogram3DSiemensMmr::meanDOI_mm;}
 	  
 };
 

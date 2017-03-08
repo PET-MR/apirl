@@ -13,7 +13,7 @@
 % Examples:
 %   [sinogram, structSizeSinogram] = Project(image, pixelSize_mm, outputPath, scanner, scanner_parameters, structSizeSino3d_span, numberOfSubsets, subsetIndex, useGpu)
 
-function [sinogram, structSizeSino] = Project(image, pixelSize_mm, outputPath, scanner, scanner_parameters, structSizeSino, numberOfSubsets, subsetIndex, useGpu, numSamples, numAxialSamples)
+function [sinogram, structSizeSino, output_message] = Project(image, pixelSize_mm, outputPath, scanner, scanner_parameters, structSizeSino, numberOfSubsets, subsetIndex, useGpu, numSamples, numAxialSamples)
 
 if ~isdir(outputPath)
     mkdir(outputPath);
@@ -98,8 +98,10 @@ interfilewrite(single(image), filenameImage, pixelSize_mm);
 filenameProjectionConfig = [outputPath 'projectPhantom.par'];
 projectionFilename = [outputPath 'projectedSinogram'];
 CreateProjectConfigFile(filenameProjectionConfig, [filenameImage '.h33'], [sinogramSampleFilename '.h33'],  scanner, scanner_parameters, projectionFilename, numberOfSubsets, subsetIndex, useGpu, numSamples, numAxialSamples);
-status = system(['project ' filenameProjectionConfig])
-
+[status, output_message] = system(['project ' filenameProjectionConfig]);
+if status > 0
+    error(output_message);
+end
 % Read the projected sinogram:
 % if is a subset, get the new size:
 if numberOfSubsets > 1
