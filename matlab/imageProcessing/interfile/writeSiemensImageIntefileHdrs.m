@@ -1,5 +1,5 @@
 
-function wrireSiemensImageIntefileHdrs(ImageInterFileName,SinoInfo,NormInfo,ImgInfo)
+function writeSiemensImageIntefileHdrs(ImageInterFileName,SinoInfo,NormInfo,ImgInfo)
 
 % SinoInfo: interfile header of sinogram data or a structure contaning the header info
 % NormInfo: interfile header of sinogram data or a structure contaning the header info
