@@ -3,13 +3,15 @@
 
 
 %% Data Path
+count_levels = 100;
+patientNumber = 'P02';
+ImgInfo.image_tag = 'AD-P2'; % needs to be changed for each patient
+imgSaveFolder = ['\\bioeng202-pc\PET-M\AD_patients\' patientNumber '\e7\data-Converted\data-LM-00\sino_rawdata_' num2str(count_levels) '\temp\' ]; % needs to be specified
 
-dataPath = '\\bioeng202-pc\PET-M\AD_patients\P03\e7\data-Converted\data-LM-00\';
-rawsinoName = '\\bioeng202-pc\PET-M\AD_patients\P03\e7\data-Converted\data-LM-00\sino_rawdata_100\';
-sino_hdr_names = '\\bioeng202-pc\PET-M\AD_patients\P03\e7\data-Converted\data-LM-00\data-LM-00-sino-100-0.s.hdr';
-norm_hdr_dir = '\\bioeng202-pc\PET-M\AD_patients\P03\e7\data-Converted\data-norm.n.hdr';
-ImgInfo.image_tag = 'AD-P3'; % needs to be changed for each patient
-imgSaveFolder = '\\bioeng202-pc\PET-M\AD_patients\P03\e7\data-Converted\data-LM-00\sino_rawdata_100\temp\'; % needs to be specified
+dataPath = ['\\bioeng202-pc\PET-M\AD_patients\' patientNumber '\e7\data-Converted\data-LM-00\'];
+rawsinoName = ['\\bioeng202-pc\PET-M\AD_patients\' patientNumber '\e7\data-Converted\data-LM-00\sino_rawdata_\' num2str(count_levels)];
+sino_hdr_names = ['\\bioeng202-pc\PET-M\AD_patients\' patientNumber '\e7\data-Converted\data-LM-00\data-LM-00-sino-' num2str(count_levels) '-0.s.hdr'];
+norm_hdr_dir = ['\\bioeng202-pc\PET-M\AD_patients\' patientNumber '\e7\data-Converted\data-norm.n.hdr'];
 
 %%
 jsReconPath = '\\bioeng202-pc\\PET-M\e7_tools\C-JSRecon12-14-OCT-2015\IF2Dicom.js';
@@ -48,7 +50,8 @@ mlem = PET.OPMLEM(Prompts,RS, SensImg,PET.ones,PET.nIter);
 
 if ~exist(imgSaveFolder,'dir'), mkdir(imgSaveFolder); end
 
-ImageInterFileName = [imgSaveFolder ImgInfo.image_tag '-' ImgInfo.ReconMethod '%.v'];
+ImageInterFileName = [imgSaveFolder ImgInfo.image_tag '-' ImgInfo.ReconMethod '-' num2str(count_levels) '%.v'];
+
 
 [Imgn,scaleFactor]= PET.BQML(mlem,sino_hdr_names,norm_hdr_dir);
 
@@ -61,12 +64,13 @@ writeBinaryFile(permute(Imgn,[2,1,3]),ImageInterFileName)
 % post-filter with 3 mm kernel, write interfiles and convert into dicom
 Img = PET.Gauss3DFilter(Imgn,3);
 ImgInfo.MinMaxImgCount = [min(Img(:)),max(Img(:))];
-ImageInterFileName = [imgSaveFolder ImgInfo.image_tag '-' ImgInfo.ReconMethod '-3mm.v'];
 
+ImageInterFileName = [imgSaveFolder ImgInfo.image_tag '-' ImgInfo.ReconMethod '-' num2str(count_levels) '%-3mm.v'];
 wrireSiemensImageIntefileHdrs(ImageInterFileName,sino_hdr_names,norm_hdr_dir,ImgInfo)
 writeBinaryFile(permute(Img,[2,1,3]),ImageInterFileName)
 
 % populate DICOM files
+[Path] = fileparts(ImageInterFileName);
 copyfile([dataPath IF2DICOM_txt],Path);
 IF2DICOM_txt_i = [Path PET.bar IF2DICOM_txt];
 command = ['cscript ' jsReconPath ' "' [ImageInterFileName '.hdr'] '" "' IF2DICOM_txt_i '"'];
