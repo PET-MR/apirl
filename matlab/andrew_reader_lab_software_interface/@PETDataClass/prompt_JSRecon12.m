@@ -16,6 +16,7 @@ end
 
 [PathName,Name] = fileparts(FolderName(1:end-1)); % remove the bar from address to get the folder's name
 
+% Converted path:
 Root_path = [PathName ObjData.bar Name '-Converted' ObjData.bar];
 
 if ~exist(Root_path,'dir')

@@ -286,14 +286,23 @@ classdef PETDataClass < handle
             end
             if outDCM.nSinograms
                 ObjData.Data.Type = 'dicom_sinogram';
+                [ObjData.Data.path_raw_data, Name] = fileparts(ObjData.Data.emission(1:end-1));
+                ObjData.Data.path_raw_data = [ObjData.Data.path(1:end-1) '-Converted' ObjData.bar];
             elseif outDCM.nListModes
                 ObjData.Data.Type = 'dicom_listmode';
+                ObjData.Data.path_raw_data = [ObjData.Data.path(1:end-1) '-Converted' ObjData.bar];
             elseif outIF.nUncompressedSinogramFiles
                 ObjData.Data.Type = 'sinogram_uncompressed_interfile';
+                [ObjData.Data.path_raw_data, Name] = fileparts(ObjData.Data.emission(1:end-1));
+                ObjData.Data.path_raw_data = ObjData.Data.path;
             elseif outIF.nCompressedSinogramFiles
                 ObjData.Data.Type = 'sinogram_interfile';
+                [ObjData.Data.path_raw_data, Name] = fileparts(ObjData.Data.emission(1:end-1));
+                ObjData.Data.path_raw_data = ObjData.Data.path;
             elseif outIF.nListModeFiles
                 ObjData.Data.Type = 'list_mode_interfile';
+                [ObjData.Data.path_raw_data, Name] = fileparts(ObjData.Data.emission_listmode(1:end-1));
+                ObjData.Data.path_raw_data = ObjData.Data.path;
             end
             type = ObjData.Data.Type;
             fprintf('Selected data type: %s\n',ObjData.Data.Type)
@@ -709,6 +718,51 @@ classdef PETDataClass < handle
             eff(9:9:end,:) = 0;
             
             gaps = createSinogram3dFromDetectorsEfficency(eff, structSizeSino3d, 0);
+        end
+        
+        function status = correct_mumap_positioning(ObjData)
+            %% Read Mumap info to correct mispostioning:
+            uMapInfoFilename = [ObjData.Data.path_raw_data 'UMapSeries' ObjData.bar 'UMapInfo.txt']; 
+            fid = fopen(uMapInfoFilename, 'r');
+            file_content_by_line = textscan(fid, '%s', inf,'Delimiter','\n');
+            fclose(fid);
+            % Replace the 3rd line with the content of the dicom mumap:
+            list_filed = dir(ObjData.Data.path);
+            for i = 3 : numel(list_filed) % first two are ., ..
+               if list_filed(i).isdir
+                   mumap_path = [ObjData.Data.path list_filed(i).name ObjData.bar];
+               end
+            end
+            slices_dicom_mumap = dir(mumap_path);
+            % we consider that the mumap is the first file (needs to be the first slice):
+            slices_dicom_mumap(3).name;
+            info_umap = dicominfo([mumap_path slices_dicom_mumap(3).name]);
+            % Read dicom header:
+            file_content_by_line{1}{3} = [num2str(info_umap.ImagePositionPatient(1)) ' ' num2str(info_umap.ImagePositionPatient(2)) ' ' num2str(info_umap.ImagePositionPatient(3))];
+            % Write the new line, before create a back up:
+            copyfile(uMapInfoFilename, [uMapInfoFilename '.bak']);
+            % Now rewrite it:
+            fid = fopen(uMapInfoFilename, 'w');
+            for i = 1 : numel(file_content_by_line{1})
+                fprintf(fid, '%s\r\n', file_content_by_line{1}{i});
+            end
+            fclose(fid);
+
+            % study info:
+            jsreconInfoFilename = [ObjData.Data.path_raw_data 'JSRecon12Info.txt']; 
+            fid = fopen(jsreconInfoFilename, 'r');
+            file_content_by_line = textscan(fid, '%s', inf,'Delimiter','\n');
+            lines_resample = strfind(file_content_by_line{1}, 'volume_resample');
+            for i = 1 : numel(lines_resample)
+                if ~isempty(lines_resample{i})
+                    spaces = strfind(file_content_by_line{1}{i}, ' ');
+                    resample_command = file_content_by_line{1}{i}(spaces+1:end);
+                    break;
+                end
+            end
+            fclose(fid);
+            % call the command:
+            [status, message] = system(resample_command);
         end
     end
     
