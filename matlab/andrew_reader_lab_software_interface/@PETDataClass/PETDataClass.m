@@ -275,17 +275,13 @@ classdef PETDataClass < handle
             if outDCM.nSinograms
                 ObjData.Data.Type = 'dicom_sinogram';
                 ObjData.Data.isSinogram = ObjData.Data.DCM.nSinograms;
-            end
-            if outDCM.nListModes
+            elseif outDCM.nListModes
                 ObjData.Data.isListMode = ObjData.Data.DCM.nListModes;
-            end
-            if outIF.nUncompressedSinogramFiles
+            elseif outIF.nUncompressedSinogramFiles
                 ObjData.Data.isSinogram = ObjData.Data.IF.nUncompressedSinogramFiles;
-            end
-            if outIF.nCompressedSinogramFiles
+            elseif outIF.nCompressedSinogramFiles
                 ObjData.Data.isSinogram = ObjData.Data.IF.nCompressedSinogramFiles;
-            end
-            if outIF.nListModeFiles
+            elseif outIF.nListModeFiles
                 ObjData.Data.isListMode = ObjData.Data.IF.nListModeFiles;
             end
             if outDCM.nSinograms

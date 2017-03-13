@@ -294,8 +294,8 @@ __device__ void CUDA_GetPointsFromLOR (float PhiAngle, float r, float Z1, float 
 {
   float sinValue, cosValue;
   // First correct the r value, for the mMR when Phi greater than 90 a half bin needs to be substracted:
-  //if (PhiAngle > 90)
-  //r = r - d_binSize_mm/2;
+	if (PhiAngle > 90)
+		r = r - d_binSize_mm/2;
   sincosf(PhiAngle*DEG_TO_RAD, &sinValue, &cosValue);
   float auxValue = sqrtf((cudaRscanner) * (cudaRscanner) - r * r);
   P1->x = r * cosValue + sinValue * auxValue;
@@ -315,10 +315,10 @@ __device__ void CUDA_GetPointsFromLOR (float PhiAngle, float r, float Z1, float 
 __device__ void CUDA_GetPointsFromBinsMmr (float PhiAngle, int iR, int numR, float Z1, float Z2, float cudaRscanner, float4* P1, float4* P2)
 {
   float sinValue, cosValue, r, lr;
-//  if (PhiAngle < 90)
-	lr = d_binSize_mm/2 + (d_binSize_mm*(iR-(float)(numR/2)));
-//  else
-//	lr = (d_binSize_mm*(iR-(float)(numR/2)));  
+  if (PhiAngle < 90)
+		lr = d_binSize_mm/2 + (d_binSize_mm*(iR-(float)(numR/2)));
+  else
+		lr = (d_binSize_mm*(iR-(float)(numR/2)));  
   r = (cudaRscanner + d_meanDOI_mm* cos(lr/cudaRscanner)) * sin(lr/cudaRscanner);
   sincosf(PhiAngle*DEG_TO_RAD, &sinValue, &cosValue);
   float auxValue = sqrtf((cudaRscanner) * (cudaRscanner) - r * r);

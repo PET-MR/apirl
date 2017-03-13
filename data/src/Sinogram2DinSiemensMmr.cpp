@@ -33,7 +33,7 @@ Sinogram2DinSiemensMmr::Sinogram2DinSiemensMmr(char* fileHeaderPath): Sinogram2D
   {
     // ptrRvalues initialization is necesary just one time
     // 1) Get the length on the cylindrical surface for each bin (from x=0 to the center of the crystal element):
-	lr = binSize_mm/2 + (binSize_mm*(j-(float)(numR/2)));
+		lr = binSize_mm/2 + (binSize_mm*(j-(float)(numR/2)));
     // 2) Now I get the x coordinate for that r.
     ptrRvalues_mm[j] = (radioScanner_mm + meanDOI_mm* cos(lr/radioScanner_mm)) * sin(lr/radioScanner_mm);
   }
@@ -67,14 +67,12 @@ Sinogram2DinSiemensMmr::Sinogram2DinSiemensMmr(unsigned int nProj, unsigned int 
     {
       if(i == 0)
       {
-		// ptrRvalues initialization is necesary just one time
-		// 1) Get the length on the cylindrical surface for each bin (from x=0 to the center of the crystal element):
-		lr = binSize_mm/2 + (binSize_mm*(j-(float)(numR/2)));
-		// 2) Now I get the x coordinate for that r.
-		ptrRvalues_mm[j] = (radioScanner_mm + meanDOI_mm* cos(lr/radioScanner_mm)) * sin(lr/(radioScanner_mm));
-	// 	#ifdef __DEBUG__
-	// 	  printf("\t%f", ptrRvalues_mm[j]);
-	// 	#endif
+				// ptrRvalues initialization is necesary just one time
+				// 1) Get the length on the cylindrical surface for each bin (from x=0 to the center of the crystal element):
+				lr = binSize_mm/2 + (binSize_mm*(j-(float)(numR/2)));
+				// 2) Now I get the x coordinate for that r.
+				ptrRvalues_mm[j] = (radioScanner_mm + meanDOI_mm* cos(lr/radioScanner_mm)) * sin(lr/(radioScanner_mm));
+
       }
       ptrSinogram[i * numR + j] = 0;
     }
@@ -164,8 +162,8 @@ bool Sinogram2DinSiemensMmr::getPointsFromLor(int indexProj, int indexR, int ind
   // r is already arc corrected in the constructor:
   r = this->getRValue(indexR);
   rad_PhiAngle = this->getAngValue(indexProj) * DEG_TO_RAD;
-//   if (this->getAngValue(indexProj) > 90)
-// 	  r = r - binSize_mm/2;
+  if (this->getAngValue(indexProj) > 90)
+		r = r - binSize_mm/2;
   auxValue = sqrt(radioScanner_mm * radioScanner_mm - r * r);
   *geomFactor = 1;
   p1->X = r * cos(rad_PhiAngle) + sin(rad_PhiAngle) * auxValue;
