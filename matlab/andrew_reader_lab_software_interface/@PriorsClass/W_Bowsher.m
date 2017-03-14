@@ -17,5 +17,5 @@ for i = 1:size(abs_imgGrad,1)
     
     Wb(i,idx(1:B)) = 1;
 end
-Wb = Wb./repmat(sum(Wb,2),[1,ObjPrior.nS]);
+% Wb = Wb./repmat(sum(Wb,2),[1,ObjPrior.nS]);
 end

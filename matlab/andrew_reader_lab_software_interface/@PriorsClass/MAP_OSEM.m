@@ -51,6 +51,7 @@ while (i <= opt.nIter) && ~converged
         
         if opt.lambda
              dP = opt.lambda*ObjPrior.dPrior(Img,opt);
+             dP(:,:,end-10:end) = dP(:,:,end-10:end) /10; % due to low-cout errors at the edge of axial FOV
         else
             dP = 0;
         end
@@ -153,7 +154,7 @@ fid = fopen([opt.save_i '\parameters.txt'],'w');
 for i = 1:length(vfields)
     s = opt.(vfields{i});
     if ~isa(s,'char')
-        if numel(s)>1
+        if numel(s)>1 || isstruct(s)
             continue;
         end
         s = num2str(s);

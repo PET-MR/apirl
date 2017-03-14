@@ -162,7 +162,7 @@ classdef PriorsClass < handle
             else
                 if length(ObjPrior.imCropFactor)== 1
                     if ObjPrior.ImageSize(3)>1
-                        ObjPrior.imCropFactor = ObjPrior.imCropFactor*[1 1 1];
+                        ObjPrior.imCropFactor = ObjPrior.imCropFactor*[1 1 0];
                     else
                         ObjPrior.imCropFactor = ObjPrior.imCropFactor*[1 1];
                     end
@@ -182,7 +182,7 @@ classdef PriorsClass < handle
                 
                 K = 0;
                 if ObjPrior.imCropFactor(3)
-                    ObjPrior.imCropFactor(2) = max(2.5, ObjPrior.imCropFactor(2));
+                    ObjPrior.imCropFactor(3) = max(2.5, ObjPrior.imCropFactor(3));
                     K = floor(ObjPrior.ImageSize(3)/ObjPrior.imCropFactor(3));
                 end
                 
