@@ -6,7 +6,7 @@ info.N = getInfoFromInterfile(normalizationFilename);
 
 proportionality_factor =  1.05; % Obtained by ROI-based SUV comparsions with e7 DICOM images
 
-counts_per_voxel = objGpet.image_size.matrixSize(1)/objGpet.sinogram_size.nRadialBins;
+counts_per_voxel = 1;%objGpet.image_size.matrixSize(1)/objGpet.sinogram_size.nRadialBins;
 
 corrected_pixel_size = objGpet.scanner_properties.binSize_mm ; % need to figure it out 
 
