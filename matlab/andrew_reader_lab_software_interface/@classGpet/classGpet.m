@@ -331,16 +331,6 @@ classdef classGpet < handle
         lambda = Project_preComp(objGpet,X,g,Angles,RadialBins,dir);
         g = init_precomputed_G (objGpet);
         
-        % SAM ELLIS EDIT (18/07/2016): new method to allow easy division without
-        % using a small additive term to avoid div. by zero. 
-        function c = vecDivision(objGpet,a,b)
-            % element-by-element division of two vectors, a./b, BUT avoiding
-            % division by 0
-            c = a;
-            c(b~=0) = a(b~=0)./b(b~=0);
-            c(b==0) = 0;
-        end
-        
         function objGpet =  varargin_pair(objGpet, varargs)
             % example PET = classGpet('scanner','mMR',
             % 'nSubsets',14,'PSF.Width', 2);
@@ -485,6 +475,16 @@ classdef classGpet < handle
         s=S(varargin);
         %
         osem_subsets(objGpet, nsub,nAngles);
+        
+        % SAM ELLIS EDIT (18/07/2016): new method to allow easy division without
+        % using a small additive term to avoid div. by zero. 
+        function c = vecDivision(objGpet,a,b)
+            % element-by-element division of two vectors, a./b, BUT avoiding
+            % division by 0
+            c = a;
+            c(b~=0) = a(b~=0)./b(b~=0);
+            c(b==0) = 0;
+        end
         
         function gaps = gaps(objGpet)
             if strcmp(objGpet.scanner,'mMR')
