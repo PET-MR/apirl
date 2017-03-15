@@ -1,7 +1,7 @@
 
 function Anonymize_randomize_DICOM(Path, patient_code)
 
-% Path: the directory containing multiple DICOM folder
+% Path: the directory containing multiple DICOM folders
 % patient_code: the code used in combination of a random number to replace
 % dicom file name, patient name and SeriesDescription
 
