@@ -9,8 +9,14 @@
 %  Genera sinogramas 3d sin degradar resolución ni incorporar zonas
 %  muertas.
 
-function [sinogram, sinogram_scatter, sinogram_randoms, TiempoSimulacion, emissionMap, histDetectionXY] = getSinograms3dMmr(outputPath, structSimu, structSizeSino3D, pixelSize_mm, graficarOnline, removeRandoms, simulatedTransverseCrystalsPerBlock)
-
+function [sinogram, sinogram_scatter, sinogram_randoms, TiempoSimulacion, emissionMap, histDetectionXY] = getSinograms3dMmr(outputPath, structSimu, structSizeSino3D, graficarOnline, pixelSize_mm, removeRandoms, simulatedTransverseCrystalsPerBlock)
+fovSize_mm = [2.08625 2.08625 2.03125].*[344 344 127];
+if nargin < 5
+    pixelSize_mm = [2.08625 2.08625 2.03125];
+    imageSize_pixels = [344 344 127];
+else
+    imageSize_pixels = fovSize_mm./ pixelSize_mm;
+end
 %%  VARIABLES PARA GENERACIÓN DE SINOGRAMAS 3D
 sinogram = single(zeros(structSizeSino3D.numR,structSizeSino3D.numTheta, sum(structSizeSino3D.sinogramsPerSegment)));
 sinogram_scatter = single(zeros(structSizeSino3D.numR,structSizeSino3D.numTheta, sum(structSizeSino3D.sinogramsPerSegment)));
@@ -25,8 +31,6 @@ valoresYX = {valoresY valoresX};           % Cell Array con los valores posibles
 % Matricez para imágenes de detección en el plano XY de todo el scanner:
 histDetectionXY = zeros(numel(valoresYX{1}), numel(valoresYX{2}));
 %% EMISSION MAP
-imageSize_pixels = [344 344 127];
-pixelSize_mm = [2.08625 2.08625 2.03125];
 coordX = -pixelSize_mm(2)*imageSize_pixels(2)/2+pixelSize_mm(2)/2:pixelSize_mm(2):pixelSize_mm(2)*imageSize_pixels(2)/2-pixelSize_mm(2)/2;
 emissionMap = zeros(imageSize_pixels);
 %% SCANNER PARAMETERS
@@ -255,7 +259,7 @@ for i = 1 : structSimu.numSplits
                 indicesScatter = coincidenceMatrix(indicesGaps,colCompton1)>0 | coincidenceMatrix(indicesGaps,colCompton2)>0;
                 histCrystalsCombScatter = histCrystalsCombScatter + hist3([globalCrystalId1(indicesGaps(indicesScatter)) globalCrystalId2(indicesGaps(indicesScatter))], {1:numberOfCrystals 1:numberOfCrystals});
                 % The same for randoms events:
-                indicesRandoms = coincidenceMatrix(:,colEventId1) ~= coincidenceMatrix(:,colEventId2);
+                indicesRandoms = coincidenceMatrix(indicesGaps,colEventId1) ~= coincidenceMatrix(indicesGaps,colEventId2);
                 histCrystalsCombRandoms = histCrystalsCombRandoms + hist3([globalCrystalId1(indicesGaps(indicesRandoms)) globalCrystalId2(indicesGaps(indicesRandoms))], {1:numberOfCrystals 1:numberOfCrystals});
 
                 %% FIN DEL LOOP

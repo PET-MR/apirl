@@ -7,7 +7,7 @@
 % Computes the scatter using one of the availables methods.
 function s=S(varargin)
     objGpet = varargin{1};
-    h = fspecial('gaussian',30,10);
+    h = fspecial('gaussian',30 ,15);
     s = [];
     if ~strcmpi(objGpet.scanner,'mMR')&& ~strcmpi(objGpet.scanner,'cylindrical')
         error('NCFs are only available for mMR and cylindrical scanners.');
@@ -29,9 +29,11 @@ function s=S(varargin)
             s = objGpet.iSSRB(s);
         else
             s = zeros(size(varargin{2}));
+            % 1 D filter for each projection:
             for i = 1 : size(s,3)
-                s(:,:,i) = imfilter(varargin{2}(:,:,i), h, 'same');
+                s(:,:,i) = imfilter(varargin{2}(:,:,i), h, 'same', 'circular');
             end
+            s(isnan(s)) = 0;
         end
         % Fit tail?
     elseif nargin == 3 % Sss simulation, need activty image and attenuation.

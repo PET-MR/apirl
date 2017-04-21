@@ -24,6 +24,8 @@ classdef classGpet < handle
         bed_position_mm
         % Ref structure:
         ref_image
+        % Ref structure for the native image space for the scanner:
+        ref_native_image
         % Projector/Backrpojector. Options:
         % 'pre-computed_matlab','otf_matlab', 'otf_siddon_cpu','otf_siddon_gpu'
         method
@@ -59,6 +61,7 @@ classdef classGpet < handle
         nAxialRays
         % Verbosity level: 0, 1, 2. (0 silent)
         verbosity
+
     end
     
     methods
@@ -84,7 +87,12 @@ classdef classGpet < handle
                     objGpet.scanner = 'mMR';
                 end
             end
+
             objGpet.initScanner();
+            objGpet.bed_position_mm = 0;
+            % Init the native image space:
+            objGpet.init_ref_image();
+            objGpet.ref_native_image = objGpet.ref_image;
             objGpet.nRays = 1;
             objGpet.nAxialRays = 1;
             objGpet.method =  'otf_siddon_cpu';
@@ -139,7 +147,6 @@ classdef classGpet < handle
 %                     objGpet.image_size.matrixSize(1), objGpet.image_size.matrixSize(2), objGpet.image_size.matrixSize(3),...
 %                     objGpet.image_size.voxelSize_mm(1), objGpet.image_size.voxelSize_mm(2), objGpet.image_size.voxelSize_mm(3));
             end
-            objGpet.bed_position_mm = 0;
             objGpet.init_ref_image();
         end
         
@@ -292,14 +299,18 @@ classdef classGpet < handle
         end
         
         function objGpet =init_ref_image(objGpet)
-            % Image centred:
-            origin_mm = [-objGpet.image_size.voxelSize_mm(2)*objGpet.image_size.matrixSize(2)/2 -objGpet.image_size.voxelSize_mm(1)*objGpet.image_size.matrixSize(1)/2 ...
-                -objGpet.image_size.voxelSize_mm(3)*objGpet.image_size.matrixSize(3)/2];
-            XWorldLimits= [origin_mm(2) origin_mm(2)+objGpet.image_size.voxelSize_mm(2)*objGpet.image_size.matrixSize(2)];
-            YWorldLimits= [origin_mm(1) origin_mm(1)+objGpet.image_size.voxelSize_mm(1)*objGpet.image_size.matrixSize(1)];
-            ZWorldLimits= [-objGpet.image_size.voxelSize_mm(3)*objGpet.image_size.matrixSize(3)/2 objGpet.image_size.voxelSize_mm(3)*objGpet.image_size.matrixSize(3)/2] + [objGpet.bed_position_mm objGpet.bed_position_mm];
-            refImage = imref3d(objGpet.image_size.matrixSize, XWorldLimits, YWorldLimits, ZWorldLimits);
+            refImage = objGpet.init_ref_structure(objGpet.image_size.matrixSize, objGpet.image_size.voxelSize_mm);
             objGpet.ref_image = refImage;
+        end
+        
+        function refImage = init_ref_structure(objGpet, matrixSize, voxelSize_mm)
+            origin_mm = [-voxelSize_mm(2)*matrixSize(2)/2 -voxelSize_mm(1)*matrixSize(1)/2 ...
+                -voxelSize_mm(3)*matrixSize(3)/2];
+            XWorldLimits= [origin_mm(2) origin_mm(2)+voxelSize_mm(2)*matrixSize(2)];
+            YWorldLimits= [origin_mm(1) origin_mm(1)+voxelSize_mm(1)*matrixSize(1)];
+            ZWorldLimits= [-voxelSize_mm(3)*matrixSize(3)/2 voxelSize_mm(3)*matrixSize(3)/2] + [objGpet.bed_position_mm objGpet.bed_position_mm];
+            refImage = imref3d(matrixSize, XWorldLimits, YWorldLimits, ZWorldLimits);
+            
         end
         
         % This functions get the field of the struct used in Apirl and
@@ -495,7 +506,7 @@ classdef classGpet < handle
                 else
                     crystalMasks = ones(504);
                     crystalMasks(9:9:end,:) = 0;
-                    gaps = createSinogram2dFromDetectorsEfficency(crystalMasks, objGpet.get_sinogram_size_for_apirl(), 1, 0);
+                    gaps = createSinogram2dFromDetectorsEfficency(crystalMasks, objGpet.get_sinogram_size_for_apirl(), 2, 0);
                 end
             else
                 gaps = ones(objGpet.sinogram_size.matrixSize);
@@ -539,18 +550,24 @@ classdef classGpet < handle
         end
         
         % Function that reads MR and  configures PET to reconstruct in that space:
-        function [imageMr, refImageMr, MrInPetFov, refImagePet] = getMrInNativeImageSpace(objGpet, pathMrDicom)
+        function [imageMr, refImageMr, MrInPetFov, refImagePetFov] = getMrInNativeImageSpace(objGpet, pathMrDicom)
             % Read dicom image:
             [imageMr, refImageMr, affineMatrix, dicomInfo] = ReadDicomImage(pathMrDicom, '', 1);
             % Update the ref_image to this pixel size:
             newVoxelSize= [refImageMr.PixelExtentInWorldY refImageMr.PixelExtentInWorldX refImageMr.PixelExtentInWorldZ];
             ratio = objGpet.image_size.voxelSize_mm ./ newVoxelSize;
-            objGpet.image_size.voxelSize_mm = newVoxelSize;
-            objGpet.image_size.matrixSize = round(objGpet.image_size.matrixSize .* ratio);
-            objGpet.init_ref_image();
-            refImagePet = objGpet.ref_image;
+            newVoxelSize_mm = newVoxelSize;
+            newMatrixSize = round(objGpet.image_size.matrixSize .* ratio);
+            refImagePetFov = objGpet.init_ref_structure(newMatrixSize, newVoxelSize_mm);
+            % I not longer force this
+            % update of the image size, if the user wants to do it he needs
+            % to use revise, ouside this function
+%             objGpet.image_size.voxelSize_mm = newVoxelSize;
+%             objGpet.image_size.matrixSize = round(objGpet.image_size.matrixSize .* ratio);
+%             objGpet.init_ref_image();
+            % refImagePet = objGpet.ref_image; 
             % And finally complete the MR image into PET FOV:
-            [MrInPetFov, refImageMrFov] = ImageResample(imageMr, refImageMr, objGpet.ref_image);    
+            [MrInPetFov, refImageMrFov] = ImageResample(imageMr, refImageMr, refImagePetFov);    
         end
         
         % Converts sinogram
@@ -654,33 +671,78 @@ classdef classGpet < handle
             end
         end
         
-        function image = OPMLEMsaveIter(objGpet,Prompts, AN, RS, SensImg, initialEstimate, nIter, outputPath, saveInterval)
+        function image_iter = OPMLEMsaveIter(objGpet,Prompts, AN, RS, SensImg, initialEstimate, nIter, outputPath, saveInterval)
             if ~isdir(outputPath)
                 mkdir(outputPath);
             end
-            image{1} = initialEstimate;
+            image = initialEstimate;
+            k=1;
             for i = 1:nIter
 		% SAM ELLIS EDIT (18/07/2016): replaced vector divisions by vecDivision
-                image{i+1} = image{i}.*objGpet.vecDivision(objGpet.PT(AN.*objGpet.vecDivision(Prompts,AN.*objGpet.P(image{i})+ RS)),SensImg);
-                image{i+1} = max(0,image{i+1});
+                image = image.*objGpet.vecDivision(objGpet.PT(AN.*objGpet.vecDivision(Prompts,AN.*objGpet.P(image)+ RS)),SensImg);
+                image = max(0,image);
                 if rem(i-1,saveInterval) == 0 % -1 to save the first iteration
-                    interfilewrite(single(image{i+1}), [outputPath 'mlem_iter_' num2str(i)], objGpet.image_size.voxelSize_mm); % i use i instead of i+1 because i=1 is the inital estimate
+                    interfilewrite(single(image), [outputPath 'mlem_iter_' num2str(i)], objGpet.image_size.voxelSize_mm); % i use i instead of i+1 because i=1 is the inital estimate
+                    image_iter{k} = image;
+                    k = k + 1;
                 end
             end
         end
         
-        function image = OPOSEMsaveIter(objGpet,Prompts, AN, RS, SensImg, initialEstimate, nIter, outputPath, saveInterval)
+        % Opmlem with downsample
+        function image = OPMLEM_DS(objGpet, prompts, anf, additive, refNewImage, numIterations, outputPath, saveInterval)
+            if ~isdir(outputPath)
+                mkdir(outputPath);
+            end
+            % Create grids for downsample and high sample:
+            x_lowres = objGpet.ref_image.XWorldLimits+objGpet.ref_image.PixelExtentInWorldX(1)/2 : objGpet.ref_image.PixelExtentInWorldX : objGpet.ref_image.XWorldLimits(2)-objGpet.ref_image.PixelExtentInWorldX/2;
+            y_lowres = objGpet.ref_image.YWorldLimits+objGpet.ref_image.PixelExtentInWorldY(1)/2 : objGpet.ref_image.PixelExtentInWorldY : objGpet.ref_image.YWorldLimits(2)-objGpet.ref_image.PixelExtentInWorldY/2;
+            z_lowres = objGpet.ref_image.ZWorldLimits+objGpet.bed_position_mm+objGpet.ref_image.PixelExtentInWorldZ(1)/2 : objGpet.ref_image.PixelExtentInWorldZ : objGpet.ref_image.ZWorldLimits(2)+objGpet.bed_position_mm-objGpet.ref_image.PixelExtentInWorldZ/2;
+            x_highres = refNewImage.XWorldLimits+refNewImage.PixelExtentInWorldX(1)/2 : refNewImage.PixelExtentInWorldX : refNewImage.XWorldLimits(2)-refNewImage.PixelExtentInWorldX/2;
+            y_highres = refNewImage.YWorldLimits+refNewImage.PixelExtentInWorldY(1)/2 : refNewImage.PixelExtentInWorldY : refNewImage.YWorldLimits(2)-refNewImage.PixelExtentInWorldY/2;
+            z_highres = refNewImage.ZWorldLimits+refNewImage.PixelExtentInWorldZ(1)/2 : refNewImage.PixelExtentInWorldZ : refNewImage.ZWorldLimits(2)-refNewImage.PixelExtentInWorldZ/2;
+            [X_lowres,Y_lowres,Z_lowres] = meshgrid(x_lowres, y_lowres, z_lowres);
+            [X_highres,Y_highres,Z_highres] = meshgrid(x_highres, y_highres, z_highres);
+            % Masks:
+            mask_highres = (X_highres.^2+Y_highres.^2)<(objGpet.image_size.matrixSize(1)*objGpet.image_size.voxelSize_mm(1)/2.5)^2;
+            mask = (X_lowres.^2+Y_lowres.^2)<(objGpet.ref_native_image.ImageSize(1)*objGpet.ref_native_image.PixelExtentInWorldX(1)/2.5)^2;
+            % Initial estimate:
+            initialEstimate = ones(size(mask_highres));
+            % The sensitivity image needs to include the interpolation
+            % matrix:
+            sensImage = objGpet.Sensitivity(anf);
+            sensImg_highres = interp3(X_lowres, Y_lowres, Z_lowres, sensImage, X_highres, Y_highres, Z_highres, 'linear', 0); %imresize(sensImage, PET_highres.image_size.matrixSize, 'bicubic'); % High resolution image
+            image{1} = initialEstimate;
+            for i = 1:numIterations
+                % Projection:
+                low_res_image = interp3(X_highres, Y_highres, Z_highres, image{i}, X_lowres, Y_lowres, Z_lowres, 'linear', 0); %imresize(opmlem{end}, PET_highres.image_size.matrixSize, 'bicubic');
+                projected = anf.*objGpet.P(low_res_image) + additive;
+                % Backproject:
+                backprojected_image = objGpet.PT(anf.*objGpet.vecDivision(prompts, projected)).*mask;
+                % transpose of interpolation (high sample)
+                backprojected_image_highres = interp3(X_lowres, Y_lowres, Z_lowres, backprojected_image, X_highres, Y_highres, Z_highres, 'linear', 0).*mask_highres; %imresize(opmlem{end}, PET_highres.image_size.matrixSize, 'bicubic');
+                % Update image
+                image{i+1} = image{i}.*objGpet.vecDivision(backprojected_image_highres, sensImg_highres);
+                image{i+1} = max(0,image{i+1});
+                if rem(i-1,saveInterval) == 0 % -1 to save the first iteration
+                    interfilewrite(single(image{i+1}), [outputPath 'mlem_ds_iter_' num2str(i)], objGpet.image_size.voxelSize_mm); % i use i instead of i+1 because i=1 is the inital estimate
+                end
+            end
+        end
+        
+        function image_iters = OPOSEMsaveIter(objGpet,Prompts, AN, RS, SensImg, initialEstimate, nIter, outputPath, saveInterval)
             k=1;
-            image{k} = initialEstimate;
+            image = initialEstimate;
             for i = 1:nIter
                 for j = 1:objGpet.nSubsets
                     % SAM ELLIS EDIT (18/07/2016): replaced vector divisions by vecDivision
-                    image{k+1} = image{k}.*objGpet.vecDivision(objGpet.PT(AN.*objGpet.vecDivision(Prompts,AN.*objGpet.P(image{k},j)+ RS),j),SensImg(:,:,:,j));
-                    image{k+1} = max(0,image{k+1});
+                    image = image.*objGpet.vecDivision(objGpet.PT(AN.*objGpet.vecDivision(Prompts,AN.*objGpet.P(image{k},j)+ RS),j),SensImg(:,:,:,j));
+                    image = max(0,image);
                     if rem(k-1,saveInterval) == 0 % -1 to save the first iteration
-                        interfilewrite(single(image{k+1}), [outputPath 'opmlem_iter_' num2str(k)], objGpet.image_size.voxelSize_mm); % i use i instead of i+1 because i=1 is the inital estimate
+                        interfilewrite(single(image), [outputPath 'opmlem_iter_' num2str(k)], objGpet.image_size.voxelSize_mm); % i use i instead of i+1 because i=1 is the inital estimate
+                        image_iters{k} = image;
+                        k = k + 1;
                     end
-                    k = k + 1;
                 end
             end
         end

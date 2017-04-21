@@ -27,13 +27,18 @@ Sinogram2DinSiemensMmr::Sinogram2DinSiemensMmr(char* fileHeaderPath): Sinogram2D
   radioScanner_mm = 328;
   radioFov_mm = 297;
   float lr;
+	float variableBinSize_mm; // The bin size in the class is fixed for the scanner but for some super resoutions application the sinogram size can change and we need to change the bin size
+	if (numR == 344)
+		variableBinSize_mm = Sinogram2DinSiemensMmr::binSize_mm;
+	else
+		variableBinSize_mm = Sinogram2DinSiemensMmr::binSize_mm*344/numR;
   // The r value is non linear in the sinogram, because each bin represent one detector element and
   // with the curve of the cylindrical scanner the distance r to the center axis increases with the cos of the bin.
   for(int j = 0; j < numR; j++)
   {
     // ptrRvalues initialization is necesary just one time
     // 1) Get the length on the cylindrical surface for each bin (from x=0 to the center of the crystal element):
-		lr = binSize_mm/2 + (binSize_mm*(j-(float)(numR/2)));
+		lr = variableBinSize_mm/2 + (variableBinSize_mm*(j-(float)(numR/2)));
     // 2) Now I get the x coordinate for that r.
     ptrRvalues_mm[j] = (radioScanner_mm + meanDOI_mm* cos(lr/radioScanner_mm)) * sin(lr/radioScanner_mm);
   }
@@ -56,6 +61,11 @@ Sinogram2DinSiemensMmr::Sinogram2DinSiemensMmr(unsigned int nProj, unsigned int 
 
   // Initialization
   float PhiIncrement = (float)maxAng_deg / numProj;
+	float variableBinSize_mm; // The bin size in the class is fixed for the scanner but for some super resoutions application the sinogram size can change and we need to change the bin size
+	if (numR == 344)
+		variableBinSize_mm = Sinogram2DinSiemensMmr::binSize_mm;
+	else
+		variableBinSize_mm = Sinogram2DinSiemensMmr::binSize_mm*344/numR;
   // The r value is non linear in the sinogram, because each bin represent one detector element and
   // with the curve of the cylindrical scanner the distance r to the center axis increases with the cos of the bin.
   for(int i = 0; i < numProj; i ++)
@@ -69,7 +79,7 @@ Sinogram2DinSiemensMmr::Sinogram2DinSiemensMmr(unsigned int nProj, unsigned int 
       {
 				// ptrRvalues initialization is necesary just one time
 				// 1) Get the length on the cylindrical surface for each bin (from x=0 to the center of the crystal element):
-				lr = binSize_mm/2 + (binSize_mm*(j-(float)(numR/2)));
+				lr = variableBinSize_mm/2 + (variableBinSize_mm*(j-(float)(numR/2)));
 				// 2) Now I get the x coordinate for that r.
 				ptrRvalues_mm[j] = (radioScanner_mm + meanDOI_mm* cos(lr/radioScanner_mm)) * sin(lr/(radioScanner_mm));
 
@@ -94,6 +104,11 @@ Sinogram2DinSiemensMmr::Sinogram2DinSiemensMmr(const Sinogram2DinSiemensMmr* src
 Sinogram2DinSiemensMmr::Sinogram2DinSiemensMmr(const Sinogram2DinSiemensMmr* srcSinogram2D, int indexSubset, int numSubsets):Sinogram2DinCylindrical3Dpet((Sinogram2DinCylindrical3Dpet*) srcSinogram2D, indexSubset, numSubsets)
 {
   float lr; 
+	float variableBinSize_mm; // The bin size in the class is fixed for the scanner but for some super resoutions application the sinogram size can change and we need to change the bin size
+	if (numR == 344)
+		variableBinSize_mm = Sinogram2DinSiemensMmr::binSize_mm;
+	else
+		variableBinSize_mm = Sinogram2DinSiemensMmr::binSize_mm*344/numR;
   radioScanner_mm = 328;
   radioFov_mm = 297;
   // Initialization of the values, that differ slightly from the cylindrical pet:
@@ -111,7 +126,7 @@ Sinogram2DinSiemensMmr::Sinogram2DinSiemensMmr(const Sinogram2DinSiemensMmr* src
   {
     // ptrRvalues initialization is necesary just one time
     // 1) Get the length on the cylindrical surface for each bin (from x=0 to the center of the crystal element):
-	lr = binSize_mm/2 + (binSize_mm*(j-(float)(numR/2)));
+		lr = variableBinSize_mm/2 + (variableBinSize_mm*(j-(float)(numR/2)));
     // 2) Now I get the x coordinate for that r.
     ptrRvalues_mm[j] = (radioScanner_mm + meanDOI_mm* cos(lr/radioScanner_mm)) * sin(lr/radioScanner_mm);
   }

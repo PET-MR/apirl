@@ -1,4 +1,4 @@
-%  *********************************************************************
+                                                          %  *********************************************************************
 %  Reconstruction Framework for Siemens Biograph mMR.  
 %  Autor: Martín Belzunce. Kings College London.
 %  Fecha de Creación: 23/01/2015
