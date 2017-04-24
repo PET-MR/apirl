@@ -6,9 +6,9 @@ function dP = d_approx_JointEntropy_prior(ObjPrior,Img,sigma_f,Wje_imgA)
 W = ObjPrior.W_JointEntropy(Img,sigma_f).*Wje_imgA;
 
 W = W./repmat(sum(W,2),[1,ObjPrior.nS]);
-W = W./(sigma_f^2)/prod(ObjPrior.ImageSize);
-
-W = W./repmat(sum(W,2),[1,ObjPrior.nS]);
+% W = W./(sigma_f^2)/prod(ObjPrior.ImageSize);
+% 
+% W = W./repmat(sum(W,2),[1,ObjPrior.nS]);
 
 imgGrad = ObjPrior.GraphGrad(Img).*W; 
 dP = -2* sum(ObjPrior.Wd .*imgGrad,2);%
