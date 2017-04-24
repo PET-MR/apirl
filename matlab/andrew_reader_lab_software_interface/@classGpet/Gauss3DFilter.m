@@ -21,8 +21,13 @@ function gf3d = Gauss3DFilter (objGpet, data, fwhm)
     end
     padSize = (matsz-1)/2;
     bound=padSize.*vox3dsz;
-    [x,y,z] = meshgrid(-bound(2):vox3dsz(2):bound(2), -bound(1):vox3dsz(1):bound(1), -bound(3):vox3dsz(3):bound(3));
-    h = exp(-(x.*x + y.*y + z.*z)/(2*gsigmm*gsigmm));
+    if size(data,3)>1
+        [x,y,z] = meshgrid(-bound(2):vox3dsz(2):bound(2), -bound(1):vox3dsz(1):bound(1), -bound(3):vox3dsz(3):bound(3));
+        h = exp(-(x.*x + y.*y + z.*z)/(2*gsigmm*gsigmm));
+    else
+        [x,y] = meshgrid(-bound(2):vox3dsz(2):bound(2), -bound(1):vox3dsz(1):bound(1));
+        h = exp(-(x.*x + y.*y)/(2*gsigmm*gsigmm));
+    end
     h = h/sum(h(:));
     numDims = length(padSize);
     idx = cell(numDims,1);
