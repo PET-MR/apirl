@@ -12,6 +12,7 @@ classdef PriorsClass < handle
         Wd
         nS
         nL
+        is3D
     end
     
     methods
@@ -27,13 +28,16 @@ classdef PriorsClass < handle
             ObjPrior.nS = [];
             ObjPrior.nL = [];
             ObjPrior.chunkSize = 1;
-            
+            ObjPrior.is3D = 0;
             
             if isempty(varargin{1}.ImageSize)
                 error('Image size should be specified');
             end
             
-            if varargin{1}.ImageSize(3)>1
+            if length(varargin{1}.ImageSize)==3 && varargin{1}.ImageSize(3)>1
+                ObjPrior.is3D = 1;
+            end
+            if ObjPrior.is3D
                 ObjPrior.imCropFactor = 4;
                 ObjPrior.chunkSize = 5e6;
             end
@@ -50,7 +54,11 @@ classdef PriorsClass < handle
             % patch-size
             n = ObjPrior.CropedImageSize(1);
             m = ObjPrior.CropedImageSize(2);
-            h = ObjPrior.CropedImageSize(3);
+            if ObjPrior.is3D
+                h = ObjPrior.CropedImageSize(3);
+            else
+                h = 1;
+            end
             
             
             wlen = 2*floor(w/2); % length of neighborhood window
@@ -138,7 +146,7 @@ classdef PriorsClass < handle
                 error('The size of local window should be odd');
             end
             
-            if ObjPrior.ImageSize(3)>1
+            if ObjPrior.is3D
                 ObjPrior.nS = ObjPrior.sWindowSize^3;
                 ObjPrior.nL = ObjPrior.lWindowSize^3;
             else
@@ -161,7 +169,7 @@ classdef PriorsClass < handle
                 end
             else
                 if length(ObjPrior.imCropFactor)== 1
-                    if ObjPrior.ImageSize(3)>1
+                    if ObjPrior.is3D
                         ObjPrior.imCropFactor = ObjPrior.imCropFactor*[1 1 0];
                     else
                         ObjPrior.imCropFactor = ObjPrior.imCropFactor*[1 1];
@@ -180,18 +188,24 @@ classdef PriorsClass < handle
                     I = floor(ObjPrior.ImageSize(2)/ObjPrior.imCropFactor(2));
                 end
                 
-                K = 0;
-                if ObjPrior.imCropFactor(3)
-                    ObjPrior.imCropFactor(3) = max(2.5, ObjPrior.imCropFactor(3));
-                    K = floor(ObjPrior.ImageSize(3)/ObjPrior.imCropFactor(3));
+                if ObjPrior.is3D
+                    K = 0;
+                    if ObjPrior.imCropFactor(3)
+                        ObjPrior.imCropFactor(3) = max(2.5, ObjPrior.imCropFactor(3));
+                        K = floor(ObjPrior.ImageSize(3)/ObjPrior.imCropFactor(3));
+                    end
+                    newSize = [length((J:(ObjPrior.ImageSize(1)-J-1))+1),length((I:(ObjPrior.ImageSize(2)-I-1))+1),length((K:(ObjPrior.ImageSize(3)-K-1))+1)];
+                else
+                    newSize = [length((J:(ObjPrior.ImageSize(1)-J-1))+1),length((I:(ObjPrior.ImageSize(2)-I-1))+1)];
                 end
-                
-                newSize = [length((J:(ObjPrior.ImageSize(1)-J-1))+1),length((I:(ObjPrior.ImageSize(2)-I-1))+1),length((K:(ObjPrior.ImageSize(3)-K-1))+1)];
-                
                 if nargin==1
                     Img = [];
                 else
-                    Img = Img((J:(ObjPrior.ImageSize(1)-J-1))+1,(I:(ObjPrior.ImageSize(2)-I-1))+1,(K:(ObjPrior.ImageSize(3)-K-1))+1);
+                    if ObjPrior.is3D
+                        Img = Img((J:(ObjPrior.ImageSize(1)-J-1))+1,(I:(ObjPrior.ImageSize(2)-I-1))+1,(K:(ObjPrior.ImageSize(3)-K-1))+1);
+                    else
+                        Img = Img((J:(ObjPrior.ImageSize(1)-J-1))+1,(I:(ObjPrior.ImageSize(2)-I-1))+1);
+                    end
                 end
             end
         end
@@ -204,8 +218,13 @@ classdef PriorsClass < handle
             ImgNew = zeros(ObjPrior.ImageSize,'single');
             
             S = (ObjPrior.ImageSize - ObjPrior.CropedImageSize)/2;
-            J = S(1); I = S(2); K = S(3);
-            ImgNew((J:(ObjPrior.ImageSize(1)-S(1)-1))+1,(I:(ObjPrior.ImageSize(2)-I-1))+1,(K:(ObjPrior.ImageSize(3)-K-1))+1) = Img;
+            J = S(1); I = S(2);
+            if ObjPrior.is3D
+                K = S(3);
+                ImgNew((J:(ObjPrior.ImageSize(1)-S(1)-1))+1,(I:(ObjPrior.ImageSize(2)-I-1))+1,(K:(ObjPrior.ImageSize(3)-K-1))+1) = Img;
+            else
+                ImgNew((J:(ObjPrior.ImageSize(1)-S(1)-1))+1,(I:(ObjPrior.ImageSize(2)-I-1))+1) = Img;
+            end
         end
         
         function ObjPrior = RevisePrior(ObjPrior,opt)
@@ -227,8 +246,12 @@ classdef PriorsClass < handle
             imgGrad = (Img(ObjPrior.SearchWindow)-repmat(Img(:),[1,ObjPrior.nS]));
         end
         
+        function imgDiv = GraphDivCrop(ObjPrior,Img)
+            Img = imCrop(ObjPrior,single(Img));
+            imgDiv = (Img(ObjPrior.SearchWindow)+repmat(Img(:),[1,ObjPrior.nS]));
+        end
         function dP = TransGraphGradUndoCrop(ObjPrior,imgGrad)
-            dP = -2* sum(ObjPrior.Wd.*imgGrad,2);
+             dP = -2* sum(ObjPrior.Wd.*imgGrad,2);
             dP = reshape(dP,ObjPrior.CropedImageSize);
             dP = UndoImCrop(ObjPrior,dP);
         end
