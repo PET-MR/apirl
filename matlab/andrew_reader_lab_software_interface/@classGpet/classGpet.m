@@ -1,5 +1,5 @@
 % *********************************************************************
-% Reconstruction Framework for Siemens Biograph mMR.  
+% Reconstruction Framework for Siemens Biograph mMR.
 % class: Gpet
 % Authors: Martin Belzunce, Abolfazl Mehranian. Kings College London.
 % Date: 08/02/2016
@@ -11,7 +11,7 @@
 classdef classGpet < handle
     properties (SetAccess = private)
         % Type of scanner. Options: '2D_radon', 'mMR', 'cylindrical'
-        scanner 
+        scanner
         % Properties of the scanner. This is an structure with additional
         % parameters specific for each scanner, for example for cylindrical
         % scanner it has the radius_mm propery.
@@ -61,7 +61,7 @@ classdef classGpet < handle
         nAxialRays
         % Verbosity level: 0, 1, 2. (0 silent)
         verbosity
-
+        Prior
     end
     
     methods
@@ -87,7 +87,7 @@ classdef classGpet < handle
                     objGpet.scanner = 'mMR';
                 end
             end
-
+            
             objGpet.initScanner();
             objGpet.bed_position_mm = 0;
             % Init the native image space:
@@ -116,7 +116,7 @@ classdef classGpet < handle
                     end
                     Revise(objGpet,varargin{1});
                     
-                % Read configuration from file:
+                    % Read configuration from file:
                 elseif ischar(varargin{1})
                     objGpet.readConfigFromFile(varargin{1})
                 end
@@ -143,11 +143,20 @@ classdef classGpet < handle
                 
                 % SAM ELLIS EDIT: removed this warning, since span = -1
                 % gives nRings = 1 as desired, so no warning necessary
-%                 warning('Overriding the image size to the number of rings to work in multislice 2d. Now the image size is %dx%dx%d and voxel size is %fx%fx%f.', ...
-%                     objGpet.image_size.matrixSize(1), objGpet.image_size.matrixSize(2), objGpet.image_size.matrixSize(3),...
-%                     objGpet.image_size.voxelSize_mm(1), objGpet.image_size.voxelSize_mm(2), objGpet.image_size.voxelSize_mm(3));
+                %                 warning('Overriding the image size to the number of rings to work in multislice 2d. Now the image size is %dx%dx%d and voxel size is %fx%fx%f.', ...
+                %                     objGpet.image_size.matrixSize(1), objGpet.image_size.matrixSize(2), objGpet.image_size.matrixSize(3),...
+                %                     objGpet.image_size.voxelSize_mm(1), objGpet.image_size.voxelSize_mm(2), objGpet.image_size.voxelSize_mm(3));
             end
             objGpet.init_ref_image();
+            
+            p.ImageSize = objGpet.image_size.matrixSize;
+            p.imCropFactor = [3,3,0];
+            p.sWindowSize = 5;
+            p.lWindowSize = 1;
+            if isstruct(varargin{1}) % have to generalize it
+                p = getFiledsFromUsersOpt(p,varargin{1});
+            end
+            objGpet.Prior = PriorsClass(p);
         end
         
         function objGpet = readConfigFromFile(objGpet, strFilename)
@@ -170,8 +179,8 @@ classdef classGpet < handle
             end
         end
         
-
-
+        
+        
         function G_2D_radon_setup(objGpet)
             % Default parameter, only if it havent been loaded by the
             % config previously:
@@ -200,7 +209,7 @@ classdef classGpet < handle
             objGpet.sinogram_size.matrixSize = [objGpet.sinogram_size.nRadialBins objGpet.sinogram_size.nAnglesBins objGpet.sinogram_size.nSinogramPlanes];
             objGpet.osem_subsets(objGpet.nSubsets, objGpet.sinogram_size.nAnglesBins);
         end
-                        
+        
         function G_mMR_setup(objGpet)
             % Default parameter, only if it havent been loaded by the
             % config previously:
@@ -217,9 +226,9 @@ classdef classGpet < handle
                 objGpet.scanner_properties.sinogramDepthOfInteraction_mm = 6.7;
                 objGpet.scanner_properties.LORDepthOfInteraction_mm = 9.6;
                 objGpet.scanner_properties.planeSep_mm = 2.03125;
-                objGpet.scanner_properties.nCrystalsPerRing = 504;                
+                objGpet.scanner_properties.nCrystalsPerRing = 504;
                 objGpet.scanner_properties.binSize_mm = pi*objGpet.scanner_properties.radius_mm/objGpet.scanner_properties.nCrystalsPerRing;%2.0445;
-
+                
             else
                 
             end
@@ -253,7 +262,7 @@ classdef classGpet < handle
                 objGpet.sinogram_size.nSeg = 11;
                 %add maxDiff
                 %                 objGpet.radialBinTrim = 0;
-                           
+                
             end
             
             if ~isfield(objGpet.scanner_properties, 'radius_mm')
@@ -375,7 +384,7 @@ classdef classGpet < handle
                     arg2 = arg([(idot+1):end]);
                     
                     if ~(sum(strcmpi(prop, arg1 )) > 0)
-                       error('unknown property')
+                        error('unknown property')
                     end
                     subProp = fieldnames(objGpet.(arg1));
                     if ~(sum(strcmpi(subProp, arg2 )) > 0)
@@ -403,40 +412,40 @@ classdef classGpet < handle
             
             a = ones(objGpet.sinogram_size.nRings);
             minRingDiff = [0,(objGpet.sinogram_size.span+1)/2:objGpet.sinogram_size.span:objGpet.sinogram_size.maxRingDifference];
-
+            
             s = zeros(1,(nseg+1)/2);
             for j = 1:(nseg+1)/2
                 s(j) = length(diag(a,minRingDiff(j)));
             end
-
+            
             if objGpet.sinogram_size.span>1, s = 2*s-1; end
-
+            
             nPlanePerSeg = zeros(1,nseg);
             nPlanePerSeg(1) = s(1);
             nPlanePerSeg(2:2:end) = s(2:end);
             nPlanePerSeg(3:2:end) = s(2:end);
-
+            
         end
-
+        
         function Scatter3D = iSSRB(objGpet,Scatter2D)
             
             nPlanePerSeg = Planes_Seg(objGpet);
             
             mo = cumsum(nPlanePerSeg)';
-            no =[[1;mo(1:end-1)+1],mo];            
-
+            no =[[1;mo(1:end-1)+1],mo];
+            
             Scatter3D = zeros(objGpet.sinogram_size.matrixSize,'single');
             % For span 1 this method fails, we use the other available in
             % the library for any span conversion:
             if objGpet.sinogram_size.span > 1
-
+                
                 Scatter3D(:,:,no(1,1):no(1,2),:) = Scatter2D;
-            
+                
                 for i = 2:2:length(nPlanePerSeg)
-
+                    
                     delta = (nPlanePerSeg(1)- nPlanePerSeg(i))/2;
                     indx = nPlanePerSeg(1) - delta;
-
+                    
                     Scatter3D (:,:,no(i,1):no(i,2),:) = Scatter2D(:,:,delta+1:indx,:);
                     Scatter3D (:,:,no(i+1,1):no(i+1,2),:) = Scatter2D(:,:,delta+1:indx,:);
                 end
@@ -454,7 +463,7 @@ classdef classGpet < handle
             scatter_3D =  scatter_3D./ncf;
             scatter_3D(gaps)=0;
             
-            Trues = emission_sinogram - randoms;     
+            Trues = emission_sinogram - randoms;
             Trues(Trues<0) = 0;
             for i = 1: size(acf,3)
                 acf_i = acf(:,:,i);
@@ -488,7 +497,7 @@ classdef classGpet < handle
         osem_subsets(objGpet, nsub,nAngles);
         
         % SAM ELLIS EDIT (18/07/2016): new method to allow easy division without
-        % using a small additive term to avoid div. by zero. 
+        % using a small additive term to avoid div. by zero.
         function c = vecDivision(objGpet,a,b)
             % element-by-element division of two vectors, a./b, BUT avoiding
             % division by 0
@@ -562,12 +571,12 @@ classdef classGpet < handle
             % I not longer force this
             % update of the image size, if the user wants to do it he needs
             % to use revise, ouside this function
-%             objGpet.image_size.voxelSize_mm = newVoxelSize;
-%             objGpet.image_size.matrixSize = round(objGpet.image_size.matrixSize .* ratio);
-%             objGpet.init_ref_image();
-            % refImagePet = objGpet.ref_image; 
+            %             objGpet.image_size.voxelSize_mm = newVoxelSize;
+            %             objGpet.image_size.matrixSize = round(objGpet.image_size.matrixSize .* ratio);
+            %             objGpet.init_ref_image();
+            % refImagePet = objGpet.ref_image;
             % And finally complete the MR image into PET FOV:
-            [MrInPetFov, refImageMrFov] = ImageResample(imageMr, refImageMr, refImagePetFov);    
+            [MrInPetFov, refImageMrFov] = ImageResample(imageMr, refImageMr, refImagePetFov);
         end
         
         % Converts sinogram
@@ -665,7 +674,7 @@ classdef classGpet < handle
         
         function Img = OPMLEM(objGpet,Prompts,RS, SensImg,Img, nIter)
             for i = 1:nIter
-		% SAM ELLIS EDIT (18/07/2016): replaced vector divisions by vecDivision
+                % SAM ELLIS EDIT (18/07/2016): replaced vector divisions by vecDivision
                 Img = Img.*objGpet.vecDivision(objGpet.PT(objGpet.vecDivision(Prompts,objGpet.P(Img)+ RS)),SensImg);
                 Img = max(0,Img);
             end
@@ -678,7 +687,7 @@ classdef classGpet < handle
             image = initialEstimate;
             k=1;
             for i = 1:nIter
-		% SAM ELLIS EDIT (18/07/2016): replaced vector divisions by vecDivision
+                % SAM ELLIS EDIT (18/07/2016): replaced vector divisions by vecDivision
                 image = image.*objGpet.vecDivision(objGpet.PT(AN.*objGpet.vecDivision(Prompts,AN.*objGpet.P(image)+ RS)),SensImg);
                 image = max(0,image);
                 if rem(i-1,saveInterval) == 0 % -1 to save the first iteration
@@ -780,18 +789,18 @@ classdef classGpet < handle
             % define function to multiply image by matrix and reshape
             % (assuming numel(alph) ==  numel(Img))
             multiplyByBases = @(alphIn,basisMat) reshape(basisMat*double(alphIn(:)),size(alphIn));
-     
+            
             for ii = 1:nIter
                 
                 % forward model:
                 FP_guess = AN.*objGpet.P(multiplyByBases(alph,basisMat)) + RS;
                 
-               % ratio with measured data and backproject (including
-               % transpose basis function multiplication)
-               corr_fact = multiplyByBases(objGpet.PT(AN.*objGpet.vecDivision(Prompts,FP_guess)),basisMat');
-               
-               % divide by sens image and multiply by old alpha values
-               alph = alph.*objGpet.vecDivision(corr_fact,alphSens);
+                % ratio with measured data and backproject (including
+                % transpose basis function multiplication)
+                corr_fact = multiplyByBases(objGpet.PT(AN.*objGpet.vecDivision(Prompts,FP_guess)),basisMat');
+                
+                % divide by sens image and multiply by old alpha values
+                alph = alph.*objGpet.vecDivision(corr_fact,alphSens);
             end
             
             Img = multiplyByBases(alph,basisMat);
@@ -804,13 +813,87 @@ classdef classGpet < handle
             if (objGpet.deleteTemp ~= false) && (objGpet.deleteTemp ~= 0)
                 % if the flag is not false, then it is true, and delete the
                 % temp folder and its contents if it exists
-                if exist(objGpet.tempPath,'dir') == 7 
+                if exist(objGpet.tempPath,'dir') == 7
                     rmdir(objGpet.tempPath,'s');
                 end
             else
             end
         end
         
+        function Img = MAPEM(objGpet,Prompts,RS, SensImg,Img, nIter,arg)
+            % default parameters
+            opt.OptimizationMethod = 'DePierro';%'OSL'
+            opt.PriorType = 'Quadratic'; %'Bowsher' 'JointBurgEntropy'
+            opt.RegualrizationParameter = 1;
+            opt.PreCompWeights = 1;
+            opt.BowsherB = 70;
+            opt.MrImage =[];
+            opt.MrSigma = 0.1; % JBE
+            opt.PetSigma  = 10; %JBE
+            opt.display = 0;
+            
+            
+            opt = getFiledsFromUsersOpt(opt,arg);
+            
+            if opt.display, figure; end
+            
+            if strcmpi(opt.PriorType,'Quadratic')
+                W0 = 1;
+            elseif strcmpi(opt.PriorType,'Bowsher')
+                if opt.PreCompWeights == 1
+                    fprintf('calculating Bowsher weighting coeffcients\n')
+                    if isempty(opt.MrImage), error('MR image should be provided in opt.MrImage\n'); end
+                    W0 = objGpet.Prior.W_Bowsher(opt.MrImage,opt.BowsherB);
+                    W0 = W0./repmat(sum(W0,2),[1,objGpet.Prior.nS]);
+                else % better to precomputed Bowsher weighting coeffcients into opt.PreCompWeights
+                    W0 = opt.PreCompWeights;
+                end
+            elseif strcmpi(opt.PriorType,'JointBurgEntropy')
+                if opt.PreCompWeights == 1
+                    fprintf('calculating MR-based Gaussian weighting coeffcients\n');
+                    if isempty(opt.MrImage), error('MR image should be provided in opt.MrImage\n'); end
+                    W0 = objGpet.Prior.W_JointEntropy(opt.MrImage,opt.MrSigma);
+                else % better to precomputed MR weighting coeffcients into opt.PreCompWeights
+                    W0 = opt.PreCompWeights;
+                end
+            end
+            fprintf('Prior: %s, Method: %s\n',opt.PriorType,opt.OptimizationMethod);
+            for i = 1:nIter
+                fprintf('Iteration: %d\n',i)
+                if strcmpi(opt.OptimizationMethod,'DePierro')
+                    xn = Img;
+                    x_em = xn.*objGpet.vecDivision(objGpet.PT(objGpet.vecDivision(Prompts,objGpet.P(xn)+ RS)),SensImg);
+                    
+                    if strcmpi(opt.PriorType,'JointBurgEntropy')
+                        W0 = objGpet.Prior.W_JointEntropy(xn,opt.PetSigma).*W0;
+                        W0 = W0./repmat(sum(W0,2),[1,objGpet.Prior.nS]);
+                    end
+                    W = objGpet.Prior.Wd.*W0;
+                    wj = objGpet.Prior.UndoImCrop(reshape(sum(W,2),objGpet.Prior.CropedImageSize));
+                    B = SensImg - opt.RegualrizationParameter / 2*objGpet.Prior.UndoImCrop(reshape(sum(W.*objGpet.Prior.GraphDivCrop(xn),2),objGpet.Prior.CropedImageSize));
+                    Img = 2*x_em.*SensImg./(B + sqrt(B.^2+4*opt.RegualrizationParameter.*SensImg.*x_em.*wj + 1e-5));
+                    Img = max(0,Img);
+                elseif strcmpi(opt.OptimizationMethod,'OSL')
+                    xn = Img;
+                    if strcmpi(opt.PriorType,'JointBurgEntropy')
+                        W0 = objGpet.Prior.W_JointEntropy(xn,opt.PetSigma).*W0;
+                        W0 = W0./repmat(sum(W0,2),[1,objGpet.Prior.nS]);
+                    end
+                    W = objGpet.Prior.Wd.*W0;
+                    dP = -2* sum(W.*objGpet.Prior.GraphGradCrop(xn),2);
+                    dP = opt.RegualrizationParameter*objGpet.Prior.UndoImCrop(reshape(dP,objGpet.Prior.CropedImageSize));
+                    Img = xn.*objGpet.vecDivision(objGpet.PT(objGpet.vecDivision(Prompts,objGpet.P(xn)+ RS)),SensImg + dP + 1e-5);
+                    Img = max(0,Img);
+                end
+                if opt.display
+                    if objGpet.image_size.matrixSize(3)==1
+                        imshow(Img,[]);
+                    else %if 3D recon, use opt.display =x, where x is a transvese slice
+                        imshow(Img(:,:,opt.display),[]);
+                    end
+                end
+            end
+        end
         gf3d = Gauss3DFilter (objGpet, data, fwhm);
         [Img,totalScaleFactor, info] = BQML(objGpet,Img,sinogramInterFileFilename,normalizationInterFileFilename);
         Img = SUV(objGpet,Img,sinogramInterFileFilename,normalizationInterFileFilename);
