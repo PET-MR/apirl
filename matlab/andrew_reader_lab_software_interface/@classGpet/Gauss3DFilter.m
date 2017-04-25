@@ -12,7 +12,11 @@ function gf3d = Gauss3DFilter (objGpet, data, fwhm)
         gf3d = data;
         return
     end
-    vox3dsz = objGpet.image_size.voxelSize_mm;
+    if size(data,3)>1
+        vox3dsz = objGpet.image_size.voxelSize_mm;
+    else
+        vox3dsz = objGpet.image_size.voxelSize_mm(1:2);
+    end
 
     gsigmm=fwhm/sqrt(2^3*log(2));
     matsz=ceil(2*fwhm./vox3dsz);
