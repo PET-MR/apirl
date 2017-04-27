@@ -699,7 +699,7 @@ classdef classGpet < handle
         end
         
         % Opmlem with downsample
-        function image = OPMLEM_DS(objGpet, prompts, anf, additive, refNewImage, numIterations, outputPath, saveInterval)
+        function image_ds = OPMLEM_DS(objGpet, prompts, anf, additive, refNewImage, numIterations, outputPath, saveInterval)
             if ~isdir(outputPath)
                 mkdir(outputPath);
             end
@@ -721,20 +721,23 @@ classdef classGpet < handle
             % matrix:
             sensImage = objGpet.Sensitivity(anf);
             sensImg_highres = interp3(X_lowres, Y_lowres, Z_lowres, sensImage, X_highres, Y_highres, Z_highres, 'linear', 0); %imresize(sensImage, PET_highres.image_size.matrixSize, 'bicubic'); % High resolution image
-            image{1} = initialEstimate;
+            image = initialEstimate;
+            k = 1;
             for i = 1:numIterations
                 % Projection:
-                low_res_image = interp3(X_highres, Y_highres, Z_highres, image{i}, X_lowres, Y_lowres, Z_lowres, 'linear', 0); %imresize(opmlem{end}, PET_highres.image_size.matrixSize, 'bicubic');
+                low_res_image = interp3(X_highres, Y_highres, Z_highres, image, X_lowres, Y_lowres, Z_lowres, 'linear', 0); %imresize(opmlem{end}, PET_highres.image_size.matrixSize, 'bicubic');
                 projected = anf.*objGpet.P(low_res_image) + additive;
                 % Backproject:
                 backprojected_image = objGpet.PT(anf.*objGpet.vecDivision(prompts, projected)).*mask;
                 % transpose of interpolation (high sample)
                 backprojected_image_highres = interp3(X_lowres, Y_lowres, Z_lowres, backprojected_image, X_highres, Y_highres, Z_highres, 'linear', 0).*mask_highres; %imresize(opmlem{end}, PET_highres.image_size.matrixSize, 'bicubic');
                 % Update image
-                image{i+1} = image{i}.*objGpet.vecDivision(backprojected_image_highres, sensImg_highres);
-                image{i+1} = max(0,image{i+1});
+                image = image.*objGpet.vecDivision(backprojected_image_highres, sensImg_highres);
+                image = max(0,image);
                 if rem(i-1,saveInterval) == 0 % -1 to save the first iteration
-                    interfilewrite(single(image{i+1}), [outputPath 'mlem_ds_iter_' num2str(i)], objGpet.image_size.voxelSize_mm); % i use i instead of i+1 because i=1 is the inital estimate
+                    image_ds{k} = image;
+                    interfilewrite(single(image_ds{k}), [outputPath 'mlem_ds_iter_' num2str(i)], [refNewImage.PixelExtentInWorldX refNewImage.PixelExtentInWorldY refNewImage.PixelExtentInWorldZ]); % i use i instead of i+1 because i=1 is the inital estimate
+                    k = k + 1;
                 end
             end
         end
@@ -745,7 +748,7 @@ classdef classGpet < handle
             for i = 1:nIter
                 for j = 1:objGpet.nSubsets
                     % SAM ELLIS EDIT (18/07/2016): replaced vector divisions by vecDivision
-                    image = image.*objGpet.vecDivision(objGpet.PT(AN.*objGpet.vecDivision(Prompts,AN.*objGpet.P(image{k},j)+ RS),j),SensImg(:,:,:,j));
+                    image = image.*objGpet.vecDivision(objGpet.PT(AN.*objGpet.vecDivision(Prompts,AN.*objGpet.P(image,j)+ RS),j),SensImg(:,:,:,j));
                     image = max(0,image);
                     if rem(k-1,saveInterval) == 0 % -1 to save the first iteration
                         interfilewrite(single(image), [outputPath 'opmlem_iter_' num2str(k)], objGpet.image_size.voxelSize_mm); % i use i instead of i+1 because i=1 is the inital estimate

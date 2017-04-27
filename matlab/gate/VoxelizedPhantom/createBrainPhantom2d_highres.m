@@ -102,6 +102,8 @@ const(tMu_2d>0.01) = 1;
 interfilewrite(uint16(const), [outputPath 'constMap_uint16'], [refImage.PixelExtentInWorldY refImage.PixelExtentInWorldX ]);
 interfilewrite(uint16(tAct_2d_small_lesions), [outputPath 'actMap_small_lesion_uint16'], [refImage.PixelExtentInWorldY refImage.PixelExtentInWorldX]);
 interfilewrite(uint16(tAct_2d_bigger_lesions), [outputPath 'actMap_bigger_lesion_uint16'], [refImage.PixelExtentInWorldY refImage.PixelExtentInWorldX]);
+interfilewrite(tAct_2d, [outputPath 'actMap'], [refImage.PixelExtentInWorldY refImage.PixelExtentInWorldX]); % Now I also save it without lesions.
+interfilewrite_gate(uint16(tAct_2d), [outputPath 'actMap_uint16'], [refImage.PixelExtentInWorldY refImage.PixelExtentInWorldX 0.5], 'BrainPhantomHighRes');
 interfilewrite(tMu_2d, [outputPath 'muMap'], [refImage.PixelExtentInWorldY refImage.PixelExtentInWorldX]);
 interfilewrite(tMu_for_recon, [outputPath 'muMap'], [refAtRecon.PixelExtentInWorldY refAtRecon.PixelExtentInWorldX]);
 
