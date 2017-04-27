@@ -29,20 +29,19 @@ classdef PriorsClass < handle
             ObjPrior.nL = [];
             ObjPrior.chunkSize = 1;
             ObjPrior.is3D = 0;
-            
+            ObjPrior.imCropFactor = 4;
+            ObjPrior.chunkSize = 5e6;
+                
             if isempty(varargin{1}.ImageSize)
                 error('Image size should be specified');
             end
+
+            % get fields from user's input
+            ObjPrior = getFiledsFromUsersOpt(ObjPrior,varargin{1});
             
             if length(varargin{1}.ImageSize)==3 && varargin{1}.ImageSize(3)>1
                 ObjPrior.is3D = 1;
             end
-            if ObjPrior.is3D
-                ObjPrior.imCropFactor = 4;
-                ObjPrior.chunkSize = 5e6;
-            end
-            % get fields from user's input
-            ObjPrior = getFiledsFromUsersOpt(ObjPrior,varargin{1});
             InitializePriors(ObjPrior);
         end
     end
@@ -197,6 +196,9 @@ classdef PriorsClass < handle
                     newSize = [length((J:(ObjPrior.ImageSize(1)-J-1))+1),length((I:(ObjPrior.ImageSize(2)-I-1))+1),length((K:(ObjPrior.ImageSize(3)-K-1))+1)];
                 else
                     newSize = [length((J:(ObjPrior.ImageSize(1)-J-1))+1),length((I:(ObjPrior.ImageSize(2)-I-1))+1)];
+                    if length(ObjPrior.ImageSize)==3
+                        newSize = [ newSize ,1];
+                    end
                 end
                 if nargin==1
                     Img = [];
@@ -257,7 +259,7 @@ classdef PriorsClass < handle
         end
         
         function imgGradW = TV_weights(ObjPrior,imgGrad,beta)
-            Norm = repmat(sqrt(sum(imgGrad.^2,2)+ beta),[1,ObjPrior.nS]);
+            Norm = repmat(sqrt(sum(abs(imgGrad).^2,2)+ beta.^2),[1,ObjPrior.nS]);
             imgGradW = imgGrad./Norm/2;
         end
         
