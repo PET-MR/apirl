@@ -16,7 +16,7 @@ classdef PriorsClass < handle
     end
     
     methods
-        % Constructurs
+        
         function ObjPrior = PriorsClass(varargin)
             ObjPrior.ImageSize = [344,344,1];
             ObjPrior.CropedImageSize = [];

@@ -61,6 +61,7 @@ classdef classGpet < handle
         nAxialRays
         % Verbosity level: 0, 1, 2. (0 silent)
         verbosity
+        % Prioir for map reconstruction.
         Prior
     end
     
@@ -108,6 +109,7 @@ classdef classGpet < handle
             objGpet.verbosity = 0;
             objGpet.method_for_randoms = 'from_ML_singles_matlab';
             objGpet.method_for_normalization = 'cbn_expansion';
+
             if nargin == 1
                 % Read configuration from file or from struct:
                 if isstruct(varargin{1})
@@ -149,14 +151,17 @@ classdef classGpet < handle
             end
             objGpet.init_ref_image();
             
-            p.ImageSize = objGpet.image_size.matrixSize;
-            p.imCropFactor = [3.3,3.3,0];
-            p.sWindowSize = 5;
-            p.lWindowSize = 1;
-            if isstruct(varargin{1}) % have to generalize it
-                p = getFiledsFromUsersOpt(p,varargin{1});
+            if isfield(varargin{1}, 'Prior')
+                user_opts = varargin{1}.Prior;
+                p.ImageSize = objGpet.image_size.matrixSize;
+                p.imCropFactor = [3,3,0];
+                p.sWindowSize = 5;
+                p.lWindowSize = 1;
+                if isstruct(varargin{1}) % have to generalize it
+                    p = getFiledsFromUsersOpt(p,user_opts);
+                end
+                objGpet.Prior = PriorsClass(p);
             end
-            objGpet.Prior = PriorsClass(p);
         end
         
         function objGpet = readConfigFromFile(objGpet, strFilename)
@@ -251,7 +256,7 @@ classdef classGpet < handle
             % config previously. By default use the same size of mmr, additionally needs the scanner radius:
             
             if isempty(objGpet.sinogram_size)
-                objGpet.scanner_properties.radius_mm = 356;
+                objGpet.scanner_properties.radius_mm = 328;
                 objGpet.sinogram_size.nRadialBins = 344;
                 objGpet.sinogram_size.nAnglesBins = 252;
                 objGpet.sinogram_size.nRings = 64;
@@ -481,6 +486,17 @@ classdef classGpet < handle
         
     end
     methods (Access = public)
+        % Now vec division is public, it can be useful externally too:
+        % SAM ELLIS EDIT (18/07/2016): new method to allow easy division without
+        % using a small additive term to avoid div. by zero. 
+        function c = vecDivision(objGpet,a,b)
+            % element-by-element division of two vectors, a./b, BUT avoiding
+            % division by 0
+            c = a;
+            c(b~=0) = a(b~=0)./b(b~=0);
+            c(b==0) = 0;
+        end
+        
         % Project:
         m = P(objGpet, x,subset_i, localNumSubsets);
         % Backproject:
@@ -495,16 +511,6 @@ classdef classGpet < handle
         s=S(varargin);
         %
         osem_subsets(objGpet, nsub,nAngles);
-        
-        % SAM ELLIS EDIT (18/07/2016): new method to allow easy division without
-        % using a small additive term to avoid div. by zero.
-        function c = vecDivision(objGpet,a,b)
-            % element-by-element division of two vectors, a./b, BUT avoiding
-            % division by 0
-            c = a;
-            c(b~=0) = a(b~=0)./b(b~=0);
-            c(b==0) = 0;
-        end
         
         function gaps = gaps(objGpet)
             if strcmp(objGpet.scanner,'mMR')
@@ -635,7 +641,7 @@ classdef classGpet < handle
                 % structure, for example for sinogram_size:
                 if isstruct(opt.(vfields{i}))
                     field = vfields{i};
-                    if sum(strcmpi(prop, field )) > 0
+                    if sum(strcmpi(prop, field )) > 0 && ~strcmpi('Prior', field ) % prior is intialized in other part
                         subprop = fieldnames(objGpet.(field));
                         secondary_fields = fieldnames(opt.(field));
                         for j = 1 : length(secondary_fields)
@@ -824,6 +830,15 @@ classdef classGpet < handle
         end
         
         function Img = MAPEM(objGpet,Prompts,RS, SensImg,Img, nIter,arg)
+            % First check if the Prior class has already been intialized
+            whos_prior = whos('objGpet.Prior');
+            if ~strcmp(whos_prior.class, 'PriorsClass')
+                p.ImageSize = objGpet.image_size.matrixSize;
+                p.imCropFactor = [3,3,0];
+                p.sWindowSize = 5;
+                p.lWindowSize = 1;
+                objGpet.Prior = PriorsClass(p);
+            end
             % default parameters
             opt.OptimizationMethod = 'DePierro';%'OSL'
             opt.PriorType = 'Quadratic'; %'Bowsher' 'JointBurgEntropy'
@@ -834,8 +849,6 @@ classdef classGpet < handle
             opt.MrSigma = 0.1; % JBE
             opt.PetSigma  = 10; %JBE
             opt.display = 0;
-            
-            
             opt = getFiledsFromUsersOpt(opt,arg);
             
             if opt.display, figure; end
