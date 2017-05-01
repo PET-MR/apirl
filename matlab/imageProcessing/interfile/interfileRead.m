@@ -1,4 +1,4 @@
-function [X refImage] = interfileread (varargin)
+function [X, refImage] = interfileRead (varargin)
 %INTERFILEREAD Read images in Interfile 3.3 format.
 %   A = INTERFILEREAD(FILENAME) reads the images in the first energy window
 %   of FILENAME into A, where A is an M-by-N array for a single image and

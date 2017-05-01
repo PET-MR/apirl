@@ -345,8 +345,20 @@ else
     % Is an image:
     if isfield(info, 'MatrixSize3')&& isfield(info, 'ScalingFactorMmPixel3')
         % 3d image:
-        structSizeSino = imref3d([info.MatrixSize2 info.MatrixSize1 info.MatrixSize3], info.ScalingFactorMmPixel2, info.ScalingFactorMmPixel1, info.ScalingFactorMmPixel3);
+        structSizeSino = init_ref_structure([info.MatrixSize2 info.MatrixSize1 info.MatrixSize3], [info.ScalingFactorMmPixel2, info.ScalingFactorMmPixel1, info.ScalingFactorMmPixel3]);
     else
-        structSizeSino = imref2d([info.MatrixSize2 info.MatrixSize1], info.ScalingFactorMmPixel2, info.ScalingFactorMmPixel1);
+        structSizeSino = init_ref_structure([info.MatrixSize2 info.MatrixSize1], [info.ScalingFactorMmPixel2, info.ScalingFactorMmPixel1]);
+    end
+end
+end
+function refImage = init_ref_structure(matrixSize, voxelSize_mm)
+    origin_mm = -voxelSize_mm.*matrixSize/2;
+    XWorldLimits= [origin_mm(2) origin_mm(2)+voxelSize_mm(2)*matrixSize(2)];
+    YWorldLimits= [origin_mm(1) origin_mm(1)+voxelSize_mm(1)*matrixSize(1)];
+    if numel(matrixSize) == 3
+        ZWorldLimits= [origin_mm(3) origin_mm(3)+voxelSize_mm(3)*matrixSize(3)];
+        refImage = imref3d(matrixSize, XWorldLimits, YWorldLimits, ZWorldLimits);
+    else
+        refImage = imref2d(matrixSize, XWorldLimits, YWorldLimits);
     end
 end

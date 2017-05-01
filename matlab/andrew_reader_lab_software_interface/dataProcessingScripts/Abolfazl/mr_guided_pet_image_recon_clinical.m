@@ -1,5 +1,5 @@
 % load data
-load('\\bioeng202-pc\PET-M\AD_patients\P02\e7\data-Converted\data-LM-00\sino_rawdata_100\rawdata_matlab.mat', 'Prompts','RS','AN','T1');
+load('/data/Scans/PatientData/AD_patients/P02/e7/data-Converted/data-LM-00/sino_rawdata_100/rawdata_matlab.mat', 'Prompts','RS','AN','T1');
 
 % initialize PET object
 set_framework_environment();

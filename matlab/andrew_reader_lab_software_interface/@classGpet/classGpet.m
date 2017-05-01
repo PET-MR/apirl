@@ -150,7 +150,7 @@ classdef classGpet < handle
             objGpet.init_ref_image();
             
             p.ImageSize = objGpet.image_size.matrixSize;
-            p.imCropFactor = [3,3,0];
+            p.imCropFactor = [3.3,3.3,0];
             p.sWindowSize = 5;
             p.lWindowSize = 1;
             if isstruct(varargin{1}) % have to generalize it
@@ -900,6 +900,148 @@ classdef classGpet < handle
         gf3d = Gauss3DFilter (objGpet, data, fwhm);
         [Img,totalScaleFactor, info] = BQML(objGpet,Img,sinogramInterFileFilename,normalizationInterFileFilename);
         Img = SUV(objGpet,Img,sinogramInterFileFilename,normalizationInterFileFilename);
+    
+    
+        function image_ds = MAPEM_DS(objGpet,prompts, anf, additive, Img, nIter,arg, outputPath, saveInterval)
+            % First initilization of the parameters needed to downsample in
+            % system matrix:
+            x_lowres = objGpet.ref_native_image.XWorldLimits+objGpet.ref_native_image.PixelExtentInWorldX(1)/2 : objGpet.ref_native_image.PixelExtentInWorldX : objGpet.ref_native_image.XWorldLimits(2)-objGpet.ref_native_image.PixelExtentInWorldX/2;
+            y_lowres = objGpet.ref_native_image.YWorldLimits+objGpet.ref_native_image.PixelExtentInWorldY(1)/2 : objGpet.ref_native_image.PixelExtentInWorldY : objGpet.ref_native_image.YWorldLimits(2)-objGpet.ref_native_image.PixelExtentInWorldY/2;
+            z_lowres = objGpet.ref_native_image.ZWorldLimits+objGpet.bed_position_mm+objGpet.ref_native_image.PixelExtentInWorldZ(1)/2 : objGpet.ref_native_image.PixelExtentInWorldZ : objGpet.ref_native_image.ZWorldLimits(2)+objGpet.bed_position_mm-objGpet.ref_native_image.PixelExtentInWorldZ/2;
+            x_highres = objGpet.ref_image.XWorldLimits+objGpet.ref_image.PixelExtentInWorldX(1)/2 : objGpet.ref_image.PixelExtentInWorldX : objGpet.ref_image.XWorldLimits(2)-objGpet.ref_image.PixelExtentInWorldX/2;
+            y_highres = objGpet.ref_image.YWorldLimits+objGpet.ref_image.PixelExtentInWorldY(1)/2 : objGpet.ref_image.PixelExtentInWorldY : objGpet.ref_image.YWorldLimits(2)-objGpet.ref_image.PixelExtentInWorldY/2;
+            z_highres = objGpet.ref_image.ZWorldLimits+objGpet.ref_image.PixelExtentInWorldZ(1)/2 : objGpet.ref_image.PixelExtentInWorldZ : objGpet.ref_image.ZWorldLimits(2)-objGpet.ref_image.PixelExtentInWorldZ/2;
+            [X_lowres,Y_lowres,Z_lowres] = meshgrid(x_lowres, y_lowres, z_lowres);
+            [X_highres,Y_highres,Z_highres] = meshgrid(x_highres, y_highres, z_highres);
+            % Masks:
+            mask_highres = (X_highres.^2+Y_highres.^2)<(objGpet.image_size.matrixSize(1)*objGpet.image_size.voxelSize_mm(1)/2.5)^2;
+            mask = (X_lowres.^2+Y_lowres.^2)<(objGpet.ref_native_image.ImageSize(1)*objGpet.ref_native_image.PixelExtentInWorldX(1)/2.5)^2;
+            % PET ds:
+            paramPET.scanner = objGpet.scanner;
+            paramPET.method =  objGpet.method;
+            paramPET.PSF.type = objGpet.PSF.type;
+            paramPET.sinogram_size.span = objGpet.sinogram_size.span;
+            paramPET.nSubsets = objGpet.nSubsets;
+            paramPET.verbosity = 1;
+            PET_lowres = classGpet(paramPET);
+            
+            % default parameters
+            opt.OptimizationMethod = 'DePierro';%'OSL'
+            opt.PriorType = 'Quadratic'; %'Bowsher' 'JointBurgEntropy'
+            opt.RegualrizationParameter = 1;
+            opt.PreCompWeights = 1;
+            opt.BowsherB = 70;
+            opt.MrImage =[];
+            opt.MrSigma = 0.1; % JBE
+            opt.PetSigma  = 10; %JBE
+            opt.display = 0;
+            
+            opt = getFiledsFromUsersOpt(opt,arg);
+            
+            if opt.display, figure; end
+            
+            if strcmpi(opt.PriorType,'Quadratic')
+                W0 = 1;
+            elseif strcmpi(opt.PriorType,'Bowsher')
+                if opt.PreCompWeights == 1
+                    fprintf('calculating Bowsher weighting coeffcients\n')
+                    if isempty(opt.MrImage), error('MR image should be provided in opt.MrImage\n'); end
+                    W0 = objGpet.Prior.W_Bowsher(opt.MrImage,opt.BowsherB);
+                    W0 = W0./repmat(sum(W0,2),[1,objGpet.Prior.nS]);
+                else % better to precomputed Bowsher weighting coeffcients into opt.PreCompWeights
+                    W0 = opt.PreCompWeights;
+                end
+            elseif strcmpi(opt.PriorType,'JointBurgEntropy')
+                if opt.PreCompWeights == 1
+                    fprintf('calculating MR-based Gaussian weighting coeffcients\n');
+                    if isempty(opt.MrImage), error('MR image should be provided in opt.MrImage\n'); end
+                    W0 = objGpet.Prior.W_JointEntropy(opt.MrImage,opt.MrSigma);
+                else % better to precomputed MR weighting coeffcients into opt.PreCompWeights
+                    W0 = opt.PreCompWeights;
+                end
+            end
+            
+            % SENS IMAGE
+            sensImage = PET_lowres.Sensitivity(anf);
+            sensImg_highres = interp3(X_lowres, Y_lowres, Z_lowres, sensImage, X_highres, Y_highres, Z_highres, 'linear', 0);
+            fprintf('Prior: %s, Method: %s\n',opt.PriorType,opt.OptimizationMethod);
+            k = 1;
+            for i = 1:nIter
+                fprintf('Iteration: %d\n',i)
+                if strcmpi(opt.OptimizationMethod,'DePierro')
+                    xn = Img;
+                    % Projection:
+                    low_res_image = interp3(X_highres, Y_highres, Z_highres, xn, X_lowres, Y_lowres, Z_lowres, 'linear', 0); %imresize(opmlem{end}, PET_highres.image_size.matrixSize, 'bicubic');
+                    projected = anf.*PET_lowres.P(low_res_image) + additive;
+                    % Backproject:
+                    backprojected_image = PET_lowres.PT(anf.*objGpet.vecDivision(prompts, projected)).*mask;
+                    % transpose of interpolation (high sample)
+                    backprojected_image_highres = interp3(X_lowres, Y_lowres, Z_lowres, backprojected_image, X_highres, Y_highres, Z_highres, 'linear', 0).*mask_highres; %imresize(opmlem{end}, PET_highres.image_size.matrixSize, 'bicubic');
+                    % Update image
+                    x_em = xn.*objGpet.vecDivision(backprojected_image_highres, sensImg_highres);
+                    
+                    if strcmpi(opt.PriorType,'JointBurgEntropy')
+                        W0 = objGpet.Prior.W_JointEntropy(xn,opt.PetSigma).*W0;
+                        W0 = W0./repmat(sum(W0,2),[1,objGpet.Prior.nS]);
+                    end
+                    W = objGpet.Prior.Wd.*W0;
+                    wj = objGpet.Prior.UndoImCrop(reshape(sum(W,2),objGpet.Prior.CropedImageSize));
+                    B = sensImg_highres - opt.RegualrizationParameter / 2*objGpet.Prior.UndoImCrop(reshape(sum(W.*objGpet.Prior.GraphDivCrop(xn),2),objGpet.Prior.CropedImageSize));
+                    Img = 2*x_em.*sensImg_highres./(B + sqrt(B.^2+4*opt.RegualrizationParameter.*sensImg_highres.*x_em.*wj + 1e-5));
+                    Img = max(0,Img);
+                elseif strcmpi(opt.OptimizationMethod,'OSL')
+                    xn = Img;
+                    if strcmpi(opt.PriorType,'JointBurgEntropy')
+                        W0 = objGpet.Prior.W_JointEntropy(xn,opt.PetSigma).*W0;
+                        W0 = W0./repmat(sum(W0,2),[1,objGpet.Prior.nS]);
+                    end
+                    W = objGpet.Prior.Wd.*W0;
+                    dP = -2* sum(W.*objGpet.Prior.GraphGradCrop(xn),2);
+                    dP = opt.RegualrizationParameter*objGpet.Prior.UndoImCrop(reshape(dP,objGpet.Prior.CropedImageSize));
+                    Img = xn.*objGpet.vecDivision(objGpet.PT(objGpet.vecDivision(Prompts,objGpet.P(xn)+ RS)),SensImg + dP + 1e-5);
+                    Img = max(0,Img);
+                end
+                if opt.display
+                    if objGpet.image_size.matrixSize(3)==1
+                        imshow(Img,[]);
+                    else %if 3D recon, use opt.display =x, where x is a transvese slice
+                        imshow(Img(:,:,opt.display),[]);
+                    end
+                end
+                if rem(i-1,saveInterval) == 0 % -1 to save the first iteration
+                    image_ds{k} = Img;
+                    interfilewrite(single(image_ds{k}), [outputPath 'map_ds_iter_' num2str(i)], [objGpet.ref_image.PixelExtentInWorldX objGpet.ref_image.PixelExtentInWorldY objGpet.ref_image.PixelExtentInWorldZ]); % i use i instead of i+1 because i=1 is the inital estimate
+                    k = k + 1;
+                end
+            end
+        end
+        
+
+%             % Initial estimate:
+%             initialEstimate = ones(size(mask_highres));
+%             % The sensitivity image needs to include the interpolation
+%             % matrix:
+%             sensImage = objGpet.Sensitivity(anf);
+%             sensImg_highres = interp3(X_lowres, Y_lowres, Z_lowres, sensImage, X_highres, Y_highres, Z_highres, 'linear', 0); %imresize(sensImage, PET_highres.image_size.matrixSize, 'bicubic'); % High resolution image
+%             image = initialEstimate;
+%             k = 1;
+%             for i = 1:numIterations
+%                 % Projection:
+%                 low_res_image = interp3(X_highres, Y_highres, Z_highres, image, X_lowres, Y_lowres, Z_lowres, 'linear', 0); %imresize(opmlem{end}, PET_highres.image_size.matrixSize, 'bicubic');
+%                 projected = anf.*objGpet.P(low_res_image) + additive;
+%                 % Backproject:
+%                 backprojected_image = objGpet.PT(anf.*objGpet.vecDivision(prompts, projected)).*mask;
+%                 % transpose of interpolation (high sample)
+%                 backprojected_image_highres = interp3(X_lowres, Y_lowres, Z_lowres, backprojected_image, X_highres, Y_highres, Z_highres, 'linear', 0).*mask_highres; %imresize(opmlem{end}, PET_highres.image_size.matrixSize, 'bicubic');
+%                 % Update image
+%                 image = image.*objGpet.vecDivision(backprojected_image_highres, sensImg_highres);
+%                 image = max(0,image);
+%                 if rem(i-1,saveInterval) == 0 % -1 to save the first iteration
+%                     image_ds{k} = image;
+%                     interfilewrite(single(image_ds{k}), [outputPath 'mlem_ds_iter_' num2str(i)], [refNewImage.PixelExtentInWorldX refNewImage.PixelExtentInWorldY refNewImage.PixelExtentInWorldZ]); % i use i instead of i+1 because i=1 is the inital estimate
+%                     k = k + 1;
+%                 end
+%             end
     end
     
 end
