@@ -5,7 +5,7 @@
 %  *********************************************************************
 %  Generates a 2d sinogram from a 2d gate simulation of the mmr.
 
-function [sinogram, sinogram_without_scatter, TiempoSimulacion, emissionMap, emissionMapNoScatter] = getSinograms2dMmr(outputPath, structSimu, structSizeSino2D, pixelSize_mm, graficarOnline, removeRandoms, simulatedTransverseCrystalsPerBlock)
+function [sinogram, sinogram_without_scatter, TiempoSimulacion, emissionMap, emissionMapNoScatter] = getSinograms2dHrMmr(outputPath, structSimu, structSizeSino2D, pixelSize_mm, graficarOnline, removeRandoms)
 
 if nargin == 5
     removeRandoms = 0;
@@ -33,10 +33,9 @@ emissionMapScatter = zeros(imageSize_pixels);
 numberofAxialBlocks = 1;
 numberofTransverseBlocksPerRing = 56;
 numberOfBlocks = numberofTransverseBlocksPerRing*numberofAxialBlocks;
-numberOfTransverseCrystalsPerBlock = 9; % includes the gap
-if nargin < 7
-    simulatedTransverseCrystalsPerBlock = numberOfTransverseCrystalsPerBlock; % this is because you can simulate 9 vrystals or 8 crystal an the gaps, for the mmr crystal index we still need to use the 9 pixels, but not for the crystals in gate.
-end
+numberOfTransverseCrystalsPerBlock = 18; % 9*2 (the gaps are included as crystals in the sinogram)
+simulatedTransverseCrystalsPerBlock = 16; % simulated transverse crystal in gate 8*2
+
 coordY = -pixelSize_mm(1)*imageSize_pixels(1)/2+pixelSize_mm(1)/2:pixelSize_mm(1):pixelSize_mm(1)*imageSize_pixels(1)/2-pixelSize_mm(1)/2;
 numberOfAxialCrystalsPerBlock = 1;
 numberOfBlocksPerRing = 56;
@@ -45,7 +44,7 @@ numberOfCrystalRings = numberofAxialBlocks*numberOfAxialCrystalsPerBlock;
 numberOfTransverseCrystalsPerRing = numberOfTransverseCrystalsPerBlock*numberOfBlocksPerRing; % includes the gap
 numberOfCrystals = numberOfTransverseCrystalsPerRing*numberOfRings;
 % DetectorIds
-[mapaDet1Ids, mapaDet2Ids] = createMmrDetectorsIdInSinogram();
+[mapaDet1Ids, mapaDet2Ids] = createHrMmrDetectorsIdInSinogram();
 
 histCrystalsComb = zeros(numberOfCrystals, numberOfCrystals);
 histCrystalsCombScatter = zeros(numberOfCrystals, numberOfCrystals);
@@ -212,47 +211,37 @@ for i = 1 : structSimu.numSplits
                 globalCrystalId1 = globalCrystalId1 + 1;
                 globalCrystalId2 = globalCrystalId2 + 1;
                 % Convert from Gate to mmr:
-                if simulatedTransverseCrystalsPerBlock == numberOfTransverseCrystalsPerBlock
-                    globalCrystalId1 = globalCrystalId1+121;
-                else
-                    globalCrystalId1 = globalCrystalId1+126;
-                end
-                globalCrystalId1(globalCrystalId1>504) = globalCrystalId1(globalCrystalId1>504) - 504; 
-                if simulatedTransverseCrystalsPerBlock == numberOfTransverseCrystalsPerBlock
-                    globalCrystalId2 = globalCrystalId2+121;
-                else
-                    globalCrystalId2 = globalCrystalId2+126;
-                end
-                globalCrystalId2(globalCrystalId2>504) = globalCrystalId2(globalCrystalId2>504) - 504; 
+                globalCrystalId1 = globalCrystalId1+126*2;
+                globalCrystalId1(globalCrystalId1>numberOfCrystals) = globalCrystalId1(globalCrystalId1>numberOfCrystals) - numberOfCrystals; % number of crystal computing gaps
+                globalCrystalId2 = globalCrystalId2+126*2;
+                globalCrystalId2(globalCrystalId2>numberOfCrystals) = globalCrystalId2(globalCrystalId2>numberOfCrystals) - numberOfCrystals; 
                 
-                % To remove the gaps using the crystal index if they were not included in the simulation:
-                if simulatedTransverseCrystalsPerBlock == numberOfTransverseCrystalsPerBlock
-                    indicesGaps = find((rem(globalCrystalId1,9)~=0)&(rem(globalCrystalId2,9)~=0));
-                else
-                    indicesGaps = globalCrystalId1 >= 0; % all the events.
-                end
                 % first, get the emission map:
-                emissionMap = emissionMap + hist3([coincidenceMatrix((indicesGaps),colEmisionY1), coincidenceMatrix((indicesGaps),colEmisionX1)],...
+                emissionMap = emissionMap + hist3([coincidenceMatrix(:,colEmisionY1), coincidenceMatrix(:,colEmisionX1)],...
                     {coordY, coordX});
                 % Histogram with a combination of crystals:
                 histCrystalsComb = histCrystalsComb + hist3([globalCrystalId1 globalCrystalId2], {1:numberOfCrystals 1:numberOfCrystals});
                 % Gaps:
                 if simulatedTransverseCrystalsPerBlock == numberOfTransverseCrystalsPerBlock
-                    histCrystalsComb(9:9:end,:) = 0;
-                    histCrystalsComb(:,9:9:end) = 0;
+                    histCrystalsComb(17:18:end,:) = 0;
+                    histCrystalsComb(18:18:end,:) = 0;
+                    histCrystalsComb(:,17:18:end) = 0;
+                    histCrystalsComb(:,18:18:end) = 0;
                 end
                 % The same for scattered events:
-                indicesScatter = coincidenceMatrix(indicesGaps,colCompton1)>0 | coincidenceMatrix(indicesGaps,colCompton2)>0;
+                indicesScatter = coincidenceMatrix(:,colCompton1)>0 | coincidenceMatrix(:,colCompton2)>0;
                 if (sum(indicesScatter) > 0)
-                    histCrystalsCombScatter = histCrystalsCombScatter + hist3([globalCrystalId1(indicesGaps(indicesScatter)) globalCrystalId2(indicesGaps(indicesScatter))], {1:numberOfCrystals 1:numberOfCrystals});
+                    histCrystalsCombScatter = histCrystalsCombScatter + hist3([globalCrystalId1(indicesScatter) globalCrystalId2(indicesScatter)], {1:numberOfCrystals 1:numberOfCrystals});
                 end
                 % Gaps:
                 if simulatedTransverseCrystalsPerBlock == numberOfTransverseCrystalsPerBlock
-                    histCrystalsCombScatter(9:9:end,:) = 0;
-                    histCrystalsCombScatter(:,9:9:end) = 0;
+                    histCrystalsCombScatter(17:18:end,:) = 0;
+                    histCrystalsCombScatter(18:18:end,:) = 0;
+                    histCrystalsCombScatter(:,17:18:end) = 0;
+                    histCrystalsCombScatter(:,18:18:end) = 0;
                 end
                 % first, get the emission map:
-                emissionMapScatter = emissionMapScatter + hist3([coincidenceMatrix((indicesGaps(indicesScatter)),colEmisionY1), coincidenceMatrix((indicesGaps(indicesScatter)),colEmisionX1)],...
+                emissionMapScatter = emissionMapScatter + hist3([coincidenceMatrix((indicesScatter),colEmisionY1), coincidenceMatrix((indicesScatter),colEmisionX1)],...
                     {coordY, coordX});
                 %% FIN DEL LOOP
             end

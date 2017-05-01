@@ -205,6 +205,14 @@ for i = 1 : structSimu.numSplits
                     imshow(emissionMap(:,:,slice),[]);
                     title(sprintf('Slice %d of the Emission Map', slice));
                 end
+                %% REMOVE RANDOMS
+                % Remove randoms because they are not part of the system
+                % matrix:
+                % If e want to remove the scatter, do it now:
+                if removeRandoms
+                    indiceRandomsEvents = (coincidenceMatrix(:,colEventId1) ~= coincidenceMatrix(:,colEventId2));
+                    coincidenceMatrix(indiceRandomsEvents,:) = [];
+                end
                 %% SINOGRAM 3D
                 % Need to convert the indexes in the simulation into the
                 % crystal indexes used by mmr. In the simulation, the
@@ -251,17 +259,27 @@ for i = 1 : structSimu.numSplits
                 histCrystalsComb = histCrystalsComb + hist3([globalCrystalId1(indicesGaps) globalCrystalId2(indicesGaps)], {1:numberOfCrystals 1:numberOfCrystals});
                 % Gaps:
                 if simulatedTransverseCrystalsPerBlock == numberOfTransverseCrystalsPerBlock
-                    histCrystalsCombScatter(9:9:end,:) = 0;
-                    histCrystalsCombScatter(:,9:9:end) = 0;
+                    histCrystalsComb(9:9:end,:) = 0;
+                    histCrystalsComb(:,9:9:end) = 0;
                 end
                 
                 % The same for scattered events:
                 indicesScatter = coincidenceMatrix(indicesGaps,colCompton1)>0 | coincidenceMatrix(indicesGaps,colCompton2)>0;
                 histCrystalsCombScatter = histCrystalsCombScatter + hist3([globalCrystalId1(indicesGaps(indicesScatter)) globalCrystalId2(indicesGaps(indicesScatter))], {1:numberOfCrystals 1:numberOfCrystals});
-                % The same for randoms events:
-                indicesRandoms = coincidenceMatrix(indicesGaps,colEventId1) ~= coincidenceMatrix(indicesGaps,colEventId2);
-                histCrystalsCombRandoms = histCrystalsCombRandoms + hist3([globalCrystalId1(indicesGaps(indicesRandoms)) globalCrystalId2(indicesGaps(indicesRandoms))], {1:numberOfCrystals 1:numberOfCrystals});
-
+                % Gaps:
+                if simulatedTransverseCrystalsPerBlock == numberOfTransverseCrystalsPerBlock
+                    histCrystalsCombScatter(9:9:end,:) = 0;
+                    histCrystalsCombScatter(:,9:9:end) = 0;
+                end
+                
+%                 % The same for randoms events:
+%                 indicesRandoms = coincidenceMatrix(indicesGaps,colEventId1) ~= coincidenceMatrix(indicesGaps,colEventId2);
+%                 histCrystalsCombRandoms = histCrystalsCombRandoms + hist3([globalCrystalId1(indicesGaps(indicesRandoms)) globalCrystalId2(indicesGaps(indicesRandoms))], {1:numberOfCrystals 1:numberOfCrystals});
+%                 % Gaps:
+%                 if simulatedTransverseCrystalsPerBlock == numberOfTransverseCrystalsPerBlock
+%                     histCrystalsCombRandoms(9:9:end,:) = 0;
+%                     histCrystalsCombRandoms(:,9:9:end) = 0;
+%                 end
                 %% FIN DEL LOOP
             end
             fclose(FID);
