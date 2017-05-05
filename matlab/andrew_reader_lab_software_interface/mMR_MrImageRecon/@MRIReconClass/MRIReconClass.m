@@ -1,11 +1,5 @@
-classdef MRIReconClass <PriorsClass
+classdef MRIReconClass <handle
     
-    % PriorsClass is used as a parent for both classGpet and MRIReconClass
-    % classes, otherwise if it is used as a child class, i.e PriorsClass <
-    % MRIReconClass <classGpet, most of its properties should be defined
-    % for both PET and MRI due to diferent resolution and FOVs.
-    % the initialization of MRI and PET classes might not be stairghtfoward
-    % too
     properties (SetAccess = public)
         % Currently supports fully sampled data, thus it's assumed image matrix
         % size is the same as k-space size (nkSamples)
@@ -41,22 +35,13 @@ classdef MRIReconClass <PriorsClass
         Walsh_CSM_smoothingFactor
         CoilSupportMask
         twixData
-        
+        Prior
+        FovReductionFactor
     end
     
     methods
         function ObjMRI = MRIReconClass(varargin)
-            % {
-            % PriorsClass's initialization list
-            p.ImageSize = [404,224,224];
-            p.imCropFactor = [4,6,6];
-            p.sWindowSize = 3;
-            p.lWindowSize = 1;
-            p = getFiledsFromUsersOpt(p,varargin{1});
-            % call the constructor for the superclass
-            ObjMRI@PriorsClass(p);
-           %}
-            % call the constructor for the subclass
+            % call the constructor
             ObjMRI.isSimulation     = 0;
             ObjMRI.imageType       = 'T1';
             ObjMRI.is3D             = [];
@@ -87,8 +72,8 @@ classdef MRIReconClass <PriorsClass
             ObjMRI.Walsh_CSM_smoothingFactor    = 40;
             ObjMRI.CoilSupportMask              = [];
             ObjMRI.ImgSize          = [];
-            ObjMRI.VoxelSize        = []; 
-
+            ObjMRI.VoxelSize        = [];
+            ObjMRI.FovReductionFactor = [4,4,0]; % This is for realistic simulations, with an MR phantom that has the same FOV as PET.
             if isempty(varargin)
                 [FileName,PathName] = uigetfile('*.dat');
                 ObjMRI.mri_DataPath  = [PathName FileName];
@@ -106,10 +91,11 @@ classdef MRIReconClass <PriorsClass
                 
                 %simulate data
                 MRI_Simulation(ObjMRI,Ph);
+                
             else
-               
+                
                 read_raw(ObjMRI);
-                CentralizekSpace(ObjMRI); 
+                CentralizekSpace(ObjMRI);
                 if isempty(ObjMRI.CoilSensitivityMap)
                     fprintf('Coil sensitivty map estimation\n');
                     EstimateCoilSensitivityMap(ObjMRI);
@@ -120,20 +106,30 @@ classdef MRIReconClass <PriorsClass
                 fprintf('Retrospective K-space undersampling\n');
                 underSamplePhaseOrSliceEndoing(ObjMRI);
             end
-          if ~isempty(ObjMRI.mri_DicomPath)
-              ObjMRI.PositionInfo = getPatientPositionOrientation(ObjMRI.mri_DicomPath);
-          else
-              fprintf('MRI Dicom images should be specifid')
-          end
+            if ~isempty(ObjMRI.mri_DicomPath)
+                ObjMRI.PositionInfo = getPatientPositionOrientation(ObjMRI.mri_DicomPath);
+            else
+                fprintf('MRI Dicom images should be specifid\n')
+            end
             % update superclass properties
             p.ImageSize = ObjMRI.ImgSize;
-            ObjMRI.RevisePrior(p)
+            if ~ObjMRI.isSimulation
+                p.imCropFactor = [5,7,7]; % for Siemsne mMR
+            else
+                p.imCropFactor = [5,5,0];
+            end
+            p.sWindowSize = 5;
+            p.lWindowSize = 1;
+            if isfield(varargin{1},'imCropFactor'), p.imCropFactor = varargin{1}.imCropFactor; end
+            if isfield(varargin{1},'sWindowSize'), p.sWindowSize = varargin{1}.sWindowSize; end
+            if isfield(varargin{1},'lWindowSize'), p.lWindowSize = varargin{1}.lWindowSize; end
+            ObjMRI.Prior = PriorsClass(p);
             
         end
     end
     
     methods (Access = private)
-
+        
         function ObjMRI = CentralizekSpace(ObjMRI)
             % For Siemens, the central frequncies are not at the center, so the data should be shifted
             delta = (ObjMRI.nkSamples/2+1) - ObjMRI.kCentre ;
@@ -187,8 +183,7 @@ classdef MRIReconClass <PriorsClass
             ObjMRI.CentralizingMask             = true(ObjMRI.nkSamples);
             ObjMRI.UnderSamplingMask            = true(ObjMRI.nkSamples);
             ObjMRI.kSpace           = ObjMRI.kScale(ObjMRI.AddkSpaceNoise(ObjMRI.F(Ph,0))); %
-            ObjMRI.ReconImgSize     = ObjMRI.ImgSize;
-            
+%             ObjMRI.ReconImgSize     = ObjMRI.ImgSize;
         end
         
         function Ph = load_phantom(ObjMRI,varargin)
@@ -201,6 +196,9 @@ classdef MRIReconClass <PriorsClass
                 error('either provide image path or phantom')
             end
             
+            ObjMRI.ReconImgSize = size(Ph);
+            % call reduce FOV#
+            Ph = ObjMRI.reduceFov(Ph);
         end
     end
     
@@ -257,8 +255,8 @@ classdef MRIReconClass <PriorsClass
             ObjMRI.ImgSize = ObjMRI.nkSamples;
             
             ObjMRI.VoxelSize = [ObjMRI.ReadFoV./ObjMRI.ReconImgSize(1), ObjMRI.PhaseFoV./ObjMRI.ReconImgSize(2),...
-                 ObjMRI.dThickness./ObjMRI.ReconImgSize(3)];
-              
+                ObjMRI.dThickness./ObjMRI.ReconImgSize(3)];
+            
         end
         
         function x = isDat(~,inputFile)
@@ -286,9 +284,9 @@ classdef MRIReconClass <PriorsClass
                 underSamplePhaseOrSliceEndoing(ObjMRI);
             end
             if isfield(opt,'sWindowSize') || isfield(opt,'lWindowSize') ...
-                || isfield(opt,'imCropFactor') || isfield(opt,'ImageSize')
-                ObjMRI.RevisePrior(opt);
-            end      
+                    || isfield(opt,'imCropFactor') || isfield(opt,'ImageSize')
+                ObjMRI.Prior = PriorsClass(opt);
+            end
             
             
         end
@@ -522,7 +520,7 @@ classdef MRIReconClass <PriorsClass
         
         function n = AddkSpaceNoise(ObjMRI,m)
             
-            snr_hf = 0.7;
+            snr_hf = 0.1;
             m = reshape(m,prod(ObjMRI.nkSamples),ObjMRI.nCoils);
             n = randn(size(m))+1j*randn(size(m));
             n = n - repmat(mean(n,1),[size(m,1),1]);
@@ -532,14 +530,14 @@ classdef MRIReconClass <PriorsClass
             n = m + snr_hf *n ;
             n = reshape(n,[ObjMRI.nkSamples,ObjMRI.nCoils]);
         end
-
+        
         function x = Magnitude(~,x)
             x = sqrt(sum(abs(x(:)).^2));
         end
         
         function Y = softThreshold(ObjMRI,Norm,Z,rho,lambda,w)
-
-            Norm = repmat(Norm + 1e-5, [1,ObjMRI.nS] );
+            
+            Norm = repmat(Norm + 1e-5, [1,ObjMRI.Prior.nS] );
             Y =  max(0, Norm - w./(rho/lambda)).*(Z./Norm);
         end
         
@@ -625,9 +623,9 @@ function Y = Homodyne(objMRI, X, dim, fraction)
             delta = (ObjMRI.ImgSize - ObjMRI.ReconImgSize)/2;
             ImgOut = zeros(ObjMRI.ImgSize,'single');
             
-             ImgOut(delta(1)+1:ObjMRI.ImgSize(1)-delta(1),...
-                 delta(2)+1:ObjMRI.ImgSize(2)-delta(2),...
-                 delta(3)+1:ObjMRI.ImgSize(3)-delta(3)) = Img;
+            ImgOut(delta(1)+1:ObjMRI.ImgSize(1)-delta(1),...
+                delta(2)+1:ObjMRI.ImgSize(2)-delta(2),...
+                delta(3)+1:ObjMRI.ImgSize(3)-delta(3)) = Img;
         end
         
         function [Img, imageRef3d] = applyAffineTransfrom(ObjMRI,image)
@@ -651,7 +649,7 @@ function Y = Homodyne(objMRI, X, dim, fraction)
         end
         
         function [Img, refResampledImage] = applyInverseAffineTransfrom(ObjMRI,image, imageRef3d)
-
+            
             if max(ObjMRI.PositionInfo.dirZ) > 0    % Use max because it can have serveral component if the image is rotated coronally:
                 image(:,:,1:end) = image(:,:,end:-1:1);
             end
@@ -666,40 +664,59 @@ function Y = Homodyne(objMRI, X, dim, fraction)
         end
         
         function [Img,ImgRef3d] = mapMrNativeSpaceToReferenceSpace(ObjMRI,image)
-            
-            image = ObjMRI.CropOrient(image);
-            [Img, ImgRef3d] = ObjMRI.applyAffineTransfrom(image);
-            ObjMRI.PositionInfo.MrInRefSpace = ImgRef3d;
+            if ObjMRI.isSimulation
+                Img = image;
+                ImgRef3d = [];
+            else
+                image = ObjMRI.CropOrient(image);
+                [Img, ImgRef3d] = ObjMRI.applyAffineTransfrom(image);
+                ObjMRI.PositionInfo.MrInRefSpace = ImgRef3d;
+            end
         end
         
         function ImgOut = mapReferenceSpaceToMrNativeSpace(ObjMRI,Img,ImgRef3d)
-            if nargin==2
-                ImgRef3d = ObjMRI.PositionInfo.MrInRefSpace;
+            if ObjMRI.isSimulation
+                ImgOut = Img;
+            else
+                if nargin==2
+                    ImgRef3d = ObjMRI.PositionInfo.MrInRefSpace;
+                end
+                image = ObjMRI.applyInverseAffineTransfrom(Img,ImgRef3d);
+                ImgOut = ObjMRI.UndoCropOrient(image);
             end
-            image = ObjMRI.applyInverseAffineTransfrom(Img,ImgRef3d);
-            ImgOut = ObjMRI.UndoCropOrient(image);
         end
         
+        %         function get_PetRefCorrdinate
         function [Img,ImgRef3d,refResampledImage] = mapMrNativeSpaceToPETSpace(ObjMRI, image,petRef)
-            % map mr native space to the scanner's reference and
-            % down-sample to PET resolution
-            if nargin==2
-                petRef = ObjMRI.PositionInfo.PetRef;
+            if ObjMRI.isSimulation
+                Img = ObjMRI.UndoReduceFov(image);
+                ImgRef3d = [];
+                refResampledImage = [];
+            else
+                % map mr native space to the scanner's reference and
+                % down-sample to PET resolution
+                if nargin==2
+                    petRef = ObjMRI.PositionInfo.PetRef;
+                end
+                
+                [Img,ImgRef3d] = ObjMRI.mapMrNativeSpaceToReferenceSpace(image);
+                [Img, refResampledImage] = ImageResample(Img,ImgRef3d, petRef);
+                ObjMRI.PositionInfo.MrInPetSpace = refResampledImage;
             end
-            
-            [Img,ImgRef3d] = ObjMRI.mapMrNativeSpaceToReferenceSpace(image);
-            [Img, refResampledImage] = ImageResample(Img,ImgRef3d, petRef);
-            ObjMRI.PositionInfo.MrInPetSpace = refResampledImage;
         end
         
         function ImgOut = mapPetSpaceToMrNativeSpace(ObjMRI, image,refResampledImage,imageRef3d)
-            if nargin==2
-                imageRef3d = ObjMRI.PositionInfo.MrInRefSpace;
-                refResampledImage = ObjMRI.PositionInfo.MrInPetSpace;
+            if ObjMRI.isSimulation
+                ImgOut = ObjMRI.reduceFov(image);
+            else
+                if nargin==2
+                    imageRef3d = ObjMRI.PositionInfo.MrInRefSpace;
+                    refResampledImage = ObjMRI.PositionInfo.MrInPetSpace;
+                end
+                Img = ImageResample(image,refResampledImage,imageRef3d );
+                
+                ImgOut = mapReferenceSpaceToMrNativeSpace(ObjMRI,Img,imageRef3d);
             end
-            Img = ImageResample(image,refResampledImage,imageRef3d );
-            
-            ImgOut = mapReferenceSpaceToMrNativeSpace(ObjMRI,Img,imageRef3d);
         end
         
         function setPositionInfo(ObjMRI,path)
@@ -710,11 +727,86 @@ function Y = Homodyne(objMRI, X, dim, fraction)
             
             ObjMRI.PositionInfo.PetRef = refPET;
         end
+        
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        
+        function [Img,newSize] = reduceFov(ObjMRI,Img)
+            if all(ObjMRI.FovReductionFactor==0)
+                newSize = ObjMRI.ReconImgSize;
+                if nargin==1
+                    Img = [];
+                end
+            else
+                if length(ObjMRI.FovReductionFactor)== 1
+                    if ObjMRI.is3D
+                        ObjMRI.FovReductionFactor = ObjMRI.FovReductionFactor*[1 1 0];
+                    else
+                        ObjMRI.FovReductionFactor = ObjMRI.FovReductionFactor*[1 1];
+                    end
+                end
+                
+                J = 0;
+                if ObjMRI.FovReductionFactor(1)
+                    ObjMRI.FovReductionFactor(1) = max(2.5, ObjMRI.FovReductionFactor(1));
+                    J = floor(ObjMRI.ReconImgSize(1)/ObjMRI.FovReductionFactor(1));
+                end
+                
+                I = 0;
+                if ObjMRI.FovReductionFactor(2)
+                    ObjMRI.FovReductionFactor(2) = max(2.5, ObjMRI.FovReductionFactor(2));
+                    I = floor(ObjMRI.ReconImgSize(2)/ObjMRI.FovReductionFactor(2));
+                end
+                
+                if ObjMRI.is3D
+                    K = 0;
+                    if ObjMRI.FovReductionFactor(3)
+                        ObjMRI.FovReductionFactor(3) = max(2.5, ObjMRI.FovReductionFactor(3));
+                        K = floor(ObjMRI.ReconImgSize(3)/ObjMRI.FovReductionFactor(3));
+                    end
+                    newSize = [length((J:(ObjMRI.ReconImgSize(1)-J-1))+1),length((I:(ObjMRI.ReconImgSize(2)-I-1))+1),length((K:(ObjMRI.ReconImgSize(3)-K-1))+1)];
+                else
+                    newSize = [length((J:(ObjMRI.ReconImgSize(1)-J-1))+1),length((I:(ObjMRI.ReconImgSize(2)-I-1))+1)];
+                    if length(ObjMRI.ReconImgSize)==3
+                        newSize = [ newSize ,1];
+                    end
+                end
+                if nargin==1
+                    Img = [];
+                else
+                    if ObjMRI.is3D
+                        Img = Img((J:(ObjMRI.ReconImgSize(1)-J-1))+1,(I:(ObjMRI.ReconImgSize(2)-I-1))+1,(K:(ObjMRI.ReconImgSize(3)-K-1))+1);
+                    else
+                        Img = Img((J:(ObjMRI.ReconImgSize(1)-J-1))+1,(I:(ObjMRI.ReconImgSize(2)-I-1))+1);
+                    end
+                end
+            end
+        end
+        
+        function ImgNew = UndoReduceFov(ObjMRI,Img)
+            if all(ObjMRI.FovReductionFactor==0)
+                ImgNew = Img;
+                return
+            end
+            ImgNew = zeros(ObjMRI.ReconImgSize,'single');
+            
+            S = (ObjMRI.ReconImgSize - ObjMRI.ImgSize)/2;
+            J = S(1); I = S(2);
+            if ObjMRI.is3D
+                K = S(3);
+                ImgNew((J:(ObjMRI.ReconImgSize(1)-S(1)-1))+1,(I:(ObjMRI.ReconImgSize(2)-I-1))+1,(K:(ObjMRI.ReconImgSize(3)-K-1))+1) = Img;
+            else
+                ImgNew((J:(ObjMRI.ReconImgSize(1)-S(1)-1))+1,(I:(ObjMRI.ReconImgSize(2)-I-1))+1) = Img;
+            end
+        end
+        
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        
+        
     end
 end
 
 
 
- 
+
 
 

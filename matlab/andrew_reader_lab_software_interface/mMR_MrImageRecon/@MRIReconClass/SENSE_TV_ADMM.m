@@ -3,15 +3,16 @@ function [u,S] = SENSE_TV_ADMM(ObjMRI,arg)
 if nargin==1, arg.save = 0; end
 
 % default values
-opt.PenaltyParameter = 0.1; %\rho
-opt.RegualrizationParameter = 0.0005; % \lambda
+opt.MrADMMPenaltyParameter = 0.1; %\rho
+opt.MrRegularizationParameter = 0.0005; % \lambda
 opt.SigmaParameter = 0;% 0: TV, >0: NCX
 opt.ADMM_niter = 50;
 opt.SENSE_niter = 2;
 opt.save = 0;
 opt.display = 0;
+opt.message = [];
 
-opt = getFiledsFromUsersOpt(opt,arg);
+opt = getFiledsFromUsersOpt(opt,arg)
 
 % only for undersampled data
 if ~ObjMRI.isUnderSampled
@@ -49,7 +50,7 @@ else
     S =[];
 end
 
-[gamma_u,zu] = deal(zeros(prod(ObjMRI.CropedImageSize),ObjMRI.nS,'single'));
+[gamma_u,zu] = deal(zeros(prod(ObjMRI.Prior.CropedImageSize),ObjMRI.Prior.nS,'single'));
 
 FHy = ObjMRI.FH(ObjMRI.kSpaceUnderSampled);
 u = zeros(ObjMRI.nkSamples,'single');
@@ -60,34 +61,35 @@ if opt.display, figure ,end
 
 for i = 1:opt.ADMM_niter
     
-    RHS = FHy + ObjMRI.TransGraphGradUndoCrop(opt.PenaltyParameter*zu - gamma_u);
+    RHS = FHy + ObjMRI.Prior.TransGraphGradUndoCrop(opt.MrADMMPenaltyParameter*zu - gamma_u);
     u = ObjMRI.PCG(RHS, @(x) ObjMRI.FH(ObjMRI.F(x)) + ...
-        opt.PenaltyParameter*ObjMRI.TransGraphGradUndoCrop(ObjMRI.GraphGradCrop(x)), u, opt.SENSE_niter, 1);
+        opt.MrADMMPenaltyParameter*ObjMRI.Prior.TransGraphGradUndoCrop(ObjMRI.Prior.GraphGradCrop(x)), u, opt.SENSE_niter, 1);
     
    if opt.SigmaParameter
        Lu = ObjMRI.RSS(zu);
        w = exp(-opt.SigmaParameter*Lu./ObjMRI.Magnitude(Lu+eps));
-       w = repmat(w,[1,ObjMRI.nS]);
+       w = repmat(w,[1,ObjMRI.Prior.nS]);
    else
        w = 1;
    end
     
-    Du = ObjMRI.GraphGradCrop(u);
-    z_tilde_u = Du + gamma_u/opt.PenaltyParameter;
+    Du = ObjMRI.Prior.GraphGradCrop(u);
+    z_tilde_u = Du + gamma_u/opt.MrADMMPenaltyParameter;
     
-    zu = ObjMRI.softThreshold(ObjMRI.RSS(z_tilde_u), z_tilde_u, opt.PenaltyParameter,opt.RegualrizationParameter, w);
+    zu = ObjMRI.softThreshold(ObjMRI.RSS(z_tilde_u), z_tilde_u, opt.MrADMMPenaltyParameter,opt.MrRegularizationParameter, w);
     
-    gamma_u = gamma_u + opt.PenaltyParameter*(Du - zu);
+    gamma_u = gamma_u + opt.MrADMMPenaltyParameter*(Du - zu);
     
     
     if opt.display
-        fprintf('Iteration: %d\n',i);
+        %fprintf('Iteration: %d\n',i);
         
         if ObjMRI.is3D
            drawnow, imshow(abs(u(:,:,opt.display)),[]);
         else
-            drawnow, imshow(abs(u));
+            drawnow, imshow(abs(u),[]);
         end
+            title([opt.message ' Iteration: #' num2str(i)]),drawnow
     end
     % save --------------------
     if save

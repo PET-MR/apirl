@@ -89,5 +89,6 @@ if opt.display
     else
         drawnow, imshow(abs(u),[])
     end
+    title([opt.message ' Iteration: #' num2str(i)]),drawnow
 end
 end
