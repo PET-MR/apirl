@@ -29,7 +29,7 @@ classdef PriorsClass < handle
             ObjPrior.nL = [];
             ObjPrior.chunkSize = 1;
             ObjPrior.is3D = 0;
-            ObjPrior.imCropFactor = 4;
+            ObjPrior.imCropFactor = 3;
             ObjPrior.chunkSize = 5e6;
                 
             if isempty(varargin{1}.ImageSize)

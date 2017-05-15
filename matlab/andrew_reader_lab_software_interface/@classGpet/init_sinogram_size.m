@@ -44,7 +44,9 @@ function init_sinogram_size(objGpet, inSpan, numRings, maxRingDifference)
         objGpet.sinogram_size.maxRingDifference = maxRingDifference;
         % Number of planes mashed in each plane of the sinogram:
         objGpet.sinogram_size.numPlanesMashed = [];
-
+        objGpet.sinogram_size.minRingDiffs = [];
+        objGpet.sinogram_size.maxRingDiffs = [];
+        objGpet.sinogram_size.nPlanesPerSeg = [];
         % Number of planes in odd and even segments:
         numPlanesOdd = floor(objGpet.sinogram_size.span/2);
         numPlanesEven = ceil(objGpet.sinogram_size.span/2);

@@ -109,7 +109,7 @@ classdef classGpet < handle
             objGpet.verbosity = 0;
             objGpet.method_for_randoms = 'from_ML_singles_matlab';
             objGpet.method_for_normalization = 'cbn_expansion';
-
+            user_opts = []; % empty options if there weren't any field related with priors.
             if nargin == 1
                 % Read configuration from file or from struct:
                 if isstruct(varargin{1})
@@ -117,9 +117,11 @@ classdef classGpet < handle
                         disp('Configuration for''otf_siddon_cpu''');
                     end
                     Revise(objGpet,varargin{1});
-                    
-                    % Read configuration from file:
-                elseif ischar(varargin{1})
+                    % Options for the prior:
+                    if isfield(varargin{1}, 'Prior')
+                        user_opts = varargin{1}.Prior;
+                    end
+                elseif ischar(varargin{1}) % Read configuration from file:
                     objGpet.readConfigFromFile(varargin{1})
                 end
             else
@@ -151,8 +153,7 @@ classdef classGpet < handle
             end
             objGpet.init_ref_image();
             
-            if isfield(varargin{1}, 'Prior')
-                user_opts = varargin{1}.Prior;
+            if ~isempty(user_opts) % User opts should have been loaded a few lines before when we check the input parameters.
                 p.ImageSize = objGpet.image_size.matrixSize;
                 p.imCropFactor = [3,3,0];
                 p.sWindowSize = 5;
@@ -527,6 +528,7 @@ classdef classGpet < handle
                 gaps = ones(objGpet.sinogram_size.matrixSize);
             end
         end
+        
         function x = ones(objGpet)
             if objGpet.sinogram_size.span == -1
                 %x = ones([objGpet.image_size.matrixSize(1) objGpet.image_size.matrixSize(2)]);
@@ -774,16 +776,19 @@ classdef classGpet < handle
             % matrix:
             sensImage = objGpet.Sensitivity(anf);
             sensImg_highres = interp3(X_lowres, Y_lowres, Z_lowres, sensImage, X_highres, Y_highres, Z_highres, 'linear', 0); %imresize(sensImage, PET_highres.image_size.matrixSize, 'bicubic'); % High resolution image
+            %sensImg_highres = interp3_lin(X_lowres, Y_lowres, Z_lowres, sensImage, X_highres, Y_highres, Z_highres); % this is my function to have matched projector/backprojector
             image = initialEstimate;
             k = 1;
             for i = 1:numIterations
                 % Projection:
                 low_res_image = interp3(X_highres, Y_highres, Z_highres, image, X_lowres, Y_lowres, Z_lowres, 'linear', 0); %imresize(opmlem{end}, PET_highres.image_size.matrixSize, 'bicubic');
+                %low_res_image = interp3_lin(X_highres, Y_highres, Z_highres, image, X_lowres, Y_lowres, Z_lowres); % this is my function to have matched projector/backprojector
                 projected = anf.*objGpet.P(low_res_image) + additive;
                 % Backproject:
                 backprojected_image = objGpet.PT(anf.*objGpet.vecDivision(prompts, projected)).*mask;
                 % transpose of interpolation (high sample)
-                backprojected_image_highres = interp3(X_lowres, Y_lowres, Z_lowres, backprojected_image, X_highres, Y_highres, Z_highres, 'linear', 0).*mask_highres; %imresize(opmlem{end}, PET_highres.image_size.matrixSize, 'bicubic');
+                 backprojected_image_highres = interp3(X_lowres, Y_lowres, Z_lowres, backprojected_image, X_highres, Y_highres, Z_highres, 'linear', 0).*mask_highres; %imresize(opmlem{end}, PET_highres.image_size.matrixSize, 'bicubic');
+                %backprojected_image_highres = interp3_lin(X_lowres, Y_lowres, Z_lowres, backprojected_image, X_highres, Y_highres, Z_highres).*mask_highres;
                 % Update image
                 image = image.*objGpet.vecDivision(backprojected_image_highres, sensImg_highres);
                 image = max(0,image);
@@ -878,14 +883,6 @@ classdef classGpet < handle
         
         function Img = MAPEM(objGpet,Prompts,RS, SensImg,Img, nIter,arg)
             % First check if the Prior class has already been intialized
-            whos_prior = whos('objGpet.Prior');
-            if ~strcmp(whos_prior.class, 'PriorsClass')
-                p.ImageSize = objGpet.image_size.matrixSize;
-                p.imCropFactor = [3,3,0];
-                p.sWindowSize = 5;
-                p.lWindowSize = 1;
-                objGpet.Prior = PriorsClass(p);
-            end
             % default parameters
             opt.PetOptimizationMethod = 'DePierro';%'OSL'
             opt.PetPriorType = 'Quadratic'; %'Bowsher' 'JointBurgEntropy'
@@ -897,7 +894,20 @@ classdef classGpet < handle
             opt.MrSigma = 0.1; % JBE
             opt.PetSigma  = 10; %JBE
             opt.display = 0;
-            opt = getFiledsFromUsersOpt(opt,arg);
+            % check if the object already was initilized:
+            if isempty(objGpet.Prior)
+                opt.ImageSize = objGpet.image_size.matrixSize;
+                opt.imCropFactor = [4,4,0];
+                opt.sWindowSize = 5;
+                opt.lWindowSize = 1;
+                opt = getFiledsFromUsersOpt(opt,arg);
+                objGpet.Prior = PriorsClass(opt);
+            else
+                % whos_prior = whos('objGpet.Prior');
+                % if strcmp(whos_prior.class, 'PriorsClass')
+                % Only initilize the parameters for this reconstruction
+                opt = getFiledsFromUsersOpt(opt,arg);
+            end
             
             if opt.display, figure; end
             
@@ -1005,8 +1015,20 @@ classdef classGpet < handle
             opt.MrSigma = 0.1; % JBE
             opt.PetSigma  = 10; %JBE
             opt.display = 0;
-            
-            opt = getFiledsFromUsersOpt(opt,arg);
+            % check if the object already was initilized:
+            if isempty(objGpet.Prior)
+                opt.ImageSize = objGpet.image_size.matrixSize;
+                opt.imCropFactor = [4,4,0];
+                opt.sWindowSize = 5;
+                opt.lWindowSize = 1;
+                opt = getFiledsFromUsersOpt(opt,arg);
+                objGpet.Prior = PriorsClass(opt);
+            else
+                % whos_prior = whos('objGpet.Prior');
+                % if strcmp(whos_prior.class, 'PriorsClass')
+                % Only initilize the parameters for this reconstruction
+                opt = getFiledsFromUsersOpt(opt,arg);
+            end
             
             if opt.display, figure; end
             
@@ -1094,32 +1116,91 @@ classdef classGpet < handle
             end
         end
         
-
-%             % Initial estimate:
-%             initialEstimate = ones(size(mask_highres));
-%             % The sensitivity image needs to include the interpolation
-%             % matrix:
-%             sensImage = objGpet.Sensitivity(anf);
-%             sensImg_highres = interp3(X_lowres, Y_lowres, Z_lowres, sensImage, X_highres, Y_highres, Z_highres, 'linear', 0); %imresize(sensImage, PET_highres.image_size.matrixSize, 'bicubic'); % High resolution image
-%             image = initialEstimate;
-%             k = 1;
-%             for i = 1:numIterations
-%                 % Projection:
-%                 low_res_image = interp3(X_highres, Y_highres, Z_highres, image, X_lowres, Y_lowres, Z_lowres, 'linear', 0); %imresize(opmlem{end}, PET_highres.image_size.matrixSize, 'bicubic');
-%                 projected = anf.*objGpet.P(low_res_image) + additive;
-%                 % Backproject:
-%                 backprojected_image = objGpet.PT(anf.*objGpet.vecDivision(prompts, projected)).*mask;
-%                 % transpose of interpolation (high sample)
-%                 backprojected_image_highres = interp3(X_lowres, Y_lowres, Z_lowres, backprojected_image, X_highres, Y_highres, Z_highres, 'linear', 0).*mask_highres; %imresize(opmlem{end}, PET_highres.image_size.matrixSize, 'bicubic');
-%                 % Update image
-%                 image = image.*objGpet.vecDivision(backprojected_image_highres, sensImg_highres);
-%                 image = max(0,image);
-%                 if rem(i-1,saveInterval) == 0 % -1 to save the first iteration
-%                     image_ds{k} = image;
-%                     interfilewrite(single(image_ds{k}), [outputPath 'mlem_ds_iter_' num2str(i)], [refNewImage.PixelExtentInWorldX refNewImage.PixelExtentInWorldY refNewImage.PixelExtentInWorldZ]); % i use i instead of i+1 because i=1 is the inital estimate
-%                     k = k + 1;
-%                 end
-%             end
+        % Opmlem with downsample
+        function image_mac = OPMLEM_MAC(objGpet, prompts, anf, additive, numIterations, outputPath, saveInterval)
+            if ~isdir(outputPath)
+                mkdir(outputPath);
+            end
+            % The projector is only span 1:
+            paramPET.scanner = objGpet.scanner;
+            paramPET.method =  objGpet.method;
+            paramPET.PSF.type = objGpet.PSF.type;
+            paramPET.sinogram_size.span = 1;
+            paramPET.nSubsets = objGpet.nSubsets;
+            paramPET.verbosity = 1;
+            paramPET.image_size = objGpet.image_size;
+            PET_span1 = classGpet(paramPET);
+            
+            % Check anf size:
+            if (size(anf) == objGpet.sinogram_size.matrixSize)
+                % MAC-2: axial compression in the span of the input
+                % sinogram.
+                mac_method = 2;
+            elseif (size(anf) == PET_span1.sinogram_size.matrixSize)
+                % MAC-1
+                mac_method = 1;
+            else
+                error('The anf matrix needs to be span 1 or of the same span as the classGpet object.');
+            end
+            % Initial estimate:
+            initialEstimate = objGpet.ones();
+            % Compute the sensitivity:
+            if mac_method == 1
+                %[anf_spanN, structSizeSino3dSpanN] = objGpet.apply_axial_compression_from_span1(anf);
+                sensImage = PET_span1.Sensitivity(anf);
+            elseif mac_method == 2
+                % Expand to span 1:
+                [anf_span1, structSizeSino3dSpan1] = convertSinogramToSpan(anf, objGpet.get_sinogram_size_for_apirl(),  1);
+                sensImage = PET_span1.Sensitivity(anf_span1);
+            end
+            image = initialEstimate;
+            k = 1;
+            for i = 1:numIterations
+                % Project span 1 sinogram:
+                projected = PET_span1.P(image);
+                if mac_method == 1
+                    projected = projected .* anf;
+                    % comprss into span N:
+                    [projected_spanN, structSizeSino3dSpanN] = objGpet.apply_axial_compression_from_span1(projected);
+                elseif mac_method == 2
+                    % First compress:
+                    [projected_spanN, structSizeSino3dSpanN] = objGpet.apply_axial_compression_from_span1(projected);
+                    % Normalize compression:
+                    for s = 1 : size(projected_spanN,3)
+                        projected_spanN(:,:,s) = projected_spanN(:,:,s)./objGpet.sinogram_size.numPlanesMashed(s);
+                    end
+                    % Now multiply by anf:
+                    projected_spanN = projected_spanN .* anf;
+                end
+                % Add additive term:
+                projected_spanN = projected_spanN + additive;
+                
+                % Expand correction sinogram to span 1:
+                correctionSinogram = objGpet.vecDivision(prompts, projected_spanN);
+                if mac_method == 1
+                    % Firs go to span 1:
+                    [correctionSinogram, structSizeSino3dSpan1] = convertSinogramToSpan(correctionSinogram, objGpet.get_sinogram_size_for_apirl(),  1);
+                    % Then multiply by anf:
+                    correctionSinogram = correctionSinogram .* anf;
+                elseif mac_method == 2
+                    % First multiply by anf:
+                    correctionSinogram = correctionSinogram .* anf;
+                    % Expand to span 1:
+                    [correctionSinogram, structSizeSino3dSpan1] = convertSinogramToSpan(correctionSinogram, objGpet.get_sinogram_size_for_apirl(),  1);
+                end
+                % Backproject with span 1:
+                backprojected_image = PET_span1.PT(correctionSinogram);
+                % Update image
+                image = image.*objGpet.vecDivision(backprojected_image, sensImage);
+                image = max(0,image);
+                if rem(i-1,saveInterval) == 0 % -1 to save the first iteration
+                    image_mac{k} = image;
+                    interfilewrite(single(image_mac{k}), [outputPath 'mlem_ds_iter_' num2str(i)], [objGpet.ref_image.PixelExtentInWorldX objGpet.ref_image.PixelExtentInWorldY objGpet.ref_image.PixelExtentInWorldZ]); % i use i instead of i+1 because i=1 is the inital estimate
+                    k = k + 1;
+                end
+            end
+        end
+        
     end
     
 end
