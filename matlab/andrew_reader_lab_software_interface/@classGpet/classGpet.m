@@ -584,6 +584,53 @@ classdef classGpet < handle
             % And finally complete the MR image into PET FOV:
             [MrInPetFov, refImageMrFov] = ImageResample(imageMr, refImageMr, refImagePetFov);
         end
+
+		% function that maps an MR in reference space to PET Fov with a FOV
+        % trimming for storage reasons
+        function [MrInPetFov, refImagePetFov] = mapMrRefSpaceToPetFov(objGpet,imageMr,refImageMr,FovReductionFactor)
+            if nargin ==3
+                voxelSize_mm = objGpet.image_size.voxelSize_mm;
+                matrixSize = objGpet.image_size.matrixSize;
+            else % for the case of trimming the FOV of MrInPetFov images
+                FovReductionFactor = max(2.5, FovReductionFactor);
+                I = floor(objGpet.image_size.matrixSize(1)/FovReductionFactor);              
+                J = floor(objGpet.image_size.matrixSize(2)/FovReductionFactor);
+                matrixSize = [length((I:(objGpet.image_size.matrixSize(1)-I-1))+1),length((J:(objGpet.image_size.matrixSize(2)-J-1))+1),objGpet.image_size.matrixSize(3)];
+                voxelSize_mm = [objGpet.ref_native_image.PixelExtentInWorldX, objGpet.ref_native_image.PixelExtentInWorldY, objGpet.ref_native_image.PixelExtentInWorldZ];
+
+                origin_mm = [-voxelSize_mm(2)*matrixSize(2)/2 -voxelSize_mm(1)*matrixSize(1)/2 ...
+                    -voxelSize_mm(3)*matrixSize(3)/2];
+                XWorldLimits= [origin_mm(2) origin_mm(2)+voxelSize_mm(2)*matrixSize(2)];
+                YWorldLimits= [origin_mm(1) origin_mm(1)+voxelSize_mm(1)*matrixSize(1)];
+                ZWorldLimits= objGpet.ref_native_image.ZWorldLimits;
+                refImagePet = imref3d(matrixSize, XWorldLimits, YWorldLimits, ZWorldLimits);
+
+                voxelSize_mm = [refImagePet.PixelExtentInWorldX, refImagePet.PixelExtentInWorldY, refImagePet.PixelExtentInWorldZ];
+                matrixSize = refImagePet.ImageSize;
+            end
+            
+            % Update the ref_image to this pixel size:
+            newVoxelSize= [refImageMr.PixelExtentInWorldY refImageMr.PixelExtentInWorldX refImageMr.PixelExtentInWorldZ];
+            ratio = voxelSize_mm ./ newVoxelSize;
+            newVoxelSize_mm = newVoxelSize;
+            newMatrixSize = round(matrixSize .* ratio);
+            
+            if nargin==3
+                refImagePetFov = objGpet.init_ref_structure(newMatrixSize, newVoxelSize_mm);
+            else
+                
+                origin_mm = [-newVoxelSize_mm(2)*newMatrixSize(2)/2 -newVoxelSize_mm(1)*newMatrixSize(1)/2 ...
+                    -newVoxelSize_mm(3)*newMatrixSize(3)/2];
+                XWorldLimits= [origin_mm(2) origin_mm(2)+newVoxelSize_mm(2)*newMatrixSize(2)];
+                YWorldLimits= [origin_mm(1) origin_mm(1)+newVoxelSize_mm(1)*newMatrixSize(1)];
+                ZWorldLimits= refImagePet.ZWorldLimits;
+                refImagePetFov = imref3d(newMatrixSize, XWorldLimits, YWorldLimits, ZWorldLimits);
+            end
+            
+            
+            
+            [MrInPetFov, refImageMrFov] = ImageResample(imageMr, refImageMr, refImagePetFov);
+        end
         
         % Converts sinogram
         function [sino_compressed, structSizeSino3dSpanN] = apply_axial_compression_from_span1(objGpet, sinogram)
@@ -840,12 +887,13 @@ classdef classGpet < handle
                 objGpet.Prior = PriorsClass(p);
             end
             % default parameters
-            opt.OptimizationMethod = 'DePierro';%'OSL'
-            opt.PriorType = 'Quadratic'; %'Bowsher' 'JointBurgEntropy'
-            opt.RegualrizationParameter = 1;
-            opt.PreCompWeights = 1;
+            opt.PetOptimizationMethod = 'DePierro';%'OSL'
+            opt.PetPriorType = 'Quadratic'; %'Bowsher' 'JointBurgEntropy'
+            opt.PetRegularizationParameter = 1;
+            opt.PetPreCompWeights = 1;
+			opt.TVsmoothingParameter = 0.1;
             opt.BowsherB = 70;
-            opt.MrImage =[];
+            opt.PriorMrImage =[];
             opt.MrSigma = 0.1; % JBE
             opt.PetSigma  = 10; %JBE
             opt.display = 0;
@@ -853,51 +901,59 @@ classdef classGpet < handle
             
             if opt.display, figure; end
             
-            if strcmpi(opt.PriorType,'Quadratic')
-                W0 = 1;
-            elseif strcmpi(opt.PriorType,'Bowsher')
-                if opt.PreCompWeights == 1
-                    fprintf('calculating Bowsher weighting coeffcients\n')
-                    if isempty(opt.MrImage), error('MR image should be provided in opt.MrImage\n'); end
-                    W0 = objGpet.Prior.W_Bowsher(opt.MrImage,opt.BowsherB);
-                    W0 = W0./repmat(sum(W0,2),[1,objGpet.Prior.nS]);
-                else % better to precomputed Bowsher weighting coeffcients into opt.PreCompWeights
-                    W0 = opt.PreCompWeights;
+            if strcmpi(opt.PetPriorType,'Quadratic')
+                if opt.PetPreCompWeights == 1
+                    W0 = 1/objGpet.Prior.nS;
+                else
+                    W0 = opt.PetPreCompWeights./repmat(sum(opt.PetPreCompWeights,2),[1,objGpet.Prior.nS]); %for weighted quadratic
                 end
-            elseif strcmpi(opt.PriorType,'JointBurgEntropy')
-                if opt.PreCompWeights == 1
+            elseif strcmpi(opt.PetPriorType,'Bowsher')
+                if opt.PetPreCompWeights == 1
+                    fprintf('calculating Bowsher weighting coeffcients\n')
+                    if isempty(opt.PriorMrImage), error('MR image should be provided in opt.PriorMrImage\n'); end
+                    W0 = objGpet.Prior.W_Bowsher(opt.PriorMrImage,opt.BowsherB);
+                    W0 = W0./repmat(sum(W0,2),[1,objGpet.Prior.nS]);
+                else % better to precomputed Bowsher weighting coeffcients into opt.PetPreCompWeights
+                    W0 = opt.PetPreCompWeights;
+                end
+            elseif strcmpi(opt.PetPriorType,'JointBurgEntropy')
+                if opt.PetPreCompWeights == 1
                     fprintf('calculating MR-based Gaussian weighting coeffcients\n');
-                    if isempty(opt.MrImage), error('MR image should be provided in opt.MrImage\n'); end
-                    W0 = objGpet.Prior.W_JointEntropy(opt.MrImage,opt.MrSigma);
-                else % better to precomputed MR weighting coeffcients into opt.PreCompWeights
-                    W0 = opt.PreCompWeights;
+                    if isempty(opt.PriorMrImage), error('MR image should be provided in opt.PriorMrImage\n'); end
+                    W0 = objGpet.Prior.W_JointEntropy(opt.PriorMrImage,opt.MrSigma);
+                else % better to precomputed MR weighting coeffcients into opt.PetPreCompWeights
+                    W0 = opt.PetPreCompWeights;
                 end
             end
-            fprintf('Prior: %s, Method: %s\n',opt.PriorType,opt.OptimizationMethod);
+            fprintf('Prior: %s, Method: %s\n',opt.PetPriorType,opt.PetOptimizationMethod);
             for i = 1:nIter
                 fprintf('Iteration: %d\n',i)
-                if strcmpi(opt.OptimizationMethod,'DePierro')
+                if strcmpi(opt.PetOptimizationMethod,'DePierro')
                     xn = Img;
                     x_em = xn.*objGpet.vecDivision(objGpet.PT(objGpet.vecDivision(Prompts,objGpet.P(xn)+ RS)),SensImg);
                     
-                    if strcmpi(opt.PriorType,'JointBurgEntropy')
+                    if strcmpi(opt.PetPriorType,'JointBurgEntropy')
                         W0 = objGpet.Prior.W_JointEntropy(xn,opt.PetSigma).*W0;
                         W0 = W0./repmat(sum(W0,2),[1,objGpet.Prior.nS]);
                     end
                     W = objGpet.Prior.Wd.*W0;
                     wj = objGpet.Prior.UndoImCrop(reshape(sum(W,2),objGpet.Prior.CropedImageSize));
-                    B = SensImg - opt.RegualrizationParameter / 2*objGpet.Prior.UndoImCrop(reshape(sum(W.*objGpet.Prior.GraphDivCrop(xn),2),objGpet.Prior.CropedImageSize));
-                    Img = 2*x_em.*SensImg./(B + sqrt(B.^2+4*opt.RegualrizationParameter.*SensImg.*x_em.*wj + 1e-5));
+                    B = SensImg - opt.PetRegularizationParameter / 2*objGpet.Prior.UndoImCrop(reshape(sum(W.*objGpet.Prior.GraphDivCrop(xn),2),objGpet.Prior.CropedImageSize));
+                    Img = 2*x_em.*SensImg./(B + sqrt(B.^2+4*opt.PetRegularizationParameter.*SensImg.*x_em.*wj + 1e-5));
                     Img = max(0,Img);
-                elseif strcmpi(opt.OptimizationMethod,'OSL')
+                elseif strcmpi(opt.PetOptimizationMethod,'OSL')
                     xn = Img;
-                    if strcmpi(opt.PriorType,'JointBurgEntropy')
+                    if strcmpi(opt.PetPriorType,'JointBurgEntropy')
                         W0 = objGpet.Prior.W_JointEntropy(xn,opt.PetSigma).*W0;
                         W0 = W0./repmat(sum(W0,2),[1,objGpet.Prior.nS]);
+					elseif strcmpi(opt.PetPriorType,'sTV')
+                        imgGrad = objGpet.Prior.GraphGradCrop(xn);
+                        Norm = repmat(sqrt(sum(abs(imgGrad).^2,2)+ opt.TVsmoothingParameter),[1,objGpet.Prior.nS]);
+                        W0 = 1./(Norm+eps);
                     end
                     W = objGpet.Prior.Wd.*W0;
                     dP = -2* sum(W.*objGpet.Prior.GraphGradCrop(xn),2);
-                    dP = opt.RegualrizationParameter*objGpet.Prior.UndoImCrop(reshape(dP,objGpet.Prior.CropedImageSize));
+                    dP = opt.PetRegularizationParameter*objGpet.Prior.UndoImCrop(reshape(dP,objGpet.Prior.CropedImageSize));
                     Img = xn.*objGpet.vecDivision(objGpet.PT(objGpet.vecDivision(Prompts,objGpet.P(xn)+ RS)),SensImg + dP + 1e-5);
                     Img = max(0,Img);
                 end
@@ -939,12 +995,13 @@ classdef classGpet < handle
             PET_lowres = classGpet(paramPET);
             
             % default parameters
-            opt.OptimizationMethod = 'DePierro';%'OSL'
-            opt.PriorType = 'Quadratic'; %'Bowsher' 'JointBurgEntropy'
-            opt.RegualrizationParameter = 1;
-            opt.PreCompWeights = 1;
+            opt.PetOptimizationMethod = 'DePierro';%'OSL'
+            opt.PetPriorType = 'Quadratic'; %'Bowsher' 'JointBurgEntropy'
+            opt.PetRegularizationParameter = 1;
+            opt.PetPreCompWeights = 1;
             opt.BowsherB = 70;
-            opt.MrImage =[];
+            opt.PriorMrImage =[];
+			opt.TVsmoothingParameter = 0.1;
             opt.MrSigma = 0.1; % JBE
             opt.PetSigma  = 10; %JBE
             opt.display = 0;
@@ -953,35 +1010,39 @@ classdef classGpet < handle
             
             if opt.display, figure; end
             
-            if strcmpi(opt.PriorType,'Quadratic')
-                W0 = 1;
-            elseif strcmpi(opt.PriorType,'Bowsher')
-                if opt.PreCompWeights == 1
-                    fprintf('calculating Bowsher weighting coeffcients\n')
-                    if isempty(opt.MrImage), error('MR image should be provided in opt.MrImage\n'); end
-                    W0 = objGpet.Prior.W_Bowsher(opt.MrImage,opt.BowsherB);
-                    W0 = W0./repmat(sum(W0,2),[1,objGpet.Prior.nS]);
-                else % better to precomputed Bowsher weighting coeffcients into opt.PreCompWeights
-                    W0 = opt.PreCompWeights;
+            if strcmpi(opt.PetPriorType,'Quadratic')
+                if opt.PetPreCompWeights == 1
+                    W0 = 1/objGpet.Prior.nS;
+                else
+                    W0 = opt.PetPreCompWeights./repmat(sum(opt.PetPreCompWeights,2),[1,objGpet.Prior.nS]); %for weighted quadratic
                 end
-            elseif strcmpi(opt.PriorType,'JointBurgEntropy')
-                if opt.PreCompWeights == 1
+            elseif strcmpi(opt.PetPriorType,'Bowsher')
+                if opt.PetPreCompWeights == 1
+                    fprintf('calculating Bowsher weighting coeffcients\n')
+                    if isempty(opt.PriorMrImage), error('MR image should be provided in opt.PriorMrImage\n'); end
+                    W0 = objGpet.Prior.W_Bowsher(opt.PriorMrImage,opt.BowsherB);
+                    W0 = W0./repmat(sum(W0,2),[1,objGpet.Prior.nS]);
+                else % better to precomputed Bowsher weighting coeffcients into opt.PetPreCompWeights
+                    W0 = opt.PetPreCompWeights;
+                end
+            elseif strcmpi(opt.PetPriorType,'JointBurgEntropy')
+                if opt.PetPreCompWeights == 1
                     fprintf('calculating MR-based Gaussian weighting coeffcients\n');
-                    if isempty(opt.MrImage), error('MR image should be provided in opt.MrImage\n'); end
-                    W0 = objGpet.Prior.W_JointEntropy(opt.MrImage,opt.MrSigma);
-                else % better to precomputed MR weighting coeffcients into opt.PreCompWeights
-                    W0 = opt.PreCompWeights;
+                    if isempty(opt.PriorMrImage), error('MR image should be provided in opt.PriorMrImage\n'); end
+                    W0 = objGpet.Prior.W_JointEntropy(opt.PriorMrImage,opt.MrSigma);
+                else % better to precomputed MR weighting coeffcients into opt.PetPreCompWeights
+                    W0 = opt.PetPreCompWeights;
                 end
             end
             
             % SENS IMAGE
             sensImage = PET_lowres.Sensitivity(anf);
             sensImg_highres = interp3(X_lowres, Y_lowres, Z_lowres, sensImage, X_highres, Y_highres, Z_highres, 'linear', 0);
-            fprintf('Prior: %s, Method: %s\n',opt.PriorType,opt.OptimizationMethod);
+            fprintf('Prior: %s, Method: %s\n',opt.PetPriorType,opt.PetOptimizationMethod);
             k = 1;
             for i = 1:nIter
                 fprintf('Iteration: %d\n',i)
-                if strcmpi(opt.OptimizationMethod,'DePierro')
+                if strcmpi(opt.PetOptimizationMethod,'DePierro')
                     xn = Img;
                     % Projection:
                     low_res_image = interp3(X_highres, Y_highres, Z_highres, xn, X_lowres, Y_lowres, Z_lowres, 'linear', 0); %imresize(opmlem{end}, PET_highres.image_size.matrixSize, 'bicubic');
@@ -993,24 +1054,28 @@ classdef classGpet < handle
                     % Update image
                     x_em = xn.*objGpet.vecDivision(backprojected_image_highres, sensImg_highres);
                     
-                    if strcmpi(opt.PriorType,'JointBurgEntropy')
+                    if strcmpi(opt.PetPriorType,'JointBurgEntropy')
                         W0 = objGpet.Prior.W_JointEntropy(xn,opt.PetSigma).*W0;
                         W0 = W0./repmat(sum(W0,2),[1,objGpet.Prior.nS]);
                     end
                     W = objGpet.Prior.Wd.*W0;
                     wj = objGpet.Prior.UndoImCrop(reshape(sum(W,2),objGpet.Prior.CropedImageSize));
-                    B = sensImg_highres - opt.RegualrizationParameter / 2*objGpet.Prior.UndoImCrop(reshape(sum(W.*objGpet.Prior.GraphDivCrop(xn),2),objGpet.Prior.CropedImageSize));
-                    Img = 2*x_em.*sensImg_highres./(B + sqrt(B.^2+4*opt.RegualrizationParameter.*sensImg_highres.*x_em.*wj + 1e-5));
+                    B = sensImg_highres - opt.PetRegularizationParameter / 2*objGpet.Prior.UndoImCrop(reshape(sum(W.*objGpet.Prior.GraphDivCrop(xn),2),objGpet.Prior.CropedImageSize));
+                    Img = 2*x_em.*sensImg_highres./(B + sqrt(B.^2+4*opt.PetRegularizationParameter.*sensImg_highres.*x_em.*wj + 1e-5));
                     Img = max(0,Img);
-                elseif strcmpi(opt.OptimizationMethod,'OSL')
+                elseif strcmpi(opt.PetOptimizationMethod,'OSL')
                     xn = Img;
-                    if strcmpi(opt.PriorType,'JointBurgEntropy')
+                    if strcmpi(opt.PetPriorType,'JointBurgEntropy')
                         W0 = objGpet.Prior.W_JointEntropy(xn,opt.PetSigma).*W0;
                         W0 = W0./repmat(sum(W0,2),[1,objGpet.Prior.nS]);
+						elseif strcmpi(opt.PetPriorType,'sTV')
+                        imgGrad = objGpet.Prior.GraphGradCrop(xn);
+                        Norm = repmat(sqrt(sum(abs(imgGrad).^2,2)+ opt.TVsmoothingParameter),[1,objGpet.Prior.nS]);
+                        W0 = 1./(Norm+eps);
                     end
                     W = objGpet.Prior.Wd.*W0;
                     dP = -2* sum(W.*objGpet.Prior.GraphGradCrop(xn),2);
-                    dP = opt.RegualrizationParameter*objGpet.Prior.UndoImCrop(reshape(dP,objGpet.Prior.CropedImageSize));
+                    dP = opt.PetRegularizationParameter*objGpet.Prior.UndoImCrop(reshape(dP,objGpet.Prior.CropedImageSize));
                     Img = xn.*objGpet.vecDivision(objGpet.PT(objGpet.vecDivision(Prompts,objGpet.P(xn)+ RS)),SensImg + dP + 1e-5);
                     Img = max(0,Img);
                 end
