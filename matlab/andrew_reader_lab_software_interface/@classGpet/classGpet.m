@@ -754,27 +754,34 @@ classdef classGpet < handle
         end
         
         % Opmlem with downsample
-        function image_ds = OPMLEM_DS(objGpet, prompts, anf, additive, refNewImage, numIterations, outputPath, saveInterval)
+        function [image, image_ds] = OPMLEM_DS(objGpet, prompts, anf, additive, initialEstimate, numIterations, outputPath, saveInterval)
             if ~isdir(outputPath)
                 mkdir(outputPath);
             end
             % Create grids for downsample and high sample:
-            x_lowres = objGpet.ref_image.XWorldLimits+objGpet.ref_image.PixelExtentInWorldX(1)/2 : objGpet.ref_image.PixelExtentInWorldX : objGpet.ref_image.XWorldLimits(2)-objGpet.ref_image.PixelExtentInWorldX/2;
-            y_lowres = objGpet.ref_image.YWorldLimits+objGpet.ref_image.PixelExtentInWorldY(1)/2 : objGpet.ref_image.PixelExtentInWorldY : objGpet.ref_image.YWorldLimits(2)-objGpet.ref_image.PixelExtentInWorldY/2;
-            z_lowres = objGpet.ref_image.ZWorldLimits+objGpet.bed_position_mm+objGpet.ref_image.PixelExtentInWorldZ(1)/2 : objGpet.ref_image.PixelExtentInWorldZ : objGpet.ref_image.ZWorldLimits(2)+objGpet.bed_position_mm-objGpet.ref_image.PixelExtentInWorldZ/2;
-            x_highres = refNewImage.XWorldLimits+refNewImage.PixelExtentInWorldX(1)/2 : refNewImage.PixelExtentInWorldX : refNewImage.XWorldLimits(2)-refNewImage.PixelExtentInWorldX/2;
-            y_highres = refNewImage.YWorldLimits+refNewImage.PixelExtentInWorldY(1)/2 : refNewImage.PixelExtentInWorldY : refNewImage.YWorldLimits(2)-refNewImage.PixelExtentInWorldY/2;
-            z_highres = refNewImage.ZWorldLimits+refNewImage.PixelExtentInWorldZ(1)/2 : refNewImage.PixelExtentInWorldZ : refNewImage.ZWorldLimits(2)-refNewImage.PixelExtentInWorldZ/2;
+            x_lowres = objGpet.ref_native_image.XWorldLimits+objGpet.ref_native_image.PixelExtentInWorldX(1)/2 : objGpet.ref_native_image.PixelExtentInWorldX : objGpet.ref_native_image.XWorldLimits(2)-objGpet.ref_native_image.PixelExtentInWorldX/2;
+            y_lowres = objGpet.ref_native_image.YWorldLimits+objGpet.ref_native_image.PixelExtentInWorldY(1)/2 : objGpet.ref_native_image.PixelExtentInWorldY : objGpet.ref_native_image.YWorldLimits(2)-objGpet.ref_native_image.PixelExtentInWorldY/2;
+            z_lowres = objGpet.ref_native_image.ZWorldLimits+objGpet.bed_position_mm+objGpet.ref_native_image.PixelExtentInWorldZ(1)/2 : objGpet.ref_native_image.PixelExtentInWorldZ : objGpet.ref_native_image.ZWorldLimits(2)+objGpet.bed_position_mm-objGpet.ref_native_image.PixelExtentInWorldZ/2;
+            x_highres = objGpet.ref_image.XWorldLimits+objGpet.ref_image.PixelExtentInWorldX(1)/2 : objGpet.ref_image.PixelExtentInWorldX : objGpet.ref_image.XWorldLimits(2)-objGpet.ref_image.PixelExtentInWorldX/2;
+            y_highres = objGpet.ref_image.YWorldLimits+objGpet.ref_image.PixelExtentInWorldY(1)/2 : objGpet.ref_image.PixelExtentInWorldY : objGpet.ref_image.YWorldLimits(2)-objGpet.ref_image.PixelExtentInWorldY/2;
+            z_highres = objGpet.ref_image.ZWorldLimits+objGpet.ref_image.PixelExtentInWorldZ(1)/2 : objGpet.ref_image.PixelExtentInWorldZ : objGpet.ref_image.ZWorldLimits(2)-objGpet.ref_image.PixelExtentInWorldZ/2;
             [X_lowres,Y_lowres,Z_lowres] = meshgrid(x_lowres, y_lowres, z_lowres);
             [X_highres,Y_highres,Z_highres] = meshgrid(x_highres, y_highres, z_highres);
             % Masks:
             mask_highres = (X_highres.^2+Y_highres.^2)<(objGpet.image_size.matrixSize(1)*objGpet.image_size.voxelSize_mm(1)/2.5)^2;
             mask = (X_lowres.^2+Y_lowres.^2)<(objGpet.ref_native_image.ImageSize(1)*objGpet.ref_native_image.PixelExtentInWorldX(1)/2.5)^2;
-            % Initial estimate:
-            initialEstimate = ones(size(mask_highres));
+            % PET ds:
+            paramPET.scanner = objGpet.scanner;
+            paramPET.method =  objGpet.method;
+            paramPET.PSF.type = objGpet.PSF.type;
+            paramPET.sinogram_size.span = objGpet.sinogram_size.span;
+            paramPET.nSubsets = objGpet.nSubsets;
+            paramPET.verbosity = 1;
+            PET_lowres = classGpet(paramPET);
+            
             % The sensitivity image needs to include the interpolation
             % matrix:
-            sensImage = objGpet.Sensitivity(anf);
+            sensImage = PET_lowres.Sensitivity(anf);
             sensImg_highres = interp3(X_lowres, Y_lowres, Z_lowres, sensImage, X_highres, Y_highres, Z_highres, 'linear', 0); %imresize(sensImage, PET_highres.image_size.matrixSize, 'bicubic'); % High resolution image
             %sensImg_highres = interp3_lin(X_lowres, Y_lowres, Z_lowres, sensImage, X_highres, Y_highres, Z_highres); % this is my function to have matched projector/backprojector
             image = initialEstimate;
@@ -783,14 +790,14 @@ classdef classGpet < handle
                 % Projection:
                 low_res_image = interp3(X_highres, Y_highres, Z_highres, image, X_lowres, Y_lowres, Z_lowres, 'linear', 0); %imresize(opmlem{end}, PET_highres.image_size.matrixSize, 'bicubic');
                 %low_res_image = interp3_lin(X_highres, Y_highres, Z_highres, image, X_lowres, Y_lowres, Z_lowres); % this is my function to have matched projector/backprojector
-                projected = anf.*objGpet.P(low_res_image) + additive;
+                projected = anf.*PET_lowres.P(low_res_image) + additive;
                 % Backproject:
-                backprojected_image = objGpet.PT(anf.*objGpet.vecDivision(prompts, projected)).*mask;
+                backprojected_image = PET_lowres.PT(anf.*PET_lowres.vecDivision(prompts, projected)).*mask;
                 % transpose of interpolation (high sample)
                  backprojected_image_highres = interp3(X_lowres, Y_lowres, Z_lowres, backprojected_image, X_highres, Y_highres, Z_highres, 'linear', 0).*mask_highres; %imresize(opmlem{end}, PET_highres.image_size.matrixSize, 'bicubic');
                 %backprojected_image_highres = interp3_lin(X_lowres, Y_lowres, Z_lowres, backprojected_image, X_highres, Y_highres, Z_highres).*mask_highres;
                 % Update image
-                image = image.*objGpet.vecDivision(backprojected_image_highres, sensImg_highres);
+                image = image.*PET_lowres.vecDivision(backprojected_image_highres, sensImg_highres);
                 image = max(0,image);
                 if rem(i-1,saveInterval) == 0 % -1 to save the first iteration
                     image_ds{k} = image;
@@ -1117,7 +1124,7 @@ classdef classGpet < handle
         end
         
         % Opmlem with downsample
-        function image_mac = OPMLEM_MAC(objGpet, prompts, anf, additive, numIterations, outputPath, saveInterval)
+        function image_mac = OPMLEM_MAC(objGpet, prompts, anf, additive, initialEstimate, numIterations, outputPath, saveInterval)
             if ~isdir(outputPath)
                 mkdir(outputPath);
             end
@@ -1142,8 +1149,6 @@ classdef classGpet < handle
             else
                 error('The anf matrix needs to be span 1 or of the same span as the classGpet object.');
             end
-            % Initial estimate:
-            initialEstimate = objGpet.ones();
             % Compute the sensitivity:
             if mac_method == 1
                 %[anf_spanN, structSizeSino3dSpanN] = objGpet.apply_axial_compression_from_span1(anf);

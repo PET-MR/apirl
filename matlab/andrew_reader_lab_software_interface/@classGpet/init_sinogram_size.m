@@ -109,6 +109,8 @@ function init_sinogram_size(objGpet, inSpan, numRings, maxRingDifference)
                 % minRingDiff y maxRingDiff. Se podría hacer sin recorrer todo el
                 % sinograma pero se complica un poco.
                 z1_aux = z1;    % z1_aux la uso para recorrer.
+                meanZ1 = 0; % mean z1 values in rings, averages all the rings combinations for this plane.
+                meanZ2 = 0; % mean z2 values in rings, averages all the rings combinations for this plane.
                 for z2 = 1 : numRings
                     % Ahora voy avanzando en los sinogramas correspondientes,
                     % disminuyendo z1 y aumentnado z2 hasta que la diferencia entre
@@ -117,14 +119,20 @@ function init_sinogram_size(objGpet, inSpan, numRings, maxRingDifference)
                         % Me asguro que esté dentro del tamaño del michelograma:
                         if(z1_aux>0)&&(z2>0)&&(z1_aux<=numRings)&&(z2<=numRings)
                             numSinosZ1inSegment = numSinosZ1inSegment + 1;
+                            meanZ1 = meanZ1 + z1_aux;
+                            meanZ2 = meanZ2 + z2;
                         end
                     end
                     % Pase esta combinación de (z1,z2), paso a la próxima:
                     z1_aux = z1_aux - 1;
                 end
                 if(numSinosZ1inSegment>0)
+                    meanZ1 = meanZ1./numSinosZ1inSegment;
+                    meanZ2 = meanZ2./numSinosZ1inSegment;
                     objGpet.sinogram_size.numPlanesMashed = [objGpet.sinogram_size.numPlanesMashed numSinosZ1inSegment];
                     numSinosThisSegment = numSinosThisSegment + 1;
+                    objGpet.sinogram_size.segments(numSinosThisSegment).z1(numSinosThisSegment) = meanZ1;
+                    objGpet.sinogram_size.segments(numSinosThisSegment).z2(numSinosThisSegment) = meanZ2;
                 end
             end
             % Guardo la cantidad de segmentos:
