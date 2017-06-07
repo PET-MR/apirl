@@ -755,8 +755,10 @@ classdef classGpet < handle
         
         % Opmlem with downsample
         function [image, image_ds] = OPMLEM_DS(objGpet, prompts, anf, additive, initialEstimate, numIterations, outputPath, saveInterval)
+            if nargin >=7
             if ~isdir(outputPath)
                 mkdir(outputPath);
+            end
             end
             % Create grids for downsample and high sample:
             x_lowres = objGpet.ref_native_image.XWorldLimits+objGpet.ref_native_image.PixelExtentInWorldX(1)/2 : objGpet.ref_native_image.PixelExtentInWorldX : objGpet.ref_native_image.XWorldLimits(2)-objGpet.ref_native_image.PixelExtentInWorldX/2;
@@ -776,7 +778,7 @@ classdef classGpet < handle
             paramPET.PSF.type = objGpet.PSF.type;
             paramPET.sinogram_size.span = objGpet.sinogram_size.span;
             paramPET.nSubsets = objGpet.nSubsets;
-            paramPET.verbosity = 1;
+            paramPET.verbosity = 0;
             PET_lowres = classGpet(paramPET);
             
             % The sensitivity image needs to include the interpolation
@@ -799,12 +801,16 @@ classdef classGpet < handle
                 % Update image
                 image = image.*PET_lowres.vecDivision(backprojected_image_highres, sensImg_highres);
                 image = max(0,image);
+                if nargin>=7
                 if rem(i-1,saveInterval) == 0 % -1 to save the first iteration
                     image_ds{k} = image;
                     interfilewrite(single(image_ds{k}), [outputPath 'mlem_ds_iter_' num2str(i)], [refNewImage.PixelExtentInWorldX refNewImage.PixelExtentInWorldY refNewImage.PixelExtentInWorldZ]); % i use i instead of i+1 because i=1 is the inital estimate
                     k = k + 1;
                 end
+                else
+                    image_ds = image;
             end
+        end
         end
         
         function image_iters = OPOSEMsaveIter(objGpet,Prompts, AN, RS, SensImg, initialEstimate, nIter, outputPath, saveInterval)
@@ -942,9 +948,9 @@ classdef classGpet < handle
                     W0 = opt.PetPreCompWeights;
                 end
             end
-            fprintf('Prior: %s, Method: %s\n',opt.PetPriorType,opt.PetOptimizationMethod);
+           if opt.display, fprintf('Prior: %s, Method: %s\n',opt.PetPriorType,opt.PetOptimizationMethod); end
             for i = 1:nIter
-                fprintf('Iteration: %d\n',i)
+                if opt.display, fprintf('Iteration: %d\n',i); end
                 if strcmpi(opt.PetOptimizationMethod,'DePierro')
                     xn = Img;
                     x_em = xn.*objGpet.vecDivision(objGpet.PT(objGpet.vecDivision(Prompts,objGpet.P(xn)+ RS)),SensImg);
@@ -1008,7 +1014,7 @@ classdef classGpet < handle
             paramPET.PSF.type = objGpet.PSF.type;
             paramPET.sinogram_size.span = objGpet.sinogram_size.span;
             paramPET.nSubsets = objGpet.nSubsets;
-            paramPET.verbosity = 1;
+            paramPET.verbosity = 0;
             PET_lowres = classGpet(paramPET);
             
             % default parameters
@@ -1022,6 +1028,9 @@ classdef classGpet < handle
             opt.MrSigma = 0.1; % JBE
             opt.PetSigma  = 10; %JBE
             opt.display = 0;
+            opt.save = 0;
+            opt.outputPath = objGpet.tempPath;
+            opt.saveInterval = 10;
             % check if the object already was initilized:
             if isempty(objGpet.Prior)
                 opt.ImageSize = objGpet.image_size.matrixSize;
@@ -1070,7 +1079,7 @@ classdef classGpet < handle
             fprintf('Prior: %s, Method: %s\n',opt.PetPriorType,opt.PetOptimizationMethod);
             k = 1;
             for i = 1:nIter
-                fprintf('Iteration: %d\n',i)
+                if opt.display,fprintf('Iteration: %d\n',i); end
                 if strcmpi(opt.PetOptimizationMethod,'DePierro')
                     xn = Img;
                     % Projection:
@@ -1115,10 +1124,14 @@ classdef classGpet < handle
                         imshow(Img(:,:,opt.display),[]);
                     end
                 end
-                if rem(i-1,saveInterval) == 0 % -1 to save the first iteration
+                if opt.save
+                    if rem(i-1,opt.saveInterval) == 0 % -1 to save the first iteration
                     image_ds{k} = Img;
                     interfilewrite(single(image_ds{k}), [outputPath 'map_ds_iter_' num2str(i)], [objGpet.ref_image.PixelExtentInWorldX objGpet.ref_image.PixelExtentInWorldY objGpet.ref_image.PixelExtentInWorldZ]); % i use i instead of i+1 because i=1 is the inital estimate
                     k = k + 1;
+                    end
+                else
+                    image_ds = Img;
                 end
             end
         end
