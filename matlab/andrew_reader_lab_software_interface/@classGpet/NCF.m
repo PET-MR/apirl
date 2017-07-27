@@ -31,13 +31,24 @@ function [n, n_ti, n_tv, gaps]=NCF(varargin)
     end
     if strcmp(objGpet.method_for_normalization, 'cbn_expansion')
         if objGpet.sinogram_size.span >= 1
-            if nargin == 1
-                % Default normalization file:
-                [n, n_ti, n_tv, acquisition_dependant_ncf_3d, crystal_dependant_ncf_3d, gaps, used_xtal_efficiencies, used_deadtimefactors, used_axial_factors, structSizeSino3d] = ...
-                    create_norm_files_mmr([], [], [], [], [], objGpet.sinogram_size.span);
+            if objGpet.sinogram_size.span == 11 % For span 11, we left the span parameter as empty so it uses the siemens axial factors, if we would put the span value it would use our span 11 axial factors from the span 1
+                if nargin == 1
+                    % Default normalization file:
+                    [n, n_ti, n_tv, acquisition_dependant_ncf_3d, crystal_dependant_ncf_3d, gaps, used_xtal_efficiencies, used_deadtimefactors, used_axial_factors, structSizeSino3d] = ...
+                        create_norm_files_mmr([], [], [], [], [], []);
+                else
+                    [n, n_ti, n_tv, acquisition_dependant_ncf_3d, crystal_dependant_ncf_3d, gaps, used_xtal_efficiencies, used_deadtimefactors, used_axial_factors, structSizeSino3d] = ...
+                    create_norm_files_mmr(varargin{2}, [], [], [], singles_per_bucket, []);
+                end
             else
-                [n, n_ti, n_tv, acquisition_dependant_ncf_3d, crystal_dependant_ncf_3d, gaps, used_xtal_efficiencies, used_deadtimefactors, used_axial_factors, structSizeSino3d] = ...
-                create_norm_files_mmr(varargin{2}, [], [], [], singles_per_bucket, objGpet.sinogram_size.span);
+                if nargin == 1
+                    % Default normalization file:
+                    [n, n_ti, n_tv, acquisition_dependant_ncf_3d, crystal_dependant_ncf_3d, gaps, used_xtal_efficiencies, used_deadtimefactors, used_axial_factors, structSizeSino3d] = ...
+                        create_norm_files_mmr([], [], [], [], [], objGpet.sinogram_size.span);
+                else
+                    [n, n_ti, n_tv, acquisition_dependant_ncf_3d, crystal_dependant_ncf_3d, gaps, used_xtal_efficiencies, used_deadtimefactors, used_axial_factors, structSizeSino3d] = ...
+                    create_norm_files_mmr(varargin{2}, [], [], [], singles_per_bucket, objGpet.sinogram_size.span);
+                end
             end
         else
             if nargin == 1

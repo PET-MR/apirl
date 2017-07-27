@@ -10,7 +10,7 @@ if B > ObjPrior.nS
     error ('B can be in maximum %d\n',ObjPrior.nS)
 end
 abs_imgGrad = abs(ObjPrior.GraphGrad(Img));
-Wb = 0*abs_imgGrad;
+Wb = zeros(size(abs_imgGrad));
 
 for i = 1:size(abs_imgGrad,1)
     [~,idx] = sort(abs_imgGrad(i,:));

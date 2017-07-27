@@ -779,6 +779,7 @@ classdef classGpet < handle
             paramPET.sinogram_size.span = objGpet.sinogram_size.span;
             paramPET.nSubsets = objGpet.nSubsets;
             paramPET.verbosity = 0;
+            paramPET.tempPath = objGpet.tempPath;
             PET_lowres = classGpet(paramPET);
             
             % The sensitivity image needs to include the interpolation
@@ -804,7 +805,7 @@ classdef classGpet < handle
                 if nargin>=7
                 if rem(i-1,saveInterval) == 0 % -1 to save the first iteration
                     image_ds{k} = image;
-                    interfilewrite(single(image_ds{k}), [outputPath 'mlem_ds_iter_' num2str(i)], [refNewImage.PixelExtentInWorldX refNewImage.PixelExtentInWorldY refNewImage.PixelExtentInWorldZ]); % i use i instead of i+1 because i=1 is the inital estimate
+                    interfilewrite(single(image_ds{k}), [outputPath 'mlem_ds_iter_' num2str(i)], [objGpet.ref_image.PixelExtentInWorldX objGpet.ref_image.PixelExtentInWorldY objGpet.ref_image.PixelExtentInWorldZ]); % i use i instead of i+1 because i=1 is the inital estimate
                     k = k + 1;
                 end
                 else
@@ -902,6 +903,7 @@ classdef classGpet < handle
             opt.PetRegularizationParameter = 1;
             opt.PetPreCompWeights = 1;
 			opt.TVsmoothingParameter = 0.1;
+            opt.LangeDeltaParameter = 1;
             opt.BowsherB = 70;
             opt.PriorMrImage =[];
             opt.MrSigma = 0.1; % JBE
@@ -973,6 +975,11 @@ classdef classGpet < handle
                         imgGrad = objGpet.Prior.GraphGradCrop(xn);
                         Norm = repmat(sqrt(sum(abs(imgGrad).^2,2)+ opt.TVsmoothingParameter),[1,objGpet.Prior.nS]);
                         W0 = 1./(Norm+eps);
+                    elseif strcmpi(opt.PetPriorType,'lange')
+                        imgGrad = objGpet.Prior.GraphGradCrop(xn);
+                        Norm = repmat(sqrt(sum(objGpet.Prior.Wd.*imgGrad.^2,2) + opt.TVsmoothingParameter),[1,objGpet.Prior.nS]);
+                        W0 = zeros(size(Norm));
+                        W0(Norm~=0) = 1./Norm(Norm~=0).*(1 + opt.LangeDeltaParameter./(opt.LangeDeltaParameter + Norm(Norm~=0)));
                     end
                     W = objGpet.Prior.Wd.*W0;
                     dP = -2* sum(W.*objGpet.Prior.GraphGradCrop(xn),2);
@@ -1015,6 +1022,7 @@ classdef classGpet < handle
             paramPET.sinogram_size.span = objGpet.sinogram_size.span;
             paramPET.nSubsets = objGpet.nSubsets;
             paramPET.verbosity = 0;
+            paramPET.tempPath = objGpet.tempPath;
             PET_lowres = classGpet(paramPET);
             
             % default parameters

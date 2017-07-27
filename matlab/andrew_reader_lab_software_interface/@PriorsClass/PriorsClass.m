@@ -243,6 +243,13 @@ classdef PriorsClass < handle
             imgGrad = (Img(ObjPrior.SearchWindow)-repmat(Img(:),[1,ObjPrior.nS]));
         end
         
+%         function imgGrad = GraphGradGpuArrays(ObjPrior,Img)
+%             for i = 1 : ObjPrior.nS
+%                 
+%             end
+%             imgGrad = (Img(ObjPrior.SearchWindow)-repmat(Img(:),[1,ObjPrior.nS]));
+%         end
+        
         function imgGrad = GraphGradCrop(ObjPrior,Img)
             Img = imCrop(ObjPrior,single(Img));
             imgGrad = (Img(ObjPrior.SearchWindow)-repmat(Img(:),[1,ObjPrior.nS]));
@@ -258,6 +265,9 @@ classdef PriorsClass < handle
             dP = UndoImCrop(ObjPrior,dP);
         end
         
+        % Computes the gradient of an image in gpu
+        function [SumGrad] = gpuGradient(ObjPrior,Img);
+            
         function imgGradW = TV_weights(ObjPrior,imgGrad,beta)
             Norm = repmat(sqrt(sum(abs(imgGrad).^2,2)+ beta.^2),[1,ObjPrior.nS]);
             imgGradW = imgGrad./Norm/2;
@@ -305,6 +315,20 @@ classdef PriorsClass < handle
                         end
                         W = W./repmat(sum(W,2),[1,ObjPrior.nS]);
                         dP = d_nonlocal_Tikhonov_prior(ObjPrior,Img,W);
+                    end
+                case 'lange'
+                    if strcmpi(opt.weight_method,'local') % local
+                        dP = d_Lange_prior(ObjPrior,Img, opt.alpha);
+                        dP = dP./ObjPrior.nS; % to use the same regualrization as non-local methods
+                    else % non-local
+
+                    end
+                case 'huber'
+                    if strcmpi(opt.weight_method,'local') % local
+                        dP = d_Lange_prior(ObjPrior,Img, delta);
+                        dP = dP./ObjPrior.nS; % to use the same regualrization as non-local methods
+                    else % non-local
+
                     end
                 case 'tv'
                     if strcmpi(opt.weight_method,'local') % local
