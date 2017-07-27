@@ -66,9 +66,9 @@ void mexGradient(int nlhs, mxArray *plhs[],
     int N;
     char const * const errId = "parallel:gpu:mexGPUExample:InvalidInput";
     char const * const errMsg = "Invalid input to MEX file.";
-
+    int Nx, Ny, Nz, Kx, Ky, Kz;
     /* Choose a reasonably sized number of threads for the block. */
-    dim3 threadsPerBlock = 512;
+    dim3 threadsPerBlock = dim3(512;
     int blocksPerGrid;
 
     /* Initialize the MathWorks GPU API. */
@@ -79,12 +79,13 @@ void mexGradient(int nlhs, mxArray *plhs[],
         mexErrMsgIdAndTxt(errId, errMsg);
     }
 
-    A = mxGPUCreateFromMxArray(prhs[0]);
-
+    inputImage = mxGPUCreateFromMxArray(prhs[0]);
+    // Load the dimensions of the images and kernel:
+    Nx = prhs[1]; Ny = prhs[2]; Nz = prhs[3]; Kx = prhs[4]; Ky = prhs[5]; Kz = prhs[6];
     /*
      * Verify that A really is a double array before extracting the pointer.
      */
-    if (mxGPUGetClassID(A) != mxDOUBLE_CLASS) {
+    if (mxGPUGetClassID(inputImage) != mxDOUBLE_CLASS) {
         mexErrMsgIdAndTxt(errId, errMsg);
     }
 
@@ -109,7 +110,7 @@ void mexGradient(int nlhs, mxArray *plhs[],
      */
     N = (int)(mxGPUGetNumberOfElements(A));
     blocksPerGrid = (N + threadsPerBlock - 1) / threadsPerBlock;
-    TimesTwo<<<blocksPerGrid, threadsPerBlock>>>(d_inputImage, d_outputGradient, N);
+    d_Gradient<<<blocksPerGrid, threadsPerBlock>>>(d_inputImage, d_outputGradient, Nx, Ny, Nz, Kx, Ky, Kz);
 
     /* Wrap the result up as a MATLAB gpuArray for return. */
     plhs[0] = mxGPUCreateMxArrayOnGPU(outputGradient);
