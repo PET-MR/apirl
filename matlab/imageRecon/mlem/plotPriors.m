@@ -22,12 +22,58 @@ ylabel('V(r)', 'FontSize',16);
 set(h, 'Position', [100 100 800 600]);
 
 
+%% LANGE
+h = figure;
+delta = [0, 1, 20:20:100, 100:50:300];
 
-outputGraphsPath = '/workspaces/Martin/Doctorado/Tesis/Tesis Martín Belzunce/docusTesis/Figuras/Capitulo3/';
-graphicFilename = sprintf('priorsMAP');
-set(gcf,'PaperPositionMode','auto');    % Para que lo guarde en el tamaño modificado.
-saveas(gcf, [outputGraphsPath graphicFilename], 'fig');
-frame = getframe(gcf);
-imwrite(frame.cdata, [outputGraphsPath graphicFilename '.png']);
-saveas(gca, [outputGraphsPath graphicFilename], 'epsc');
-saveas(gca, [outputGraphsPath graphicFilename], 'tif');
+[DELTA, R] = meshgrid(delta,r);
+lange = DELTA.*(R./DELTA-log(1+R./DELTA));
+plot(R,lange, 'LineWidth', 2);
+for i = 1 : numel(delta)
+    labels{i} = sprintf('\\delta=%d', delta(i));
+end
+legend(labels, 'Location', 'NorthWest');
+title('Lange/Fair');
+ylabel('\psi(t)');
+xlabel('t');
+
+% Derivada
+h = figure;
+dlange = (1-DELTA./(R+DELTA));
+plot(R,dlange, 'LineWidth', 2);
+for i = 1 : numel(delta)
+    labels{i} = sprintf('\\delta=%d', delta(i));
+end
+legend(labels, 'Location', 'NorthWest');
+title('Lange/Fair');
+ylabel('\psi(t)');
+xlabel('t');
+
+%%
+h = figure;
+delta = [1, 20:20:100, 100:50:300];
+delta = 1 : 2 :20;
+[DELTA, R] = meshgrid(delta,r);
+huber = zeros(size(DELTA));
+huber(DELTA>=R) = R(DELTA>=R).^2/2;
+huber(DELTA<R) = DELTA(DELTA<R).*R(DELTA<R)-DELTA(DELTA<R).^2/2;
+plot(R,huber, 'LineWidth', 2);
+for i = 1 : numel(delta)
+    labels{i} = sprintf('\\delta=%d', delta(i));
+end
+legend(labels, 'Location', 'NorthWest');
+ylabel('\psi(t)');
+xlabel('t');
+
+h = figure;
+[DELTA, R] = meshgrid(delta,r);
+dhuber = zeros(size(DELTA));
+dhuber(DELTA>=R) = R(DELTA>=R);
+dhuber(DELTA<R) = DELTA(DELTA<R);
+plot(R,dhuber, 'LineWidth', 2);
+for i = 1 : numel(delta)
+    labels{i} = sprintf('\\delta=%d', delta(i));
+end
+legend(labels, 'Location', 'NorthWest');
+ylabel('\psi(t)');
+xlabel('t');

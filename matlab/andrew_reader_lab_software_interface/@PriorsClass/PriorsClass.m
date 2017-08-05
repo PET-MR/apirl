@@ -8,6 +8,7 @@ classdef PriorsClass < handle
         lWindowSize % local window size (local neighborhood)
         SearchWindow
         LocalWindow
+        GradientImplementation % two options: matlab(default), mex-cuda
         chunkSize
         Wd
         nS
@@ -31,7 +32,7 @@ classdef PriorsClass < handle
             ObjPrior.is3D = 0;
             ObjPrior.imCropFactor = 3;
             ObjPrior.chunkSize = 5e6;
-                
+            ObjPrior.GradientImplementation = 'matlab'; % by default matlab    
             if isempty(varargin{1}.ImageSize)
                 error('Image size should be specified');
             end
@@ -152,9 +153,11 @@ classdef PriorsClass < handle
                 ObjPrior.nS = ObjPrior.sWindowSize^2;
                 ObjPrior.nL = ObjPrior.lWindowSize^2;
             end
-            
-            [ObjPrior.SearchWindow, ObjPrior.Wd] = Neighborhood(ObjPrior,ObjPrior.sWindowSize);
-            ObjPrior.LocalWindow = Neighborhood(ObjPrior,ObjPrior.lWindowSize);
+            % The search window is only needed for the matlab version:
+            if strcmp(ObjPrior.GradientImplementation, 'matlab')
+                [ObjPrior.SearchWindow, ObjPrior.Wd] = Neighborhood(ObjPrior,ObjPrior.sWindowSize);
+                ObjPrior.LocalWindow = Neighborhood(ObjPrior,ObjPrior.lWindowSize);
+            end
         end
         
         function [Img,newSize] = imCrop(ObjPrior,Img)
@@ -266,7 +269,7 @@ classdef PriorsClass < handle
         end
         
         % Computes the gradient of an image in gpu
-        function [SumGrad] = gpuGradient(ObjPrior,Img);
+        %function [SumGrad] = gpuGradient(ObjPrior,Img);
             
         function imgGradW = TV_weights(ObjPrior,imgGrad,beta)
             Norm = repmat(sqrt(sum(abs(imgGrad).^2,2)+ beta.^2),[1,ObjPrior.nS]);

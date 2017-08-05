@@ -33,8 +33,6 @@ r = (-structSizeSino3d.numR/2):(-structSizeSino3d.numR/2+structSizeSino3d.numR-1
 mapaDet1Ids_2d = rem((THETA + floor(R/2) + numDetectorsPerRing -1), numDetectorsPerRing) + 1;   % The +1 is added in matlab version respect than c version, because here we have 1-base indexes.
 mapaDet2Ids_2d = rem((THETA - floor((R+1)/2) + numDetectorsPerRing/2 -1), numDetectorsPerRing) + 1; % The +1 is added in matlab version respect than c version, because here we have 1-base indexes.
 
-
-
 % Now we start going through each possible sinogram, then get the rings of
 % each sinogram and get the crystal efficency for that ring in det1 and the
 % crystal effiencies for the sencdo ring with det2. When there is axial

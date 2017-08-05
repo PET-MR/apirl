@@ -60,7 +60,7 @@ if (ndims(inputImage) ~= 3) && (ndims(inputImage) ~= 2)
 end
 
 % Tamaño del grafico:
-AGRANDARfIGURE=[5 109 1432 712];  
+AGRANDARfIGURE=[5 109 1100 712];  
 
 % Genero variables necesaris:
 sizeImage = size(inputImage);
@@ -70,7 +70,8 @@ coordPixels_mm{1} = -(sizePixel_mm(1)*sizeImage(1)/2-sizePixel_mm(1)/2):sizePixe
 coordPixels_mm{2} = -(sizePixel_mm(2)*sizeImage(2)/2-sizePixel_mm(2)/2):sizePixel_mm(2):(sizePixel_mm(2)*sizeImage(2)/2-sizePixel_mm(2)/2);
 % Si es un volumen calculo la tercera:
 if (ndims(inputImage) == 3)
-    coordPixels_mm{3} = sizePixel_mm(3)/2:sizePixel_mm(3):(sizePixel_mm(3)*sizeImage(3)-sizePixel_mm(3)/2);
+    %coordPixels_mm{3} = sizePixel_mm(3)/2:sizePixel_mm(3):(sizePixel_mm(3)*sizeImage(3)-sizePixel_mm(3)/2);
+    coordPixels_mm{3} = -(sizePixel_mm(3)*sizeImage(3)/2-sizePixel_mm(3)/2):sizePixel_mm(3):(sizePixel_mm(3)*sizeImage(3)/2-sizePixel_mm(3)/2);
 end
 % upsample:
 upsample_factor = 8;
@@ -115,6 +116,7 @@ if dim == 1
     % Para el fiteo debo trasponer el vector:
     vector = vector';
     textLabel = 'Y [mm]';
+    dim_peak = 1; % no change
 elseif dim == 2
     
     % Resolución a nivel de filas, o sea y.
@@ -124,12 +126,15 @@ elseif dim == 2
     indicePicoEje = columna(1);
     % Texto para leyenda de grafico:
     textLabel = 'X [mm]';
+    dim_peak = 2; % no change
 elseif dim == 3
     % Si me piden el eje z serían las columnas ya que permute las
     % dimensiones 2 y 3 de la imagen.
     vector = imagenPlanar(fila(1),:)./pico;
     indicePicoEje = columna(1);
     textLabel = 'Z [mm]';
+    % For the peak the dim will be columns:
+    dim_peak = 2;
 end
 % Resample:
 vector_resampled = interp(vector, upsample_factor);
@@ -156,16 +161,16 @@ else
 end
 
 % Deshabilito el fwhm:
-% % Si la hago fiteando una guassiana:
-% try
-%     ParamsGaussiana = lsqcurvefit(@Gaussian,[max(vector),coordPixels_mm{dim}(indicePicoEje), fwhm/2.35],coordPixels_mm{dim},vector);
-%     fwhm_fiteado = ParamsGaussiana(3)*2.32;
-% catch
-%    disp('Fitting error.'); 
-%    ParamsGaussiana = [0 0 0];
-%    fwhm_fiteado = 0;
-% end
-fwhm_fiteado = 0;
+% Si la hago fiteando una guassiana:
+try
+    ParamsGaussiana = lsqcurvefit(@Gaussian,[max(vector),coordPixels_mm{dim}(indicePicoEje), fwhm/2.35],coordPixels_mm{dim},vector);
+    fwhm_fiteado = ParamsGaussiana(3)*2.32;
+catch
+   disp('Fitting error.'); 
+   ParamsGaussiana = [0 0 0];
+   fwhm_fiteado = 0;
+end
+%fwhm_fiteado = 0;
 
 % Si hay que graficar, lo hago y guardo el gráfico:
 if graficar
@@ -173,21 +178,25 @@ if graficar
         label = textLabel;
     end
     % Grafico la original y la fiteada y la guardo:
+    pixels_from_centre = round(fwhm*3/sizePixel_mm(dim));
+    pixels_from_centre_finer = round(fwhm*3/sizePixel_mm(dim))*upsample_factor;
     h1 = figure;
-    plot(coordPixels_mm{dim}, vector, coordPixelsPasoFino_mm{dim}, Gaussian(ParamsGaussiana, coordPixelsPasoFino_mm{dim}), 'LineWidth',3);
+    plot(coordPixels_mm{dim}(peak(dim_peak)-pixels_from_centre:peak(dim_peak)+pixels_from_centre), vector(peak(dim_peak)-pixels_from_centre:peak(dim_peak)+pixels_from_centre), coordPixelsPasoFino_mm{dim}(peak(dim_peak)*upsample_factor-pixels_from_centre_finer:peak(dim_peak)*upsample_factor+pixels_from_centre_finer), Gaussian(ParamsGaussiana, coordPixelsPasoFino_mm{dim}(peak(dim_peak)*upsample_factor-pixels_from_centre_finer:peak(dim_peak)*upsample_factor+pixels_from_centre_finer)), 'LineWidth',3);
+    xlim([coordPixels_mm{dim}(peak(dim_peak)-pixels_from_centre) coordPixels_mm{dim}(peak(dim_peak)+pixels_from_centre)]);
     h2=legend('Image Profile', 'Fitted Gaussian','Location','NorthEast');
     set(h2, 'FontSize',16)
     set(gcf, 'Position', AGRANDARfIGURE);
     %     title('Log-Likelihood p', 'FontSize',20,'FontWeight','Bold');
     ylabel('Intesity','FontSize',18,'FontWeight','Bold');
     xlabel(label,'FontSize',18,'FontWeight','Bold');
-    h3 = text(50,0.5, sprintf('FWHM: %.2f mm', fwhm));
+    h3 = text(coordPixels_mm{dim}(peak(dim_peak))+fwhm.*0.7,0.75, sprintf('FWHM: %.2f mm', fwhm));
     set(h3, 'FontSize',20)
-    h3 = text(50,0.25, sprintf('Fitted FWHM: %.2f mm', fwhm_fiteado));
+    h3 = text(coordPixels_mm{dim}(peak(dim_peak))+fwhm.*0.7,0.6, sprintf('Fitted FWHM: %.2f mm', fwhm_fiteado));
     set(h3, 'FontSize',20)
     saveas(gca, [fullFilename], 'tif');
+    saveas(gca, [fullFilename], 'png');
     set(gcf,'PaperPositionMode','auto');    % Para que lo guarde en el tamaño modificado.
     frame = getframe(gca);
-    imwrite(frame.cdata, [fullFilename '.png']);
+    imwrite(frame.cdata, [fullFilename '_nolabels.png']);
     saveas(gca, [fullFilename], 'epsc');
 end

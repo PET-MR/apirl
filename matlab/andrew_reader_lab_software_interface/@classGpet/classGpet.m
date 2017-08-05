@@ -996,6 +996,7 @@ classdef classGpet < handle
                 end
             end
         end
+        
         gf3d = Gauss3DFilter (objGpet, data, fwhm);
         [Img,totalScaleFactor, info] = BQML(objGpet,Img,sinogramInterFileFilename,normalizationInterFileFilename);
         Img = SUV(objGpet,Img,sinogramInterFileFilename,normalizationInterFileFilename);

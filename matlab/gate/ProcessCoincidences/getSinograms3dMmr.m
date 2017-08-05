@@ -139,7 +139,7 @@ for i = 1 : structSimu.numSplits
         else
             fprintf('Iniciando el procesamiento del archivo %s.\n', NombreArch);
             while feof(FID) == 0
-                datos = textscan(FID, '%f', 100000 * numColumnas);
+                datos = textscan(FID, '%f', 10000000 * numColumnas);
                 if isempty(datos{1})
                     break;
                 end
