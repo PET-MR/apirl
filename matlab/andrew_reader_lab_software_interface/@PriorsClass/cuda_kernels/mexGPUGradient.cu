@@ -14,7 +14,7 @@ texture<float, 3, cudaReadModeElementType> texImage;
 __global__ void d_Gradient(float *ptrGradientImage, int Nx, int Ny, int Nz, int Kx, int Ky, int Kz) // Nx: x for texture memory, cols in matlab matrix
 {
   int i, j, k, linearIndex;
-  float output = 0, voxelValue = 0;
+  float output = 0, voxelValue = 0, spatialWeight = 0, spatialWeightNorm = 0;
 	int Kradius_x, Kradius_y, Kradius_z;
 	Kradius_x = Kx/2; Kradius_y = Ky/2; Kradius_z = Kz/2;
   // The blocks are larger than the voxel to be processed to load the edges of the kernel
@@ -41,13 +41,21 @@ __global__ void d_Gradient(float *ptrGradientImage, int Nx, int Ny, int Nz, int 
 			#pragma unroll
 			for(k = 0; k < Kz; k++)
 			{
-				//if((y<(Ny-Kradius_y))||(x<(Nx-Kradius_x))||(z<(Nz-Kradius_z))|(y>Kradius_y)||(x>Kradius_x)||(z>Kradius_z))
+				if((y<(Ny-Kradius_y))||(x<(Nx-Kradius_x))||(z<(Nz-Kradius_z))||(y>Kradius_y)||(x>Kradius_x)||(z>Kradius_z))
+				{
 					// Sum of differences
-					output += tex3D(texImage, x-Kradius_x+i+0.5f, y-Kradius_y+j+0.5f, z-Kradius_z+k+0.5f)-voxelValue;
+					// spatial weight:
+					spatialWeight = sqrt((-Kradius_x+(float)i)*(-Kradius_x+(float)i)+(-Kradius_y+(float)j)*(-Kradius_y+(float)j)+(-Kradius_z+(float)k)*(-Kradius_z+(float)k));
+					if (spatialWeight != 0)
+						spatialWeight = (1/spatialWeight);
+						output += spatialWeight*(tex3D(texImage, x-Kradius_x+i+0.5f, y-Kradius_y+j+0.5f, z-Kradius_z+k+0.5f)-voxelValue);
+					// I could pre compute it to avoid computing it for each thread:
+					spatialWeightNorm += spatialWeight;
+				}
 			}
     }
   }
-  ptrGradientImage[linearIndex] = output;
+  ptrGradientImage[linearIndex] = output/spatialWeightNorm;
 }
 
 __global__ void d_GradientTV(float *ptrGradientImage, int Nx, int Ny, int Nz, int Kx, int Ky, int Kz) // Its computed: sqrt(sum(delta_ij^2))
@@ -82,7 +90,7 @@ __global__ void d_GradientTV(float *ptrGradientImage, int Nx, int Ny, int Nz, in
 			{
 				//if((y<(Ny-Kradius_y))||(x<(Nx-Kradius_x))||(z<(Nz-Kradius_z))|(y>Kradius_y)||(x>Kradius_x)||(z>Kradius_z))
 					// Sum of differences
-					output += (tex3D(texImage, x-Kradius_x+i+0.5f, y-Kradius_y+j+0.5f, z-Kradius_z+k+0.5f)-voxelValue).*(tex3D(texImage, x-Kradius_x+i+0.5f, y-Kradius_y+j+0.5f, z-Kradius_z+k+0.5f)-voxelValue);
+					output += (tex3D(texImage, x-Kradius_x+i+0.5f, y-Kradius_y+j+0.5f, z-Kradius_z+k+0.5f)-voxelValue)*(tex3D(texImage, x-Kradius_x+i+0.5f, y-Kradius_y+j+0.5f, z-Kradius_z+k+0.5f)-voxelValue);
 			}
     }
   }
@@ -142,7 +150,6 @@ void mexFunction(int nlhs, mxArray *plhs[],
 		cudaChannelFormatDesc floatTex = cudaCreateChannelDesc<float>();
 		const cudaExtent extentImageSize = make_cudaExtent(Nx, Ny, Nz); // For this memory the width is Nx, therefore the cols
 		cudaMemcpy3DParms copyParams = {0};
-mexPrintf("%d %d",Nx, extentImageSize.width);
 
 	  // Must be called with init gpu memory. It loads the texture memory for the projection.
     // The image is in a texture memory:  cudaChannelFormatDesc floatTex;
