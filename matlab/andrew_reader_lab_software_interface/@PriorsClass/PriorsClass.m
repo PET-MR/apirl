@@ -8,7 +8,14 @@ classdef PriorsClass < handle
         lWindowSize % local window size (local neighborhood)
         SearchWindow
         LocalWindow
-        GradientImplementation % two options: matlab(default), mex-cuda
+        PriorImplementation % two options: matlab(default), mex-cuda
+        PriorType % type of prior: 'Lange';%'Quadratic'
+        SimilarityKernel % type of similarity kernel: 'local'(no-similarity), 'Bowsher' 'JointBurgEntropy'
+        dPhandle % handle of the derivative of the Prior function
+        dWhandle % handle of the function that computes the similarity weights
+        dPNLhandle % Handle for priors with non local similarity kernels
+        PriorParams % parameters for the prior, is a cell array witha s amny elements as parameters has the prior. (e.g. quadratic [], tv smoothparametr, lange: delta and smoothparameter
+        PreCompWeights % Pre computed weight for the similarity kernels
         chunkSize
         Wd
         nS
@@ -32,16 +39,28 @@ classdef PriorsClass < handle
             ObjPrior.is3D = 0;
             ObjPrior.imCropFactor = 3;
             ObjPrior.chunkSize = 5e6;
-            ObjPrior.GradientImplementation = 'matlab'; % by default matlab    
+            ObjPrior.PriorImplementation = 'matlab'; % by default matlab
+            ObjPrior.SimilarityKernel = 'local';
             if isempty(varargin{1}.ImageSize)
                 error('Image size should be specified');
             end
 
             % get fields from user's input
             ObjPrior = getFiledsFromUsersOpt(ObjPrior,varargin{1});
-            
             if length(varargin{1}.ImageSize)==3 && varargin{1}.ImageSize(3)>1
                 ObjPrior.is3D = 1;
+            end
+            % Sometimes as input parameter, we can have PetPriorType and
+            % PetSimilarityKernel, or the Mr version:
+            if isfield(varargin{1}, 'PetPriorType')
+                ObjPrior.PriorType = varargin{1}.PetPriorType;
+            elseif isfield(varargin{1}, 'MrPriorType')
+                ObjPrior.PriorType = varargin{1}.MrPriorType;
+            end
+            if isfield(varargin{1}, 'PetSimilarityKernel')
+                ObjPrior.SimilarityKernel = varargin{1}.PetSimilarityKernel;
+            elseif isfield(varargin{1}, 'MrSimilarityKernel')
+                ObjPrior.SimilarityKernel = varargin{1}.MrSimilarityKernel;
             end
             InitializePriors(ObjPrior);
         end
@@ -153,8 +172,54 @@ classdef PriorsClass < handle
                 ObjPrior.nS = ObjPrior.sWindowSize^2;
                 ObjPrior.nL = ObjPrior.lWindowSize^2;
             end
+            % Get the prior function into a handle:
+            if strcmpi(ObjPrior.SimilarityKernel,'local') % local
+                switch lower(ObjPrior.PriorType)
+                    case 'quadratic'
+                        ObjPrior.dPhandle = @d_Tikhonov_prior;
+                    case 'tikhonov'
+                        ObjPrior.dPhandle = @d_Tikhonov_prior;
+                    case 'lange'
+                        ObjPrior.dPhandle = @d_Lange_prior;
+                    case 'huber'
+                        ObjPrior.dPhandle = @d_Huber_prior;
+                    case 'tv'
+                        ObjPrior.dPhandle = @d_smoothed_TV_prior;
+                    case 'approx_joint_entropy'
+                        ObjPrior.dPhandle = @d_approx_JointEntropy_prior;
+                    case 'joint_entropy'
+                        ObjPrior.dPhandle = @d_JointEntropy_prior;
+                    case 'kiapio'
+                        ObjPrior.dPhandle = @d_Kiapio_prior;
+                    case 'modified_lot'
+                        ObjPrior.dPhandle = @d_modified_LOT_prior;
+                    case 'parallel_level_set'
+                        ObjPrior.dPhandle = @d_ParallelLevelSets_prior;
+                end
+            else % non-local
+                switch lower(ObjPrior.PriorType)
+                    case 'tikhonov'
+                        ObjPrior.dPhandle = @d_nonlocal_Tikhonov_prior;
+                    case 'quadratic'
+                        ObjPrior.dPhandle = @d_nonlocal_Tikhonov_prior;
+                    case 'lange'
+                        ObjPrior.dPhandle = @d_nonlocal_Lange_prior;
+                    case 'huber'
+                        ObjPrior.dPhandle = @d_nonlocal_Huber_prior;
+                    case 'tv'
+                        ObjPrior.dPhandle = @d_smoothed_TV_prior;
+                end
+                % Similarity functions:
+                if strcmpi(ObjPrior.SimilarityKernel,'nl_self_similarity')
+                    ObjPrior.dWhandle = @W_GaussianKernel;
+                elseif strcmpi(ObjPrior.SimilarityKernel,'nl_side_similarity') || strcmpi(ObjPrior.SimilarityKernel,'bowsher')
+                    ObjPrior.dWhandle = @W_Bowsher;
+                elseif strcmpi(ObjPrior.SimilarityKernel,'nl_joint_similarity')
+                    ObjPrior.dWhandle = @W_JointGaussianKernel;
+                end
+            end
             % The search window is only needed for the matlab version:
-            if strcmp(ObjPrior.GradientImplementation, 'matlab')
+            if strcmp(ObjPrior.PriorImplementation, 'matlab')
                 [ObjPrior.SearchWindow, ObjPrior.Wd] = Neighborhood(ObjPrior,ObjPrior.sWindowSize);
                 ObjPrior.LocalWindow = Neighborhood(ObjPrior,ObjPrior.lWindowSize);
             end
@@ -246,12 +311,31 @@ classdef PriorsClass < handle
             imgGrad = (Img(ObjPrior.SearchWindow)-repmat(Img(:),[1,ObjPrior.nS]));
         end
         
-%         function imgGrad = GraphGradGpuArrays(ObjPrior,Img)
-%             for i = 1 : ObjPrior.nS
-%                 
-%             end
-%             imgGrad = (Img(ObjPrior.SearchWindow)-repmat(Img(:),[1,ObjPrior.nS]));
-%         end
+        function imgGrad = GraphGradWithSpatialWeight(ObjPrior,Img)
+            if strcmp(ObjPrior.PriorImplementation, 'matlab')
+                imgGrad = sum(ObjPrior.Wd.*ObjPrior.GraphGrad(Img),2);
+            elseif strcmp(ObjPrior.PriorImplementation, 'mex-cuda')
+                enableSpatialWeight = 1;
+                typeOfLocalDifferences = 'LinearSum';
+                imgGrad = ObjPrior.GpuGraphGrad(Img, ObjPrior.sWindowSize, ObjPrior.sWindowSize, ObjPrior.sWindowSize, enableSpatialWeight, typeOfLocalDifferences); % Possible values: 'LinearSum', 'Magnitud'
+            end
+        end
+        
+        function imgGrad = GpuGraphGrad(ObjPrior, image, Kx, Ky, Kz, enableSpatialWeight, typeOfLocalDifferences)
+            % typeOfLocalDifferences: 
+            % 1:Sum of linear differences,
+            % 2:Magnitud of linear differences(sqrt(square_sums))
+            switch typeOfLocalDifferences
+                case 'LinearSum'
+                    imgGrad = mexGPUGradient(single(image), Kx, Ky, Kz, enableSpatialWeight, 1); % This function is not part of the prior class because is a mex file.
+                case 'Magnitud'
+                    imgGrad = mexGPUGradient(single(image), Kx, Ky, Kz, enableSpatialWeight, 2); % This function is not part of the prior class because is a mex file.
+                case 'LinearSumWithBowsher'
+                    imgGrad = mexGPUGradient(single(image), Kx, Ky, Kz, enableSpatialWeight, 1); % This function is not part of the prior class because is a mex file.
+                case 'MagnitudWithBowsher'
+                    imgGrad = mexGPUGradient(single(image), Kx, Ky, Kz, enableSpatialWeight, 2); % This function is not part of the prior class because is a mex file.
+            end
+        end
         
         function imgGrad = GraphGradCrop(ObjPrior,Img)
             Img = imCrop(ObjPrior,single(Img));
@@ -263,7 +347,7 @@ classdef PriorsClass < handle
             imgDiv = (Img(ObjPrior.SearchWindow)+repmat(Img(:),[1,ObjPrior.nS]));
         end
         function dP = TransGraphGradUndoCrop(ObjPrior,imgGrad)
-             dP = -2* sum(ObjPrior.Wd.*imgGrad,2);
+            dP = -2* sum(ObjPrior.Wd.*imgGrad,2);
             dP = reshape(dP,ObjPrior.CropedImageSize);
             dP = UndoImCrop(ObjPrior,dP);
         end
@@ -303,60 +387,18 @@ classdef PriorsClass < handle
             
             Img = imCrop(ObjPrior,single(Img));
             
-            switch lower(opt.prior)
-                case 'tikhonov'
-                    if strcmpi(opt.weight_method,'local') % local
-                        dP = d_Tikhonov_prior(ObjPrior,Img);
-                        dP = dP./ObjPrior.nS; % to use the same regualrization as non-local methods
-                    else % non-local
-                        if strcmpi(opt.weight_method,'nl_self_similarity')
-                            W = W_GaussianKernel(ObjPrior,Img,opt.sigma_ker);
-                        elseif strcmpi(opt.weight_method,'nl_side_similarity') || strcmpi(opt.weight_method,'bowsher')
-                            W = opt.nl_weights;
-                        elseif strcmpi(opt.weight_method,'nl_joint_similarity')
-                            W = (W_GaussianKernel(ObjPrior,Img,opt.sigma_ker).*opt.nl_weights).^1/(opt.n_modalities);
-                        end
-                        W = W./repmat(sum(W,2),[1,ObjPrior.nS]);
-                        dP = d_nonlocal_Tikhonov_prior(ObjPrior,Img,W);
-                    end
-                case 'lange'
-                    if strcmpi(opt.weight_method,'local') % local
-                        dP = d_Lange_prior(ObjPrior,Img, opt.alpha);
-                        dP = dP./ObjPrior.nS; % to use the same regualrization as non-local methods
-                    else % non-local
-
-                    end
-                case 'huber'
-                    if strcmpi(opt.weight_method,'local') % local
-                        dP = d_Lange_prior(ObjPrior,Img, delta);
-                        dP = dP./ObjPrior.nS; % to use the same regualrization as non-local methods
-                    else % non-local
-
-                    end
-                case 'tv'
-                    if strcmpi(opt.weight_method,'local') % local
-                        dP = d_smoothed_TV_prior(ObjPrior,Img,opt.beta);
-                    else % non-local
-                        if strcmpi(opt.weight_method,'nl_self_similarity')
-                            W = W_GaussianKernel(ObjPrior,Img,opt.sigma_ker);
-                        elseif strcmpi(opt.weight_method,'nl_side_similarity') || strcmpi(opt.weight_method,'bowsher')
-                            W = opt.nl_weights;
-                        elseif strcmpi(opt.weight_method,'nl_joint_similarity')
-                            W = (W_GaussianKernel(ObjPrior,Img,opt.sigma_ker).*opt.nl_weights).^1/(opt.n_modalities);
-                        end
-                        W = W./repmat(sum(W,2),[1,ObjPrior.nS]);
-                        dP = d_smoothed_nonlocal_TV_prior(ObjPrior,Img,opt.beta,W);
-                    end
-                case 'approx_joint_entropy'
-                    dP = d_approx_JointEntropy_prior(ObjPrior,Img,opt.sigma_f,opt.je_weights);
-                case 'joint_entropy'
-                    dP = d_JointEntropy_prior(ObjPrior,Img,opt.imgA,opt.sigma_f,opt.sigma_a,opt.M,opt.N);
-                case 'kiapio'
-                    dP = d_Kiapio_prior(ObjPrior,Img,opt.normVectors,opt.alpha);
-                case 'modified_lot'
-                    dP = d_modified_LOT_prior(ObjPrior,Img,opt.normVectors,opt.alpha,opt.beta);
-                case 'parallel_level_set'
-                    dP = d_ParallelLevelSets_prior(ObjPrior,Img,opt.normVectors,opt.alpha,opt.beta);
+            % Get prior:
+            if strcmpi(opt.SimilarityKernel,'local') % local
+                dP = ObjPrior.dPhandle(ObjPrior, Img, ObjPrior.PriorParams);
+                dP = dP./ObjPrior.nS; % to use the same regualrization as non-local methods
+            else % non-local
+                if opt.PreCompWeights == 1
+                    W = ObjPrior.dWhandle(ObjPrior, Img, opt);
+                    W = W./repmat(sum(W,2),[1,ObjPrior.nS]);
+                else
+                    W = opt.PreCompWeights;
+                end
+                dP = ObjPrior.dPNLhandle(ObjPrior, Img,opt,W);
             end
             dP = reshape(dP,ObjPrior.CropedImageSize);
             dP = UndoImCrop(ObjPrior,dP);
@@ -383,7 +425,7 @@ classdef PriorsClass < handle
         %dP = d_ParallelLevelSets_prior(ObjPrior,Img,normVectors,alpha,beta);
         dP = d_smoothed_TV_prior(ObjPrior,Img,beta);
         dP = d_smoothed_nonlocal_TV_prior(ObjPrior,Img,beta,nl_weights);
-        dP = d_Tikhonov_prior(ObjPrior,Img);
+        dP = d_Tikhonov_prior(ObjPrior,Img, params);
         dP = d_nonlocal_Tikhonov_prior(ObjPrior,Img,nl_weights);
         
         % reconstruction

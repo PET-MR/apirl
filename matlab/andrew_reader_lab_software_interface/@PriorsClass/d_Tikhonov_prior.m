@@ -1,5 +1,5 @@
-function dP = d_Tikhonov_prior(ObjPrior,Img)
+function dP = d_Tikhonov_prior(ObjPrior, Img, params) % params should be empty, is only kept to 
 
-dP = -2* sum(ObjPrior.Wd.*ObjPrior.GraphGrad(Img),2);
+dP = -2*ObjPrior.GraphGradWithSpatialWeight(Img);
 
 end

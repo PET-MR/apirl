@@ -997,6 +997,72 @@ classdef classGpet < handle
             end
         end
         
+        function Img = MAPEM2(objGpet,Prompts,RS, SensImg,Img, nIter,arg)
+            % First check if the Prior class has already been intialized
+            % default parameters
+            opt.PetOptimizationMethod = 'DePierro';%'OSL'
+            opt.PriorType = 'Quadratic'; %'TV' 'Lange'
+            opt.SimilarityKernel = 'local';  %'Bowsher' 'JointBurgEntropy'
+            opt.PriorImplementation = 'matlab'; % 2 options: 'matlab', 'mex-cuda'
+            opt.PetRegularizationParameter = 1;
+            opt.PetPreCompWeights = 1;
+			opt.TVsmoothingParameter = 0.1;
+            opt.LangeDeltaParameter = 1;
+            opt.BowsherB = 70;
+            opt.PriorMrImage =[];
+            opt.MrSigma = 0.1; % JBE
+            opt.PetSigma  = 10; %JBE
+            opt.display = 0;
+            % check if the object already was initilized:
+            %if isempty(objGpet.Prior)
+                opt.ImageSize = objGpet.image_size.matrixSize;
+                opt.imCropFactor = [4,4,0];
+                opt.sWindowSize = 5;
+                opt.lWindowSize = 1;
+                opt = getFiledsFromUsersOpt(opt,arg);
+                objGpet.Prior = PriorsClass(opt);
+%             else
+%                 % whos_prior = whos('objGpet.Prior');
+%                 % if strcmp(whos_prior.class, 'PriorsClass')
+%                 % Only initilize the parameters for this reconstruction
+%                 opt = getFiledsFromUsersOpt(opt,arg);
+            %end
+            
+            if opt.display, figure; end
+            
+
+            if opt.display, fprintf('Prior: %s, Method: %s\n',opt.PriorType,opt.PetOptimizationMethod); end
+            for i = 1:nIter
+                if opt.display, fprintf('Iteration: %d\n',i); end
+                if strcmpi(opt.PetOptimizationMethod,'DePierro')
+                    xn = Img;
+                    x_em = xn.*objGpet.vecDivision(objGpet.PT(objGpet.vecDivision(Prompts,objGpet.P(xn)+ RS)),SensImg);
+                    
+                    if strcmpi(opt.PetPriorType,'JointBurgEntropy')
+                        W0 = objGpet.Prior.W_JointEntropy(xn,opt.PetSigma).*W0;
+                        W0 = W0./repmat(sum(W0,2),[1,objGpet.Prior.nS]);
+                    end
+                    W = objGpet.Prior.Wd.*W0;
+                    wj = objGpet.Prior.UndoImCrop(reshape(sum(W,2),objGpet.Prior.CropedImageSize));
+                    B = SensImg - opt.PetRegularizationParameter / 2*objGpet.Prior.UndoImCrop(reshape(sum(W.*objGpet.Prior.GraphDivCrop(xn),2),objGpet.Prior.CropedImageSize));
+                    Img = 2*x_em.*SensImg./(B + sqrt(B.^2+4*opt.PetRegularizationParameter.*SensImg.*x_em.*wj + 1e-5));
+                    Img = max(0,Img);
+                elseif strcmpi(opt.PetOptimizationMethod,'OSL')
+                    xn = Img;
+                    dP = opt.PetRegularizationParameter*objGpet.Prior.dPrior(xn,opt);
+                    Img = xn.*objGpet.vecDivision(objGpet.PT(objGpet.vecDivision(Prompts,objGpet.P(xn)+ RS)),SensImg + dP + 1e-5);
+                    Img = max(0,Img);
+                end
+                if opt.display
+                    if objGpet.image_size.matrixSize(3)==1
+                        imshow(Img,[]);
+                    else %if 3D recon, use opt.display =x, where x is a transvese slice
+                        imshow(Img(:,:,opt.display),[]);
+                    end
+                end
+            end
+        end
+        
         gf3d = Gauss3DFilter (objGpet, data, fwhm);
         [Img,totalScaleFactor, info] = BQML(objGpet,Img,sinogramInterFileFilename,normalizationInterFileFilename);
         Img = SUV(objGpet,Img,sinogramInterFileFilename,normalizationInterFileFilename);
