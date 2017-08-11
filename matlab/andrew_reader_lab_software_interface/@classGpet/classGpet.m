@@ -1009,7 +1009,7 @@ classdef classGpet < handle
 			opt.TVsmoothingParameter = 0.1;
             opt.LangeDeltaParameter = 1;
             opt.BowsherB = 70;
-            opt.PriorMrImage =[];
+            opt.PriorImage =[];
             opt.MrSigma = 0.1; % JBE
             opt.PetSigma  = 10; %JBE
             opt.display = 0;

@@ -78,14 +78,22 @@ __global__ void d_LocalDifferences(float *ptrGradientImage, int Nx, int Ny, int 
 							output += spatialWeight*(tex3D(texImage, x-Kradius_x+i+0.5f, y-Kradius_y+j+0.5f, z-Kradius_z+k+0.5f)-voxelValue);
 							break;
 						case Magnitud:
-							output += (tex3D(texImage, x-Kradius_x+i+0.5f, y-Kradius_y+j+0.5f, z-Kradius_z+k+0.5f)-voxelValue)*(tex3D(texImage, x-Kradius_x+i+0.5f, y-Kradius_y+j+0.5f, z-Kradius_z+k+0.5f)-voxelValue);
+							output += spatialWeight*(tex3D(texImage, x-Kradius_x+i+0.5f, y-Kradius_y+j+0.5f, z-Kradius_z+k+0.5f)-voxelValue)*(tex3D(texImage, x-Kradius_x+i+0.5f, y-Kradius_y+j+0.5f, z-Kradius_z+k+0.5f)-voxelValue);
 							break;
 					}
 				}
 			}
     }
   }
-  ptrGradientImage[linearIndex] = output/spatialWeightNorm;
+  switch(typeDiff)
+	{
+		case LinearSum:
+			ptrGradientImage[linearIndex] = output/spatialWeightNorm;
+			break;
+		case Magnitud:
+			ptrGradientImage[linearIndex] = sqrt(output/spatialWeightNorm);
+			break;
+	}
 }
 
 /*

@@ -1,4 +1,4 @@
-function dP = d_nonlocal_Tikhonov_prior(ObjPrior,Img,nl_weights)
+function dP = d_nonlocal_Tikhonov_prior(ObjPrior,Img,nl_weights, params) % params only for compatibility, but it's not really needed
 
 % nl_weights, non-local weights clculated from ObjPrior.W_GaussianKernel or W_Bowsher()
 

@@ -1,4 +1,5 @@
-function dP = d_smoothed_nonlocal_TV_prior(ObjPrior,Img,beta,nl_weights)
+function dP = d_smoothed_nonlocal_TV_prior(ObjPrior,Img,nl_weights, params)
+beta = params.beta;
 % beta, TV smoothness parameter
 % nl_weights, non-local weights calculated from ObjPrior.W_GaussianKernel() or W_Bowsher()
 

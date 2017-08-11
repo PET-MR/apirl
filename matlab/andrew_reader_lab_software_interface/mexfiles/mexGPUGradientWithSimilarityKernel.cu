@@ -37,6 +37,8 @@ __device__ int d_InsertNumberSorted(float* array, float value, float* secondaryA
 	if ((*numElements) == 0)
 	{
 		array[0] = value;
+		secondaryArray[0] = secondaryValue;
+		(*numElements)++;
 		return EXIT_SUCCESS;
 	}
 	if ((*numElements) == numTotalElements)
@@ -47,7 +49,7 @@ __device__ int d_InsertNumberSorted(float* array, float value, float* secondaryA
 			array[0] = value;
 			secondaryArray[0] = secondaryValue;
 			// And now place it in the correct position:
-			for (i = 0; i < (*numElements); i ++)
+			for (i = 0; i < (*numElements)-1; i ++) // The last element filled is array[(*numElements)-1]
 			{
 				if(array[i]>array[i+1])
 				{
@@ -76,8 +78,9 @@ __device__ int d_InsertNumberSorted(float* array, float value, float* secondaryA
 		// Add at the end of the list:
 		array[*numElements] = value; // add a new element.
 		secondaryArray[*numElements] = secondaryValue; // add a new element.
+		(*numElements)++;
 		// Now sort it
-		for (i = (*numElements); i > 0; i --)
+		for (i = (*numElements)-1; i > 0; i --)
 		{
 			if(array[i] < array[i-1])
 			{
@@ -115,7 +118,7 @@ __global__ void d_LocalDifferencesWithBowsher(float *ptrGradientImage, int Nx, i
     return;
   }
   linearIndex = x + y*Nx + z*Nx*Ny; // col-wise stored matrix for matlab
-	
+	ptrGradientImage[linearIndex] = 0;
   voxelValue = tex3D(texImage, x+0.5f, y+0.5f, z+0.5f);
 	voxelValueSimilarityImage = tex3D(texSimilarityImage, x+0.5f, y+0.5f, z+0.5f);
   // Process only the voxels inside the processing window
@@ -135,17 +138,18 @@ __global__ void d_LocalDifferencesWithBowsher(float *ptrGradientImage, int Nx, i
 					if (bSpatialWeight)
 					{
 						spatialWeight = sqrt((-Kradius_x+(float)i)*(-Kradius_x+(float)i)+(-Kradius_y+(float)j)*(-Kradius_y+(float)j)+(-Kradius_z+(float)k)*(-Kradius_z+(float)k));
-						if (spatialWeight != 0)
-							spatialWeight = (1/spatialWeight);
 						// I could pre compute it to avoid computing it for each thread:
 						spatialWeightNorm += spatialWeight;
+						if (spatialWeight != 0)
+							spatialWeight = (1/spatialWeight);
+						
 					}
 					else
 					{
 						spatialWeight = 1; // If not spatial weight: 1
 						spatialWeightNorm = 1;
 					}
-					diffSimilarity = abs(tex3D(texSimilarityImage, x-Kradius_x+i+0.5f, y-Kradius_y+j+0.5f, z-Kradius_z+k+0.5f)-voxelValueSimilarityImage);
+					diffSimilarity = fabsf(tex3D(texSimilarityImage, x-Kradius_x+i+0.5f, y-Kradius_y+j+0.5f, z-Kradius_z+k+0.5f)-voxelValueSimilarityImage);
 					switch(typeDiff)
 					{
 						case LinearSum:
@@ -155,14 +159,20 @@ __global__ void d_LocalDifferencesWithBowsher(float *ptrGradientImage, int Nx, i
 							output = (tex3D(texImage, x-Kradius_x+i+0.5f, y-Kradius_y+j+0.5f, z-Kradius_z+k+0.5f)-voxelValue)*(tex3D(texImage, x-Kradius_x+i+0.5f, y-Kradius_y+j+0.5f, z-Kradius_z+k+0.5f)-voxelValue);
 							break;
 					}
+					if((x==71)&&(y==83)&&(z==59))
+						printf("%d %d %d %f \n", x, y, z, output);
 					d_InsertNumberSorted(bowsherValues, diffSimilarity, outputValues, output, &numElements, numBowsherVoxels);
 				}
 			}
     }
   }
   for(i = 0; i < numBowsherVoxels; i++)
-		ptrGradientImage[linearIndex] += output;
-	output = output/spatialWeightNorm;
+	{
+		ptrGradientImage[linearIndex] += outputValues[i];
+			if((x==71)&&(y==83)&&(z==59))
+				printf("%d BowsherWeight:%f OutputWeight:%f \n", i, bowsherValues[i], outputValues[i]);
+	}
+	ptrGradientImage[linearIndex] = ptrGradientImage[linearIndex]/(spatialWeightNorm*numBowsherVoxels);
 }
 
 __global__ void d_LocalDifferencesWithSimilarityWeights(float *ptrGradientImage, int Nx, int Ny, int Nz, int Kx, int Ky, int Kz, int bSpatialWeight, TypeOfLocalDifference typeDiff, TypeOfSimilarityKernel typeSimilarity) // Nx: x for texture memory, cols in matlab matrix
@@ -241,15 +251,14 @@ void mexFunction(int nlhs, mxArray *plhs[],
     cudaArray *d_inputImage;
 		cudaArray *d_similarityImage;
     float *d_outputGradient;
-    int Nx, Ny, Nz, Kx, Ky, Kz, enableSpatialWeight;
+    int Nx, Ny, Nz, Kx, Ky, Kz, enableSpatialWeight, numBowsher;
 		TypeOfLocalDifference typeDiff;
 		mxGPUArray* outputGradient;
     
     /* Initialize the MathWorks GPU API. */
     mxInitGPU();
-
     /* Throw an error if the input is not a single array. */
-    if (nrhs!=7) {
+    if (nrhs!=8) {
         mexErrMsgIdAndTxt("mexGradient:mexGradient(inputMatrix,Kx,Ky,Kz)",
 				                  "Wrong number of input parameters.");
     }
@@ -268,15 +277,15 @@ void mexFunction(int nlhs, mxArray *plhs[],
 			mexErrMsgIdAndTxt("mexGradient:similarityImage",
 				                  "The similarity image has a different size to the input image.");
 		/* Check the other parameters: make sure the first input argument is scalar */
-		if( !mxIsDouble(prhs[1]) || (mxGetNumberOfElements(prhs[1])!=1) || !mxIsDouble(prhs[2]) || (mxGetNumberOfElements(prhs[2])!=1) || !mxIsDouble(prhs[3]) || (mxGetNumberOfElements(prhs[3])!=1) ||
+		if( !mxIsDouble(prhs[7]) || (mxGetNumberOfElements(prhs[7])!=1) || !mxIsDouble(prhs[2]) || (mxGetNumberOfElements(prhs[2])!=1) || !mxIsDouble(prhs[3]) || (mxGetNumberOfElements(prhs[3])!=1) ||
 			!mxIsDouble(prhs[4]) || (mxGetNumberOfElements(prhs[4])!=1) || !mxIsDouble(prhs[5]) || (mxGetNumberOfElements(prhs[5])!=1) || !mxIsDouble(prhs[6]) || (mxGetNumberOfElements(prhs[6])!=1))
 		{
 				mexErrMsgIdAndTxt("mexGradient:Kx,Ky,Kz:notScalar",
 				                  "The kernel sizes must be a scalar.");
 		}
     // Load the dimensions of the images and kernel:
- 		Kx = mxGetScalar(prhs[2]); Ky = mxGetScalar(prhs[1]); Kz = mxGetScalar(prhs[3]);
-		enableSpatialWeight = mxGetScalar(prhs[4]); typeDiff = (TypeOfLocalDifference) mxGetScalar(prhs[5]); numBowsher = mxGetScalar(prhs[6]);
+ 		Kx = mxGetScalar(prhs[3]); Ky = mxGetScalar(prhs[2]); Kz = mxGetScalar(prhs[4]);
+		enableSpatialWeight = mxGetScalar(prhs[5]); typeDiff = (TypeOfLocalDifference) mxGetScalar(prhs[6]); numBowsher = mxGetScalar(prhs[7]);
     /* Create a GPUArray to hold the result and get its underlying pointer. mxGetClassID(prhs[0])*/
     outputGradient = mxGPUCreateGPUArray(mxGetNumberOfDimensions(prhs[0]),
                             mxGetDimensions(prhs[0]),
@@ -290,7 +299,6 @@ void mexFunction(int nlhs, mxArray *plhs[],
 		cudaChannelFormatDesc floatTex = cudaCreateChannelDesc<float>();
 		const cudaExtent extentImageSize = make_cudaExtent(Nx, Ny, Nz); // For this memory the width is Nx, therefore the cols
 		cudaMemcpy3DParms copyParams = {0};
-
 	  // Must be called with init gpu memory. It loads the texture memory for the projection.
     // The image is in a texture memory:  cudaChannelFormatDesc floatTex;
     checkCudaErrors(cudaMalloc3DArray(&d_inputImage, &floatTex, extentImageSize));
@@ -309,6 +317,22 @@ void mexFunction(int nlhs, mxArray *plhs[],
     // bind array to 3D texture
     checkCudaErrors(cudaBindTextureToArray(texImage, d_inputImage, floatTex));
 
+		// Repeat the same for the similarity image:
+		checkCudaErrors(cudaMalloc3DArray(&d_similarityImage, &floatTex, extentImageSize));
+		copyParams.srcPtr   = make_cudaPitchedPtr(similarityImage, extentImageSize.width*sizeof(float), extentImageSize.width, extentImageSize.height);
+    copyParams.dstArray = d_similarityImage;
+    copyParams.extent   = extentImageSize;
+    copyParams.kind     = cudaMemcpyHostToDevice;
+    checkCudaErrors(cudaMemcpy3D(&copyParams));
+		// set texture parameters
+    texSimilarityImage.normalized = false;                      // access with normalized texture coordinates
+    texSimilarityImage.filterMode = cudaFilterModeLinear;      // linear interpolation
+    texSimilarityImage.addressMode[0] = cudaAddressModeBorder;   // set to zerto the borders.
+    texSimilarityImage.addressMode[1] = cudaAddressModeBorder;
+    texSimilarityImage.addressMode[2] = cudaAddressModeBorder;
+    // bind array to 3D texture
+    checkCudaErrors(cudaBindTextureToArray(texSimilarityImage, d_similarityImage, floatTex));
+		
     /*
      * Call the kernel using the CUDA runtime API. We are using a 1-d grid here,
      * and it would be possible for the number of elements to be too large for
@@ -316,7 +340,7 @@ void mexFunction(int nlhs, mxArray *plhs[],
      */
 		dim3 threadsPerBlock = dim3(8,8,8);
 		dim3 blocksPerGrid = dim3(ceil((float)Nx/8),ceil((float)Ny/8),ceil((float)Nz/8));
-		//mexPrintf("%d %d %d %d %d %d, blocks: %d %d %d, grid: %d %d %d", Nx, Ny, Nz, Kx, Ky, Kz, threadsPerBlock.x, threadsPerBlock.y, threadsPerBlock.z, blocksPerGrid.x, blocksPerGrid.y, blocksPerGrid.z);
+		mexPrintf("%d %d %d %d %d %d, blocks: %d %d %d, grid: %d %d %d", Nx, Ny, Nz, Kx, Ky, Kz, threadsPerBlock.x, threadsPerBlock.y, threadsPerBlock.z, blocksPerGrid.x, blocksPerGrid.y, blocksPerGrid.z);
 		d_LocalDifferencesWithBowsher<<<blocksPerGrid, threadsPerBlock>>>(d_outputGradient, Nx, Ny, Nz, Kx, Ky, Kz, enableSpatialWeight, typeDiff, numBowsher);
 		checkCudaErrors(cudaThreadSynchronize());
 

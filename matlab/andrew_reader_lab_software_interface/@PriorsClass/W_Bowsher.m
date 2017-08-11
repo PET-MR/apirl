@@ -1,4 +1,5 @@
-function Wb = W_Bowsher(ObjPrior,Img,B)
+function Wb = W_Bowsher(ObjPrior,Img,params)
+B = params.BowsherB;
 % B: user defined number of the neighboring voxels that have the
 % highest similarity on the anatomical image based on thier
 % absoulte intensity differences
