@@ -28,7 +28,7 @@ texture<float, 3, cudaReadModeElementType> texImage;
 texture<float, 3, cudaReadModeElementType> texSimilarityImage;
 
 // Inserts a new value (without allocating memory) in an array for the similarity weight that has already been sorted from
-// greater to lower. The number is inserted in the correct position. When a new element is larger that the first element, then is removed
+// lower to greater (from more similarity to less). The number is inserted in the correct position. When a new element is larger that the first element, then is removed
 // and its also removed from the output values
 // Return EXIT_SUCCESS if could introduce the number or EXIT_FAILURE if all the numbers were greater.
 __device__ int d_InsertNumberSorted(float* array, float value, float* secondaryArray, float secondaryValue, int* numElements, int numTotalElements) // numElements:actual values in the array, numTotalValues: total number of values to be filled in the array.
@@ -43,7 +43,7 @@ __device__ int d_InsertNumberSorted(float* array, float value, float* secondaryA
 	}
 	if ((*numElements) == numTotalElements)
 	{
-		if (value > array[0])
+		if (value < array[0])
 		{
 			// Replace the first value
 			array[0] = value;
@@ -51,7 +51,7 @@ __device__ int d_InsertNumberSorted(float* array, float value, float* secondaryA
 			// And now place it in the correct position:
 			for (i = 0; i < (*numElements)-1; i ++) // The last element filled is array[(*numElements)-1]
 			{
-				if(array[i]>array[i+1])
+				if(array[i] < array[i+1])
 				{
 					// The first array:
 					aux = array[i+1];
@@ -82,7 +82,7 @@ __device__ int d_InsertNumberSorted(float* array, float value, float* secondaryA
 		// Now sort it
 		for (i = (*numElements)-1; i > 0; i --)
 		{
-			if(array[i] < array[i-1])
+			if(array[i-1] < array[i])
 			{
 				aux = array[i-1];
 				array[i-1] = array[i];
@@ -139,9 +139,9 @@ __global__ void d_LocalDifferencesWithBowsher(float *ptrGradientImage, int Nx, i
 					{
 						spatialWeight = sqrt((-Kradius_x+(float)i)*(-Kradius_x+(float)i)+(-Kradius_y+(float)j)*(-Kradius_y+(float)j)+(-Kradius_z+(float)k)*(-Kradius_z+(float)k));
 						// I could pre compute it to avoid computing it for each thread:
-						spatialWeightNorm += spatialWeight;
 						if (spatialWeight != 0)
 							spatialWeight = (1/spatialWeight);
+						spatialWeightNorm += spatialWeight;
 						
 					}
 					else
@@ -159,8 +159,6 @@ __global__ void d_LocalDifferencesWithBowsher(float *ptrGradientImage, int Nx, i
 							output = (tex3D(texImage, x-Kradius_x+i+0.5f, y-Kradius_y+j+0.5f, z-Kradius_z+k+0.5f)-voxelValue)*(tex3D(texImage, x-Kradius_x+i+0.5f, y-Kradius_y+j+0.5f, z-Kradius_z+k+0.5f)-voxelValue);
 							break;
 					}
-					if((x==71)&&(y==83)&&(z==59))
-						printf("%d %d %d %f \n", x, y, z, output);
 					d_InsertNumberSorted(bowsherValues, diffSimilarity, outputValues, output, &numElements, numBowsherVoxels);
 				}
 			}
@@ -169,8 +167,6 @@ __global__ void d_LocalDifferencesWithBowsher(float *ptrGradientImage, int Nx, i
   for(i = 0; i < numBowsherVoxels; i++)
 	{
 		ptrGradientImage[linearIndex] += outputValues[i];
-			if((x==71)&&(y==83)&&(z==59))
-				printf("%d BowsherWeight:%f OutputWeight:%f \n", i, bowsherValues[i], outputValues[i]);
 	}
 	ptrGradientImage[linearIndex] = ptrGradientImage[linearIndex]/(spatialWeightNorm*numBowsherVoxels);
 }
@@ -340,7 +336,7 @@ void mexFunction(int nlhs, mxArray *plhs[],
      */
 		dim3 threadsPerBlock = dim3(8,8,8);
 		dim3 blocksPerGrid = dim3(ceil((float)Nx/8),ceil((float)Ny/8),ceil((float)Nz/8));
-		mexPrintf("%d %d %d %d %d %d, blocks: %d %d %d, grid: %d %d %d", Nx, Ny, Nz, Kx, Ky, Kz, threadsPerBlock.x, threadsPerBlock.y, threadsPerBlock.z, blocksPerGrid.x, blocksPerGrid.y, blocksPerGrid.z);
+		//mexPrintf("%d %d %d %d %d %d, blocks: %d %d %d, grid: %d %d %d\n", Nx, Ny, Nz, Kx, Ky, Kz, threadsPerBlock.x, threadsPerBlock.y, threadsPerBlock.z, blocksPerGrid.x, blocksPerGrid.y, blocksPerGrid.z);
 		d_LocalDifferencesWithBowsher<<<blocksPerGrid, threadsPerBlock>>>(d_outputGradient, Nx, Ny, Nz, Kx, Ky, Kz, enableSpatialWeight, typeDiff, numBowsher);
 		checkCudaErrors(cudaThreadSynchronize());
 
