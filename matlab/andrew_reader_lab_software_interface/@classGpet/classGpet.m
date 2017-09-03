@@ -823,7 +823,7 @@ classdef classGpet < handle
                     image = image.*objGpet.vecDivision(objGpet.PT(AN.*objGpet.vecDivision(Prompts,AN.*objGpet.P(image,j)+ RS),j),SensImg(:,:,:,j));
                     image = max(0,image);
                     if rem(k-1,saveInterval) == 0 % -1 to save the first iteration
-                        interfilewrite(single(image), [outputPath 'opmlem_iter_' num2str(k)], objGpet.image_size.voxelSize_mm); % i use i instead of i+1 because i=1 is the inital estimate
+                        interfilewrite(single(image), [outputPath 'oposem_subiter_' num2str(k)], objGpet.image_size.voxelSize_mm); % i use i instead of i+1 because i=1 is the inital estimate
                         image_iters{k} = image;
                         k = k + 1;
                     end
@@ -1013,20 +1013,15 @@ classdef classGpet < handle
             opt.MrSigma = 0.1; % JBE
             opt.PetSigma  = 10; %JBE
             opt.display = 0;
-            % check if the object already was initilized:
-            %if isempty(objGpet.Prior)
-                opt.ImageSize = objGpet.image_size.matrixSize;
-                opt.imCropFactor = [4,4,0];
-                opt.sWindowSize = 5;
-                opt.lWindowSize = 1;
-                opt = getFiledsFromUsersOpt(opt,arg);
-                objGpet.Prior = PriorsClass(opt);
-%             else
-%                 % whos_prior = whos('objGpet.Prior');
-%                 % if strcmp(whos_prior.class, 'PriorsClass')
-%                 % Only initilize the parameters for this reconstruction
-%                 opt = getFiledsFromUsersOpt(opt,arg);
-            %end
+            opt.save = 0;
+            opt.outputPath = [];
+            opt.saveInterval = 0;
+            opt.ImageSize = objGpet.image_size.matrixSize;
+            opt.imCropFactor = [4,4,0];
+            opt.sWindowSize = 5;
+            opt.lWindowSize = 1;
+            opt = getFiledsFromUsersOpt(opt,arg);
+            objGpet.Prior = PriorsClass(opt);
             
             if opt.display, figure; end
             
@@ -1058,6 +1053,11 @@ classdef classGpet < handle
                         imshow(Img,[]);
                     else %if 3D recon, use opt.display =x, where x is a transvese slice
                         imshow(Img(:,:,opt.display),[]);
+                    end
+                end
+                if opt.save
+                    if rem(i,opt.saveInterval) == 0 %
+                        interfilewrite(single(Img), [opt.outputPath 'map_iter_' num2str(i)], [objGpet.image_size.matrixSize]); % i use i instead of i+1 because i=1 is the inital estimate
                     end
                 end
             end
@@ -1189,7 +1189,7 @@ classdef classGpet < handle
                     W = objGpet.Prior.Wd.*W0;
                     dP = -2* sum(W.*objGpet.Prior.GraphGradCrop(xn),2);
                     dP = opt.PetRegularizationParameter*objGpet.Prior.UndoImCrop(reshape(dP,objGpet.Prior.CropedImageSize));
-                    Img = xn.*objGpet.vecDivision(objGpet.PT(objGpet.vecDivision(Prompts,objGpet.P(xn)+ RS)),SensImg + dP + 1e-5);
+                    Img = xn.*objGpet.vecDivision(objGpet.PT(objGpet.vecDivision(Prompts,objGpet.P(xn)+ additive)),SensImg + dP + 1e-5);
                     Img = max(0,Img);
                 end
                 if opt.display
@@ -1208,6 +1208,135 @@ classdef classGpet < handle
                 else
                     image_ds = Img;
                 end
+            end
+        end
+        
+        function image_ds = MAPEM2_DS(objGpet,prompts, anf, additive, Img, nIter,arg, outputPath)
+            % First initilization of the parameters needed to downsample in
+            % system matrix, that can be done in gpu or cpu:
+            x_lowres = objGpet.ref_native_image.XWorldLimits+objGpet.ref_native_image.PixelExtentInWorldX(1)/2 : objGpet.ref_native_image.PixelExtentInWorldX : objGpet.ref_native_image.XWorldLimits(2)-objGpet.ref_native_image.PixelExtentInWorldX/2;
+            y_lowres = objGpet.ref_native_image.YWorldLimits+objGpet.ref_native_image.PixelExtentInWorldY(1)/2 : objGpet.ref_native_image.PixelExtentInWorldY : objGpet.ref_native_image.YWorldLimits(2)-objGpet.ref_native_image.PixelExtentInWorldY/2;
+            z_lowres = objGpet.ref_native_image.ZWorldLimits+objGpet.bed_position_mm+objGpet.ref_native_image.PixelExtentInWorldZ(1)/2 : objGpet.ref_native_image.PixelExtentInWorldZ : objGpet.ref_native_image.ZWorldLimits(2)+objGpet.bed_position_mm-objGpet.ref_native_image.PixelExtentInWorldZ/2;
+            x_highres = objGpet.ref_image.XWorldLimits+objGpet.ref_image.PixelExtentInWorldX(1)/2 : objGpet.ref_image.PixelExtentInWorldX : objGpet.ref_image.XWorldLimits(2)-objGpet.ref_image.PixelExtentInWorldX/2;
+            y_highres = objGpet.ref_image.YWorldLimits+objGpet.ref_image.PixelExtentInWorldY(1)/2 : objGpet.ref_image.PixelExtentInWorldY : objGpet.ref_image.YWorldLimits(2)-objGpet.ref_image.PixelExtentInWorldY/2;
+            z_highres = objGpet.ref_image.ZWorldLimits+objGpet.ref_image.PixelExtentInWorldZ(1)/2 : objGpet.ref_image.PixelExtentInWorldZ : objGpet.ref_image.ZWorldLimits(2)-objGpet.ref_image.PixelExtentInWorldZ/2;
+            [X_lowres,Y_lowres,Z_lowres] = meshgrid(single(x_lowres), single(y_lowres), single(z_lowres));
+            [X_highres,Y_highres,Z_highres] = meshgrid(single(x_highres), single(y_highres), single(z_highres));
+            % If running a gpu, create a copy in gpu:
+%             if strcmp(objGpet.method, 'otf_siddon_gpu')
+%                 gpuX_lowres = gpuArray(X_lowres); gpuY_lowres = gpuArray(Y_lowres); gpuZ_lowres = gpuArray(Z_lowres);
+%                 gpuX_highres = gpuArray(X_highres); gpuY_highres = gpuArray(Y_highres); gpuZ_highres = gpuArray(Z_highres);
+%             end
+            % Masks:
+            mask_highres = (X_highres.^2+Y_highres.^2)<(objGpet.image_size.matrixSize(1)*objGpet.image_size.voxelSize_mm(1)/2.5)^2;
+            mask = (X_lowres.^2+Y_lowres.^2)<(objGpet.ref_native_image.ImageSize(1)*objGpet.ref_native_image.PixelExtentInWorldX(1)/2.5)^2;
+            % PET ds:
+            paramPET.scanner = objGpet.scanner;
+            paramPET.method =  objGpet.method;
+            paramPET.PSF.type = objGpet.PSF.type;
+            paramPET.sinogram_size.span = objGpet.sinogram_size.span;
+            paramPET.nSubsets = objGpet.nSubsets;
+            paramPET.verbosity = 0;
+            paramPET.tempPath = objGpet.tempPath;
+            PET_lowres = classGpet(paramPET);
+            
+            % default parameters
+            opt.PetOptimizationMethod = 'DePierro';%'OSL'
+            opt.PetPriorType = 'Quadratic'; %'Bowsher' 'JointBurgEntropy'
+            opt.PetSimilarityKernel = 'local'; 
+            opt.PriorImplementation = 'matlab';
+            opt.PetRegularizationParameter = 1;
+            opt.PetPreCompWeights = 1;
+            opt.BowsherB = 70;
+            opt.PriorImage = [];
+			opt.TVsmoothingParameter = 0.1;
+            opt.MrSigma = 0.1; % JBE
+            opt.PetSigma  = 10; %JBE
+            opt.display = 0;
+            opt.save = 0;
+            opt.outputPath = objGpet.tempPath;
+            opt.saveInterval = 10;
+
+            opt.ImageSize = objGpet.image_size.matrixSize;
+            opt.imCropFactor = [4,4,0];
+            opt.sWindowSize = 5;
+            opt.lWindowSize = 1;
+            opt = getFiledsFromUsersOpt(opt,arg);
+            objGpet.Prior = PriorsClass(opt);
+            
+            if opt.display, figure; end
+            
+            % SENS IMAGE
+            sensImage = PET_lowres.Sensitivity(anf);
+            %if strcmp(objGpet.method, 'otf_siddon_gpu')
+            %    sensImg_highres = gather(interp3(gpuX_lowres, gpuY_lowres, gpuZ_lowres, gpuArray(sensImage), gpuX_highres, gpuY_highres, gpuZ_highres, 'linear', 0));
+            %else
+                sensImg_highres = interp3(X_lowres, Y_lowres, Z_lowres, sensImage, X_highres, Y_highres, Z_highres, 'linear', 0);
+            %end
+            fprintf('Prior: %s, Method: %s\n',objGpet.Prior.PriorType,opt.PetOptimizationMethod);
+            k = 1;
+            if opt.display, fprintf('Prior: %s, Method: %s\n',objGpet.Prior.PriorType,opt.PetOptimizationMethod); end
+            
+            for i = 1:nIter
+                tic
+                if opt.display,fprintf('Iteration: %d\n',i); end
+                xn = Img;
+                % Projection:
+                %if strcmp(objGpet.method, 'otf_siddon_gpu')
+                %    % if using gpu, run the interpolation also in gpu
+                %    gpuXn = gpuArray(xn);
+                %    low_res_image = gather(interp3(gpuX_highres, gpuY_highres, gpuZ_highres, gpuXn, gpuX_lowres, gpuY_lowres, gpuZ_lowres, 'linear', 0)); %imresize(opmlem{end}, PET_highres.image_size.matrixSize, 'bicubic');
+                %    clear gpuXn
+                %else
+                    low_res_image = interp3(X_highres, Y_highres, Z_highres, xn, X_lowres, Y_lowres, Z_lowres, 'linear', 0); %imresize(opmlem{end}, PET_highres.image_size.matrixSize, 'bicubic');
+                %end
+                projected = anf.*PET_lowres.P(low_res_image) + additive;
+                % Backproject:
+                backprojected_image = PET_lowres.PT(anf.*objGpet.vecDivision(prompts, projected)).*mask;
+                % transpose of interpolation (high sample)
+                %if strcmp(objGpet.method, 'otf_siddon_gpu')
+                %    gpuBackprojected_image = gpuArray(backprojected_image);
+                %    backprojected_image_highres = gather(interp3(gpuX_lowres, gpuY_lowres, gpuZ_lowres, gpuBackprojected_image, gpuX_highres, gpuY_highres, gpuZ_highres, 'linear', 0)).*mask_highres; %imresize(opmlem{end}, PET_highres.image_size.matrixSize, 'bicubic');
+                %    clear gpuBackprojected_image
+                %else
+                    backprojected_image_highres = gather(interp3(X_lowres, Y_lowres, Z_lowres, backprojected_image, X_highres, Y_highres, Z_highres, 'linear', 0)).*mask_highres; %imresize(opmlem{end}, PET_highres.image_size.matrixSize, 'bicubic');
+                %end
+                if strcmpi(opt.PetOptimizationMethod,'DePierro')
+                    % Update image
+                    x_em = xn.*objGpet.vecDivision(backprojected_image_highres, sensImg_highres);
+                    
+                    if strcmpi(opt.PetPriorType,'JointBurgEntropy')
+                        W0 = objGpet.Prior.W_JointEntropy(xn,opt.PetSigma).*W0;
+                        W0 = W0./repmat(sum(W0,2),[1,objGpet.Prior.nS]);
+                    end
+                    W = objGpet.Prior.Wd.*W0;
+                    wj = objGpet.Prior.UndoImCrop(reshape(sum(W,2),objGpet.Prior.CropedImageSize));
+                    B = sensImg_highres - opt.PetRegularizationParameter / 2*objGpet.Prior.UndoImCrop(reshape(sum(W.*objGpet.Prior.GraphDivCrop(xn),2),objGpet.Prior.CropedImageSize));
+                    Img = 2*x_em.*sensImg_highres./(B + sqrt(B.^2+4*opt.PetRegularizationParameter.*sensImg_highres.*x_em.*wj + 1e-10));
+                    Img = max(0,Img);
+                elseif strcmpi(opt.PetOptimizationMethod,'OSL')                  
+                    dP = opt.PetRegularizationParameter*objGpet.Prior.dPrior(xn,opt);
+                    Img = xn.*objGpet.vecDivision(backprojected_image_highres, sensImg_highres + dP + 1e-10);
+                    Img = max(0,Img);
+                end
+                if opt.display
+                    if objGpet.image_size.matrixSize(3)==1
+                        imshow(Img,[]);
+                    else %if 3D recon, use opt.display =x, where x is a transvese slice
+                        imshow(Img(:,:,opt.display),[]);
+                    end
+                end
+                if opt.save
+                    if rem(i-1,opt.saveInterval) == 0 % -1 to save the first iteration
+                        image_ds{k} = Img;
+                        interfilewrite(single(image_ds{k}), [outputPath 'map_ds_iter_' num2str(i)], [objGpet.ref_image.PixelExtentInWorldX objGpet.ref_image.PixelExtentInWorldY objGpet.ref_image.PixelExtentInWorldZ]); % i use i instead of i+1 because i=1 is the inital estimate
+                        k = k + 1;
+                    end
+                else
+                    image_ds = Img;
+                end
+                timeIter = toc;
+                if objGpet.verbosity>0,fprintf('Iteration time: %f sec\n',timeIter); end
             end
         end
         

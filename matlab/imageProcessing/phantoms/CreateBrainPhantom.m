@@ -11,7 +11,7 @@
 % It returns the image resized to the standard PET mMR image size, and
 % an attenuation map.
 
-function [pet_rescaled, mumap_rescaled, t1_rescaled, t2_rescaled, refImage] = CreateBrainPhantom(binaryFilename, imageSize_pixels, pixelSize_mm)
+function [pet_rescaled, mumap_rescaled, t1_rescaled, t2_rescaled, classified_tissue_rescaled, refImage] = CreateBrainPhantom(binaryFilename, imageSize_pixels, pixelSize_mm)
 %% PARAMETERS
 imageSizePhantom_pixels = [362 434 362];
 pixelSizePhantom_mm = [0.5 0.5 0.5];
@@ -32,9 +32,10 @@ phantom = fread(fid, imageSizePhantom_pixels(1)*imageSizePhantom_pixels(2)*image
 phantom = reshape(phantom, imageSizePhantom_pixels);
 % Then interchange rows and cols, x and y: 
 phantom = permute(phantom, [2 1 3]);
+phantom = phantom(end:-1:1,:,end:-1:1);
 fclose(fid);
 imageSizePhantom_pixels = size(phantom);
-
+classified_tissue = round(phantom./16);
 %% PHANTOM PARAMETER
 
 indicesCsf = phantom == 16;
@@ -63,7 +64,7 @@ mumap(indicesBone) = mu_bone_1_cm;
 
 %% TRANSFORM THE ATANOMY INTO PET SIGNALS
 whiteMatterAct = 32;
-grayMatterAct = 96;
+grayMatterAct = 128;
 skinAct = 16;
 pet = phantom;
 pet(indicesWhiteMatter) = whiteMatterAct;
@@ -130,14 +131,18 @@ if pixelSize_mm ~= pixelSizePhantom_mm | imageSize_pixels ~= imageSizePhantom_pi
     t1_rescaled(isnan(t1_rescaled)) = 0;
     t2_rescaled = interp3(Xphantom,Yphantom,Zphantom,t2,Xpet,Ypet,Zpet); 
     t2_rescaled(isnan(t2_rescaled)) = 0;
+    classified_tissue_rescaled = interp3(Xphantom,Yphantom,Zphantom,classified_tissue,Xpet,Ypet,Zpet, 'nearest'); 
+    classified_tissue_rescaled(isnan(classified_tissue_rescaled)) = 0;
     % I am having problems with the first slices, zero padd them:
     pet_rescaled(:,:,1:5) = 0;
     mumap_rescaled(:,:,1:5) = 0;
     t1_rescaled(:,:,1:5) = 0;
     t2_rescaled(:,:,1:5) = 0;
+    classified_tissue_rescaled(:,:,1:5) = 0;
 else
     pet_rescaled = pet;
     mumap_rescaled = mumap;
     t1_rescaled = t1;
     t2_rescaled = t2;
+    classified_tissue_rescaled = classified_tissue;
 end

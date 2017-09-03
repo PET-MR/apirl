@@ -324,14 +324,14 @@ classdef PriorsClass < handle
             end
         end
         
-        function imgGrad = GraphGradWithSpatialWeightAndSimilarity(ObjPrior,Img, nl_weights)
+        function imgGrad = GraphGradWithSpatialWeightAndSimilarity(ObjPrior,Img, nl_weights, opt)
             if strcmp(ObjPrior.PriorImplementation, 'matlab')
                 imgGrad = sum(nl_weights.*ObjPrior.Wd.*ObjPrior.GraphGrad(Img),2);
             elseif strcmp(ObjPrior.PriorImplementation, 'mex-cuda')
                 enableSpatialWeight = 1;
                 typeOfLocalDifferences = 'LinearSum';
                 % So far this only works with bowsher:
-                imgGrad = ObjPrior.GpuGraphGradWithSimilarity(Img, ObjPrior.imCrop(single(ObjPrior.PriorImage)), ObjPrior.sWindowSize, ObjPrior.sWindowSize, ObjPrior.sWindowSize, enableSpatialWeight, typeOfLocalDifferences); % Possible values: 'LinearSumWithBowsher', 'MagnitudWithBowsher'
+                imgGrad = ObjPrior.GpuGraphGradWithSimilarity(Img, ObjPrior.imCrop(single(ObjPrior.PriorImage)), ObjPrior.sWindowSize, ObjPrior.sWindowSize, ObjPrior.sWindowSize, enableSpatialWeight, typeOfLocalDifferences, opt); % Possible values: 'LinearSumWithBowsher', 'MagnitudWithBowsher'
             end
         end
         
@@ -349,15 +349,15 @@ classdef PriorsClass < handle
             end
         end      
         
-        function magGrad = MagnitudGraphGradWithSpatialWeightAndSimilarity(ObjPrior, Img, smooth, nl_weights) % Parameter needed sometimes if the magnitud is used in the denominator.
+        function magGrad = MagnitudGraphGradWithSpatialWeightAndSimilarity(ObjPrior, Img, nl_weights, smooth) % Parameter needed sometimes if the magnitud is used in the denominator.
             if nargin == 2
                 smooth = 0;
             end
             if strcmp(ObjPrior.PriorImplementation, 'matlab')
                 imgGrad = ObjPrior.GraphGrad(Img);
-                magGrad = sqrt(sum(imgGrad.^2,2)+ smooth);
+                magGrad = sqrt(sum(nl_weights.*ObjPrior.Wd.*imgGrad.^2,2)+ smooth);
             elseif strcmp(ObjPrior.PriorImplementation, 'mex-cuda')
-                enableSpatialWeight = 0; % For TV, in my opinion needs to be included, but it wasn't in the matlab implementation.
+                enableSpatialWeight = 1; % For TV, in my opinion needs to be included, but it wasn't in the matlab implementation.
                 typeOfLocalDifferences = 'Magnitud';
                 magGrad = ObjPrior.GpuGraphGradWithSimilarity(Img, ObjPrior.PriorImage, ObjPrior.sWindowSize, ObjPrior.sWindowSize, ObjPrior.sWindowSize, enableSpatialWeight, typeOfLocalDifferences); % Possible values: 'LinearSum', 'Magnitud'
             end
@@ -375,15 +375,15 @@ classdef PriorsClass < handle
             end
         end
         
-        function imgGrad = GpuGraphGradWithSimilarity(ObjPrior, image, similarityImage, Kx, Ky, Kz, enableSpatialWeight, typeOfLocalDifferences)
+        function imgGrad = GpuGraphGradWithSimilarity(ObjPrior, image, similarityImage, Kx, Ky, Kz, enableSpatialWeight, typeOfLocalDifferences, opt)
             % typeOfLocalDifferences: 
             % 1:Sum of linear differences,
             % 2:Magnitud of linear differences(sqrt(square_sums))
             switch typeOfLocalDifferences
                 case 'LinearSum'
-                    imgGrad = mexGPUGradientWithSimilarityKernel(single(image), single(similarityImage), Kx, Ky, Kz, enableSpatialWeight, 1, 40); % This function is not part of the prior class because is a mex file.
+                    imgGrad = mexGPUGradientWithSimilarityKernel(single(image), single(similarityImage), Kx, Ky, Kz, enableSpatialWeight, 1, opt.BowsherB); % This function is not part of the prior class because is a mex file.
                 case 'Magnitud'
-                    imgGrad = mexGPUGradient(single(image), Kx, Ky, Kz, enableSpatialWeight, 2); % This function is not part of the prior class because is a mex file.
+                    imgGrad = mexGPUGradientWithSimilarityKernel(single(image), single(similarityImage), Kx, Ky, Kz, enableSpatialWeight, 2, opt.BowsherB);
             end
         end
         
@@ -438,7 +438,7 @@ classdef PriorsClass < handle
             Img = imCrop(ObjPrior,single(Img));
             
             % Get prior:
-            if strcmpi(opt.SimilarityKernel,'local') % local
+            if strcmpi(ObjPrior.SimilarityKernel,'local') % local
                 dP = ObjPrior.dPhandle(ObjPrior, Img, ObjPrior.PriorParams);
                 dP = dP./ObjPrior.nS; % to use the same regualrization as non-local methods
             else % non-local
@@ -446,6 +446,11 @@ classdef PriorsClass < handle
                     if isempty(ObjPrior.PreCompWeights)
                         W = ObjPrior.dWhandle(ObjPrior, ObjPrior.PriorImage, opt);
                         W = W./repmat(sum(W,2),[1,ObjPrior.nS]);
+                        if strcmpi(ObjPrior.SimilarityKernel,'bowsher')
+                            % bowsher doesn't change with iterations, so
+                            % once computed, reuse it
+                            ObjPrior.PreCompWeights = W;
+                        end
                     else
                         W = ObjPrior.PreCompWeights;
                     end

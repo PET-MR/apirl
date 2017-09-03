@@ -156,7 +156,7 @@ __global__ void d_LocalDifferencesWithBowsher(float *ptrGradientImage, int Nx, i
 							output = spatialWeight*(tex3D(texImage, x-Kradius_x+i+0.5f, y-Kradius_y+j+0.5f, z-Kradius_z+k+0.5f)-voxelValue);
 							break;
 						case Magnitud:
-							output = (tex3D(texImage, x-Kradius_x+i+0.5f, y-Kradius_y+j+0.5f, z-Kradius_z+k+0.5f)-voxelValue)*(tex3D(texImage, x-Kradius_x+i+0.5f, y-Kradius_y+j+0.5f, z-Kradius_z+k+0.5f)-voxelValue);
+							output = spatialWeight*(tex3D(texImage, x-Kradius_x+i+0.5f, y-Kradius_y+j+0.5f, z-Kradius_z+k+0.5f)-voxelValue)*(tex3D(texImage, x-Kradius_x+i+0.5f, y-Kradius_y+j+0.5f, z-Kradius_z+k+0.5f)-voxelValue);
 							break;
 					}
 					d_InsertNumberSorted(bowsherValues, diffSimilarity, outputValues, output, &numElements, numBowsherVoxels);
@@ -168,7 +168,15 @@ __global__ void d_LocalDifferencesWithBowsher(float *ptrGradientImage, int Nx, i
 	{
 		ptrGradientImage[linearIndex] += outputValues[i];
 	}
-	ptrGradientImage[linearIndex] = ptrGradientImage[linearIndex]/(spatialWeightNorm*numBowsherVoxels);
+    switch(typeDiff)
+	{
+		case LinearSum:
+			ptrGradientImage[linearIndex] = ptrGradientImage[linearIndex]/(spatialWeightNorm*numBowsherVoxels);
+			break;
+		case Magnitud:
+			ptrGradientImage[linearIndex] = sqrt(ptrGradientImage[linearIndex]/(spatialWeightNorm*numBowsherVoxels));
+			break;
+	}
 }
 
 __global__ void d_LocalDifferencesWithSimilarityWeights(float *ptrGradientImage, int Nx, int Ny, int Nz, int Kx, int Ky, int Kz, int bSpatialWeight, TypeOfLocalDifference typeDiff, TypeOfSimilarityKernel typeSimilarity) // Nx: x for texture memory, cols in matlab matrix
@@ -344,12 +352,16 @@ void mexFunction(int nlhs, mxArray *plhs[],
     plhs[0] = mxGPUCreateMxArrayOnCPU(outputGradient); //mxGPUCreateMxArrayOnCPU(mxGPUArray const * const);
 
 		// Undo the current texture binding so we leave things in a good state
-    // for the next loop iteration or upon exiting.
-    //cudaUnbindTexture(texImage);
+    cudaUnbindTexture(texImage);
+		cudaUnbindTexture(texSimilarityImage);
     /*
      * The mxGPUArray pointers are host-side structures that refer to device
      * data. These must be destroyed before leaving the MEX function.
      */
     //mxGPUDestroyGPUArray(inputImage); 
     mxGPUDestroyGPUArray(outputGradient);
+		// Free the other memory:
+		cudaFree(d_outputGradient);
+		cudaFreeArray(d_inputImage);
+		cudaFreeArray(d_similarityImage);
 }
