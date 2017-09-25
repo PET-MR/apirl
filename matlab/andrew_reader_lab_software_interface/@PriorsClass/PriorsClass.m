@@ -206,6 +206,8 @@ classdef PriorsClass < handle
                     case 'quadratic'
                         ObjPrior.dPNLhandle = @d_nonlocal_Tikhonov_prior;
                     case 'lange'
+                        ObjPrior.dPNLhandle = @d_Lange_withnonlocalweights_prior;
+                    case 'nonlocal_lange'
                         ObjPrior.dPNLhandle = @d_nonlocal_Lange_prior;
                     case 'huber'
                         ObjPrior.dPNLhandle = @d_nonlocal_Huber_prior;
@@ -349,17 +351,17 @@ classdef PriorsClass < handle
             end
         end      
         
-        function magGrad = MagnitudGraphGradWithSpatialWeightAndSimilarity(ObjPrior, Img, nl_weights, smooth) % Parameter needed sometimes if the magnitud is used in the denominator.
+        function magGrad = MagnitudGraphGradWithSpatialWeightAndSimilarity(ObjPrior, Img, nl_weights, opt) % Parameter needed sometimes if the magnitud is used in the denominator.
             if nargin == 2
                 smooth = 0;
             end
             if strcmp(ObjPrior.PriorImplementation, 'matlab')
                 imgGrad = ObjPrior.GraphGrad(Img);
-                magGrad = sqrt(sum(nl_weights.*ObjPrior.Wd.*imgGrad.^2,2)+ smooth);
+                magGrad = sqrt(sum(nl_weights.*ObjPrior.Wd.*imgGrad.^2,2)+ opt.TVsmoothingParameter);
             elseif strcmp(ObjPrior.PriorImplementation, 'mex-cuda')
                 enableSpatialWeight = 1; % For TV, in my opinion needs to be included, but it wasn't in the matlab implementation.
                 typeOfLocalDifferences = 'Magnitud';
-                magGrad = ObjPrior.GpuGraphGradWithSimilarity(Img, ObjPrior.PriorImage, ObjPrior.sWindowSize, ObjPrior.sWindowSize, ObjPrior.sWindowSize, enableSpatialWeight, typeOfLocalDifferences); % Possible values: 'LinearSum', 'Magnitud'
+                magGrad = ObjPrior.GpuGraphGradWithSimilarity(Img, ObjPrior.imCrop(single(ObjPrior.PriorImage)), ObjPrior.sWindowSize, ObjPrior.sWindowSize, ObjPrior.sWindowSize, enableSpatialWeight, typeOfLocalDifferences, opt); % Possible values: 'LinearSum', 'Magnitud'
             end
         end 
         
@@ -439,7 +441,7 @@ classdef PriorsClass < handle
             
             % Get prior:
             if strcmpi(ObjPrior.SimilarityKernel,'local') % local
-                dP = ObjPrior.dPhandle(ObjPrior, Img, ObjPrior.PriorParams);
+                dP = ObjPrior.dPhandle(ObjPrior, Img, opt);
                 dP = dP./ObjPrior.nS; % to use the same regualrization as non-local methods
             else % non-local
                 if strcmp(ObjPrior.PriorImplementation, 'matlab')

@@ -803,15 +803,15 @@ classdef classGpet < handle
                 image = image.*PET_lowres.vecDivision(backprojected_image_highres, sensImg_highres);
                 image = max(0,image);
                 if nargin>=7
-                if rem(i-1,saveInterval) == 0 % -1 to save the first iteration
-                    image_ds{k} = image;
-                    interfilewrite(single(image_ds{k}), [outputPath 'mlem_ds_iter_' num2str(i)], [objGpet.ref_image.PixelExtentInWorldX objGpet.ref_image.PixelExtentInWorldY objGpet.ref_image.PixelExtentInWorldZ]); % i use i instead of i+1 because i=1 is the inital estimate
-                    k = k + 1;
-                end
+                    if rem(i-1,saveInterval) == 0 % -1 to save the first iteration
+                        image_ds{k} = image;
+                        interfilewrite(single(image_ds{k}), [outputPath 'mlem_ds_iter_' num2str(i)], [objGpet.ref_image.PixelExtentInWorldX objGpet.ref_image.PixelExtentInWorldY objGpet.ref_image.PixelExtentInWorldZ]); % i use i instead of i+1 because i=1 is the inital estimate
+                        k = k + 1;
+                    end
                 else
                     image_ds = image;
+                end
             end
-        end
         end
         
         function image_iters = OPOSEMsaveIter(objGpet,Prompts, AN, RS, SensImg, initialEstimate, nIter, outputPath, saveInterval)
@@ -1001,8 +1001,8 @@ classdef classGpet < handle
             % First check if the Prior class has already been intialized
             % default parameters
             opt.PetOptimizationMethod = 'DePierro';%'OSL'
-            opt.PriorType = 'Quadratic'; %'TV' 'Lange'
-            opt.SimilarityKernel = 'local';  %'Bowsher' 'JointBurgEntropy'
+            opt.PetPriorType = 'Quadratic'; %'TV' 'Lange'
+            opt.PetSimilarityKernel = 'local';  %'Bowsher' 'JointBurgEntropy'
             opt.PriorImplementation = 'matlab'; % 2 options: 'matlab', 'mex-cuda'
             opt.PetRegularizationParameter = 1;
             opt.PetPreCompWeights = 1;
@@ -1026,7 +1026,7 @@ classdef classGpet < handle
             if opt.display, figure; end
             
 
-            if opt.display, fprintf('Prior: %s, Method: %s\n',opt.PriorType,opt.PetOptimizationMethod); end
+            if opt.display, fprintf('Prior: %s, Method: %s\n',opt.PetPriorType,opt.PetOptimizationMethod); end
             for i = 1:nIter
                 if opt.display, fprintf('Iteration: %d\n',i); end
                 if strcmpi(opt.PetOptimizationMethod,'DePierro')
@@ -1249,6 +1249,7 @@ classdef classGpet < handle
             opt.PetPreCompWeights = 1;
             opt.BowsherB = 70;
             opt.PriorImage = [];
+            opt.LangeDeltaParameter = [];
 			opt.TVsmoothingParameter = 0.1;
             opt.MrSigma = 0.1; % JBE
             opt.PetSigma  = 10; %JBE

@@ -533,7 +533,7 @@ classdef PETDataClass < handle
     
     methods (Access = public)
         
-        [totalPrompts,totalRandoms, totalWords, outFileHdr, output_listmode_file] = undersample_mMR_listmode_data(ObjData,input_listmode_file,countReductionFractor,chunk_size_events)
+        [totalPrompts,totalRandoms, totalWords, outFileHdr, output_listmode_file] = undersample_mMR_listmode_data(ObjData,input_listmode_file,countReductionFractor,chunk_size_events, numRealizations)
         % Initialize sinogram size struct.
         sino_size_out = init_sinogram_size(ObjData, inspan, numRings, maxRingDifference);
         % Change span sinogram.

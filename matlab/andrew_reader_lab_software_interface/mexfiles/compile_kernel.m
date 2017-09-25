@@ -11,7 +11,7 @@ else
     error(['Error in compilation of cuda kernels: ' message]);
 end
 %mexcuda gradient_kernel.cu -lstdc++ -lc
-
+mexcuda mexGPULange.cu -lstdc++ -lc
 mexcuda mexGPUGradient.cu -lstdc++ -lc
 mexcuda mexGPUGradientWithSimilarityKernel.cu -lstdc++ -lc
 % Another way of compiling:

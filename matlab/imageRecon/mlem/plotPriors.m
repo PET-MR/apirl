@@ -7,7 +7,7 @@
 %  Grafico los priors.
 clear all
 close all
-r = 1 : 256; % Diferencia entre píxeles.
+r = -256: 1 : 256; % Diferencia entre píxeles.
 delta_Geman = 100;
 delta_Herbert = 100;
 delta_Green = 100;
@@ -24,10 +24,12 @@ set(h, 'Position', [100 100 800 600]);
 
 %% LANGE
 h = figure;
-delta = [0, 1, 20:20:100, 100:50:300];
-
+r = -1: 0.01 : 1; % Diferencia entre píxeles.
+delta = [1e-3*max(abs(r)) 5e-3*max(abs(r)) 1e-2*max(abs(r)) 5e-2*max(abs(r)) 1e-1*max(abs(r)) 2e-1*max(abs(r)) max(abs(r))];
 [DELTA, R] = meshgrid(delta,r);
-lange = DELTA.*(R./DELTA-log(1+R./DELTA));
+% Equalization factor:
+scale_factor = (max(abs(r))./2./delta(1)-log(1+max(abs(r))./2./delta(1)))./(max(abs(r))./2./DELTA-log(1+max(abs(r))./2./DELTA));
+lange = scale_factor.*(abs(R)./DELTA-log(1+abs(R)./DELTA));
 plot(R,lange, 'LineWidth', 2);
 for i = 1 : numel(delta)
     labels{i} = sprintf('\\delta=%d', delta(i));
@@ -39,7 +41,8 @@ xlabel('t');
 
 % Derivada
 h = figure;
-dlange = (1-DELTA./(R+DELTA));
+scale_factor = (max(abs(R))/2./(max(abs(R))./2+delta(1)))./(max(abs(R))/2./(max(abs(R))./2+delta));
+dlange = scale_factor.*(abs(R)./(abs(R)+DELTA));
 plot(R,dlange, 'LineWidth', 2);
 for i = 1 : numel(delta)
     labels{i} = sprintf('\\delta=%d', delta(i));
@@ -55,8 +58,8 @@ delta = [1, 20:20:100, 100:50:300];
 delta = 1 : 2 :20;
 [DELTA, R] = meshgrid(delta,r);
 huber = zeros(size(DELTA));
-huber(DELTA>=R) = R(DELTA>=R).^2/2;
-huber(DELTA<R) = DELTA(DELTA<R).*R(DELTA<R)-DELTA(DELTA<R).^2/2;
+huber(DELTA>=abs(R)) = R(DELTA>=abs(R)).^2/2;
+huber(DELTA<abs(R)) = DELTA(DELTA<abs(R)).*R(DELTA<abs(R))-DELTA(DELTA<abs(R)).^2/2;
 plot(R,huber, 'LineWidth', 2);
 for i = 1 : numel(delta)
     labels{i} = sprintf('\\delta=%d', delta(i));

@@ -8,10 +8,10 @@
 #include <cuda.h>
 #include "helper_cuda.h"
 
-enum TypeOfLocalDifference
+enum TypeOfLange
 {
-	LinearSum = 1,
-	Magnitud = 2
+	Local = 1,
+	NonLocal = 2
 };
 
 enum TypeOfSimilarityKernel
@@ -25,10 +25,10 @@ enum TypeOfSimilarityKernel
 /* Texture memory */
 texture<float, 3, cudaReadModeElementType> texImage;
 
-__global__ void d_LocalDifferences(float *ptrGradientImage, int Nx, int Ny, int Nz, int Kx, int Ky, int Kz, int bSpatialWeight, TypeOfLocalDifference typeDiff) // Nx: x for texture memory, cols in matlab matrix
+__global__ void d_Lange(float *ptrGradientImage, int Nx, int Ny, int Nz, int Kx, int Ky, int Kz, float delta, int bSpatialWeight, TypeOfLange typeLange) // Nx: x for texture memory, cols in matlab matrix
 {
   int i, j, k, linearIndex;
-  float output = 0, voxelValue = 0, spatialWeight = 0, spatialWeightNorm = 0;
+  float output = 0, voxelValue = 0, spatialWeight = 0, spatialWeightNorm = 0, auxValue = 0, normValue = 0;
 	int Kradius_x, Kradius_y, Kradius_z;
 	Kradius_x = Kx/2; Kradius_y = Ky/2; Kradius_z = Kz/2;
   // The blocks are larger than the voxel to be processed to load the edges of the kernel
@@ -72,51 +72,55 @@ __global__ void d_LocalDifferences(float *ptrGradientImage, int Nx, int Ny, int 
 						spatialWeight = 1; // If not spatial weight: 1
 						spatialWeightNorm = 1;
 					}
-					switch(typeDiff)
+                    // Delta value:
+                    auxValue = tex3D(texImage, x-Kradius_x+i+0.5f, y-Kradius_y+j+0.5f, z-Kradius_z+k+0.5f)-voxelValue;
+					switch(typeLange)
 					{
-						case LinearSum:
-							output += spatialWeight*(tex3D(texImage, x-Kradius_x+i+0.5f, y-Kradius_y+j+0.5f, z-Kradius_z+k+0.5f)-voxelValue);
+						case Local:
+							output += spatialWeight*auxValue/(delta + fabs(auxValue));
 							break;
-						case Magnitud:
-							output += spatialWeight*(tex3D(texImage, x-Kradius_x+i+0.5f, y-Kradius_y+j+0.5f, z-Kradius_z+k+0.5f)-voxelValue)*(tex3D(texImage, x-Kradius_x+i+0.5f, y-Kradius_y+j+0.5f, z-Kradius_z+k+0.5f)-voxelValue);
+						case NonLocal:
+							output += spatialWeight*auxValue;
+                            normValue += spatialWeight*auxValue*auxValue;
 							break;
 					}
 				}
 			}
     }
   }
-  switch(typeDiff)
+  switch(typeLange)
 	{
-		case LinearSum:
-			ptrGradientImage[linearIndex] = output/spatialWeightNorm;
+		case Local:
+			ptrGradientImage[linearIndex] = -output/spatialWeightNorm;
 			break;
-		case Magnitud:
-			ptrGradientImage[linearIndex] = sqrt(output/spatialWeightNorm);
+		case NonLocal:
+			ptrGradientImage[linearIndex] = -(output/spatialWeightNorm)/(delta+sqrt(normValue/spatialWeightNorm));
 			break;
 	}
 }
 
 /*
  * Host code, receives arrays on cpu, the memory is trasnfer to gpu here.
- * The format is: mexGPUGradient(single(Img), Kx, Ky, Kz, spatialWeight, typeOfDifference);
+ * The format is: mexGPUGradient(single(Img), Kx, Ky, Kz, delta, spatialWeight, typeOfLange);
  */
 void mexFunction(int nlhs, mxArray *plhs[],
                  int nrhs, mxArray const *prhs[])
 {
     /* Declare all variables.*/
+    float delta;
     float *inputImage;
     cudaArray *d_inputImage;
     float *d_outputGradient;
     int Nx, Ny, Nz, Kx, Ky, Kz, enableSpatialWeight;
-		TypeOfLocalDifference typeDiff;
+		TypeOfLange typeLange;
 		mxGPUArray* outputGradient;
     
     /* Initialize the MathWorks GPU API. */
     mxInitGPU();
 
     /* Throw an error if the input is not a single array. */
-    if (nrhs!=6) {
-        mexErrMsgIdAndTxt("mexGradient:mexGradient(inputMatrix,Kx,Ky,Kz)",
+    if (nrhs!=7) {
+        mexErrMsgIdAndTxt("mexGradient:mexGradient(inputMatrix,Kx,Ky,Kz,delta,spatialWeight,type)",
 				                  "Wrong number of input parameters.");
     }
 		/* Check if the matrix is single: */
@@ -131,14 +135,14 @@ void mexFunction(int nlhs, mxArray *plhs[],
 		
 		/* Check the other parameters: make sure the first input argument is scalar */
 		if( !mxIsDouble(prhs[1]) || (mxGetNumberOfElements(prhs[1])!=1) || !mxIsDouble(prhs[2]) || (mxGetNumberOfElements(prhs[2])!=1) || !mxIsDouble(prhs[3]) || (mxGetNumberOfElements(prhs[3])!=1) ||
-			!mxIsDouble(prhs[4]) || (mxGetNumberOfElements(prhs[4])!=1) || !mxIsDouble(prhs[5]) || (mxGetNumberOfElements(prhs[5])!=1))
+			!mxIsDouble(prhs[4]) || (mxGetNumberOfElements(prhs[4])!=1) || !mxIsDouble(prhs[5]) || (mxGetNumberOfElements(prhs[5])!=1) || !mxIsDouble(prhs[6]) || (mxGetNumberOfElements(prhs[6])!=1))
 		{
-				mexErrMsgIdAndTxt("mexGradient:Kx,Ky,Kz:notScalar",
+				mexErrMsgIdAndTxt("mexGradient:Kx,Ky,Kz,delta,spatialWeight,type:notScalar",
 				                  "The kernel sizes must be a scalar.");
 		}
     // Load the dimensions of the images and kernel:
  		Kx = mxGetScalar(prhs[2]); Ky = mxGetScalar(prhs[1]); Kz = mxGetScalar(prhs[3]);
-		enableSpatialWeight = mxGetScalar(prhs[4]); typeDiff = (TypeOfLocalDifference) mxGetScalar(prhs[5]);
+		delta = mxGetScalar(prhs[4]); enableSpatialWeight = mxGetScalar(prhs[5]); typeLange = (TypeOfLange) mxGetScalar(prhs[6]);
     /* Create a GPUArray to hold the result and get its underlying pointer. mxGetClassID(prhs[0])*/
     outputGradient = mxGPUCreateGPUArray(mxGetNumberOfDimensions(prhs[0]),
                             mxGetDimensions(prhs[0]),
@@ -179,7 +183,7 @@ void mexFunction(int nlhs, mxArray *plhs[],
 		dim3 threadsPerBlock = dim3(8,8,8);
 		dim3 blocksPerGrid = dim3(ceil((float)Nx/8),ceil((float)Ny/8),ceil((float)Nz/8));
 		//mexPrintf("%d %d %d %d %d %d, blocks: %d %d %d, grid: %d %d %d", Nx, Ny, Nz, Kx, Ky, Kz, threadsPerBlock.x, threadsPerBlock.y, threadsPerBlock.z, blocksPerGrid.x, blocksPerGrid.y, blocksPerGrid.z);
-		d_LocalDifferences<<<blocksPerGrid, threadsPerBlock>>>(d_outputGradient, Nx, Ny, Nz, Kx, Ky, Kz, enableSpatialWeight, typeDiff);
+		d_Lange<<<blocksPerGrid, threadsPerBlock>>>(d_outputGradient, Nx, Ny, Nz, Kx, Ky, Kz, delta, enableSpatialWeight, typeLange);
 		checkCudaErrors(cudaThreadSynchronize());
 
     /* Wrap the result up as a MATLAB gpuArray for return. */
