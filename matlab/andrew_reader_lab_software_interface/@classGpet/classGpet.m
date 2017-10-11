@@ -776,6 +776,7 @@ classdef classGpet < handle
             paramPET.scanner = objGpet.scanner;
             paramPET.method =  objGpet.method;
             paramPET.PSF.type = objGpet.PSF.type;
+            paramPET.PSF.Width = objGpet.PSF.Width;
             paramPET.sinogram_size.span = objGpet.sinogram_size.span;
             paramPET.nSubsets = objGpet.nSubsets;
             paramPET.verbosity = 0;
@@ -797,7 +798,7 @@ classdef classGpet < handle
                 % Backproject:
                 backprojected_image = PET_lowres.PT(anf.*PET_lowres.vecDivision(prompts, projected)).*mask;
                 % transpose of interpolation (high sample)
-                 backprojected_image_highres = interp3(X_lowres, Y_lowres, Z_lowres, backprojected_image, X_highres, Y_highres, Z_highres, 'linear', 0).*mask_highres; %imresize(opmlem{end}, PET_highres.image_size.matrixSize, 'bicubic');
+                backprojected_image_highres = interp3(X_lowres, Y_lowres, Z_lowres, backprojected_image, X_highres, Y_highres, Z_highres, 'linear', 0).*mask_highres; %imresize(opmlem{end}, PET_highres.image_size.matrixSize, 'bicubic');
                 %backprojected_image_highres = interp3_lin(X_lowres, Y_lowres, Z_lowres, backprojected_image, X_highres, Y_highres, Z_highres).*mask_highres;
                 % Update image
                 image = image.*PET_lowres.vecDivision(backprojected_image_highres, sensImg_highres);
@@ -1086,6 +1087,7 @@ classdef classGpet < handle
             paramPET.scanner = objGpet.scanner;
             paramPET.method =  objGpet.method;
             paramPET.PSF.type = objGpet.PSF.type;
+            paramPET.PSF.Width = objGpet.PSF.Width;
             paramPET.sinogram_size.span = objGpet.sinogram_size.span;
             paramPET.nSubsets = objGpet.nSubsets;
             paramPET.verbosity = 0;
@@ -1234,6 +1236,7 @@ classdef classGpet < handle
             paramPET.scanner = objGpet.scanner;
             paramPET.method =  objGpet.method;
             paramPET.PSF.type = objGpet.PSF.type;
+            paramPET.PSF.Width = objGpet.PSF.Width;
             paramPET.sinogram_size.span = objGpet.sinogram_size.span;
             paramPET.nSubsets = objGpet.nSubsets;
             paramPET.verbosity = 0;

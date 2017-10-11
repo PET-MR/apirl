@@ -43,6 +43,8 @@ __device__ __constant__ int d_numBinsSino2d;
 __device__ __constant__ float d_crystalElementSize_mm;
 /// Size of each sinogram's bin.
 __device__ __constant__ float d_binSize_mm;
+
+__device__ __constant__ float d_angleStep_deg;
 /// Depth or length og each crystal.
 __device__ __constant__ float d_crystalElementLength_mm;
 /// Mean depth of interaction:

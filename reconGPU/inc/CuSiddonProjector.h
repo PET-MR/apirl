@@ -76,6 +76,8 @@ extern __device__ __constant__ float d_RadioScanner_mm;
 extern __device__ __constant__ float d_crystalElementSize_mm;
 /// Size of each sinogram's bin.
 extern __device__ __constant__ float d_binSize_mm;
+/// Size of each angle step.
+extern __device__ __constant__ float d_angleStep_deg;
 /// Depth or length og each crystal.
 extern __device__ __constant__ float d_crystalElementLength_mm;
 /// Mean depth of interaction:

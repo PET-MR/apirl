@@ -96,7 +96,7 @@ classdef PriorsClass < handle
             end
             
             % image grid
-            [X, Y, Z] = ndgrid(1:n,1:m,1:h);
+            [X, Y, Z] = ndgrid(1:m,1:n,1:h); % x cos, y rows
             Y = single(Y);
             X = single(X);
             Z = single(Z);
@@ -106,12 +106,12 @@ classdef PriorsClass < handle
             D = N;
             l = 1;
             for x = xidx
-                Xnew = ObjPrior.setBoundary1(X + x, n);
+                Xnew = ObjPrior.setBoundary1(X + x, m);
                 for y = yidx
-                    Ynew = ObjPrior.setBoundary1(Y + y, m);
+                    Ynew = ObjPrior.setBoundary1(Y + y, n);
                     for z = zidx
                         Znew = ObjPrior.setBoundary1(Z + z, h);
-                        N(:,l) = Xnew + (Ynew-1).*n + (Znew-1)*n*m;
+                        N(:,l) = Ynew + (Xnew-1).*m + (Znew-1)*n*m; % col-wise
                         D(:,l) = sqrt(x^2+y^2+z^2);
                         l = l + 1;
                     end
@@ -446,7 +446,7 @@ classdef PriorsClass < handle
             else % non-local
                 if strcmp(ObjPrior.PriorImplementation, 'matlab')
                     if isempty(ObjPrior.PreCompWeights)
-                        W = ObjPrior.dWhandle(ObjPrior, ObjPrior.PriorImage, opt);
+                        W = ObjPrior.dPNLhandle(ObjPrior, ObjPrior.imCrop(ObjPrior.PriorImage), opt);
                         W = W./repmat(sum(W,2),[1,ObjPrior.nS]);
                         if strcmpi(ObjPrior.SimilarityKernel,'bowsher')
                             % bowsher doesn't change with iterations, so

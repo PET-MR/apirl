@@ -165,7 +165,7 @@ class DLLEXPORT Sinogram3DSiemensMmr : public Sinogram3DCylindricalPet
 	int CopyAllBinsFrom(Sinogram3D* srcSinogram3D);
 	
 	/** Method that returns the effective radio scanner (takes into account the depth of interction). */
-	  virtual float getEffectiveRadioScanner_mm(){ return radioScanner_mm;}; //{ return radioScanner_mm + Sinogram3DSiemensMmr::scannerParameters.crystalElementLength_mm/2;};
+	virtual float getEffectiveRadioScanner_mm(){ return radioScanner_mm + meanDOI_mm;}; //{ return radioScanner_mm + Sinogram3DSiemensMmr::scannerParameters.crystalElementLength_mm/2;};
 	  
 	/** Gets the crystal size in the transverse direction in mm. */
 	virtual float getCrystalElementSize_mm() {return Sinogram3DSiemensMmr::crystalElementSize_mm;}

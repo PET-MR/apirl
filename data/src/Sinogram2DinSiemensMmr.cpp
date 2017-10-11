@@ -38,7 +38,7 @@ Sinogram2DinSiemensMmr::Sinogram2DinSiemensMmr(char* fileHeaderPath): Sinogram2D
   {
     // ptrRvalues initialization is necesary just one time
     // 1) Get the length on the cylindrical surface for each bin (from x=0 to the center of the crystal element):
-		lr = variableBinSize_mm/2 + (variableBinSize_mm*(j-(float)(numR/2)));
+		lr = variableBinSize_mm/2 + (variableBinSize_mm*(j-(float)(numR/2))); // removed the previous offset variableBinSize_mm/2 +
     // 2) Now I get the x coordinate for that r.
     ptrRvalues_mm[j] = (radioScanner_mm + meanDOI_mm* cos(lr/radioScanner_mm)) * sin(lr/radioScanner_mm);
   }
@@ -173,25 +173,26 @@ bool Sinogram2DinSiemensMmr::getFovLimits(Line2D lor, Point2D* limitPoint1, Poin
 
 bool Sinogram2DinSiemensMmr::getPointsFromLor(int indexProj, int indexR, int indexRingConfig, Point3D* p1, Point3D* p2, float* geomFactor)
 {
-  float r, rad_PhiAngle, auxValue;
+  float r, rad_PhiAngle, auxValue, stepAngle_deg;
   // r is already arc corrected in the constructor:
   r = this->getRValue(indexR);
-  rad_PhiAngle = this->getAngValue(indexProj) * DEG_TO_RAD;
-  if (this->getAngValue(indexProj) > 90)
-		r = r - binSize_mm/2;
-  auxValue = sqrt(radioScanner_mm * radioScanner_mm - r * r);
+  // For even indices, I have a half angle
+	stepAngle_deg = this->getAngValue(1)-this->getAngValue(0);
+	rad_PhiAngle = (this->getAngValue(indexProj)-(indexR%2)*stepAngle_deg/2) * DEG_TO_RAD;
+	
+  auxValue = sqrt(this->getEffectiveRadioScanner_mm() * this->getEffectiveRadioScanner_mm() - r * r);
   *geomFactor = 1;
   p1->X = r * cos(rad_PhiAngle) + sin(rad_PhiAngle) * auxValue;
   p1->Y = r * sin(rad_PhiAngle) - cos(rad_PhiAngle) * auxValue;
   p2->X = r * cos(rad_PhiAngle) - sin(rad_PhiAngle) * auxValue;
   p2->Y = r * sin(rad_PhiAngle) + cos(rad_PhiAngle) * auxValue;
-  float alpha = atan2((2.0f*radioScanner_mm+crystalElementLength_mm*2),(ptrListZ2_mm[indexRingConfig]-ptrListZ1_mm[indexRingConfig]));
-  //p1->Z = ptrListZ1_mm[indexRingConfig] - meanDOI_mm/(effRadioScanner_mm) * (ptrListZ2_mm[indexRingConfig]-ptrListZ1_mm[indexRingConfig]);
-  //p2->Z = ptrListZ2_mm[indexRingConfig] - meanDOI_mm/(effRadioScanner_mm) * (ptrListZ1_mm[indexRingConfig]-ptrListZ2_mm[indexRingConfig]);
-  p1->Z = (ptrListZ2_mm[indexRingConfig]+ptrListZ1_mm[indexRingConfig])/2 - 
-	(ptrListZ2_mm[indexRingConfig]-ptrListZ1_mm[indexRingConfig])/(2.0f*radioScanner_mm+crystalElementLength_mm*2)*radioScanner_mm - cos(alpha)*meanDOI_mm;
-  p2->Z = (ptrListZ2_mm[indexRingConfig]+ptrListZ1_mm[indexRingConfig])/2 + 
-	(ptrListZ2_mm[indexRingConfig]-ptrListZ1_mm[indexRingConfig])/(2.0f*radioScanner_mm+crystalElementLength_mm*2)*radioScanner_mm + cos(alpha)*meanDOI_mm;
+//   float alpha = atan2((2.0f*radioScanner_mm+crystalElementLength_mm*2),(ptrListZ2_mm[indexRingConfig]-ptrListZ1_mm[indexRingConfig]));
+//   p1->Z = (ptrListZ2_mm[indexRingConfig]+ptrListZ1_mm[indexRingConfig])/2 - 
+// 	(ptrListZ2_mm[indexRingConfig]-ptrListZ1_mm[indexRingConfig])/(2.0f*radioScanner_mm+crystalElementLength_mm*2)*radioScanner_mm - cos(alpha)*meanDOI_mm;
+//   p2->Z = (ptrListZ2_mm[indexRingConfig]+ptrListZ1_mm[indexRingConfig])/2 + 
+// 	(ptrListZ2_mm[indexRingConfig]-ptrListZ1_mm[indexRingConfig])/(2.0f*radioScanner_mm+crystalElementLength_mm*2)*radioScanner_mm + cos(alpha)*meanDOI_mm;
+	p1->Z = ptrListZ1_mm[indexRingConfig];
+	p2->Z = ptrListZ2_mm[indexRingConfig];
   return true;
 }
   
@@ -199,8 +200,10 @@ bool Sinogram2DinSiemensMmr::getPointsFromLor(int indexProj, int indexR, int ind
 bool Sinogram2DinSiemensMmr::getPointsFromLor (int indexAng, int indexR, Point2D* p1, Point2D* p2)
 {
   float r = this->getRValue(indexR);
-  float rad_PhiAngle = this->getAngValue(indexAng) * DEG_TO_RAD;
-  float auxValue = sqrt(radioScanner_mm * radioScanner_mm - r * r);
+	// For even indices, I have a half angle
+	float stepAngle_deg = this->getAngValue(1)-this->getAngValue(0);
+  float rad_PhiAngle = (this->getAngValue(indexAng)-(indexR%2)*stepAngle_deg/2) * DEG_TO_RAD;
+  float auxValue = sqrt(this->getEffectiveRadioScanner_mm() * this->getEffectiveRadioScanner_mm() - r * r);
   if(r > radioFov_mm)
   {
     // El r no puede ser mayor que el rfov:
@@ -216,9 +219,10 @@ bool Sinogram2DinSiemensMmr::getPointsFromLor (int indexAng, int indexR, Point2D
 bool Sinogram2DinSiemensMmr::getPointsFromLor (int indexAng, int indexR, Point2D* p1, Point2D* p2, float* geom)
 {
   float r = this->getRValue(indexR);
-  float rad_PhiAngle = this->getAngValue(indexAng) * DEG_TO_RAD;
   // RadioFov se usa si no se tiene geometrías, en el cylindricalpet se debe utilizar el radioscanner:
   float auxValue = sqrt(radioScanner_mm * radioScanner_mm - r * r);
+	float stepAngle_deg = this->getAngValue(1)-this->getAngValue(0);
+  float rad_PhiAngle = (this->getAngValue(indexAng)-(indexR%2)*stepAngle_deg/2) * DEG_TO_RAD;
   *geom = 1;
   if(r > radioFov_mm)
   {

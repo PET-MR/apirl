@@ -102,7 +102,7 @@ class DLLEXPORT Sinogram2DinSiemensMmr : public Sinogram2DinCylindrical3Dpet
 	  
 	  /** Returns the effective radio scanner, taking into account the depth of interacion.
 	   */
-	  virtual float getEffectiveRadioScanner_mm(){ return radioScanner_mm;};//{ return (radioScanner_mm + crystalElementLength_mm/2);};
+	  virtual float getEffectiveRadioScanner_mm(){ return radioScanner_mm + meanDOI_mm;};//{ return (radioScanner_mm + crystalElementLength_mm/2);};
 	  /** Método que obtiene los dos puntos límites, de entrada y salida, de una lor que cruza el field of view.
 	      El mismo dependerá del tipo de fov del sinograma. Por default es circular, pero
 	      puede ser cuadrado o de otra geometría en clases derivadas.

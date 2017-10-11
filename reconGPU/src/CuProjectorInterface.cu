@@ -64,6 +64,8 @@ extern __device__ __constant__ int d_numBinsSino2d;
 extern __device__ __constant__ float d_crystalElementSize_mm;
 /// Size of each sinogram's bin.
 extern __device__ __constant__ float d_binSize_mm;
+/// Size of each angle step.
+extern __device__ __constant__ float d_angleStep_deg;
 /// Depth or length og each crystal.
 extern __device__ __constant__ float d_crystalElementLength_mm;
 /// Mean depth of interaction:
@@ -218,6 +220,8 @@ bool CuProjectorInterface::InitGpuMemory(Sinogram3D* sinogram, Image* image, Tip
   checkCudaErrors(cudaMemcpyToSymbol(d_crystalElementSize_mm, &aux, sizeof(float)));
   aux = sinogram->getRadialBinSize_mm();
   checkCudaErrors(cudaMemcpyToSymbol(d_binSize_mm, &aux, sizeof(float)));
+  aux = sinogram->getSegment(0)->getSinogram2D(0)->getAngValue(1) - sinogram->getSegment(0)->getSinogram2D(0)->getAngValue(0);
+  checkCudaErrors(cudaMemcpyToSymbol(d_angleStep_deg, &aux, sizeof(float)));
   aux = sinogram->getCrystalElementLength_mm();
   checkCudaErrors(cudaMemcpyToSymbol(d_crystalElementLength_mm, &aux, sizeof(float)));
   aux = sinogram->getMeanDOI_mm();
