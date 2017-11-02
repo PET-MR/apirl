@@ -745,7 +745,7 @@ classdef classGpet < handle
                 % SAM ELLIS EDIT (18/07/2016): replaced vector divisions by vecDivision
                 image = image.*objGpet.vecDivision(objGpet.PT(AN.*objGpet.vecDivision(Prompts,AN.*objGpet.P(image)+ RS)),SensImg);
                 image = max(0,image);
-                if rem(i-1,saveInterval) == 0 % -1 to save the first iteration
+                if rem(i,saveInterval) == 0 % 
                     interfilewrite(single(image), [outputPath 'mlem_iter_' num2str(i)], objGpet.image_size.voxelSize_mm); % i use i instead of i+1 because i=1 is the inital estimate
                     image_iter{k} = image;
                     k = k + 1;

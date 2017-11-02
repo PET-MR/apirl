@@ -35,7 +35,7 @@ function [n, n_ti, n_tv, gaps]=NCF(varargin)
                 if nargin == 1
                     % Default normalization file:
                     [n, n_ti, n_tv, acquisition_dependant_ncf_3d, crystal_dependant_ncf_3d, gaps, used_xtal_efficiencies, used_deadtimefactors, used_axial_factors, structSizeSino3d] = ...
-                        create_norm_files_mmr([], [], [], [], [], []);
+                        create_norm_files_mmr([], [], [], [], [], objGpet.sinogram_size.span); % For the default use my axial factors
                 else
                     [n, n_ti, n_tv, acquisition_dependant_ncf_3d, crystal_dependant_ncf_3d, gaps, used_xtal_efficiencies, used_deadtimefactors, used_axial_factors, structSizeSino3d] = ...
                     create_norm_files_mmr(varargin{2}, [], [], [], singles_per_bucket, []);
