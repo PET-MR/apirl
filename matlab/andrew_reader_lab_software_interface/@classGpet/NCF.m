@@ -25,6 +25,8 @@ function [n, n_ti, n_tv, gaps]=NCF(varargin)
             n = fread(fid,inf,'float32');
             fclose(fid);
             n = reshape(n,objGpet.sinogram_size.nRadialBins,objGpet.sinogram_size.nAnglesBins,objGpet.sinogram_size.nSinogramPlanes);
+            % Force the gaps just in case:
+            n = n.*objGpet.gaps();
         else
             error('e7 supports only span 11. Consider PET.method_for_normalization = ''cbn_expansion'' ');
         end

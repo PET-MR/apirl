@@ -566,8 +566,14 @@ classdef classGpet < handle
             [MrInPet, refResampledImage] = ImageResample(imageMr, refMrImage, objGpet.ref_image);
         end
         
-        % Function that reads MR and  configures PET to reconstruct in that space:
-        function [imageMr, refImageMr, MrInPetFov, refImagePetFov] = getMrInNativeImageSpace(objGpet, pathMrDicom)
+        % Function that reads MR and  configures PET to reconstruct in that
+        % space. The first input parameter is the path of the dicom image
+        % and the second (optional) is logical value that says if the
+        % object update the image size to refImagePetFov.
+        function [imageMr, refImageMr, MrInPetFov, refImagePetFov] = getMrInNativeImageSpace(objGpet, pathMrDicom, updateImageSize)
+            if nargin == 2
+                updateImageSize = 0;
+            end
             % Read dicom image:
             [imageMr, refImageMr, affineMatrix, dicomInfo] = ReadDicomImage(pathMrDicom, '', 1);
             % Update the ref_image to this pixel size:
@@ -576,15 +582,15 @@ classdef classGpet < handle
             newVoxelSize_mm = newVoxelSize;
             newMatrixSize = round(objGpet.image_size.matrixSize .* ratio);
             refImagePetFov = objGpet.init_ref_structure(newMatrixSize, newVoxelSize_mm);
-            % I not longer force this
-            % update of the image size, if the user wants to do it he needs
-            % to use revise, ouside this function
-            %             objGpet.image_size.voxelSize_mm = newVoxelSize;
-            %             objGpet.image_size.matrixSize = round(objGpet.image_size.matrixSize .* ratio);
-            %             objGpet.init_ref_image();
-            % refImagePet = objGpet.ref_image;
+            % Update the image size if required:
+            if updateImageSize
+                objGpet.image_size.voxelSize_mm = newVoxelSize;
+                objGpet.image_size.matrixSize = round(objGpet.image_size.matrixSize .* ratio);
+                objGpet.init_ref_image();
+                %refImagePet = objGpet.ref_image;
+            end
             % And finally complete the MR image into PET FOV:
-            [MrInPetFov, refImageMrFov] = ImageResample(imageMr, refImageMr, refImagePetFov);
+            [MrInPetFov, refImagePetFov] = ImageResample(imageMr, refImageMr, refImagePetFov);
         end
 
 		% function that maps an MR in reference space to PET Fov with a FOV
@@ -655,22 +661,22 @@ classdef classGpet < handle
             mask(indicesOutMask) = 0;
         end
         
-        function SenseImg = Sensitivity(objGpet, AN)
+        function senseImg = Sensitivity(objGpet, AN)
             % SAM ELLIS EDIT: IF AN IS DOUBLE, THEN LET THE SENSEIMG BE
             % DOUBLE TOO
             classAN = whos('AN');
             classAN = classAN.class;
             
-            SenseImg = zeros([objGpet.image_size.matrixSize, objGpet.nSubsets],classAN) ;
+            senseImg = zeros([objGpet.image_size.matrixSize, objGpet.nSubsets],classAN) ;
             % SAM ELLIS EDIT (23/08/2016): only show messages if using more
             % than one subset
             if objGpet.nSubsets > 1
                 for n = 1:objGpet.nSubsets
                     fprintf('%d, ',n);
-                    SenseImg(:,:,:,n) = objGpet.PT(AN,n);
+                    senseImg(:,:,:,n) = objGpet.PT(AN,n);
                 end
             else
-                SenseImg = objGpet.PT(AN);
+                senseImg = objGpet.PT(AN);
             end
             fprintf('Done.\n');
         end
@@ -756,9 +762,9 @@ classdef classGpet < handle
         % Opmlem with downsample
         function [image, image_ds] = OPMLEM_DS(objGpet, prompts, anf, additive, initialEstimate, numIterations, outputPath, saveInterval)
             if nargin >=7
-            if ~isdir(outputPath)
-                mkdir(outputPath);
-            end
+                if ~isdir(outputPath)
+                    mkdir(outputPath);
+                end
             end
             % Create grids for downsample and high sample:
             x_lowres = objGpet.ref_native_image.XWorldLimits+objGpet.ref_native_image.PixelExtentInWorldX(1)/2 : objGpet.ref_native_image.PixelExtentInWorldX : objGpet.ref_native_image.XWorldLimits(2)-objGpet.ref_native_image.PixelExtentInWorldX/2;
@@ -815,6 +821,33 @@ classdef classGpet < handle
             end
         end
         
+        function [senseImg] = Sensitivity_DS(objGpet, anf)
+        % Create grids for downsample and high sample:
+            x_lowres = objGpet.ref_native_image.XWorldLimits+objGpet.ref_native_image.PixelExtentInWorldX(1)/2 : objGpet.ref_native_image.PixelExtentInWorldX : objGpet.ref_native_image.XWorldLimits(2)-objGpet.ref_native_image.PixelExtentInWorldX/2;
+            y_lowres = objGpet.ref_native_image.YWorldLimits+objGpet.ref_native_image.PixelExtentInWorldY(1)/2 : objGpet.ref_native_image.PixelExtentInWorldY : objGpet.ref_native_image.YWorldLimits(2)-objGpet.ref_native_image.PixelExtentInWorldY/2;
+            z_lowres = objGpet.ref_native_image.ZWorldLimits+objGpet.bed_position_mm+objGpet.ref_native_image.PixelExtentInWorldZ(1)/2 : objGpet.ref_native_image.PixelExtentInWorldZ : objGpet.ref_native_image.ZWorldLimits(2)+objGpet.bed_position_mm-objGpet.ref_native_image.PixelExtentInWorldZ/2;
+            x_highres = objGpet.ref_image.XWorldLimits+objGpet.ref_image.PixelExtentInWorldX(1)/2 : objGpet.ref_image.PixelExtentInWorldX : objGpet.ref_image.XWorldLimits(2)-objGpet.ref_image.PixelExtentInWorldX/2;
+            y_highres = objGpet.ref_image.YWorldLimits+objGpet.ref_image.PixelExtentInWorldY(1)/2 : objGpet.ref_image.PixelExtentInWorldY : objGpet.ref_image.YWorldLimits(2)-objGpet.ref_image.PixelExtentInWorldY/2;
+            z_highres = objGpet.ref_image.ZWorldLimits+objGpet.ref_image.PixelExtentInWorldZ(1)/2 : objGpet.ref_image.PixelExtentInWorldZ : objGpet.ref_image.ZWorldLimits(2)-objGpet.ref_image.PixelExtentInWorldZ/2;
+            [X_lowres,Y_lowres,Z_lowres] = meshgrid(x_lowres, y_lowres, z_lowres);
+            [X_highres,Y_highres,Z_highres] = meshgrid(x_highres, y_highres, z_highres);
+            % PET ds:
+            paramPET.scanner = objGpet.scanner;
+            paramPET.method =  objGpet.method;
+            paramPET.PSF.type = objGpet.PSF.type;
+            paramPET.PSF.Width = objGpet.PSF.Width;
+            paramPET.sinogram_size.span = objGpet.sinogram_size.span;
+            paramPET.nSubsets = objGpet.nSubsets;
+            paramPET.verbosity = 0;
+            paramPET.tempPath = objGpet.tempPath;
+            PET_lowres = classGpet(paramPET);
+            
+            % The sensitivity image needs to include the interpolation
+            % matrix:
+            senseImg = PET_lowres.Sensitivity(anf);
+            senseImg = interp3(X_lowres, Y_lowres, Z_lowres, senseImg, X_highres, Y_highres, Z_highres, 'linear', 0); %imresize(sensImage, PET_highres.image_size.matrixSize, 'bicubic'); % High resolution image
+        end
+            
         function image_iters = OPOSEMsaveIter(objGpet,Prompts, AN, RS, SensImg, initialEstimate, nIter, outputPath, saveInterval)
             k=1;
             image = initialEstimate;

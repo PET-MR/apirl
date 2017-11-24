@@ -74,8 +74,8 @@ classdef PriorsClass < handle
         function [N,D] = Neighborhood(ObjPrior,w)
             
             % patch-size
-            n = ObjPrior.CropedImageSize(1);
-            m = ObjPrior.CropedImageSize(2);
+            m = ObjPrior.CropedImageSize(1);
+            n = ObjPrior.CropedImageSize(2);
             if ObjPrior.is3D
                 h = ObjPrior.CropedImageSize(3);
             else
@@ -96,7 +96,7 @@ classdef PriorsClass < handle
             end
             
             % image grid
-            [X, Y, Z] = ndgrid(1:m,1:n,1:h); % x cos, y rows
+            [Y, X, Z] = ndgrid(1:m,1:n,1:h); % ndgrid behaves different to meshgrid, first parameter are columns and not x
             Y = single(Y);
             X = single(X);
             Z = single(Z);
@@ -106,9 +106,9 @@ classdef PriorsClass < handle
             D = N;
             l = 1;
             for x = xidx
-                Xnew = ObjPrior.setBoundary1(X + x, m);
+                Xnew = ObjPrior.setBoundary1(X + x, n);
                 for y = yidx
-                    Ynew = ObjPrior.setBoundary1(Y + y, n);
+                    Ynew = ObjPrior.setBoundary1(Y + y, m);
                     for z = zidx
                         Znew = ObjPrior.setBoundary1(Z + z, h);
                         N(:,l) = Ynew + (Xnew-1).*m + (Znew-1)*n*m; % col-wise
@@ -446,7 +446,7 @@ classdef PriorsClass < handle
             else % non-local
                 if strcmp(ObjPrior.PriorImplementation, 'matlab')
                     if isempty(ObjPrior.PreCompWeights)
-                        W = ObjPrior.dPNLhandle(ObjPrior, ObjPrior.imCrop(ObjPrior.PriorImage), opt);
+                        W = ObjPrior.dWhandle(ObjPrior, ObjPrior.imCrop(ObjPrior.PriorImage), opt);
                         W = W./repmat(sum(W,2),[1,ObjPrior.nS]);
                         if strcmpi(ObjPrior.SimilarityKernel,'bowsher')
                             % bowsher doesn't change with iterations, so

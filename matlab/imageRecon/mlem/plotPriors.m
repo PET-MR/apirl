@@ -25,21 +25,39 @@ set(h, 'Position', [100 100 800 600]);
 %% LANGE
 h = figure;
 r = -1: 0.01 : 1; % Diferencia entre píxeles.
-delta = [1e-3*max(abs(r)) 5e-3*max(abs(r)) 1e-2*max(abs(r)) 5e-2*max(abs(r)) 1e-1*max(abs(r)) 2e-1*max(abs(r)) max(abs(r))];
+delta = [2e-3*max(abs(r)) 2e-2*max(abs(r)) 2e-1*max(abs(r)) 2*max(abs(r))];
 [DELTA, R] = meshgrid(delta,r);
 % Equalization factor:
 scale_factor = (max(abs(r))./2./delta(1)-log(1+max(abs(r))./2./delta(1)))./(max(abs(r))./2./DELTA-log(1+max(abs(r))./2./DELTA));
 lange = scale_factor.*(abs(R)./DELTA-log(1+abs(R)./DELTA));
-plot(R,lange, 'LineWidth', 2);
+plot(R,lange, 'LineWidth', 3);
 for i = 1 : numel(delta)
-    labels{i} = sprintf('\\delta=%d', delta(i));
+    labels{i} = sprintf('\\delta=%.3f', delta(i));
 end
-legend(labels, 'Location', 'NorthWest');
-title('Lange/Fair');
-ylabel('\psi(t)');
-xlabel('t');
+hl = legend(labels, 'Location', 'North');
+%title('Lange/Fair');
+ylabel('\psi(t)', 'FontSize', 18, 'FontWeight', 'bold');
+xlabel('t', 'FontSize', 18, 'FontWeight', 'bold');
+xlim([-0.6 0.6]);
+set(hl, 'FontSize', 13);
+ticklabels = get(gca, 'XtickLabel');
+set(gca, 'XtickLabel', ticklabels, 'FontSize', 14);
+ticks = get(gca, 'Xtick');
+for i = 1 : numel(ticks)
+    newTickLabels{i} = num2str(ticks(i), '%.1f');
+end
+set(gca, 'XtickLabel', newTickLabels, 'FontSize',14);
+% Save for publication:
+set(gcf,'PaperPositionMode','auto');    % Para que lo guarde en el tamaño modificado.
+%set(gcf,'InvertHardcopy','off');    % Para que lo gu[198.6 397.4 795 1986 3974];arde en el tamaño modificado.
+fullFilename = ['/home/mab15/workspace/KCL/Publications/svn/2017_mic/poster/Lange'];
+saveas(gca, [fullFilename], 'png');
+saveas(gca, [fullFilename], 'epsc');
+saveas(gca, [fullFilename], 'tif');
+saveas(gca, [fullFilename], 'bmp');
 
-% Derivada
+
+%% Derivada
 h = figure;
 scale_factor = (max(abs(R))/2./(max(abs(R))./2+delta(1)))./(max(abs(R))/2./(max(abs(R))./2+delta));
 dlange = scale_factor.*(abs(R)./(abs(R)+DELTA));
