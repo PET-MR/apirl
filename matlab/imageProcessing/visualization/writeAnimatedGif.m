@@ -20,7 +20,7 @@ if ndims(volume) == 4
         %imind = uint8(round(double(volume(:,:,slices(n))./maxImage.*numColors)));
         %imind = double(volume(:,:,slices(n))./maxImage);
         % Write to the GIF File 
-        imwrite(volume(:,:,:,n),filename,'gif','WriteMode','append','DelayTime', frame_time); 
+        imwrite(double(volume(:,:,:,n)),filename,'gif','WriteMode','append','DelayTime', frame_time); 
     end
 else
     slices = find(mean(mean(volume))>0);
