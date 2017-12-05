@@ -1,3 +1,9 @@
+%  *********************************************************************
+%  Visualization tools.  
+%  Author: Martín Belzunce. Kings College London.
+%  Date: 10/02/2016
+%  *********************************************************************
+
 % Function that writes an animated gif from a 3d volume:
 function filename = writeAnimatedGif(volume, filename, frame_time, colormap,adjustCotnrast)
 
@@ -8,7 +14,7 @@ if nargin < 4
     numColors = 255;
     colormap = repmat([0 : 1/numColors : 1]',1,3);
 else
-    numColors = size(colormap,1);
+    numColors = size(colormap,1)-1;
 end
 if nargin < 5
     adjustCotnrast = 1; % Use the whole range
