@@ -1,191 +1,139 @@
-function CreateAnimationComparingTwoMethods(imagesMethod1, imagesMethod2, params)
-%% GENERATE THE TWO IMAGES
-% Save all the frames:
-slice_mlem = round(slice./size(nonlocal_lange_bowsher_mr_voxels.images{i},3).*size(mlem.images{1},3));
-sizeSlice = size(nonlocal_lange_bowsher_mr_voxels.images{1}(:,:,slice));
-indices_rows = 200:480;
-indices_cols = 200:480; % To match the 235 slices
-clear frames_both_recon
-clear frames_both_with_labels
-for i = iteration% 1 : numel(nonlocal_lange_bowsher_mr_voxels.images)
-    frames_both_recon(:,:,i) = [mlem_resampled{i}(indices_rows,indices_cols,slice) nonlocal_lange_bowsher_mr_voxels.images{i}(:,:,slice)];
-    frames_both_with_labels(:,:,:,i) = insertText(frames_both_recon(:,:,i), [60 numel(indices_rows)-35], 'Standard', 'BoxOpacity', 0.0, 'FontSize', 18, 'TextColor', 'white', 'BoxColor', 'yellow');%, 'Font', 'Arial');
-    aux = rgb2gray(frames_both_with_labels(:,:,:,i));
-    aux = insertText(aux, [60+numel(indices_cols) numel(indices_rows)-35], 'Proposed', 'BoxOpacity', 0.0, 'FontSize', 18, 'TextColor', 'white', 'BoxColor', 'yellow');%, 'Font', 'Arial');
-    aux = rgb2gray(aux);
-    aux = insertText(aux, [numel(indices_cols)-75 1], 'Reconstruction', 'BoxOpacity', 0.0, 'FontSize', 18, 'TextColor', 'white', 'BoxColor', 'yellow');%, 'Font', 'Arial');
-    frames_both_recon(:,:,i) = rgb2gray(aux);
+% Creates an animated gif with the comparison between two reconstructed
+% 3D images. The images are received in a cell array, where each element of
+% the cell array is a 3d matrix for a given parameter (for example, update
+% number or regularization parameter).
+% The animation can consist of a sequence of different way of comparing the
+% reconstructed images. The order of the sequence can be chosen using the
+% following values:
+% 0: shows the same slice evolving as function of an input parameter. In
+% this case the slice is fixed and the index of the cell array is used to
+% go through the images.
+% 1: shows a set of slices for a given image of the cell array.
+% 2: shows rotating MIPs for a given image of the cell array.
+
+% Parameters:
+% - imagesMethod1: cell array with 3d images of method 1
+% - imagesMethod2: cell array with 3d images of method 2
+% - sequence: vector with the sequence order, for example [0 1 2]
+% - params:
+% recommendation: use even number of rows and columns
+function [frames, outputFilename] = CreateAnimationComparingTwoMethods(imagesMethod1, imagesMethod2, sequence, colormap, outputFilename, varargin)
+
+fixedArgs = 5;
+if nargin ~= (fixedArgs + numel(sequence))
+    error('A params structure needs to be define for each element of the sequence. Example: CreateAnimationComparingTwoMethods(imagesMethod1, imagesMethod2, [1 2], params1, params2)');
 end
-lastFrame = i;
-% After that sweep all images:
-slicesToShow = 25:100;
-clear frames_slices
-for i = 1 : numel(slicesToShow)% + numel(%size(mlem_resampled{1},3) % 1 lap and a half
-    slice_i = rem(slice + i, slicesToShow(end))+floor((slice+i)/slicesToShow(end))*25;  
-    % FIRST RESIZE THE SMALLER MLEM IMAGE
-    frames_slices(:,:,i) = [mlem_resampled{iteration(end)}(indices_rows,indices_cols,slice_i) nonlocal_lange_bowsher_mr_voxels.images{iteration(end)}(:,:,slice_i)];
-    frames_both_with_labels = insertText(frames_slices(:,:,i), [60 numel(indices_rows)-35], 'Standard', 'BoxOpacity', 0.0, 'FontSize', 18, 'TextColor', 'white', 'BoxColor', 'yellow');%, 'Font', 'Arial');
-    aux = rgb2gray(frames_both_with_labels);
-    aux = insertText(aux, [60+numel(indices_cols) numel(indices_rows)-35], 'Proposed', 'BoxOpacity', 0.0, 'FontSize', 18, 'TextColor', 'white', 'BoxColor', 'yellow');%, 'Font', 'Arial');
-    aux = rgb2gray(aux);
-    aux = insertText(aux, [numel(indices_cols)-60 1], 'Final Images', 'BoxOpacity', 0.0, 'FontSize', 18, 'TextColor', 'white', 'BoxColor', 'yellow');%, 'Font', 'Arial');
-    frames_slices(:,:,i) = rgb2gray(aux);
+current_frame = 0;
+frames = [];
+for i = 1 : numel(sequence)
+    if sequence == 0
+        % Show an specific slice changing.
+        % Load parameters       
+        sliceToShow = varargin{fixedArgs+i}.slice;
+        rowIndices = varargin{fixedArgs+i}.rows;
+        colIndices = varargin{fixedArgs+i}.cols;
+        image_indices = varargin{fixedArgs+i}.cellArrayElements;
+        title = varargin{fixedArgs+i}.title;
+        label1 = varargin{fixedArgs+i}.labelMethod1;
+        label2 = varargin{fixedArgs+i}.labelMethod2;
+        fontName = varargin{fixedArgs+i}.fontName;
+        for j = 1 : numel(image_indices)
+            frames(:,:,current_frame+j) = [imagesMethod1{image_indices(j)}(rowIndices,colIndices,sliceToShow) imagesMethod2{image_indices(j)}(rowIndices,colIndices,sliceToShow)];
+            % Insert text:
+            aux = insertText(frames(:,:,current_frame+j), [60 numel(rowIndices)-35], label1, 'Font', fontName, 'BoxOpacity', 0.0, 'FontSize', 18, 'TextColor', 'white', 'BoxColor', 'yellow');%, 'Font', 'Arial');
+            aux = rgb2gray(aux(:,:,:,i));
+            aux = insertText(aux, [60+numel(colIndices) numel(rowIndices)-35], label2, 'Font', fontName, 'BoxOpacity', 0.0, 'FontSize', 18, 'TextColor', 'white', 'BoxColor', 'yellow');%, 'Font', 'Arial');
+            aux = rgb2gray(aux);
+            aux = insertText(aux, [numel(colIndices)-75 1], title, 'Font', fontName, 'BoxOpacity', 0.0, 'FontSize', 18, 'TextColor', 'white', 'BoxColor', 'yellow');%, 'Font', 'Arial');
+            frames(:,:,i) = rgb2gray(aux);
+        end
+        current_frame = current_frame + numel(image_indices);
+
+    elseif sequence == 1
+        % Go through the slices of an image
+        slicesToShow = varargin{fixedArgs+i}.slices;
+        rowIndices = varargin{fixedArgs+i}.rows;
+        colIndices = varargin{fixedArgs+i}.cols;
+        imageIndex = varargin{fixedArgs+i}.cellArrayElement;
+        title = varargin{fixedArgs+i}.title;
+        label1 = varargin{fixedArgs+i}.labelMethod1;
+        label2 = varargin{fixedArgs+i}.labelMethod2;
+        fontName = varargin{fixedArgs+i}.fontName;
+       
+        for j = 1 : numel(slicesToShow)% 
+            frames(:,:,current_frame+j) = [imagesMethod1{imageIndex}(rowIndices,colIndices,slicesToShow(j)) imagesMethod2{imageIndex}(rowIndices,colIndices,slicesToShow(j))];
+            aux = insertText(frames(:,:,current_frame+j), [60 numel(rowIndices)-35], label1, 'Font', fontName, 'BoxOpacity', 0.0, 'FontSize', 18, 'TextColor', 'white', 'BoxColor', 'yellow');%, 'Font', 'Arial');
+            aux = rgb2gray(aux);
+            aux = insertText(aux, [60+numel(colIndices) numel(rowIndices)-35], label2, 'Font', fontName, 'BoxOpacity', 0.0, 'FontSize', 18, 'TextColor', 'white', 'BoxColor', 'yellow');%, 'Font', 'Arial');
+            aux = rgb2gray(aux);
+            aux = insertText(aux, [numel(colIndices)-60 1], title, 'Font', fontName, 'BoxOpacity', 0.0, 'FontSize', 18, 'TextColor', 'white', 'BoxColor', 'yellow');%, 'Font', 'Arial');
+            frames(:,:,current_frame+j) = rgb2gray(aux);
+        end
+        current_frame = current_frame + numel(image_indices);
+    elseif sequence == 2
+        % Rotating mips
+        % Go through the slices of an image
+        rowIndices = varargin{fixedArgs+i}.rows;
+        colIndices = varargin{fixedArgs+i}.cols;
+        imageIndex = varargin{fixedArgs+i}.cellArrayElement;
+        title = varargin{fixedArgs+i}.title;
+        label1 = varargin{fixedArgs+i}.labelMethod1;
+        label2 = varargin{fixedArgs+i}.labelMethod2;
+        fontName = varargin{fixedArgs+i}.fontName;
+        angles = varargin{fixedArgs+i}.angles;
+        for j = 1 : numel(angles)
+            [mipTransverse1, mipCoronal1, mipSagital1] = getMIPs(imagesMethod1{imageIndex}(rowIndices,colIndices,:), angles(i));
+            [mipTransverse2, mipCoronal2, mipSagital2] = getMIPs(imagesMethod2{imageIndex}, angles(i));
+            % Check if needs zero padding:
+            if ~isempty(frames)
+                if size(frames,2) ~= size(mipCoronal,2)
+                    additional_cols = round(abs(size(frames,2) - size(mipCoronal,2))/2);
+                        
+                    if size(frames,2) > size(mipCoronal,2)
+                        mipCoronal1_filled = padarray(mipCoronal1, [0 additional_cols],'both');
+                        mipCoronal2_filled = padarray(mipCoronal2, [0 additional_cols],'both');
+                    else
+                        % Pad the frames
+                        frames = padarray(frames, [0 additional_cols],'both');
+                    end
+                end
+                if size(frames,1) ~= size(mipCoronal,1)
+                    additional_rows = round(abs(size(frames,1) - size(mipCoronal,1))/2);               
+                    if size(frames,1) > size(mipCoronal,1)
+                        mipCoronal1_filled = padarray(mipCoronal1, [additional_rows 0],'both');
+                        mipCoronal2_filled = padarray(mipCoronal2, [additional_rows 0],'both');
+                    else
+                        frames = padarray(frames, [additional_rows 0],'both');
+                    end
+                end
+                
+            end
+       
+            frames(:,:,current_frame+j) = [mipCoronal1_filled mipCoronal2_filled]; % Crop to match the size of the pther images
+            aux = insertText(frames(:,:,current_frame+j), [60 size(frames,1)-35], label1, 'Font', fontName, 'BoxOpacity', 0.0, 'FontSize', 18, 'TextColor', 'white', 'BoxColor', 'yellow');%, 'Font', 'Arial');
+            aux = rgb2gray(aux);
+            aux = insertText(aux, [60+numel(colIndices) size(frames,1)-35], label2, 'Font', fontName, 'BoxOpacity', 0.0, 'FontSize', 18, 'TextColor', 'white', 'BoxColor', 'yellow');%, 'Font', 'Arial');
+            aux = rgb2gray(aux);
+            aux = insertText(aux, [numel(colIndices)-75 1], title, 'Font', fontName, 'BoxOpacity', 0.0, 'FontSize', 18, 'TextColor', 'white', 'BoxColor', 'yellow');%, 'Font', 'Arial');
+            frames(:,:,current_frame+j) = rgb2gray(aux);
+        end
+        current_frame = current_frame + numel(image_indices);
+    end
 end
-
-clear frames_slices_in_order
-for i = 1 : size(mlem_resampled{1},3) 
-    slice_i = i;%rem(slice + i, size(mlem_resampled{1},3))+1;  
-    % FIRST RESIZE THE SMALLER MLEM IMAGE
-    frames_slices_in_order(:,:,i) = [mlem_resampled{iteration(end)}(indices_rows,indices_cols,slice_i) nonlocal_lange_bowsher_mr_voxels.images{iteration(end)}(:,:,slice_i)];
-    frames_both_with_labels = insertText(frames_slices_in_order(:,:,i), [60 numel(indices_rows)-35], 'Standard', 'BoxOpacity', 0.0, 'FontSize', 18, 'TextColor', 'white', 'BoxColor', 'yellow');%, 'Font', 'Arial');
-    aux = rgb2gray(frames_both_with_labels);
-    aux = insertText(aux, [60+numel(indices_cols) numel(indices_rows)-35], 'Proposed', 'BoxOpacity', 0.0, 'FontSize', 18, 'TextColor', 'white', 'BoxColor', 'yellow');%, 'Font', 'Arial');
-    aux = rgb2gray(aux);
-    aux = insertText(aux, [numel(indices_cols)-60 1], 'Final Images', 'BoxOpacity', 0.0, 'FontSize', 18, 'TextColor', 'white', 'BoxColor', 'yellow');%, 'Font', 'Arial');
-    frames_slices_in_order(:,:,i) = rgb2gray(aux);
-end
-
-filename = [outputPath sprintf('mlem_and_nonlocal_lange_bowsher_mr_res_slice%d_gray.gif',slice)];
-writeAnimatedGif(frames_both_recon, filename, 0.1,gray, 0.5);
-
-gray = colormap(gray);
-invgray = gray(end:-1:1,:);
-filename = [outputPath sprintf('mlem_and_nonlocal_lange_bowsher_mr_res_slice%d_invgray.gif',slice)];
-writeAnimatedGif(frames_both_recon, filename, 0.1,invgray, 0.5);
-
-filename = [outputPath sprintf('mlem_and_nonlocal_lange_bowsher_mr_res_slice%d_nih.gif',slice)];
-writeAnimatedGif(frames_both_recon, filename, 0.1,nihMap, 0.5);
-
-filename = [outputPath sprintf('mlem_and_nonlocal_lange_bowsher_mr_res_slice%d_hot.gif',slice)];
-writeAnimatedGif(frames_both_recon, filename, 0.1,hot, 0.5);
-
-filename = [outputPath 'mlem_and_nonlocal_lange_bowsher_mr_res_slices_gray.gif'];
-writeAnimatedGif(frames_slices, filename, 0.1,gray, 0.5);
-
-gray = colormap(gray);
-invgray = gray(end:-1:1,:);
-filename = [outputPath 'mlem_and_nonlocal_lange_bowsher_mr_res_slices_invgray.gif'];
-writeAnimatedGif(frames_slices, filename, 0.1,invgray, 0.5);
-
-filename = [outputPath 'mlem_and_nonlocal_lange_bowsher_mr_res_slices_nih.gif'];
-writeAnimatedGif(frames_slices, filename, 0.1,nihMap, 0.5);
-
-filename = [outputPath 'mlem_and_nonlocal_lange_bowsher_mr_res_slices_hot.gif'];
-writeAnimatedGif(frames_slices, filename, 0.1,hot, 0.5);
-
-%% GENERATE THE ROTATING MIPs
-% Save all the frames:
-slice = 80;
-slice_mlem = round(slice./size(nonlocal_lange_bowsher_mr_voxels.images{i},3).*size(mlem.images{1},3));
-sizeSlice = size(nonlocal_lange_bowsher_mr_voxels.images{1}(:,:,slice));
-iteration = [1:19 20:2:28 30:4:70 80:10:150 160:20:300];
-indices_rows_low_res = round(indices_rows./size(nonlocal_lange_bowsher_mr_voxels.images{i},1).*size(mlem.images{1},1));
-indices_cols_low_res = round(indices_cols./size(nonlocal_lange_bowsher_mr_voxels.images{i},2).*size(mlem.images{1},2));
-clear frames_both_rotating
-angles = 0:3:357;
-for i = 1 : numel(angles)
-    [mipTransverseMlem, mipCoronalMlem, mipSagitalMlem] = getMIPs(mlem_resampled{iteration(end)}(indices_rows,indices_cols,:), angles(i));
-    [mipTransverse, mipCoronal, mipSagital] = getMIPs(nonlocal_lange_bowsher_mr_voxels.images{iteration(end)}, angles(i));
-    % Fill the coronal to math the size:
-    additional_cols = size(frames_slices,1) - size(mipCoronal,1);
-    mipCoronalMlem_filled = [zeros(round(additional_cols/2), size(mipCoronal,2)); mipCoronalMlem; zeros(round(additional_cols/2), size(mipCoronal,2))];
-    mipCoronal_filled = [zeros(round(additional_cols/2), size(mipCoronal,2)); mipCoronal; zeros(round(additional_cols/2), size(mipCoronal,2))];
-    frames_both_rotating(:,:,i) = [mipCoronalMlem_filled mipCoronal_filled]; % Crop to match the size of the pther images
-    aux = insertText(frames_both_rotating(:,:,i), [60 size(frames_both_rotating,1)-35], 'Standard', 'BoxOpacity', 0.0, 'FontSize', 18, 'TextColor', 'white', 'BoxColor', 'yellow');%, 'Font', 'Arial');
-    aux = rgb2gray(aux);
-    aux = insertText(aux, [60+numel(indices_cols) size(frames_both_rotating,1)-35], 'Proposed', 'BoxOpacity', 0.0, 'FontSize', 18, 'TextColor', 'white', 'BoxColor', 'yellow');%, 'Font', 'Arial');
-    aux = rgb2gray(aux);
-    aux = insertText(aux, [numel(indices_cols)-75 1], '3D Volume', 'BoxOpacity', 0.0, 'FontSize', 18, 'TextColor', 'white', 'BoxColor', 'yellow');%, 'Font', 'Arial');
-    frames_both_rotating(:,:,i) = rgb2gray(aux);
-end
-% for i = iteration% 1 : numel(nonlocal_lange_bowsher_mr_voxels.images)
-%     % FIRST RESIZE THE SMALLER MLEM IMAGE
-%     mlem_slice_resized = imresize(mlem.images{i}(:,:,slice_mlem), sizeSlice);
-%     frames_both(:,:,i) = [mlem_slice_resized(indices_rows,indices_cols) nonlocal_lange_bowsher_mr_voxels.images{i}(indices_rows,indices_cols,slice)];
-%     frames_both_with_labels(:,:,:,i) = insertText(frames_both(:,:,i), [60 numel(indices_rows)-35], 'Standard', 'BoxOpacity', 0.0, 'FontSize', 18, 'TextColor', 'white', 'BoxColor', 'yellow');%, 'Font', 'Arial');
-%     aux = rgb2gray(frames_both_with_labels(:,:,:,i));
-%     aux = insertText(aux, [60+numel(indices_cols) numel(indices_rows)-35], 'Proposed', 'BoxOpacity', 0.0, 'FontSize', 18, 'TextColor', 'white', 'BoxColor', 'yellow');%, 'Font', 'Arial');
-%     aux = rgb2gray(aux);
-%     aux = insertText(aux, [numel(indices_cols)-75 1], 'Reconstruction', 'BoxOpacity', 0.0, 'FontSize', 18, 'TextColor', 'white', 'BoxColor', 'yellow');%, 'Font', 'Arial');
-%     frames_both(:,:,i) = rgb2gray(aux);
-% end
-% lastFrame = i;
-% % After that sweep all images:
-% slicesToShow = 25:100;
-% for i = 1 : size(mlem.images{1},3)
-%     slice_low_res = rem(slice_mlem + i, size(mlem.images{1},3))+1;  
-%     slice_high_res = round(slice_low_res.*size(nonlocal_lange_bowsher_mr_voxels.images{i},3)./size(mlem.images{1},3));
-%     % FIRST RESIZE THE SMALLER MLEM IMAGE
-%     mlem_slice_resized = imresize(mlem.images{iteration(end)}(:,:,slice_low_res), sizeSlice);
-%     frames_both(:,:,i+lastFrame) = [mlem_slice_resized(indices_rows,indices_cols) nonlocal_lange_bowsher_mr_voxels.images{iteration(end)}(indices_rows,indices_cols,slice_high_res)];
-%     frames_both_with_labels(:,:,:,i+lastFrame) = insertText(frames_both(:,:,i+lastFrame), [60 numel(indices_rows)-35], 'Standard', 'BoxOpacity', 0.0, 'FontSize', 18, 'TextColor', 'white', 'BoxColor', 'yellow');%, 'Font', 'Arial');
-%     aux = rgb2gray(frames_both_with_labels(:,:,:,i+lastFrame));
-%     aux = insertText(aux, [60+numel(indices_cols) numel(indices_rows)-35], 'Proposed', 'BoxOpacity', 0.0, 'FontSize', 18, 'TextColor', 'white', 'BoxColor', 'yellow');%, 'Font', 'Arial');
-%     aux = rgb2gray(aux);
-%     aux = insertText(aux, [numel(indices_cols)-75 1], 'Final Images', 'BoxOpacity', 0.0, 'FontSize', 18, 'TextColor', 'white', 'BoxColor', 'yellow');%, 'Font', 'Arial');
-%     frames_both(:,:,i+lastFrame) = rgb2gray(aux);
-% end
-%%
-frames_both = cat(3, frames_both_recon, frames_slices, frames_both_rotating);
-factors = [0.1:0.1:1 ones(1,size(frames_both_rotating,3)-numel([0.1:0.1:1]))];
-for i = 1 : size(frames_both_rotating,3)
-    frames_both_rotating_soft = frames_both_rotating*factors(i);
-end
-frames_both = cat(3, frames_both_recon, frames_slices, frames_both_rotating_soft);
-frames_both_2 = cat(3, frames_both_recon, frames_both_rotating, frames_slices_in_order);
-
-% Variation of nih colormap
-logNihMap = log(1+nihMap)./log(2);
-expNihMap = nihMap.^2;
-nihMap_stretch_red = interp1(nihMap(200:end,2),nihMap(200:end,2), [1:-0.01:0]', 'linear','extrap'); nihMap_stretch_red = [repmat(1, size(nihMap_stretch_red)) nihMap_stretch_red repmat(0, size(nihMap_stretch_red))];
-nihMap_stretch_yellow = interp1(nihMap(143:199,1),nihMap(143:199,1), [0:0.04:1]', 'linear','extrap');  nihMap_stretch_yellow = [ nihMap_stretch_yellow repmat(1, size(nihMap_stretch_yellow)) repmat(0, size(nihMap_stretch_yellow))];
-nihMap_stretch_green = interp1(nihMap(87:142,3),nihMap(87:142,3), [0:0.08:1]', 'linear','extrap'); nihMap_stretch_green = [repmat(0, size(nihMap_stretch_green)) repmat(1, size(nihMap_stretch_green)) nihMap_stretch_green ];
-nihMap_stretch_blue = interp1(nihMap(30:86,2),nihMap(30:86,2), [0:0.05:1]', 'linear','extrap'); nihMap_stretch_blue = [repmat(0, size(nihMap_stretch_blue)) nihMap_stretch_blue repmat(1, size(nihMap_stretch_blue)) ];
-nihMap_extended = [nihMap(1:29,:); nihMap_stretch_blue; nihMap_stretch_green; nihMap_stretch_yellow; nihMap_stretch_red];
-nihMap_extended(nihMap_extended<0) = 0;
-
 scale = 1;
-filename = [outputPath 'mlem_and_nonlocal_lange_bowsher_mr_res_seq_gray.gif'];
-writeAnimatedGif(frames_both, filename, 0.1,gray, scale);
-
-gray = colormap(gray);
-invgray = gray(end:-1:1,:);
-filename = [outputPath 'mlem_and_nonlocal_lange_bowsher_mr_res_seq_invgray.gif'];
-writeAnimatedGif(frames_both, filename, 0.1,invgray, scale);
-
-
-filename = [outputPath 'mlem_and_nonlocal_lange_bowsher_mr_res_seq_nih.gif'];
-writeAnimatedGif(frames_both, filename, 0.1,nihMap_extended, scale);
-
-filename = [outputPath 'mlem_and_nonlocal_lange_bowsher_mr_res_seq_hot.gif'];
-writeAnimatedGif(frames_both, filename, 0.1,hot, scale);
-
-filename = [outputPath 'mlem_and_nonlocal_lange_bowsher_mr_res_seq2_gray.gif'];
-writeAnimatedGif(frames_both_2, filename, 0.1,gray, scale);
-
-gray = colormap(gray);
-invgray = gray(end:-1:1,:);
-filename = [outputPath 'mlem_and_nonlocal_lange_bowsher_mr_res_seq2_invgray.gif'];
-writeAnimatedGif(frames_both_2, filename, 0.1,invgray, scale);
-
-
-filename = [outputPath 'mlem_and_nonlocal_lange_bowsher_mr_res_seq2_nih.gif'];
-writeAnimatedGif(frames_both_2, filename, 0.1,nihMap, scale*0.9);
-
-filename = [outputPath 'mlem_and_nonlocal_lange_bowsher_mr_res_seq2_hot.gif'];
-writeAnimatedGif(frames_both_2, filename, 0.1,hot, scale);
-%% WITH MR?
-mrSlices = MrInPetFov(indices_rows,indices_cols,slice)./max(max(MrInPetFov(indices_rows,indices_cols,slice)));
-figure, 
-for i = 1 : numel(nonlocal_lange_bowsher_mr_voxels.images)
-    imshow(frames(:,:,i)), colormap(gca,hot), hold on,
-    red = cat(3, 1*ones(size(mrSlices)), 1*ones(size(mrSlices)), 1*ones(size(mrSlices)));
-    h = imshow(red); hold off;
-    set(h, 'AlphaData', mrSlices);
-    fused_frame(:,:,:,i) = get(h, 'CData');
-    %colormap(:,:,i) = get(gca,'Colormap');
+writeAnimatedGif(frames, outputFilename, 0.1,colormap, scale);
 end
 
-filename = [outputPath sprintf('fused_slice%d_hot',slice)];
-writeAnimatedGif(fused_frame, filename, 0.1,colormap(:,:,i), 0.5);
-text((c-1)*sizeFrame(2)+10, (r-1)*sizeFrame(1)+10, num2str(i), 'FontSize', 14, 'FontWeight', 'bold', 'color', 'k');
+function [mipTransverse, mipCoronal, mipSagital] = getMIPs(volume, angle)
+
+    volume = imrotate3(volume, angle, [0 0 1], 'crop');
+    % Get the Maximum Intensity ProjectionsL
+    % Transverse XY:
+    mipTransverse = max(volume,[],3);
+    % Coronal XZ:
+    mipCoronal = max(volume,[],2);
+    mipCoronal = permute(mipCoronal, [3 1 2]);
+    % Sagital YZ:
+    mipSagital = max(volume,[],1);
+    mipSagital = permute(mipSagital, [2 3 1]);
+end
