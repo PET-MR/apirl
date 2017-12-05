@@ -71,6 +71,12 @@ if nargin ~= (fixedArgs + numel(sequence))
 end
 current_frame = 0;
 frames = [];
+% Normalize data:
+maxValue = 0;
+for i = 1 : numel(imagesMethod1)
+    maxValue = max([max(imagesMethod1{i}(:)) maxValue]);
+    maxValue = max([max(imagesMethod2{i}(:)) maxValue]);
+end
 for i = 1 : numel(sequence)
     if sequence(i) == 0
         % Show an specific slice changing.
@@ -86,7 +92,7 @@ for i = 1 : numel(sequence)
         label2 = varargin{i}.labelMethod2;
         fontName = varargin{i}.fontName;
         for j = 1 : numel(image_indices)
-            frames(:,:,current_frame+j) = [imagesMethod1{image_indices(j)}(rowIndices1,colIndices1,sliceToShow) imagesMethod2{image_indices(j)}(rowIndices2,colIndices2,sliceToShow)];
+            frames(:,:,current_frame+j) = [imagesMethod1{image_indices(j)}(rowIndices1,colIndices1,sliceToShow) imagesMethod2{image_indices(j)}(rowIndices2,colIndices2,sliceToShow)]./maxValue;
             % Insert text:
             aux = insertText(frames(:,:,current_frame+j), [1 size(frames,1)-35; round(size(frames,2)/2) size(frames,1)-35; 1 1], {label1, label2, title}, 'Font', fontName, 'BoxOpacity', 0.0, 'FontSize', 18, 'TextColor', 'white', 'BoxColor', 'yellow');%, 'Font', 'Arial');
             frames(:,:,current_frame+j) = rgb2gray(aux);
@@ -107,7 +113,7 @@ for i = 1 : numel(sequence)
         fontName = varargin{i}.fontName;
        
         for j = 1 : numel(slicesToShow)% 
-            frames(:,:,current_frame+j) = [imagesMethod1{imageIndex}(rowIndices1,colIndices1,slicesToShow(j)) imagesMethod2{imageIndex}(rowIndices2,colIndices2,slicesToShow(j))];
+            frames(:,:,current_frame+j) = [imagesMethod1{imageIndex}(rowIndices1,colIndices1,slicesToShow(j)) imagesMethod2{imageIndex}(rowIndices2,colIndices2,slicesToShow(j))]./maxValue;
             aux = insertText(frames(:,:,current_frame+j), [1 size(frames,1)-35; round(size(frames,2)/2) size(frames,1)-35; 1 1], {label1, label2, title}, 'Font', fontName, 'BoxOpacity', 0.0, 'FontSize', 18, 'TextColor', 'white', 'BoxColor', 'yellow');%, 'Font', 'Arial');
             frames(:,:,current_frame+j) = rgb2gray(aux);
         end
@@ -153,7 +159,7 @@ for i = 1 : numel(sequence)
                 
             end
        
-            frames(:,:,current_frame+j) = [mipCoronal1 mipCoronal2]; % Crop to match the size of the pther images
+            frames(:,:,current_frame+j) = [mipCoronal1 mipCoronal2]./maxValue; % Crop to match the size of the pther images
             aux = insertText(frames(:,:,current_frame+j), [1 size(frames,1)-35; round(size(frames,2)/2) size(frames,1)-35; 1 1], {label1, label2, title}, 'Font', fontName, 'BoxOpacity', 0.0, 'FontSize', 18, 'TextColor', 'white', 'BoxColor', 'yellow');%, 'Font', 'Arial');
             frames(:,:,current_frame+j) = rgb2gray(aux);
         end
