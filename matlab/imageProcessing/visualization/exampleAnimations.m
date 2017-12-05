@@ -7,12 +7,25 @@
 % Examples of how to use the function CreateAnimationComparingTwoMethods.
 
 % Firs for individual type of animation and then for a sequence.
+%% LOAD DATA
+% Mlem data was saved in a cell array with the 3d image for every
+% iteration:
+load('/data/Results/FDG_11/MLEM/mlem_resampled.mat');
+% Mr guided data was saved into an structure that contains the field
+% "images" that is a cell array with the reconstructed images for every
+% iteration, so images are in nonlocal_lange_bowsher_mr_voxels.images{i}.
+% Also the images were trimmed before saving, therefore they are smaller
+% than mlem.
+load('/data/Results/FDG_11/nonlocal_lange_bowsher_psf/delta4.00e-02_B40_regparam2.23e+03/nonlocal_lange_bowsher_mr_voxels.mat');
 %% GENERATE ANIMATION WITH FUNCTION
+% For the animation both final images needs to have the same size, in this
+% case that can be sorted out by chosing the rows and cols that need to be
+% visualized.
 % First go only through iterations
 opts0.slice = 80;
-opts0.rows1 = 200:480;
+opts0.rows1 = 200:480; % rows and cols for image 1 (MLEM), chose values so your image is centred in the brain and also needs to match the size of the second method.
 opts0.cols1 = 200:480;
-opts0.rows2 = 1 : size(nonlocal_lange_bowsher_mr_voxels.images{1},1);
+opts0.rows2 = 1 : size(nonlocal_lange_bowsher_mr_voxels.images{1},1); % Second image was trimmed before saving to rows and cols 200:480, so now I use all the rows and cols available.
 opts0.cols2 = 1 : size(nonlocal_lange_bowsher_mr_voxels.images{1},2);
 opts0.cellArrayElements = [1:19 20:2:28 30:4:70 80:10:150 160:20:300]; % Iterations I want to show
 opts0.title = '                                            Reconstruction';
