@@ -222,11 +222,18 @@ for i = 1 : numel(sequence)
             if outputSize(1) ~= size(mipCoronal1,1)
                 additional_rows = round(abs(outputSize(1) - size(mipCoronal1,1))/2); 
                 if rem(size(mipCoronal1,1),2)
-                    mipCoronal1 = padarray(mipCoronal1, [additional_rows-1 0],'both'); % I need a row less
+                    mipCoronal1 = padarray(mipCoronal1, [additional_rows-1 0],'pre'); % I need a row less
+                    mipCoronal1 = padarray(mipCoronal1, [additional_rows 0],'post'); % I need a row less
                 else
                     mipCoronal1 = padarray(mipCoronal1, [additional_rows 0],'both');
                 end
-                mipCoronal2 = padarray(mipCoronal2, [additional_rows 0],'both');
+                if rem(size(mipCoronal2,1),2)
+                    mipCoronal2 = padarray(mipCoronal2, [additional_rows-1 0],'pre'); % I need a row less
+                    mipCoronal2 = padarray(mipCoronal2, [additional_rows 0],'post'); % I need a row less
+                else
+                    mipCoronal2 = padarray(mipCoronal2, [additional_rows 0],'both');
+                end
+                
             end 
        
             frames(:,:,current_frame+j) = weight.*[mipCoronal1 mipCoronal2]./maxValue; % Crop to match the size of the pther images
