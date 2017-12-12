@@ -38,6 +38,7 @@
 % opts0.labelMethod1 = '                   PET Only';
 % opts0.labelMethod2 = '              MR-Assisted PET';
 % opts0.fontName = 'arial';
+% opts0.fontSize = 12;
 %
 % Sequence 1:
 % opts1.slices = 25:100;
@@ -50,6 +51,7 @@
 % opts1.labelMethod1 = '                   PET Only';
 % opts1.labelMethod2 = '              MR-Assisted PET';
 % opts1.fontName = 'arial';
+% opts1.fontSize = 12;
 
 % Sequence 2:
 % opts2.angles = 0:3:357;
@@ -62,10 +64,11 @@
 % opts2.labelMethod1 = '                   PET Only';
 % opts2.labelMethod2 = '              MR-Assisted PET';
 % opts2.fontName = 'arial';
+% opts2.fontSize = 12;
 % recommendation: use even number of rows and columns
-function [frames, outputFilename] = CreateAnimationComparingTwoMethods(imagesMethod1, imagesMethod2, sequence, colormap, outputFilename, varargin)
+function [frames, outputFilename] = CreateAnimationComparingTwoMethods(imagesMethod1, imagesMethod2, sequence, colormap, scale, outputSize, outputFilename, varargin)
 
-fixedArgs = 5;
+fixedArgs = 7;
 if nargin ~= (fixedArgs + numel(sequence))
     error('A params structure needs to be define for each element of the sequence. Example: CreateAnimationComparingTwoMethods(imagesMethod1, imagesMethod2, [1 2], params1, params2)');
 end
@@ -91,10 +94,52 @@ for i = 1 : numel(sequence)
         label1 = varargin{i}.labelMethod1;
         label2 = varargin{i}.labelMethod2;
         fontName = varargin{i}.fontName;
+        fontSize = varargin{i}.fontSize;
         for j = 1 : numel(image_indices)
-            frames(:,:,current_frame+j) = [imagesMethod1{image_indices(j)}(rowIndices1,colIndices1,sliceToShow) imagesMethod2{image_indices(j)}(rowIndices2,colIndices2,sliceToShow)]./maxValue;
+            image1 = imagesMethod1{image_indices(j)}(rowIndices1,colIndices1,sliceToShow);
+            image2 = imagesMethod2{image_indices(j)}(rowIndices2,colIndices2,sliceToShow);
+            % Get scaling factor to match the desired output size:
+            resizeFactor = min([outputSize(1)./size(image1,1) outputSize(2)./(size(image1,2)*2)]);
+            image1 = imresize(image1, resizeFactor, 'nearest');
+            image2 = imresize(image2, resizeFactor, 'nearest');
+            % Check if needs zero padding:
+%             if ~isempty(frames)
+%                 if size(frames,2) ~= (size(image1,2)+size(image2,2))
+%                     additional_cols = round(abs(size(frames,2) - (size(image1,2)+size(image2,2)))/2);
+%                         
+%                     if size(frames,2) > (size(image1,2)+size(image2,2))
+%                         image1 = padarray(image1, [0 additional_cols],'both');
+%                         image2 = padarray(image2, [0 additional_cols],'both');
+%                     else
+%                         % Pad the frames
+%                         frames = padarray(frames, [0 additional_cols],'both');
+%                     end
+%                 end
+%                 if size(frames,1) ~= size(image1,1)
+%                     additional_rows = round(abs(size(frames,1) - size(image1,1))/2);               
+%                     if size(frames,1) > size(image1,1)
+%                         image1 = padarray(image1, [additional_rows 0],'both');
+%                         image2 = padarray(image2, [additional_rows 0],'both');
+%                     else
+%                         frames = padarray(frames, [additional_rows 0],'both');
+%                     end
+%                 end     
+%             end
+            % Because the images have been resized to match the outputSize
+            % in one axis, we now that we always need to add zeros
+            if outputSize(2) ~= (size(image1,2)+size(image2,2))
+                additional_cols = round(abs(outputSize(2) - (size(image1,2)+size(image2,2)))/2);
+                image1 = padarray(image1, [0 additional_cols],'both');
+                image2 = padarray(image2, [0 additional_cols],'both');
+            end
+            if outputSize(1) ~= size(image1,1)
+                additional_rows = round(abs(outputSize(1) - size(image1,1))/2);               
+                image1 = padarray(image1, [additional_rows 0],'both');
+                image2 = padarray(image2, [additional_rows 0],'both');
+            end  
+            frames(:,:,current_frame+j) = [image1 image2]./maxValue;
             % Insert text:
-            aux = insertText(frames(:,:,current_frame+j), [1 size(frames,1)-35; round(size(frames,2)/2) size(frames,1)-35; 1 1], {label1, label2, title}, 'Font', fontName, 'BoxOpacity', 0.0, 'FontSize', 18, 'TextColor', 'white', 'BoxColor', 'yellow');%, 'Font', 'Arial');
+            aux = insertText(frames(:,:,current_frame+j), [1 size(frames,1)-fontSize*2; round(size(frames,2)/2) size(frames,1)-fontSize*2; 1 round(fontSize/2)], {label1, label2, title}, 'Font', fontName, 'BoxOpacity', 0.0, 'FontSize', fontSize, 'TextColor', 'white', 'BoxColor', 'yellow');%, 'Font', 'Arial');
             frames(:,:,current_frame+j) = rgb2gray(aux);
         end
         current_frame = current_frame + numel(image_indices);
@@ -111,10 +156,28 @@ for i = 1 : numel(sequence)
         label1 = varargin{i}.labelMethod1;
         label2 = varargin{i}.labelMethod2;
         fontName = varargin{i}.fontName;
-       
+        fontSize = varargin{i}.fontSize;
         for j = 1 : numel(slicesToShow)% 
-            frames(:,:,current_frame+j) = [imagesMethod1{imageIndex}(rowIndices1,colIndices1,slicesToShow(j)) imagesMethod2{imageIndex}(rowIndices2,colIndices2,slicesToShow(j))]./maxValue;
-            aux = insertText(frames(:,:,current_frame+j), [1 size(frames,1)-35; round(size(frames,2)/2) size(frames,1)-35; 1 1], {label1, label2, title}, 'Font', fontName, 'BoxOpacity', 0.0, 'FontSize', 18, 'TextColor', 'white', 'BoxColor', 'yellow');%, 'Font', 'Arial');
+            image1 = imagesMethod1{imageIndex}(rowIndices1,colIndices1,slicesToShow(j));
+            image2 = imagesMethod2{imageIndex}(rowIndices2,colIndices2,slicesToShow(j));
+            % Get scaling factor to match the desired output size:
+            resizeFactor = min([outputSize(1)./size(image1,1) outputSize(2)./(size(image1,2)*2)]);
+            image1 = imresize(image1, resizeFactor, 'nearest');
+            image2 = imresize(image2, resizeFactor, 'nearest');
+            % Because the images have been resized to match the outputSize
+            % in one axis, we now that we always need to add zeros
+            if outputSize(2) ~= (size(image1,2)+size(image2,2))
+                additional_cols = round(abs(outputSize(2) - (size(image1,2)+size(image2,2)))/2);
+                image1 = padarray(image1, [0 additional_cols],'both');
+                image2 = padarray(image2, [0 additional_cols],'both');
+            end
+            if outputSize(1) ~= size(image1,1)
+                additional_rows = round(abs(outputSize(1) - size(image1,1))/2);               
+                image1 = padarray(image1, [additional_rows 0],'both');
+                image2 = padarray(image2, [additional_rows 0],'both');
+            end 
+            frames(:,:,current_frame+j) = [image1 image2]./maxValue;
+            aux = insertText(frames(:,:,current_frame+j), [1 size(frames,1)-fontSize*2; round(size(frames,2)/2) size(frames,1)-fontSize*2; 1 round(fontSize/2)], {label1, label2, title}, 'Font', fontName, 'BoxOpacity', 0.0, 'FontSize', fontSize, 'TextColor', 'white', 'BoxColor', 'yellow');%, 'Font', 'Arial');
             frames(:,:,current_frame+j) = rgb2gray(aux);
         end
         current_frame = current_frame + numel(slicesToShow);
@@ -130,49 +193,56 @@ for i = 1 : numel(sequence)
         label1 = varargin{i}.labelMethod1;
         label2 = varargin{i}.labelMethod2;
         fontName = varargin{i}.fontName;
+        fontSize = varargin{i}.fontSize;
         angles = varargin{i}.angles;
+        if isfield(varargin{i}, 'transition')
+            transition = varargin{i}.transition; % Number of angles where the trasnistion occurs.
+        else
+            transition = 0;
+        end
         for j = 1 : numel(angles)
+            if j <= transition
+                weight = (1/transition)*(j-1);
+            else
+                weight = 1;
+            end
             [mipTransverse1, mipCoronal1, mipSagital1] = getMIPs(imagesMethod1{imageIndex}(rowIndices1,colIndices1,:), angles(j));
             [mipTransverse2, mipCoronal2, mipSagital2] = getMIPs(imagesMethod2{imageIndex}(rowIndices2,colIndices2,:), angles(j));
-            % Check if needs zero padding:
-            if ~isempty(frames)
-                if size(frames,2) ~= (size(mipCoronal1,2)+size(mipCoronal2,2))
-                    additional_cols = round(abs(size(frames,2) - (size(mipCoronal1,2)+size(mipCoronal2,2)))/2);
-                        
-                    if size(frames,2) > (size(mipCoronal1,2)+size(mipCoronal2,2))
-                        mipCoronal1 = padarray(mipCoronal1, [0 additional_cols],'both');
-                        mipCoronal2 = padarray(mipCoronal2, [0 additional_cols],'both');
-                    else
-                        % Pad the frames
-                        frames = padarray(frames, [0 additional_cols],'both');
-                    end
-                end
-                if size(frames,1) ~= size(mipCoronal1,1)
-                    additional_rows = round(abs(size(frames,1) - size(mipCoronal1,1))/2);               
-                    if size(frames,1) > size(mipCoronal1,1)
-                        mipCoronal1 = padarray(mipCoronal1, [additional_rows 0],'both');
-                        mipCoronal2 = padarray(mipCoronal2, [additional_rows 0],'both');
-                    else
-                        frames = padarray(frames, [additional_rows 0],'both');
-                    end
-                end
-                
+            % Get scaling factor to match the desired output size:
+            resizeFactor = min([outputSize(1)./size(mipCoronal1,1) outputSize(2)./(size(mipCoronal1,2)*2)]);
+            mipCoronal1 = imresize(mipCoronal1, resizeFactor, 'nearest');
+            mipCoronal2 = imresize(mipCoronal2, resizeFactor, 'nearest');
+            % Because the images have been resized to match the outputSize
+            % in one axis, we now that we always need to add zeros
+            if outputSize(2) ~= (size(mipCoronal1,2)+size(mipCoronal2,2))
+                additional_cols = round(abs(outputSize(2) - (size(mipCoronal1,2)+size(mipCoronal2,2)))/2);
+                mipCoronal1 = padarray(mipCoronal1, [0 additional_cols],'both');
+                mipCoronal2 = padarray(mipCoronal2, [0 additional_cols],'both');
             end
+            if outputSize(1) ~= size(mipCoronal1,1)
+                additional_rows = round(abs(outputSize(1) - size(mipCoronal1,1))/2); 
+                if rem(size(mipCoronal1,1),2)
+                    mipCoronal1 = padarray(mipCoronal1, [additional_rows-1 0],'both'); % I need a row less
+                else
+                    mipCoronal1 = padarray(mipCoronal1, [additional_rows 0],'both');
+                end
+                mipCoronal2 = padarray(mipCoronal2, [additional_rows 0],'both');
+            end 
        
-            frames(:,:,current_frame+j) = [mipCoronal1 mipCoronal2]./maxValue; % Crop to match the size of the pther images
-            aux = insertText(frames(:,:,current_frame+j), [1 size(frames,1)-35; round(size(frames,2)/2) size(frames,1)-35; 1 1], {label1, label2, title}, 'Font', fontName, 'BoxOpacity', 0.0, 'FontSize', 18, 'TextColor', 'white', 'BoxColor', 'yellow');%, 'Font', 'Arial');
+            frames(:,:,current_frame+j) = weight.*[mipCoronal1 mipCoronal2]./maxValue; % Crop to match the size of the pther images
+            aux = insertText(frames(:,:,current_frame+j), [1 size(frames,1)-fontSize*2; round(size(frames,2)/2) size(frames,1)-fontSize*2; 1 round(fontSize/2)], {label1, label2, title}, 'Font', fontName, 'BoxOpacity', 0.0, 'FontSize', fontSize, 'TextColor', 'white', 'BoxColor', 'yellow');%, 'Font', 'Arial');
             frames(:,:,current_frame+j) = rgb2gray(aux);
         end
         current_frame = current_frame + numel(angles);
     end
 end
-scale = 1;
 writeAnimatedGif(frames, outputFilename, 0.1,colormap, scale);
 end
 
 function [mipTransverse, mipCoronal, mipSagital] = getMIPs(volume, angle)
 
-    volume = imrotate3(volume, angle, [0 0 1], 'crop');
+    %volume = imrotate3(volume, angle, [0 0 1], 'crop');
+    volume = imrotate(volume, angle, 'crop');
     % Get the Maximum Intensity ProjectionsL
     % Transverse XY:
     mipTransverse = max(volume,[],3);
