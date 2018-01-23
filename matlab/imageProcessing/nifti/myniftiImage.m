@@ -33,7 +33,7 @@ classdef myniftiImage < handle
         
     methods 
         
-        function self = niftiImage(varargin)
+        function self = myniftiImage(varargin)
         % niftiImage: create a niftiImage object from either the full file 
         % names for the header and image components, or a single .nii file.
         % It returns a niftiImage object, that contains the header
@@ -510,7 +510,7 @@ classdef myniftiImage < handle
 
                     %xform = affine3d([R zeros(3,1); T 1]');
                     % Modified by MArtin Belzunce 01/12/17
-                    xform = affine3d([R zeros(3,1); T 1]');
+                    xform = affine3d([R zeros(3,1); T 1]);
                 else
                     xformName = 'None';
                     xform = affine3d();
@@ -661,16 +661,16 @@ classdef myniftiImage < handle
             imageDims = length(size(V));
             headerStruct.dim = [imageDims size(V) ones(1, 7 - imageDims)];
             headerStruct.pixdim = [1 ones(1,imageDims) zeros(1, 7 - imageDims)];
-            [headerStruct.datatype, headerStruct.bitpix] = images.internal.nifti.niftiImage.setDataType(class(V));
+            [headerStruct.datatype, headerStruct.bitpix] = myniftiImage.setDataType(class(V));
 
             headerStruct.scl_slope = 0;
             headerStruct.scl_inter = 0;
-            headerStruct.xyzt_units = images.internal.nifti.niftiImage.setSpaceTimeUnits('Unknown', 'None');
+            headerStruct.xyzt_units = myniftiImage.setSpaceTimeUnits('Unknown', 'None');
 
             %intent_p1, intent_p2, %intent_p3. intent_code. intent_name
             [headerStruct.intent_code, headerStruct.intent_name, ...
              headerStruct.intent_p1, headerStruct.intent_p2, ...
-             headerStruct.intent_p3] = images.internal.nifti.niftiImage.setIntent('None', '', [0, 0, 0]);
+             headerStruct.intent_p3] = myniftiImage.setIntent('None', '', [0, 0, 0]);
 
             headerStruct.slice_start = 0;
             headerStruct.slice_end = 0;
@@ -737,24 +737,24 @@ classdef myniftiImage < handle
                 rawStruct.scl_slope = 0;
             end
 
-            rawStruct.xyzt_units = images.internal.nifti.niftiImage.setSpaceTimeUnits(simpleStruct.SpaceUnits, simpleStruct.TimeUnits);
+            rawStruct.xyzt_units = myniftiImage.setSpaceTimeUnits(simpleStruct.SpaceUnits, simpleStruct.TimeUnits);
 
             %intent_p1, intent_p2, %intent_p3. intent_code. intent_name
             if isfield(simpleStruct, 'Intent') && isfield(simpleStruct, 'IntentDescription') && isfield(simpleStruct, 'IntentParams')
             [rawStruct.intent_code, rawStruct.intent_name, ...
              rawStruct.intent_p1, rawStruct.intent_p2, ...
-             rawStruct.intent_p3] = images.internal.nifti.niftiImage.setIntent(simpleStruct.Intent, ...
+             rawStruct.intent_p3] = myniftiImage.setIntent(simpleStruct.Intent, ...
                                                  simpleStruct.IntentDescription, ...
                                                  simpleStruct.IntentParams);
             else
             [rawStruct.intent_code, rawStruct.intent_name, ...
              rawStruct.intent_p1, rawStruct.intent_p2, ...
-             rawStruct.intent_p3] = images.internal.nifti.niftiImage.setIntent('None', ...
+             rawStruct.intent_p3] = myniftiImage.setIntent('None', ...
                                                  '', ...
                                                  [0, 0, 0]);
             end
 
-            [rawStruct.datatype, rawStruct.bitpix] = images.internal.nifti.niftiImage.setDataType(simpleStruct.Datatype);
+            [rawStruct.datatype, rawStruct.bitpix] = myniftiImage.setDataType(simpleStruct.Datatype);
 
             if isfield(simpleStruct, 'SliceStart') && isfield(simpleStruct, 'SliceEnd') && isfield(simpleStruct, 'SliceDuration')
                 rawStruct.slice_start = simpleStruct.SliceStart;
@@ -772,8 +772,8 @@ classdef myniftiImage < handle
                 rawStruct.toffset = 0;
             end
 
-            rawStruct.slice_code = images.internal.nifti.niftiImage.setSliceCode(simpleStruct.SliceCode);
-            rawStruct.dim_info = images.internal.nifti.niftiImage.setDimInfo(simpleStruct.FrequencyDimension, simpleStruct.PhaseDimension, simpleStruct.SpatialDimension);
+            rawStruct.slice_code = myniftiImage.setSliceCode(simpleStruct.SliceCode);
+            rawStruct.dim_info = myniftiImage.setDimInfo(simpleStruct.FrequencyDimension, simpleStruct.PhaseDimension, simpleStruct.SpatialDimension);
 
             % cal_max and cal_min
             if isfield(simpleStruct, 'DisplayIntensityRange')
@@ -786,7 +786,7 @@ classdef myniftiImage < handle
 
             % xform
             if isfield(simpleStruct, 'TransformName') && isfield(simpleStruct, 'Transform')
-                rawStruct = images.internal.nifti.niftiImage.setXForm(rawStruct, simpleStruct);
+                rawStruct = myniftiImage.setXForm(rawStruct, simpleStruct);
             else
                 rawStruct.qform_code = 0;
                 rawStruct.sform_code = 0;

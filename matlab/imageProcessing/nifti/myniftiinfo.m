@@ -45,9 +45,9 @@ function metadata = myniftiinfo(filename)
     metadata.Filename = fullfile(fileDetails.folder, fileDetails.name);
     metadata.Filemoddate = fileDetails.date;
     metadata.Filesize = fileDetails.bytes;
-    NV = images.internal.nifti.niftiImage(NF.FileWithHeader);
+    NV = myniftiImage(NF.FileWithHeader);
 
-    % Get the simplified structure from niftiImage.
+    % Get the simplified structure from myniftiImage.
     simpleStruct = NV.simplifyStruct();
     % Copy simplified fields into metadata.
     fields = fieldnames(simpleStruct);

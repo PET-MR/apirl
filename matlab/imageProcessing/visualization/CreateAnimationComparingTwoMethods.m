@@ -66,9 +66,9 @@
 % opts2.fontName = 'arial';
 % opts2.fontSize = 12;
 % recommendation: use even number of rows and columns
-function [frames, outputFilename] = CreateAnimationComparingTwoMethods(imagesMethod1, imagesMethod2, sequence, colormap, scale, outputSize, outputFilename, varargin)
+function [frames, outputFilename] = CreateAnimationComparingTwoMethods(imagesMethod1, imagesMethod2, sequence, frame_time, colormap, scale, outputSize, outputFilename, varargin)
 
-fixedArgs = 7;
+fixedArgs = 8;
 if nargin ~= (fixedArgs + numel(sequence))
     error('A params structure needs to be define for each element of the sequence. Example: CreateAnimationComparingTwoMethods(imagesMethod1, imagesMethod2, [1 2], params1, params2)');
 end
@@ -213,7 +213,7 @@ for i = 1 : numel(sequence)
             mipCoronal1 = imresize(mipCoronal1, resizeFactor, 'nearest');
             mipCoronal2 = imresize(mipCoronal2, resizeFactor, 'nearest');
             % Because the images have been resized to match the outputSize
-            % in one axis, we now that we always need to add zeros
+            % in one axis, we now that we always need to add zerosmipCoronal1
             if outputSize(2) ~= (size(mipCoronal1,2)+size(mipCoronal2,2))
                 additional_cols = round(abs(outputSize(2) - (size(mipCoronal1,2)+size(mipCoronal2,2)))/2);
                 mipCoronal1 = padarray(mipCoronal1, [0 additional_cols],'both');
@@ -243,7 +243,7 @@ for i = 1 : numel(sequence)
         current_frame = current_frame + numel(angles);
     end
 end
-writeAnimatedGif(frames, outputFilename, 0.1,colormap, scale);
+writeAnimatedGif(frames, outputFilename, frame_time, colormap, scale);
 end
 
 function [mipTransverse, mipCoronal, mipSagital] = getMIPs(volume, angle)

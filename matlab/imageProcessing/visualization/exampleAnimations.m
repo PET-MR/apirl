@@ -22,6 +22,7 @@ load('/data/Results/FDG_11/nonlocal_lange_bowsher_psf/delta4.00e-02_B40_regparam
 % case that can be sorted out by chosing the rows and cols that need to be
 % visualized.
 % First go only through iterations
+frame_time = 0.1;
 opts0.slice = 80;
 opts0.rows1 = 200:480; % rows and cols for image 1 (MLEM), chose values so your image is centred in the brain and also needs to match the size of the second method.
 opts0.cols1 = 200:480;
@@ -35,7 +36,7 @@ opts0.fontName = 'arial';
 opts0.fontSize = 60;
 scale =1 ;
 outputSize = [1080 1920];
-[frames, outputFilename] = CreateAnimationComparingTwoMethods(mlem_resampled, nonlocal_lange_bowsher_mr_voxels.images, [0], gray, scale, outputSize, sprintf('/data/Results/FDG_11/OnlyIterationsSlice_%d.gif', opts0.slice), opts0);
+[frames, outputFilename] = CreateAnimationComparingTwoMethods(mlem_resampled, nonlocal_lange_bowsher_mr_voxels.images, [0], frame_time, gray, scale, outputSize, sprintf('/data/Results/FDG_11/OnlyIterationsSlice_%d.gif', opts0.slice), opts0);
 %% Only through slices
 opts1.slices = 25:100;
 opts1.rows1 = 200:480;
@@ -49,7 +50,7 @@ opts1.labelMethod2 = '              MRI-assisted PET';
 opts1.fontName = 'arial';
 opts1.fontSize = 60;
 scale =1 ;
-[frames, outputFilename] = CreateAnimationComparingTwoMethods(mlem_resampled, nonlocal_lange_bowsher_mr_voxels.images, [1], gray, scale, outputSize, sprintf('/data/Results/FDG_11/OnlySlicesIteration_%d.gif', opts1.cellArrayElement), opts1);
+[frames, outputFilename] = CreateAnimationComparingTwoMethods(mlem_resampled, nonlocal_lange_bowsher_mr_voxels.images, [1], frame_time, gray, scale, outputSize, sprintf('/data/Results/FDG_11/OnlySlicesIteration_%d.gif', opts1.cellArrayElement), opts1);
 %% Only through MIPs
 opts2.angles = [0:1:357];% 0:3:357];
 opts2.rows1 = 200:480;
@@ -63,11 +64,11 @@ opts2.labelMethod2 = '              MRI-assisted PET';
 opts2.fontName = 'arial';
 opts2.fontSize = 60;
 scale =1 ;
-[frames, outputFilename] = CreateAnimationComparingTwoMethods(mlem_resampled, nonlocal_lange_bowsher_mr_voxels.images, [2], gray, scale, outputSize, '/data/Results/FDG_11/RotatingMips.gif', opts2);
+[frames, outputFilename] = CreateAnimationComparingTwoMethods(mlem_resampled, nonlocal_lange_bowsher_mr_voxels.images, [2], frame_time, gray, scale, outputSize, '/data/Results/FDG_11/RotatingMips.gif', opts2);
 %% Create a Sequence
 opts1.slices = [opts0.slice:100 25:opts0.slice-1]; % Change the slices to start from the same slice as the iteration update
 opts2.transition = 6;
-[frames, outputFilename] = CreateAnimationComparingTwoMethods(mlem_resampled, nonlocal_lange_bowsher_mr_voxels.images, [0 1 2], gray, scale, outputSize, '/data/Results/FDG_11/FullSequence.gif', opts0, opts1, opts2);
+[frames, outputFilename] = CreateAnimationComparingTwoMethods(mlem_resampled, nonlocal_lange_bowsher_mr_voxels.images, [0 1 2], frame_time, gray, scale, outputSize, '/data/Results/FDG_11/FullSequence.gif', opts0, opts1, opts2);
 v = VideoWriter('/data/Results/FDG_11/FullSequence.avi', 'Uncompressed AVI');
 v.FrameRate = 10;
 open(v);
@@ -90,3 +91,6 @@ close(v)
 gray = colormap(gray);
 invgray = gray(end:-1:1,:);
 [frames, outputFilename] = CreateAnimationComparingTwoMethods(mlem_resampled, nonlocal_lange_bowsher_mr_voxels.images, [0 1 2], invgray, scale, outputSize, '/data/Results/FDG_11/FullSequence_inv.gif', opts0, opts1, opts2);
+
+frame_time = 0.05;
+[frames, outputFilename] = CreateAnimationComparingTwoMethods(mlem_resampled, nonlocal_lange_bowsher_mr_voxels.images, [0 1 2], frame_time, gray, scale, outputSize, '/data/Results/FDG_11/FullSequence2.gif', opts0, opts1, opts2);
