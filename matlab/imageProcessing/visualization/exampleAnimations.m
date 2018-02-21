@@ -52,7 +52,7 @@ opts1.fontSize = 60;
 scale =1 ;
 [frames, outputFilename] = CreateAnimationComparingTwoMethods(mlem_resampled, nonlocal_lange_bowsher_mr_voxels.images, [1], frame_time, gray, scale, outputSize, sprintf('/data/Results/FDG_11/OnlySlicesIteration_%d.gif', opts1.cellArrayElement), opts1);
 %% Only through MIPs
-opts2.angles = [0:1:357];% 0:3:357];
+opts2.angles = [0:5:357];% 0:3:357];
 opts2.rows1 = 200:480;
 opts2.cols1 = 200:480;
 opts2.rows2 = 1 : size(nonlocal_lange_bowsher_mr_voxels.images{1},1);

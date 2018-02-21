@@ -87,6 +87,8 @@ classdef PETDataClass < handle
             ObjData.Data.DCM.sinogramHdrs = [];
             ObjData.Data.DCM.nListModes = 0;
             ObjData.Data.DCM.listModeHdrs = [];
+            ObjData.Data.DCM.nListModeLarges = 0;
+            ObjData.Data.DCM.listModeLargeHdrs = [];
             ObjData.Data.DCM.nNormFiles =0;
             ObjData.Data.DCM.NormFileHdrs = [];
             ObjData.Data.IF.nCompressedSinogramFiles = 0;
@@ -215,7 +217,7 @@ classdef PETDataClass < handle
                     
                     ObjData = read_histogram_interfiles(ObjData, ObjData.Data.path);
                     
-                elseif strcmpi(ObjData.Data.Type, 'dicom_sinogram') || strcmpi(ObjData.Data.Type, 'dicom_listmode')
+                elseif strcmpi(ObjData.Data.Type, 'dicom_sinogram') || strcmpi(ObjData.Data.Type, 'dicom_listmode') || strcmpi(ObjData.Data.Type, 'dicom_listmodelarge')
                     fprintf('Calling JSRecon12...\n');
                     ObjData = prompt_JSRecon12(ObjData, ObjData.Data.path);
                 else
@@ -248,6 +250,8 @@ classdef PETDataClass < handle
             ObjData.Data.DCM.sinogramHdrs = outDCM.SinogramHdrs;
             ObjData.Data.DCM.nListModes   = outDCM.nListModes;
             ObjData.Data.DCM.listModeHdrs = outDCM.listModeHdrs;
+            ObjData.Data.DCM.nListModeLarges   = outDCM.nListModeLarges;
+            ObjData.Data.DCM.listModeLargeHdrs = outDCM.listModeLargeHdrs;
             ObjData.Data.DCM.nNormFiles   = outDCM.nNormFiles;
             ObjData.Data.DCM.NormFileHdrs = outDCM.NormFileHdrs;
             
@@ -277,6 +281,8 @@ classdef PETDataClass < handle
                 ObjData.Data.isSinogram = ObjData.Data.DCM.nSinograms;
             elseif outDCM.nListModes
                 ObjData.Data.isListMode = ObjData.Data.DCM.nListModes;
+            elseif outDCM.nListModeLarges
+                ObjData.Data.isListModeLarge = ObjData.Data.DCM.nListModeLarges;
             elseif outIF.nUncompressedSinogramFiles
                 ObjData.Data.isSinogram = ObjData.Data.IF.nUncompressedSinogramFiles;
             elseif outIF.nCompressedSinogramFiles
@@ -290,6 +296,9 @@ classdef PETDataClass < handle
                 ObjData.Data.path_raw_data = [ObjData.Data.path(1:end-1) '-Converted' ObjData.bar];
             elseif outDCM.nListModes
                 ObjData.Data.Type = 'dicom_listmode';
+                ObjData.Data.path_raw_data = [ObjData.Data.path(1:end-1) '-Converted' ObjData.bar];
+            elseif outDCM.nListModeLarges
+                ObjData.Data.Type = 'dicom_listmodelarge';
                 ObjData.Data.path_raw_data = [ObjData.Data.path(1:end-1) '-Converted' ObjData.bar];
             elseif outIF.nUncompressedSinogramFiles
                 ObjData.Data.Type = 'sinogram_uncompressed_interfile';
@@ -400,6 +409,16 @@ classdef PETDataClass < handle
                         end
                     elseif ObjData.Data.isListMode>1
                         error('There are %d list-mode files, please specify the static sinogram number.\n',ObjData.Data.isListMode)
+                    end
+                elseif ObjData.Data.isListModeLarge
+                    if ObjData.Data.isListModeLarge==1
+                        if  ObjData.NumberOfFrames==1
+                            frame =1;
+                        else
+                            error('There are %d dynamic frames, please specify the frame number.\n',ObjData.NumberOfFrames)
+                        end
+                    elseif ObjData.Data.isListModeLarge>1
+                        error('There are %d list-mode large format files, please specify the static sinogram number.\n',ObjData.Data.isListModeLarge)
                     end
                 end
             else

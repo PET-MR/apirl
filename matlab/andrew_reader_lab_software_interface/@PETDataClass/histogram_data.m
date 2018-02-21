@@ -13,6 +13,8 @@ function data = histogram_data(ObjData)
 % if single list-mode files, FrameTimePoints = user defined frames or default [0,imageDuration(1)]
 if strcmpi(ObjData.Data.Type, 'dicom_listmode')
     N = ObjData.Data.DCM.nListModes;
+elseif strcmpi(ObjData.Data.Type, 'dicom_listmodelarge')
+    N = ObjData.Data.DCM.nListModeLarges;
 else
     N = ObjData.Data.IF.nListModeFiles;
 end
