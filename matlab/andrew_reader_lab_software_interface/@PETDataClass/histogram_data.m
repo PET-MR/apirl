@@ -24,12 +24,18 @@ if strcmpi(ObjData.MethodListData,'e7')
     
     
     for j = 1: N
+        % In frame I store the text needed in histogram replay that is
+        % starttime:framedur1,framedur2,...
         frame = [num2str(ObjData.FrameTimePoints(j,1)) ':' ];
-        for i = 2:length(ObjData.FrameTimePoints(j,:))-1
-            frame = [frame num2str(ObjData.FrameTimePoints(j,i)) ','];
+        frameDurations = diff(ObjData.FrameTimePoints);
+        for i = 1:length(frameDurations)-1
+            frame = [frame num2str(frameDurations(i)) ','];
         end
-        frame = [frame num2str(ObjData.FrameTimePoints(j,end))];
-        
+        if isempty(i)
+            frame = [frame num2str(frameDurations(1))];
+        else
+            frame = [frame num2str(frameDurations(i+1))];
+        end
         [Path,name]=fileparts(ObjData.Data.emission(j).n);
         idx = strfind(name,'sino') + length('sino');
         outSinoFileName = [Path ObjData.bar name(1:idx-1)];
@@ -39,9 +45,23 @@ if strcmpi(ObjData.MethodListData,'e7')
         [status,message] = system(command);
         if status
             display(message)
-            error('HistogramReplay was failed');
+            error('HistogramReplay has failed');
         end
         
+        % There is problem when creating multiple files from dynamic data,
+        % that only when mhdr is created, so I will create them manually:
+        for i = 1:length(frameDurations)
+            mhdr_filename{i} = writeInterfileMhdr([outSinoFileName sprintf('-%d.s.hdr', i-1)]);
+        end
+        % Then the main mhdr file is not needed:
+        delete([outSinoFileName '.mhdr']);
+        % Once the data has been histogrammed, load the sinograms and
+        % switch to thistogram mode:
+        [sinogramsPath, file] = fileparts(ObjData.Data.emission_listmode_hdr(j).n);
+        ObjData.Data.IF = ParseInterfileDataFile(sinogramsPath,0);
+                
+        ObjData.Data.isSinogram = ObjData.Data.IF.nUncompressedSinogramFiles;  ObjData.Data.isListMode = 0;  ObjData.Data.isListModeLarge = 0;
+        ObjData.read_histogram_interfiles(sinogramsPath);
     end
     fprintf('Done\n');
 elseif strcmpi(ObjData.MethodListData,'matlab')

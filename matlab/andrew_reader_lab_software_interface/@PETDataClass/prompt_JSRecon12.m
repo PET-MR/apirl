@@ -112,14 +112,15 @@ elseif strcmpi(ObjData.Data.Type, 'dicom_listmode') || strcmpi(ObjData.Data.Type
         end
         
     end
-    fprintf('Histogram replay\n');
-    ObjData.histogram_data();
-    
-
-    
-    
-    
-    
+    % Don' t histofram by default
+%     % Check if the interfile file already exists, and if it doesn't call
+%     % histogram replay:
+%     if ~exist(ObjData.Data.emission(i).n, 'file')
+%         fprintf('Histogram replay\n');
+%         ObjData.histogram_data();
+%     end
+    % With the interfile list mode data ready now switch the data type to interfile list-mode:
+    %ObjData.Data.Type = 'interfle_listmode';
 end
 
 

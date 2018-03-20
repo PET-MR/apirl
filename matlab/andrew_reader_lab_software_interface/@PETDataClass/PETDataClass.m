@@ -103,8 +103,9 @@ classdef PETDataClass < handle
             ObjData.Data.IF.HumanUmapHdrs = [];
             ObjData.Data.IF.nHardwareUmaps = 0;
             ObjData.Data.IF.HardwareUmapHdrs = [];
-            ObjData.Data.isListMode         =0;
-            ObjData.Data.isSinogram         =0;
+            ObjData.Data.isListMode         = 0;
+            ObjData.Data.isListModeLarge    = 0;
+            ObjData.Data.isSinogram         = 0;
             
             ObjData.span                        = 11; % span by default.
             ObjData.Gantry.nCrystalRings        = 64; % number of crystal rings.
@@ -225,16 +226,18 @@ classdef PETDataClass < handle
                 end
             end
         end
+        
+        % Histogram data: converts a list mode acquisition into span-1 sinograms.
+        ObjData = histogram_data(ObjData);
     end
-    
+      
     
     methods (Access = private)
         
         make_mhdr(ObjData,filename);
         ObjData = prompt_JSRecon12(ObjData, FolderName);
         ObjData = read_histogram_interfiles(ObjData, FolderName,reFraming);
-        % Histogram data: converts a list mode acquisition into span-1 sinograms.
-        ObjData = histogram_data(ObjData);
+        
         
         function type = ParseObjDataFile(ObjData,path)
             
@@ -335,11 +338,28 @@ classdef PETDataClass < handle
         end
         
         function [status, message] = e7_sino_rawdata(ObjData,frame)
-            % e7_sino_rawdata calls e7_recon to gereate all raw data and
-            command = [ObjData.SoftwarePaths.e7.siemens ' -e "' ObjData.Data.emission(frame).n '"' ...
-                ' -u "' ObjData.Data.umap(1).n '","' ObjData.Data.hardware_umap(1).n '"' ...
-                ' -n "' ObjData.Data.norm '" --os "' ObjData.Data.scatters(frame).n '" --rs --force -l 73,. -d ' ObjData.Data.rawdata_sino(frame).n ];
-            
+            % e7_sino_rawdata calls e7_recon to gereate all raw data
+            % Check if there is a registered umap:
+            if isfield(ObjData.Data.IF, 'RegisteredHumanUmapMhdrs')
+                if frame <= numel(ObjData.Data.IF.RegisteredHumanUmapMhdrs)
+                    command = [ObjData.SoftwarePaths.e7.siemens ' -e "' ObjData.Data.emission(frame).n '"' ...
+                        ' -u "' ObjData.Data.IF.RegisteredHumanUmapMhdrs(frame).hdrFilename '","' ObjData.Data.hardware_umap(1).n '"' ...
+                        ' -n "' ObjData.Data.norm '" --rs --force -l 73,. -d ' ObjData.Data.rawdata_sino(frame).n ];
+                else
+                    % Use the stadnard umap:
+                    command = [ObjData.SoftwarePaths.e7.siemens ' -e "' ObjData.Data.emission(frame).n '"' ...
+                        ' -u "' ObjData.Data.umap(1).n '","' ObjData.Data.hardware_umap(1).n '"' ...
+                        ' -n "' ObjData.Data.norm '" --rs --force -l 73,. -d ' ObjData.Data.rawdata_sino(frame).n ];                    
+                end
+            else
+                % Use the stadnard umap:
+                command = [ObjData.SoftwarePaths.e7.siemens ' -e "' ObjData.Data.emission(frame).n '"' ...
+                    ' -u "' ObjData.Data.umap(1).n '","' ObjData.Data.hardware_umap(1).n '"' ...
+                    ' -n "' ObjData.Data.norm '" --rs --force -l 73,. -d ' ObjData.Data.rawdata_sino(frame).n ];
+                % command = [ObjData.SoftwarePaths.e7.siemens ' -e "' ObjData.Data.emission(frame).n '"' ...
+                %    ' -u "' ObjData.Data.umap(1).n '","' ObjData.Data.hardware_umap(1).n '"' ...
+                %    ' -n "' ObjData.Data.norm '" --os "' ObjData.Data.scatters(frame).n '" --rs --force -l 73,. -d ' ObjData.Data.rawdata_sino(frame).n ];
+            end
             [status,message] = system(command);
             
         end
@@ -368,6 +388,36 @@ classdef PETDataClass < handle
                 ' --oi "' fullFilename ' "' ' -u "' ObjData.Data.umap(1).n '","' ObjData.Data.hardware_umap(1).n '"' ...
                 ' -n "' ObjData.Data.norm '"' ' --gf --quant 1 -w 344 -l 73,. --fl --ecf --izoom 1 --force --cvrg 97 --rs ' strIntermediateIters];
             [status,message] = system(command);            
+        end
+        
+        function [status, message] = e7_recon_nac(ObjData, frame, numSubsets, numIterations, readIfFilesFound)
+            if nargin < 5
+                readIfFilesFound = 0; % By default read files
+            end
+            strPsf = ' ';
+            outputTag = '';
+            strIntermediateIters = ' ';
+            lastSlash = strfind(ObjData.Data.emission(frame).n,ObjData.bar);
+            filename = [ObjData.Data.emission(frame).n(lastSlash(end)+1:end-11) outputTag];
+            outputPath = [ObjData.Data.emission(frame).n(1:lastSlash(end)) ObjData.bar 'recon_nac_' num2str(frame-1) outputTag ObjData.bar];
+            if ~isdir(outputPath)
+                mkdir(outputPath);
+            end
+            fullFilename = [outputPath filename];
+            fullOutputFilename = [fullFilename ' _000_000.v.hdr'];
+            if exist(fullOutputFilename, 'file') && readIfFilesFound
+                ObjData.Data.recon_nac(frame).n = fullOutputFilename;
+                status = 1;
+                message = 'Files exist, not reconstructing';
+            else
+                % The file is not there:
+                command = [ObjData.SoftwarePaths.e7.siemens ' --algo op-osem --is '  num2str(numIterations) ',' num2str(numSubsets) strPsf ' -e "' ObjData.Data.emission(frame).n '"' ...
+                    ' --oi "' fullFilename ' "' ...
+                    ' -n "' ObjData.Data.norm '"' ' --gf --quant 1 -w 344 -l 73,. --fl --ecf --izoom 1 --force --cvrg 97 --rs ' strIntermediateIters];
+                [status,message] = system(command); 
+                ObjData.Data.recon_nac(frame).n = fullOutputFilename;
+            end
+            
         end
         
         function status = uncompress_emission(ObjData)
@@ -557,7 +607,9 @@ classdef PETDataClass < handle
         sino_size_out = init_sinogram_size(ObjData, inspan, numRings, maxRingDifference);
         % Change span sinogram.
         [sinogram_out, sinogram_size_out] = change_sinogram_span(ObjData, sinogram_in, sinogram_size_in, span);
-        
+        % Detect motion from list mode:
+        [massCentroid, countRate] = detect_motion_from_list_mode(ObjData, window_sec);
+
         function  P = Prompts(ObjData,frame)
             if nargin==1, frame = 0; end
             frame = check_load_sinogram_inputs(ObjData,frame);
@@ -611,8 +663,18 @@ classdef PETDataClass < handle
         function Reconstruct(ObjData, numSubsets, numIterations, enablePsf, saveIterations)
             for frame = 1 : ObjData.NumberOfFrames
                 [status, message] = e7_recon(ObjData, frame, numSubsets, numIterations, enablePsf, saveIterations);
-            end
+            end        
+        end
         
+        function ReconstructNac(ObjData, numSubsets, numIterations, frame)
+            readIfFilesFound = 1; % Read if iles found:
+            if nargin == 4
+                [status, message] = e7_recon_nac(ObjData, frame, numSubsets, numIterations, readIfFilesFound);
+            else
+                for frame = 1 : numel(ObjData.Data.emission)
+                    [status, message] = e7_recon_nac(ObjData, frame, numSubsets, numIterations, readIfFilesFound);
+                end 
+            end
         end
         
         function add = RS(ObjData,frame)
@@ -627,34 +689,17 @@ classdef PETDataClass < handle
         
        
         function frameListmodeData(ObjData,newFrame)
-
-            ObjData.FrameTimePoints             = newFrame;
-            ObjData.NumberOfFrames              = length(ObjData.FrameTimePoints)-1;
-            
-            if strcmpi(ObjData.Data.Type,'dicom_listmode') && ObjData.Data.isListMode==1
-                ObjData.prompt_JSRecon12(ObjData.Data.path);
+            if nargin == 2
+                % Change the framing
+                ObjData.FrameTimePoints             = newFrame;
+                ObjData.NumberOfFrames              = length(ObjData.FrameTimePoints)-1;
+            end
+            if (strcmpi(ObjData.Data.Type,'dicom_listmode') || strcmpi(ObjData.Data.Type,'dicom_listmodelarge')) %&& ObjData.Data.isListMode==1
+                %ObjData.prompt_JSRecon12(ObjData.Data.path);
+                ObjData.histogram_data();
             else
                 ObjData.read_histogram_interfiles(ObjData.Data.path);
             end
-        end
-        
-        % Initalizes tima frames
-        function InitFramesConfig(ObjData, timeFrame_sec)
-            % Get info from the header:
-            info = getInfoFromInterfile(ObjData.Data.emission_listmode(1).n);
-            % Scan time:
-            scanTime_sec = info.ImageDurationSec;
-            % Frame durations (it has NumberOfFrames elements):
-            ObjData.FrameDuration_sec = timeFrame_sec;
-            % Read from the header of the list file, the total time:
-            % Number of frames.
-            ObjData.NumberOfFrames = ceil(scanTime_sec./timeFrame_sec);
-            
-            % List with the frames time stamps (it has NumberOfFrames elements):
-            ObjData.DynamicFrames_sec = zeros(ObjData.NumberOfFrames,1);
-            
-            % Generate the time stamps for the frames:
-            ObjData.DynamicFrames_sec = 0 : timeFrame_sec : timeFrame_sec*ObjData.NumberOfFrames;
         end
         
         
@@ -747,6 +792,12 @@ classdef PETDataClass < handle
             fclose(fid);
             % Replace the 3rd line with the content of the dicom mumap:
             list_filed = dir(ObjData.Data.path);
+            lengthString(1) = 0; lengthString(2) = 0; % For '.' and '..'
+            for i = 3:length(list_filed)
+                lengthString(i) = numel(list_filed(i).name);
+            end
+            [values, indices] = sort(lengthString);
+            list_filed = list_filed(indices);
             for i = 3 : numel(list_filed) % first two are ., ..
                if list_filed(i).isdir
                    mumap_path = [ObjData.Data.path list_filed(i).name ObjData.bar];
@@ -782,6 +833,128 @@ classdef PETDataClass < handle
             fclose(fid);
             % call the command:
             [status, message] = system(resample_command);
+        end
+
+        function status = register_mumap(ObjData)
+            if ~isfield(ObjData.Data, 'recon_nac')
+                error('The NAC reconstructed images are needed.');
+                status = -1;
+            end
+            % read mumap:
+            umap = interfileReadSiemensImage(ObjData.Data.IF.HumanUmapHdrs.hdrFilename);
+            for i = 1 : numel(ObjData.Data.recon_nac)
+                % read nac image:
+                image = interfileReadSiemensImage(ObjData.Data.recon_nac(i).n);
+                % register umap:
+                [optimizer, metric] = imregconfig('multimodal');
+                %metric.NumberOfSpatialSamples = 1000; metric.NumberOfHistogramBins = 100;
+                optimizer.MaximumIterations = 200;
+                optimizer.InitialRadius = 0.004;
+                umap_this_frame = imregister(umap, image, 'rigid', optimizer, metric,'DisplayOptimization',true );
+                % write it in Siemens format
+                % first replicate header:.
+                [path, ] = fileparts(ObjData.Data.IF.HumanUmapHdrs.hdrFilename);
+                ObjData.Data.IF.RegisteredHumanUmapHdrs(i).hdrFilename = [ObjData.Data.IF.HumanUmapHdrs.hdrFilename(1:end-6) '-' num2str(i-1) '.v.hdr'];
+                ObjData.Data.IF.RegisteredHumanUmapMhdrs(i).hdrFilename = [ObjData.Data.IF.HumanUmapMhdrs.hdrFilename(1:end-5) '-' num2str(i-1) '.mhdr'];
+                filenameBinaryFile = ObjData.ReplicateInterfileImageHeader(ObjData.Data.IF.HumanUmapHdrs.hdrFilename, ObjData.Data.IF.RegisteredHumanUmapHdrs(i).hdrFilename);
+                filenameNewHdrInMhdr = ObjData.ReplicateInterfileMasterHeader(ObjData.Data.IF.HumanUmapMhdrs.hdrFilename, ObjData.Data.IF.RegisteredHumanUmapMhdrs(i).hdrFilename);
+                fid = fopen([path ObjData.bar filenameBinaryFile], 'wb');
+                fwrite(fid, permute(umap_this_frame, [2 1 3]), 'single');
+                fclose(fid);
+                status = 0;
+            end
+        end
+        
+        function status = register_mumap_with_flirt(ObjData)
+            if ~isfield(ObjData.Data, 'recon_nac')
+                error('The NAC reconstructed images are needed.');
+                status = -1;
+            end
+            % read mumap:
+            umap = interfileReadSiemensImage(ObjData.Data.IF.HumanUmapHdrs.hdrFilename);
+            for i = 1 : numel(ObjData.Data.recon_nac)
+                % read nac image:
+                image = interfileReadSiemensImage(ObjData.Data.recon_nac(i).n);
+                % write the image in nifti for fsl:
+                params.PixelDimensions = ObjData.image_size.voxelSize_mm;
+                params.SpaceUnits = 'Millimeter';
+                params.TimeUnits = 'Second';
+                params.ImageSize = size(umap);
+                params.Description = '';
+                params.Qfactor = 1;
+                params.SliceCode = 'Unknown';
+                params.Datatype = 'single';
+                params.FrequencyDimension = 0;
+                params.PhaseDimension = 0;
+                params.SpatialDimension = 0;
+                niftiwrite(single(umap), [ObjData.Data.path_raw_data '/temp_umap'], params);
+                niftiwrite(single(image), [ObjData.Data.path_raw_data '/temp_nac'], params);
+                % Register:
+                command = sprintf('fsl5.0-flirt -ref %s/temp_nac.nii -in %s/temp_umap.nii -out %s/temp_umap_reg.nii.gz -cost mutualinfo -dof 6', ...
+                    ObjData.Data.path_raw_data, ObjData.Data.path_raw_data, ObjData.Data.path_raw_data); % dof 6 for rigid transformation
+                [status, message] = system(command);
+                info_ref = niftiinfo([ObjData.Data.path_raw_data '/temp_umap_reg.nii.gz']);
+                umap_this_frame = niftiread(info_ref);
+                % write it in Siemens format
+                % first replicate header:.
+                [path, ] = fileparts(ObjData.Data.IF.HumanUmapHdrs.hdrFilename);
+                ObjData.Data.IF.RegisteredHumanUmapHdrs(i).hdrFilename = [ObjData.Data.IF.HumanUmapHdrs.hdrFilename(1:end-6) '-' num2str(i-1) '.v.hdr'];
+                ObjData.Data.IF.RegisteredHumanUmapMhdrs(i).hdrFilename = [ObjData.Data.IF.HumanUmapMhdrs.hdrFilename(1:end-5) '-' num2str(i-1) '.mhdr'];
+                filenameBinaryFile = ObjData.ReplicateInterfileImageHeader(ObjData.Data.IF.HumanUmapHdrs.hdrFilename, ObjData.Data.IF.RegisteredHumanUmapHdrs(i).hdrFilename);
+                filenameNewHdrInMhdr = ObjData.ReplicateInterfileMasterHeader(ObjData.Data.IF.HumanUmapMhdrs.hdrFilename, ObjData.Data.IF.RegisteredHumanUmapMhdrs(i).hdrFilename);
+                fid = fopen([path ObjData.bar filenameBinaryFile], 'wb');
+                fwrite(fid, permute(umap_this_frame, [2 1 3]), 'single');
+                fclose(fid);
+                status = 0;
+            end
+        end
+        
+        function filenameBinaryFile = ReplicateInterfileImageHeader(ObjData, filenameHdrToRep, filenameNewHdr)
+            copyfile(filenameHdrToRep, filenameNewHdr);
+            % Now replace in the new header the new binary file:
+            fid = fopen(filenameNewHdr, 'r');
+            [path, filenameBinaryFile] = fileparts(filenameNewHdr);
+            file_content_by_line = textscan(fid, '%s', inf,'Delimiter','\n');
+            fclose(fid);
+            % Look for the name of data file:= field
+            for i = 1 : numel(file_content_by_line{1})
+                if strncmp('!name of data file:=', file_content_by_line{1}{i}, numel('!name of data file:='))
+                    % Replace it with the new binary file:
+                    file_content_by_line{1}{i} = ['!name of data file:=' filenameBinaryFile];
+                    break;
+                end
+            end
+            % Now rewrite it:
+            fid = fopen(filenameNewHdr, 'w');
+            for i = 1 : numel(file_content_by_line{1})
+                fprintf(fid, '%s\r\n', file_content_by_line{1}{i});
+            end
+            fclose(fid);
+        end
+        
+        function filenameNewHdr = ReplicateInterfileMasterHeader(ObjData, filenameHdrToRep, filenameNewMhdr)
+            copyfile(filenameHdrToRep, filenameNewMhdr);
+            % Now replace in the new header the new binary file:
+            fid = fopen(filenameNewMhdr, 'r');
+            [path, filenameBase] = fileparts(filenameNewMhdr);
+            filenameNewHdr = [filenameBase '.v.hdr'];
+            file_content_by_line = textscan(fid, '%s', inf,'Delimiter','\n');
+            fclose(fid);
+            % Look for the name of data file:= field
+            for i = 1 : numel(file_content_by_line{1})
+                if strncmp('%data set [1]:=', file_content_by_line{1}{i}, numel('%data set [1]:='))
+                    % Replace it with the new header .v.hdr file:
+                    commas = findstr(file_content_by_line{1}{i},',');
+                    file_content_by_line{1}{i} = [file_content_by_line{1}{i}(1:commas(1)) filenameNewHdr file_content_by_line{1}{i}(commas(2):end)];
+                    break;
+                end
+            end
+            % Now rewrite it:
+            fid = fopen(filenameNewMhdr, 'w');
+            for i = 1 : numel(file_content_by_line{1})
+                fprintf(fid, '%s\r\n', file_content_by_line{1}{i});
+            end
+            fclose(fid);
         end
     end
     

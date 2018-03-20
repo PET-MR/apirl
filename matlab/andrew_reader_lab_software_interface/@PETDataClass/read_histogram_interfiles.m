@@ -11,7 +11,9 @@ function ObjData = read_histogram_interfiles(ObjData, FolderName)
 if ObjData.Data.isSinogram
     
     for i = 1: ObjData.Data.IF.nUncompressedSinogramFiles
+        % For uncompressed sinograms use only the header:
         UncompMhdr = ObjData.Data.IF.UncompressedSinogramMhdrs(i).hdr.NameOfMhdrFile;
+        UncompHdr = ObjData.Data.IF.UncompressedSinogramHdrs(i).hdrFilename;
         ObjData.Data.emission(i).n = UncompMhdr;
         if ~exist(UncompMhdr,'file'), error('could not find %s\n',UncompMhdr); end
         
@@ -43,7 +45,7 @@ end
 
 
 
-if ObjData.Data.isListMode
+if ObjData.Data.isListMode || ObjData.Data.isListModeLarge
     % The NameOfDataFile in list-mode interfile is often not correct, so
     % need to find the correct filename
     Dir = dir(ObjData.Data.path);
