@@ -344,21 +344,18 @@ classdef PETDataClass < handle
                 if frame <= numel(ObjData.Data.IF.RegisteredHumanUmapMhdrs)
                     command = [ObjData.SoftwarePaths.e7.siemens ' -e "' ObjData.Data.emission(frame).n '"' ...
                         ' -u "' ObjData.Data.IF.RegisteredHumanUmapMhdrs(frame).hdrFilename '","' ObjData.Data.hardware_umap(1).n '"' ...
-                        ' -n "' ObjData.Data.norm '" --rs --force -l 73,. -d ' ObjData.Data.rawdata_sino(frame).n ];
+                        ' -n "' ObjData.Data.norm '" --os "' ObjData.Data.scatters(frame).n '" --rs --force -l 73,. -d ' ObjData.Data.rawdata_sino(frame).n ];
                 else
                     % Use the stadnard umap:
                     command = [ObjData.SoftwarePaths.e7.siemens ' -e "' ObjData.Data.emission(frame).n '"' ...
                         ' -u "' ObjData.Data.umap(1).n '","' ObjData.Data.hardware_umap(1).n '"' ...
-                        ' -n "' ObjData.Data.norm '" --rs --force -l 73,. -d ' ObjData.Data.rawdata_sino(frame).n ];                    
+                        ' -n "' ObjData.Data.norm '" --os "' ObjData.Data.scatters(frame).n '" --rs --force -l 73,. -d ' ObjData.Data.rawdata_sino(frame).n ];                    
                 end
             else
                 % Use the stadnard umap:
                 command = [ObjData.SoftwarePaths.e7.siemens ' -e "' ObjData.Data.emission(frame).n '"' ...
                     ' -u "' ObjData.Data.umap(1).n '","' ObjData.Data.hardware_umap(1).n '"' ...
-                    ' -n "' ObjData.Data.norm '" --rs --force -l 73,. -d ' ObjData.Data.rawdata_sino(frame).n ];
-                % command = [ObjData.SoftwarePaths.e7.siemens ' -e "' ObjData.Data.emission(frame).n '"' ...
-                %    ' -u "' ObjData.Data.umap(1).n '","' ObjData.Data.hardware_umap(1).n '"' ...
-                %    ' -n "' ObjData.Data.norm '" --os "' ObjData.Data.scatters(frame).n '" --rs --force -l 73,. -d ' ObjData.Data.rawdata_sino(frame).n ];
+                    ' -n "' ObjData.Data.norm '" --os "' ObjData.Data.scatters(frame).n '" --rs --force -l 73,. -d ' ObjData.Data.rawdata_sino(frame).n ];
             end
             [status,message] = system(command);
             
@@ -890,7 +887,7 @@ classdef PETDataClass < handle
                 niftiwrite(single(umap), [ObjData.Data.path_raw_data '/temp_umap'], params);
                 niftiwrite(single(image), [ObjData.Data.path_raw_data '/temp_nac'], params);
                 % Register:
-                command = sprintf('fsl5.0-flirt -ref %s/temp_nac.nii -in %s/temp_umap.nii -out %s/temp_umap_reg.nii.gz -cost mutualinfo -dof 6', ...
+                command = sprintf('fsl5.0-flirt -ref %s/temp_nac.nii -in %s/temp_umap.nii -out %s/temp_umap_reg.nii.gz -dof 6 -searchrx -30 30 -searchry -30 30 -searchrz -30 30', ...
                     ObjData.Data.path_raw_data, ObjData.Data.path_raw_data, ObjData.Data.path_raw_data); % dof 6 for rigid transformation
                 [status, message] = system(command);
                 info_ref = niftiinfo([ObjData.Data.path_raw_data '/temp_umap_reg.nii.gz']);

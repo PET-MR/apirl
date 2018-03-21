@@ -33,8 +33,17 @@ end
 
 directory = [directory bar];
 listing = dir(directory);
+% Dir return the string sorted but not sorts in a way that you get '1',
+% '11', '2', etc, then the dynamic data is messed up, I correct that by
+% resorting by length, the data is already ordered alphabetically for the
+% same length:
+lengthString(1) = 0; lengthString(2) = 0; % For '.' and '..'
 for i = 3:length(listing)
-    
+    lengthString(i) = numel(listing(i).name);
+end
+[values, indices] = sort(lengthString);
+listing = listing(indices);
+for i = 3:length(listing)
     [~, name, ext] = fileparts(listing(i).name); % This name doesnt include the path.
     if ~isempty(name) && ~isempty(ext)
         if strcmpi(ext,'.l')
@@ -79,15 +88,17 @@ for i = 3:length(listing)
                     if ~isempty(strfind(Mhdr.NameOfDataFile,'hardware'))
                        nHardUmapMhdrs = nHardUmapMhdrs + 1; 
                        HardwareUmapMhdrs(nHardUmapMhdrs).hdr = Mhdr;
+                       HardwareUmapMhdrs(nHardUmapMhdrs).hdrFilename = MhdrFilename;
                     else
                         nHumanUmapMhdrs = nHumanUmapMhdrs + 1;
                         HumanUmapMhdrs(nHumanUmapMhdrs).hdr = Mhdr;
+                        HumanUmapMhdrs(nHumanUmapMhdrs).hdrFilename = MhdrFilename;
                     end
                 end
             elseif strcmpi(Mhdr.DataDescription,'sinogram')
                 % exclude those of scatters, norms
                 % NumberOfEmissionDataTypes ==1
-                if Mhdr.NumberOfEmissionDataTypes==2
+                if Mhdr.NumberOfEmissionDataTypes==2                 
                     % check theat the .s is available, sometimes is only
                     % the mhdr when the list mode is used:
                     % check if the Mhdr.NameOfDataFile referes to compressed or uncompressed sinograms
@@ -146,6 +157,7 @@ end
 function dataStruct = getHeaderFiles(hdrFilename,dataStruct,n)
 if exist(hdrFilename,'file')
     dataStruct(n).hdr = getInfoFromInterfile(hdrFilename);
+    dataStruct(n).hdrFilename = hdrFilename;
 else
     error('could not find the header file: %s\n',hdrFilename);
 end

@@ -52,19 +52,21 @@ opts1.fontSize = 60;
 scale =1 ;
 [frames, outputFilename] = CreateAnimationComparingTwoMethods(mlem_resampled, nonlocal_lange_bowsher_mr_voxels.images, [1], frame_time, gray, scale, outputSize, sprintf('/data/Results/FDG_11/OnlySlicesIteration_%d.gif', opts1.cellArrayElement), opts1);
 %% Only through MIPs
-opts2.angles = [0:5:357];% 0:3:357];
+opts2.angles = [0:45:357];% 0:3:357];
 opts2.rows1 = 200:480;
 opts2.cols1 = 200:480;
 opts2.rows2 = 1 : size(nonlocal_lange_bowsher_mr_voxels.images{1},1);
 opts2.cols2 = 1 : size(nonlocal_lange_bowsher_mr_voxels.images{1},2);
+opts2.rows2 = 200:480;
+opts2.cols2 = 200:480;
 opts2.cellArrayElement = 300; % Iteration I want to show
 opts2.title = '                           Positron Emission Tomography (PET)';
 opts2.labelMethod1 = '                 Standard PET';
 opts2.labelMethod2 = '              MRI-assisted PET';
 opts2.fontName = 'arial';
 opts2.fontSize = 60;
-scale =1 ;
-[frames, outputFilename] = CreateAnimationComparingTwoMethods(mlem_resampled, nonlocal_lange_bowsher_mr_voxels.images, [2], frame_time, gray, scale, outputSize, '/data/Results/FDG_11/RotatingMips.gif', opts2);
+scale = 1;
+[frames, outputFilename] = CreateAnimationComparingTwoMethods(mlem_resampled, mlem_resampled, [2], frame_time, gray, scale, outputSize, 'RotatingMips.gif', opts2);
 %% Create a Sequence
 opts1.slices = [opts0.slice:100 25:opts0.slice-1]; % Change the slices to start from the same slice as the iteration update
 opts2.transition = 6;

@@ -810,7 +810,7 @@ classdef classGpet < handle
                 image = image.*PET_lowres.vecDivision(backprojected_image_highres, sensImg_highres);
                 image = max(0,image);
                 if nargin>=7
-                    if rem(i-1,saveInterval) == 0 % -1 to save the first iteration
+                    if rem(i,saveInterval) == 0 % -1 to save the first iteration
                         image_ds{k} = image;
                         interfilewrite(single(image_ds{k}), [outputPath 'mlem_ds_iter_' num2str(i)], [objGpet.ref_image.PixelExtentInWorldX objGpet.ref_image.PixelExtentInWorldY objGpet.ref_image.PixelExtentInWorldZ]); % i use i instead of i+1 because i=1 is the inital estimate
                         k = k + 1;
@@ -848,7 +848,7 @@ classdef classGpet < handle
             senseImg = interp3(X_lowres, Y_lowres, Z_lowres, senseImg, X_highres, Y_highres, Z_highres, 'linear', 0); %imresize(sensImage, PET_highres.image_size.matrixSize, 'bicubic'); % High resolution image
         end
             
-        function image_iters = OPOSEMsaveIter(objGpet,Prompts, AN, RS, SensImg, initialEstimate, nIter, outputPath, saveInterval)
+        function image_iters = OPOSEMsaveIter(objGpet,Prompts, AN, RS, SensImg, initialEstimate, nIter, outputPath, saveInterval) % SaveInterval is for subiterations
             k=1;
             image = initialEstimate;
             for i = 1:nIter
@@ -856,7 +856,7 @@ classdef classGpet < handle
                     % SAM ELLIS EDIT (18/07/2016): replaced vector divisions by vecDivision
                     image = image.*objGpet.vecDivision(objGpet.PT(AN.*objGpet.vecDivision(Prompts,AN.*objGpet.P(image,j)+ RS),j),SensImg(:,:,:,j));
                     image = max(0,image);
-                    if rem(k-1,saveInterval) == 0 % -1 to save the first iteration
+                    if rem((i-1)*objGpet.nSubsets+j,saveInterval) == 0 % -1 to save the first iteration
                         interfilewrite(single(image), [outputPath 'oposem_subiter_' num2str(k)], objGpet.image_size.voxelSize_mm); % i use i instead of i+1 because i=1 is the inital estimate
                         image_iters{k} = image;
                         k = k + 1;
@@ -1091,7 +1091,7 @@ classdef classGpet < handle
                 end
                 if opt.save
                     if rem(i,opt.saveInterval) == 0 %
-                        interfilewrite(single(Img), [opt.outputPath 'map_iter_' num2str(i)], [objGpet.image_size.matrixSize]); % i use i instead of i+1 because i=1 is the inital estimate
+                        interfilewrite(single(Img), [opt.outputPath 'map_iter_' num2str(i)], [objGpet.image_size.voxelSize_mm]); % i use i instead of i+1 because i=1 is the inital estimate
                     end
                 end
             end
