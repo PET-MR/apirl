@@ -75,6 +75,11 @@ function m = P(objGpet, x,subset_i, localNumSubsets)    % If the fourth paramete
                 if objGpet.verbosity > 0
                     disp(output_message);
                 end
+            elseif strcmpi(objGpet.method, 'mex_otf_siddon_gpu')
+                [m, structSizeSinogram, output_message] = Project(x, objGpet.image_size.voxelSize_mm, objGpet.tempPath, objGpet.scanner, objGpet.scanner_properties, structSizeSino, numSubsets, subset_i, 1, objGpet.nRays, objGpet.nAxialRays);
+                if objGpet.verbosity > 0
+                    disp(output_message);
+                end
             end
         end
         

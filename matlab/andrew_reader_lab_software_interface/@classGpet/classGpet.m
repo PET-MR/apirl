@@ -63,6 +63,8 @@ classdef classGpet < handle
         verbosity
         % Prioir for map reconstruction.
         Prior
+        % Save image format (nifti, interfile):
+        saveImageFormat
     end
     
     methods
@@ -101,6 +103,7 @@ classdef classGpet < handle
             objGpet.PSF.Width = 4; %mm
             objGpet.radialBinTrim = 0;
             objGpet.Geom = '';
+            objGpet.saveImageFormat = 'interfile'; % By default interfile
             % SAM ELLIS EDIT (25/08/2016): changed the '.' to pwd so that
             % when deleting temp files, don't need to be in the original
             % directory
@@ -328,6 +331,29 @@ classdef classGpet < handle
             
         end
         
+        function write_image(objGpet, image, filename, voxelSize_mm)
+            if nargin < 4
+                voxelSize_mm = objGpet.image_size.voxelSize_mm;
+            end
+            if strcmp(objGpet.saveImageFormat, 'interfile')
+                interfilewrite(single(image), filename, voxelSize_mm);
+            elseif strcmp(objGpet.saveImageFormat, 'nifti')
+                params.PixelDimensions = voxelSize_mm;
+                params.SpaceUnits = 'Millimeter';
+                params.TimeUnits = 'Second';
+                params.ImageSize = size(image);
+                params.Description = '';
+                params.Qfactor = 1;
+                params.SliceCode = 'Unknown';
+                params.Datatype = 'single';
+                params.FrequencyDimension = 0;
+                params.PhaseDimension = 0;
+                params.SpatialDimension = 0;
+                image = image(end:-1:1,end:-1:1,end:-1:1);
+                image = permute(image, [2 1 3]);
+                niftiwrite(single(image), filename, params, 'Compressed', 1);
+            end
+        end
         % This functions get the field of the struct used in Apirl and
         % converts to the struct sinogram_size used in this framework.
         function structSizeSino = get_sinogram_size_for_apirl(objPETRawData)
@@ -752,7 +778,7 @@ classdef classGpet < handle
                 image = image.*objGpet.vecDivision(objGpet.PT(AN.*objGpet.vecDivision(Prompts,AN.*objGpet.P(image)+ RS)),SensImg);
                 image = max(0,image);
                 if rem(i,saveInterval) == 0 % 
-                    interfilewrite(single(image), [outputPath 'mlem_iter_' num2str(i)], objGpet.image_size.voxelSize_mm); % i use i instead of i+1 because i=1 is the inital estimate
+                    objGpet.write_image(image, [outputPath 'mlem_iter_' num2str(i)]); % The third parameter by default is objGpet.image_size.voxelSize_mm
                     image_iter{k} = image;
                     k = k + 1;
                 end
@@ -812,7 +838,7 @@ classdef classGpet < handle
                 if nargin>=7
                     if rem(i,saveInterval) == 0 % -1 to save the first iteration
                         image_ds{k} = image;
-                        interfilewrite(single(image_ds{k}), [outputPath 'mlem_ds_iter_' num2str(i)], [objGpet.ref_image.PixelExtentInWorldX objGpet.ref_image.PixelExtentInWorldY objGpet.ref_image.PixelExtentInWorldZ]); % i use i instead of i+1 because i=1 is the inital estimate
+                        objGpet.write_image(image, [outputPath 'mlem_ds_iter_' num2str(i)]); % The third parameter by default is objGpet.image_size.voxelSize_mm
                         k = k + 1;
                     end
                 else
@@ -857,7 +883,7 @@ classdef classGpet < handle
                     image = image.*objGpet.vecDivision(objGpet.PT(AN.*objGpet.vecDivision(Prompts,AN.*objGpet.P(image,j)+ RS),j),SensImg(:,:,:,j));
                     image = max(0,image);
                     if rem((i-1)*objGpet.nSubsets+j,saveInterval) == 0 % -1 to save the first iteration
-                        interfilewrite(single(image), [outputPath 'oposem_subiter_' num2str(k)], objGpet.image_size.voxelSize_mm); % i use i instead of i+1 because i=1 is the inital estimate
+                        objGpet.write_image(image, [outputPath 'oposem_subiter_' num2str(k)]);
                         image_iters{k} = image;
                         k = k + 1;
                     end
@@ -1091,7 +1117,7 @@ classdef classGpet < handle
                 end
                 if opt.save
                     if rem(i,opt.saveInterval) == 0 %
-                        interfilewrite(single(Img), [opt.outputPath 'map_iter_' num2str(i)], [objGpet.image_size.voxelSize_mm]); % i use i instead of i+1 because i=1 is the inital estimate
+                        objGpet.write_image(Img, [opt.outputPath 'map_iter_' num2str(i)]);
                     end
                 end
             end
@@ -1237,7 +1263,7 @@ classdef classGpet < handle
                 if opt.save
                     if rem(i-1,opt.saveInterval) == 0 % -1 to save the first iteration
                     image_ds{k} = Img;
-                    interfilewrite(single(image_ds{k}), [outputPath 'map_ds_iter_' num2str(i)], [objGpet.ref_image.PixelExtentInWorldX objGpet.ref_image.PixelExtentInWorldY objGpet.ref_image.PixelExtentInWorldZ]); % i use i instead of i+1 because i=1 is the inital estimate
+                    objGpet.write_image(image_ds{k}, [outputPath 'map_ds_iter_' num2str(i)]);
                     k = k + 1;
                     end
                 else
@@ -1366,7 +1392,7 @@ classdef classGpet < handle
                 if opt.save
                     if rem(i-1,opt.saveInterval) == 0 % -1 to save the first iteration
                         image_ds{k} = Img;
-                        interfilewrite(single(image_ds{k}), [outputPath 'map_ds_iter_' num2str(i)], [objGpet.ref_image.PixelExtentInWorldX objGpet.ref_image.PixelExtentInWorldY objGpet.ref_image.PixelExtentInWorldZ]); % i use i instead of i+1 because i=1 is the inital estimate
+                        objGpet.write_image(Img, [outputPath 'map_ds_iter_' num2str(i)]);
                         k = k + 1;
                     end
                 else
@@ -1454,7 +1480,7 @@ classdef classGpet < handle
                 image = max(0,image);
                 if rem(i-1,saveInterval) == 0 % -1 to save the first iteration
                     image_mac{k} = image;
-                    interfilewrite(single(image_mac{k}), [outputPath 'mlem_ds_iter_' num2str(i)], [objGpet.ref_image.PixelExtentInWorldX objGpet.ref_image.PixelExtentInWorldY objGpet.ref_image.PixelExtentInWorldZ]); % i use i instead of i+1 because i=1 is the inital estimate
+                    objGpet.write_image(image_mac{k}, [outputPath 'map_ds_iter_' num2str(i)]);
                     k = k + 1;
                 end
             end
