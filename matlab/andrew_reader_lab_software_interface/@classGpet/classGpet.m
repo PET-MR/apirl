@@ -65,6 +65,8 @@ classdef classGpet < handle
         Prior
         % Save image format (nifti, interfile):
         saveImageFormat
+        % Gpu id, for the gpu projector:
+        gpuId
     end
     
     methods
@@ -110,6 +112,7 @@ classdef classGpet < handle
             objGpet.tempPath = [pwd objGpet.bar 'temp' objGpet.bar];
             objGpet.deleteTemp = false; % SAM ELLIS 24/08/2016
             objGpet.verbosity = 0;
+            objGpet.gpuId = 0;
             objGpet.method_for_randoms = 'from_ML_singles_matlab';
             objGpet.method_for_normalization = 'cbn_expansion';
             user_opts = []; % empty options if there weren't any field related with priors.
@@ -228,7 +231,7 @@ classdef classGpet < handle
                 objGpet.sinogram_size.nRings = 64;
                 objGpet.sinogram_size.nSinogramPlanes = 837;
                 objGpet.sinogram_size.maxRingDifference = 60;
-                objGpet.sinogram_size.nPlanesPerSeg = [127   115   115    93    93    71    71    49    49    27    27];
+                objGpet.sinogram_size.nPlanesPerSeg = int32([127   115   115    93    93    71    71    49    49    27    27]); % int32 to pass it thourgh a mex file to the c++ library
                 objGpet.sinogram_size.span = 11;
                 objGpet.sinogram_size.nSeg = 11;
                 objGpet.scanner_properties.radius_mm = 328;
@@ -248,7 +251,7 @@ classdef classGpet < handle
                 objGpet.nIter = 3;
             end
             
-            objGpet.sinogram_size.matrixSize = [objGpet.sinogram_size.nRadialBins objGpet.sinogram_size.nAnglesBins objGpet.sinogram_size.nSinogramPlanes];
+            objGpet.sinogram_size.matrixSize = int32([objGpet.sinogram_size.nRadialBins objGpet.sinogram_size.nAnglesBins objGpet.sinogram_size.nSinogramPlanes]);
             objGpet.image_size.matrixSize =[344, 344, 127];
             objGpet.image_size.voxelSize_mm = [2.08626 2.08626 2.03125];
             
@@ -266,7 +269,7 @@ classdef classGpet < handle
                 objGpet.sinogram_size.nRings = 64;
                 objGpet.sinogram_size.nSinogramPlanes = 837;
                 objGpet.sinogram_size.maxRingDifference = 60;
-                objGpet.sinogram_size.nPlanesPerSeg = [127   115   115    93    93    71    71    49    49    27    27];
+                objGpet.sinogram_size.nPlanesPerSeg = int32([127   115   115    93    93    71    71    49    49    27    27]);
                 objGpet.sinogram_size.span = 11;
                 objGpet.sinogram_size.nSeg = 11;
                 %add maxDiff

@@ -75,11 +75,15 @@ function m = P(objGpet, x,subset_i, localNumSubsets)    % If the fourth paramete
                 if objGpet.verbosity > 0
                     disp(output_message);
                 end
+            elseif strcmpi(objGpet.method, 'mex_otf_siddon_cpu')
+                
             elseif strcmpi(objGpet.method, 'mex_otf_siddon_gpu')
-                [m, structSizeSinogram, output_message] = Project(x, objGpet.image_size.voxelSize_mm, objGpet.tempPath, objGpet.scanner, objGpet.scanner_properties, structSizeSino, numSubsets, subset_i, 1, objGpet.nRays, objGpet.nAxialRays);
-                if objGpet.verbosity > 0
-                    disp(output_message);
-                end
+                projector_config.nRays = objGpet.nRays; projector_config.nAxialRays = objGpet.nAxialRays; projector_config.type = 'CuSiddonProjector';
+                projector_config.gpuId = objGpet.gpuId; projector_config.blockSize = [256 1 1];
+                m = mexProject(single(permute(x,[2 1 3])), objGpet.image_size, objGpet.sinogram_size, objGpet.scanner, projector_config); % permute because c++ library meori is index by row and matlab by column
+                %if objGpet.verbosity > 0
+                %    disp(output_message);
+                %end
             end
         end
         

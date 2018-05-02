@@ -139,6 +139,10 @@ function init_sinogram_size(objGpet, inSpan, numRings, maxRingDifference)
             objGpet.sinogram_size.nPlanesPerSeg(segment) = numSinosThisSegment;
         end
         objGpet.sinogram_size.nSinogramPlanes = sum(objGpet.sinogram_size.nPlanesPerSeg);
+        % Cast to int32 to be used in the mex file:
+        objGpet.sinogram_size.maxRingDiffs = int32(objGpet.sinogram_size.maxRingDiffs);
+        objGpet.sinogram_size.minRingDiffs = int32(objGpet.sinogram_size.minRingDiffs);
+        objGpet.sinogram_size.nPlanesPerSeg = int32(objGpet.sinogram_size.nPlanesPerSeg);
     end
     % subsets:
     objGpet.osem_subsets(objGpet.nSubsets, objGpet.sinogram_size.nAnglesBins);
