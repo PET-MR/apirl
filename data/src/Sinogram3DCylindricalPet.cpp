@@ -51,12 +51,16 @@ Sinogram3DCylindricalPet::Sinogram3DCylindricalPet(int numProj, int numR, int nu
   memcpy(this->minRingDiffPerSegment, minRingDiffPerSegment, sizeof(int)*numSegments);
   this->maxRingDiffPerSegment = (int*)malloc(sizeof(int)*numSegments);
   memcpy(this->maxRingDiffPerSegment, maxRingDiffPerSegment, sizeof(int)*numSegments);
-  
+
   this->ptrAngValues_deg = (float*)realloc(ptrAngValues_deg, sizeof(float)*numProj);
   ptrAxialvalues_mm = (float*) malloc(sizeof(float)*numRings);
   // Initilize the segments:
   segments = NULL;
   inicializarSegmentos();
+  // Initialize ring config:
+  if(!this->initRingConfig(numSinogramsPerSegment))
+    printf("Sinogram3DCylindricalPet::Sinogram3DCylindricalPet::initRingConfig error while setting the properties of the sinogram.\n");
+
 }
 
 /// Constructor para copia desde otro objeto sinograma3d

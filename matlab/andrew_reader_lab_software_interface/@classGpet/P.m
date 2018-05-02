@@ -76,11 +76,24 @@ function m = P(objGpet, x,subset_i, localNumSubsets)    % If the fourth paramete
                     disp(output_message);
                 end
             elseif strcmpi(objGpet.method, 'mex_otf_siddon_cpu')
-                
+                projector_config.nRays = objGpet.nRays; projector_config.nAxialRays = objGpet.nAxialRays; projector_config.type = 'Siddon';
+                if isempty(numSubsets)
+                    m = mexProject(single(permute(x,[2 1 3])), objGpet.image_size, objGpet.sinogram_size, objGpet.scanner, projector_config); % permute because c++ library meori is index by row and matlab by column
+                else
+                    % The subset return the reduced version:
+                    m = zeros(objGpet.sinogram_size.matrixSize);
+                    m(:, subset_i : numSubsets : end, :) = mexProject(single(permute(x,[2 1 3])), objGpet.image_size, objGpet.sinogram_size, objGpet.scanner, projector_config, subset_i-1, numSubsets); % In the c++ library is -1
+                end
             elseif strcmpi(objGpet.method, 'mex_otf_siddon_gpu')
                 projector_config.nRays = objGpet.nRays; projector_config.nAxialRays = objGpet.nAxialRays; projector_config.type = 'CuSiddonProjector';
                 projector_config.gpuId = objGpet.gpuId; projector_config.blockSize = [256 1 1];
-                m = mexProject(single(permute(x,[2 1 3])), objGpet.image_size, objGpet.sinogram_size, objGpet.scanner, projector_config); % permute because c++ library meori is index by row and matlab by column
+                if isempty(numSubsets)
+                    m = mexProject(single(permute(x,[2 1 3])), objGpet.image_size, objGpet.sinogram_size, objGpet.scanner, projector_config); % permute because c++ library meori is index by row and matlab by column
+                else
+                    % The subset return the reduced version:
+                    m = zeros(objGpet.sinogram_size.matrixSize);
+                    m(:, subset_i : numSubsets : end, :) = mexProject(single(permute(x,[2 1 3])), objGpet.image_size, objGpet.sinogram_size, objGpet.scanner, projector_config, subset_i-1, numSubsets); % In the c++ library is -1
+                end
                 %if objGpet.verbosity > 0
                 %    disp(output_message);
                 %end
@@ -111,6 +124,28 @@ function m = P(objGpet, x,subset_i, localNumSubsets)    % If the fourth paramete
                 if objGpet.verbosity > 0
                     disp(output_message);
                 end
+            elseif strcmpi(objGpet.method, 'mex_otf_siddon_cpu')
+                projector_config.nRays = objGpet.nRays; projector_config.nAxialRays = objGpet.nAxialRays; projector_config.type = 'Siddon';
+                if isempty(numSubsets)
+                    m = mexProject(single(permute(x,[2 1 3])), objGpet.image_size, objGpet.sinogram_size, objGpet.scanner, projector_config); % permute because c++ library meori is index by row and matlab by column
+                else
+                    % The subset return the reduced version:
+                    m = zeros(objGpet.sinogram_size.matrixSize);
+                    m(:, subset_i : numSubsets : end, :) = mexProject(single(permute(x,[2 1 3])), objGpet.image_size, objGpet.sinogram_size, objGpet.scanner, projector_config, subset_i-1, numSubsets); % In the c++ library is -1
+                end
+            elseif strcmpi(objGpet.method, 'mex_otf_siddon_gpu')
+                projector_config.nRays = objGpet.nRays; projector_config.nAxialRays = objGpet.nAxialRays; projector_config.type = 'CuSiddonProjector';
+                projector_config.gpuId = objGpet.gpuId; projector_config.blockSize = [256 1 1];
+                if isempty(numSubsets)
+                    m = mexProject(single(permute(x,[2 1 3])), objGpet.image_size, objGpet.sinogram_size, objGpet.scanner, projector_config); % permute because c++ library meori is index by row and matlab by column
+                else
+                    % The subset return the reduced version:
+                    m = zeros(objGpet.sinogram_size.matrixSize);
+                    m(:, subset_i : numSubsets : end, :) = mexProject(single(permute(x,[2 1 3])), objGpet.image_size, objGpet.sinogram_size, objGpet.scanner, projector_config, subset_i-1, numSubsets); % In the c++ library is -1
+                end
+                %if objGpet.verbosity > 0
+                %    disp(output_message);
+                %end
             end
         end
 

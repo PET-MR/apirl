@@ -470,6 +470,74 @@ bool Sinogram3D::readFromInterfile(string headerFilename, float radioScanner_mm)
   return true;
 }
 
+/* Initialize the ring configuration, once the general aprameters have been set:
+ * int numSegments, int* numSinogramsPerSegment, int* minRingDiffPerSegment, int* maxRingDiffPerSegment
+ * It verifies if the final numSinogramsPerSegment matches what the expected value
+ */
+bool Sinogram3D::initRingConfig(int* numSinogramsPerSegment)
+{
+  int span = abs(maxRingDiffPerSegment[0]) + abs(minRingDiffPerSegment[0])+1;
+  int maxRingsPerSino = (int)ceil((float)span/2);
+  int* listaRing1, *listaRing2;
+  float *listaZ1_mm, *listaZ2_mm;
+  listaRing1 = (int*) malloc(sizeof(int)*maxRingsPerSino);
+  listaRing2 = (int*) malloc(sizeof(int)*maxRingsPerSino);
+  listaZ1_mm = (float*) malloc(sizeof(float)*maxRingsPerSino);
+  listaZ2_mm = (float*) malloc(sizeof(float)*maxRingsPerSino);
+  int indiceSino = 0;
+  for(int i = 0; i<numSegments; i++)
+  {
+    int numSinosThisSegment = 0;
+    // Por cada segmento, voy generando los sinogramas correspondientes y
+    // contándolos, debería coincidir con los sinogramas para ese segmento:
+    for(int z1 = 0; z1 < numRings*2; z1++)
+    {
+      int numSinosZ1inSegment = 0;	// Cantidad de sinogramas para z1 en este segmento.
+      // Recorro completamente z2 desde y me quedo con los que están entre
+      // minRingDiff y maxRingDiff. Se podría hacer sin recorrer todo el
+      // sinograma pero se complica un poco.
+      int z1_aux = z1;
+      for(int z2 = 0; z2 < numRings; z2++)
+      {
+	// Ahora voy avanzando en los sinogramas correspondientes,
+	// disminuyendo z1 y aumentnado z2 hasta que la diferencia entre
+	// anillos llegue a maxRingDiff.
+	if (((z1_aux-z2)<=maxRingDiffPerSegment[i])&&((z1_aux-z2)>=minRingDiffPerSegment[i]))
+	{
+	  // Me asguro que esté dentro del tamaño del michelograma:
+	  if ((z1_aux>=0)&&(z2>=0)&&(z1_aux<numRings)&&(z2<numRings))
+	  {
+	    //Agrego el sinograma a la lista de anillos:
+	    listaRing1[numSinosZ1inSegment] = z1_aux;
+	    listaRing2[numSinosZ1inSegment] = z2;
+	    // También las coordenadas axiales:
+	    listaZ1_mm[numSinosZ1inSegment] = ptrAxialvalues_mm[z1_aux];
+	    listaZ2_mm[numSinosZ1inSegment] = ptrAxialvalues_mm[z2];
+	    // Incremento:
+	    numSinosZ1inSegment = numSinosZ1inSegment + 1;
+	  }
+	}
+	// Pase esta combinación de (z1,z2), paso a la próxima:
+	z1_aux = z1_aux - 1;
+      }
+      if(numSinosZ1inSegment>0)
+      {
+	this->getSegment(i)->getSinogram2D(numSinosThisSegment)->setMultipleRingConfig(numSinosZ1inSegment, listaRing1, listaRing2, listaZ1_mm, listaZ2_mm);
+	// Cuenta la cantidad de segmentos para verificar que se cumpla:
+	numSinosThisSegment = numSinosThisSegment + 1;
+	indiceSino = indiceSino + 1;
+      }
+    }
+    if(numSinosThisSegment != numSinogramsPerSegment[i])
+      return false;
+  }
+  free(listaRing1);
+  free(listaRing2);
+  free(listaZ1_mm);
+  free(listaZ2_mm);
+  return true;
+}
+  
 bool Sinogram3D::FillConstant(float Value)
 {
   /// Se llena todos los bins del sinograma con un valor constante de valor Value.
@@ -676,6 +744,37 @@ bool Sinogram3D::writeInterfile(string headerFilename)
 	}
   }
   fileStream.close();
+  return true;
+}
+
+// The ptr needs to have requested the data previously.
+bool Sinogram3D::copyRawDataInPtr(float* ptrLinearSinogram)
+{
+  int offset = 0;
+  int numBins2d = this->getSegment(0)->getSinogram2D(0)->getNumProj()*this->getSegment(0)->getSinogram2D(0)->getNumR();
+  for(int i = 0; i < this->numSegments; i++)
+  {
+      for(int j = 0; j < this->getSegment(i)->getNumSinograms(); j++)
+      {
+	memcpy((void*)(ptrLinearSinogram + offset), (void*)this->getSegment(i)->getSinogram2D(j)->getSinogramPtr(), numBins2d*sizeof(float));
+	offset += numBins2d;
+      }
+  }
+  return true;
+}
+
+bool Sinogram3D::readRawDataFromPtr(float* ptrLinearSinogram)
+{
+  int offset = 0;
+  int numBins2d = this->getSegment(0)->getSinogram2D(0)->getNumProj()*this->getSegment(0)->getSinogram2D(0)->getNumR();
+  for(int i = 0; i < this->numSegments; i++)
+  {
+      for(int j = 0; j < this->getSegment(i)->getNumSinograms(); j++)
+      {
+	memcpy((void*)this->getSegment(i)->getSinogram2D(j)->getSinogramPtr(), (void*)(ptrLinearSinogram + offset), numBins2d*sizeof(float));
+	offset += numBins2d;
+      }
+  }
   return true;
 }
 

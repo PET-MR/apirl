@@ -130,8 +130,7 @@ class DLLEXPORT Sinogram3DSiemensMmr : public Sinogram3DCylindricalPet
 	 * y la memoria.
 	 * 
 	 */
-	Sinogram3DSiemensMmr(int numProj, int numR, int numRings, float radioFov_mm, float axialFov_mm, float radioScanner_mm, 
-	 int numSegments, int* numSinogramsPerSegment, int* minRingDiffPerSegment, int* maxRingDiffPerSegment);
+	Sinogram3DSiemensMmr(int numProj, int numR, int numRings, int numSegments, int* numSinogramsPerSegment, int* minRingDiffPerSegment, int* maxRingDiffPerSegment);
 	
 	/// Constructor que genera un nuevo Sinogram3DSiemensMmr que es un subset de un sinograma orginal.
 	/** Genera un Sinogram3DSiemensMmr cuyo sinogramas 2d son un subsets de los de un sinograma original.

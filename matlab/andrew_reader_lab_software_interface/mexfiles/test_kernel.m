@@ -1,43 +1,44 @@
-% Test kernels:
-kernel = parallel.gpu.CUDAKernel('kernel_gradient.ptx', 'kernel_gradient.cu');
-Nx = 100; Ny = 75; Nz = 50; Kx = 7; Ky = 7; Kz = 7;
-kernel.ThreadBlockSize = [8 8 8];
-kernel.GridSize = ceil([Nx Ny Nz]./kernel.ThreadBlockSize); %BLOCK_SIZE_X-2*KERNEL_RADIUS)
-A = single(rand(Nx, Ny, Nz));
-B = zeros(size(A), 'single');
-tic
-dA = gpuArray(A);
-dB = gpuArray(B);
-[dOA, dOB] = feval(kernel, dA, dB,  Nx, Ny, Nz, Kx, Ky, Kz);
-toc
-%% WITH MEX FILE
-tic
-grad = mexGPUGradient(A, Kx, Ky, Kz);
-toc
-%% COMPARE WITH GRAD
-apirlPath = '/home/mab15/workspace/apirl-code/trunk/';
-addpath([apirlPath 'matlab/andrew_reader_lab_software_interface/']);
-set_framework_environment(apirlPath);
-opt.PetOptimizationMethod = 'DePierro';%'OSL'
-opt.PetPriorType = 'Quadratic'; %'Bowsher' 'JointBurgEntropy'
-opt.PetRegularizationParameter = 1;
-opt.PetPreCompWeights = 1;
-opt.TVsmoothingParameter = 0.1;
-opt.LangeDeltaParameter = 1;
-opt.BowsherB = 70;
-opt.PriorMrImage =[];
-opt.MrSigma = 0.1; % JBE
-opt.PetSigma  = 10; %JBE
-opt.display = 0;
-% check if the object already was initilized:
-opt.ImageSize = [Nx Ny Nz];
-opt.imCropFactor = [0,0,0];
-opt.sWindowSize = 7;
-opt.lWindowSize = 1;
-Prior = PriorsClass(opt);
+%% TEST RECONSTRUCTION WITH MEX PROJECTOR AND WITH STANDARD WITH I/O THROUGH HD
+%% GENERATE A SINOGRAM  WITH STANDARD METHOD AND RECONTRUCT
+opt.method =  'otf_siddon_gpu';
+opt.PSF.type = 'shift-invar';
+opt.PSF.Width = 2.5;
+opt.nSubsets = 1;
+opt.verbosity = 1;
+PET = classGpet(opt);
 
-W0 = opt.PetPreCompWeights./repmat(sum(opt.PetPreCompWeights,2),[1,Prior.nS]); %for weighted quadratic
+image = zeros(PET.image_size.matrixSize);
+image(120:160, 220:240, 30:50)=1;
+sino = PET.P(image);
+
+% time for projection
+tic; a = PET.P(image); time_proj_standard = toc
+% time for backprojection
+tic; b = PET.PT(a); time_backproj_standard = toc
+
+% time for mlem:
+nIter = 20;
 tic
-imgGrad = Prior.GraphGradCrop(A);
-imgGrad = reshape(sum(imgGrad,2), [Nx Ny Nz]);
-toc
+sens = PET.Sensitivity(ones(size(sino)));
+recon_image_standard = PET.OPMLEM(sino,zeros(size(sino)), sens,PET.ones, nIter);
+time_mlem60_standard = toc
+%% NOW RECONSTRUCT WITH MEX
+opt.method =  'mex_otf_siddon_gpu';
+opt.PSF.type = 'shift-invar';
+opt.PSF.Width = 2.5;
+opt.nSubsets = 1;
+opt.verbosity = 1;
+PET = classGpet(opt);
+
+
+% time for projection
+tic; c = PET.P(image); time_proj_mex = toc
+% time for backprojection
+tic; d = PET.PT(a); time_backproj_mex = toc
+
+% time for mlem:
+nIter = 20;
+tic
+sens = PET.Sensitivity(ones(size(sino)));
+recon_image_standard = PET.OPMLEM(sino,zeros(size(sino)), sens,PET.ones, nIter);
+time_mlem60_standard = toc

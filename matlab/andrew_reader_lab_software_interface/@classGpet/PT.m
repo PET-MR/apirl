@@ -61,6 +61,24 @@ function x = PT(objGpet,m, subset_i, localNumSubsets)    % If the fourth paramet
             if objGpet.verbosity > 1
                 disp(output_message);
             end
+        elseif strcmpi(objGpet.method, 'mex_otf_siddon_cpu')
+            structSizeSino = get_sinogram_size_for_apirl(objGpet);
+            [x, pixelSize, output_message] = Backproject(m, objGpet.image_size.matrixSize, objGpet.image_size.voxelSize_mm, objGpet.tempPath, objGpet.scanner, objGpet.scanner_properties, structSizeSino, numSubsets, subset_i, 0, objGpet.nRays, objGpet.nAxialRays);
+            if objGpet.verbosity > 1
+                disp(output_message);
+            end
+        elseif strcmpi(objGpet.method, 'mex_otf_siddon_gpu')
+            projector_config.nRays = objGpet.nRays; projector_config.nAxialRays = objGpet.nAxialRays; projector_config.type = 'CuSiddonProjector';
+            projector_config.gpuId = objGpet.gpuId; projector_config.blockSize = [256 1 1];
+            if isempty(numSubsets)
+                x = mexBackproject(single(m), objGpet.sinogram_size, objGpet.scanner, objGpet.image_size, projector_config); % permute because c++ library meori is index by row and matlab by column
+                x = permute(x, [2 1 3]);
+            else
+                % The subset return the reduced version:
+                m_subset =  m(:, subset_i : numSubsets : end, :);
+                x = mexBackproject(single(m_subset), objGpet.sinogram_size, objGpet.scanner, objGpet.image_size, projector_config, subset_i-1, numSubsets); % In the c++ library is -1                
+                x = permute(x, [2 1 3]);
+            end
         end
     elseif strcmpi(objGpet.scanner,'cylindrical')
         if strcmpi(objGpet.method, 'pre-computed_matlab')
@@ -76,6 +94,18 @@ function x = PT(objGpet,m, subset_i, localNumSubsets)    % If the fourth paramet
             [x, pixelSize, output_message] = Backproject(m, objGpet.image_size.matrixSize, objGpet.image_size.voxelSize_mm, objGpet.tempPath, objGpet.scanner, objGpet.scanner_properties, structSizeSino, numSubsets, subset_i, 1,objGpet.nRays, objGpet.nAxialRays);
             if objGpet.verbosity > 1
                 disp(output_message);
+            end
+        elseif strcmpi(objGpet.method, 'mex_otf_siddon_gpu')
+            projector_config.nRays = objGpet.nRays; projector_config.nAxialRays = objGpet.nAxialRays; projector_config.type = 'CuSiddonProjector';
+            projector_config.gpuId = objGpet.gpuId; projector_config.blockSize = [256 1 1];
+            if isempty(numSubsets)
+                x = mexBackproject(single(m), objGpet.sinogram_size, objGpet.scanner, objGpet.image_size, projector_config); % permute because c++ library meori is index by row and matlab by column
+                x = permute(x, [2 1 3]);
+            else
+                % The subset return the reduced version:
+                m_subset =  m(:, subset_i : numSubsets : end, :);
+                x = mexBackproject(single(m_subset), objGpet.sinogram_size, objGpet.scanner, objGpet.image_size, projector_config, subset_i-1, numSubsets); % In the c++ library is -1                
+                x = permute(x, [2 1 3]);
             end
         end
     else

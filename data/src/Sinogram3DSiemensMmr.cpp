@@ -28,39 +28,41 @@ const float Sinogram3DSiemensMmr::widthRingsMmr_mm = 4.0625f; //axialFov_mm / nu
 
 
 
-Sinogram3DSiemensMmr::Sinogram3DSiemensMmr(int numProj, int numR, int numRings, float radioFov_mm, float axialFov_mm, float radioScanner_mm, 
-					   int numSegments, int* numSinogramsPerSegment, int* minRingDiffPerSegment, int* maxRingDiffPerSegment):Sinogram3DCylindricalPet(
-					   numProj, numR, numRings, radioFov_mm, axialFov_mm, radioScanner_mm, numSegments, numSinogramsPerSegment, minRingDiffPerSegment, maxRingDiffPerSegment)
+Sinogram3DSiemensMmr::Sinogram3DSiemensMmr(int numProj, int numR, int numRings, int numSegments, int* numSinogramsPerSegment, int* minRingDiffPerSegment, 
+					   int* maxRingDiffPerSegment):Sinogram3DCylindricalPet(numProj, numR, numRings, Sinogram3DSiemensMmr::radioFovMmr_mm, Sinogram3DSiemensMmr::axialFovMmr_mm, 
+					   Sinogram3DSiemensMmr::radioScannerMmr_mm, numSegments, numSinogramsPerSegment, minRingDiffPerSegment, maxRingDiffPerSegment)
 {
-	// Override the generic parameters of sinogram 3d with the fixed parameters for the mmr:
-	this->radioScanner_mm = Sinogram3DSiemensMmr::radioScannerMmr_mm;
-	this->widthRings_mm = Sinogram3DSiemensMmr::widthRingsMmr_mm;
-	this->axialFov_mm = Sinogram3DSiemensMmr::axialFovMmr_mm;
-	this->radioFov_mm = Sinogram3DSiemensMmr::radioFovMmr_mm;
-	// Redefine the axial values to the specific crystal size:
-	if (ptrAxialvalues_mm == NULL)
-		ptrAxialvalues_mm = (float*) malloc(sizeof(float)*numRings);
+    // Override the generic parameters of sinogram 3d with the fixed parameters for the mmr:
+    this->radioScanner_mm = Sinogram3DSiemensMmr::radioScannerMmr_mm;
+    this->widthRings_mm = Sinogram3DSiemensMmr::widthRingsMmr_mm;
+    this->axialFov_mm = Sinogram3DSiemensMmr::axialFovMmr_mm;
+    this->radioFov_mm = Sinogram3DSiemensMmr::radioFovMmr_mm;
+    // Redefine the axial values to the specific crystal size:
+    if (ptrAxialvalues_mm == NULL)
+	    ptrAxialvalues_mm = (float*) malloc(sizeof(float)*numRings);
 
-	for(int i = 0; i < numRings; i++)
-	{
-		ptrAxialvalues_mm[i] = widthRings_mm/2 + widthRings_mm*i;
-	}
-
+    for(int i = 0; i < numRings; i++)
+    {
+	    ptrAxialvalues_mm[i] = widthRings_mm/2 + widthRings_mm*i;
+    } 
+    // Initialize ring config:
+    if(!this->initRingConfig(numSinogramsPerSegment))
+      printf("Sinogram3DCylindricalPet::Sinogram3DCylindricalPet::initRingConfig error while setting the properties of the sinogram.\n");
 }
 
 
 Sinogram3DSiemensMmr::Sinogram3DSiemensMmr(char* fileHeaderPath):Sinogram3DCylindricalPet(this->radioFov_mm, this->axialFov_mm, this->radioScanner_mm)
 {
-	// Override the generic parameters of sinogram 3d with the fixed parameters for the mmr:
-	this->radioScanner_mm = Sinogram3DSiemensMmr::radioScannerMmr_mm;
-	this->widthRings_mm = Sinogram3DSiemensMmr::widthRingsMmr_mm;
-	this->axialFov_mm = Sinogram3DSiemensMmr::axialFovMmr_mm;
-	this->radioFov_mm = Sinogram3DSiemensMmr::radioFovMmr_mm;
-	if(!readFromInterfile(fileHeaderPath, this->radioScanner_mm))
-	{
-		cout << "Error reading the sinogram in interfile format." << endl;
-		return;
-	}
+  // Override the generic parameters of sinogram 3d with the fixed parameters for the mmr:
+  this->radioScanner_mm = Sinogram3DSiemensMmr::radioScannerMmr_mm;
+  this->widthRings_mm = Sinogram3DSiemensMmr::widthRingsMmr_mm;
+  this->axialFov_mm = Sinogram3DSiemensMmr::axialFovMmr_mm;
+  this->radioFov_mm = Sinogram3DSiemensMmr::radioFovMmr_mm;
+  if(!readFromInterfile(fileHeaderPath, this->radioScanner_mm))
+  {
+	  cout << "Error reading the sinogram in interfile format." << endl;
+	  return;
+  }
   // Redefine axial values:
   /*for(int i = 0; i < numRings; i++)
   {
@@ -153,7 +155,7 @@ Sinogram3D* Sinogram3DSiemensMmr::getSubset(int indexSubset, int numSubsets)
   // Siempre calculo por defecto, luego si no dio exacta la división, debo agregar un ángulo a la proyección:
   if((numProj%numSubsets)>indexSubset)
     numProjSubset++;
-  Sinogram3DSiemensMmr* sino3dSubset = new Sinogram3DSiemensMmr(numProjSubset, numR, numRings, radioFov_mm, axialFov_mm, radioScanner_mm, 
+  Sinogram3DSiemensMmr* sino3dSubset = new Sinogram3DSiemensMmr(numProjSubset, numR, numRings, 
 	 numSegments, numSinogramsPerSegment, minRingDiffPerSegment, maxRingDiffPerSegment);
   // Copy the ring config of sinos2d:
   sino3dSubset->CopyRingConfigForEachSinogram(this);

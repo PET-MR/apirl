@@ -224,6 +224,12 @@ class DLLEXPORT Sinogram3D : public Sinogram2D
 	/** Método que calcula el likelihood de esta proyección respecto de una de referencia. */
 	float getLikelihoodValue(Sinogram3D* referenceProjection);
 	
+	/* Initialize the ring configuration, once the general aprameters have been set:
+	* int numSegments, int* numSinogramsPerSegment, int* minRingDiffPerSegment, int* maxRingDiffPerSegment
+	* It verifies if the final numSinogramsPerSegment matches what the expected value
+	*/
+	bool initRingConfig(int* numSinogramsPerSegment);
+	
 	/// Copy all the bins from a source sinograms.
 	/** It copies all the bins values from srcSinogram3D into this value.
 	 */
@@ -243,7 +249,15 @@ class DLLEXPORT Sinogram3D : public Sinogram2D
 		El nombre del archivo puede incluir un path.
 	*/
 	bool writeInterfile(string headerFilename);
-
+	
+	/** Método que copia todo el sinograma 3d en orden en una dirección de memoria. La misma ya debe tener alocada la memoria necesaria.
+	*/
+	bool copyRawDataInPtr(float* ptrLinearSinogram);
+	
+	/** Método que copia desde un puntero de memoria el valor de los bins del sinograma 3d
+	*/
+	bool readRawDataFromPtr(float* ptrLinearSinogram);
+	
 	/// Método que realiza la corrección de atenuación, randoms y scatter del sinograma 3d.
 	/** Método que realiza la corrección de atenuación, randoms y scatter del sinograma 3d.
 	 * La estimación de cada factor debe realizarse por fuera y generar los sinogramas de corrrección, los cuales

@@ -4,7 +4,7 @@
 #  Copyright (c) 2010
 
 PROJECT(reconGPU)
-SET(BUILD_SHARED_LIBS  OFF)
+SET(BUILD_SHARED_LIBS  ON)
 SET(CUDA_SEPARABLE_COMPILATION ON)
 SET(CUDA_BUILD_CUBIN ON)
 SET(CUDA_VERBOSE_BUILD ON)
@@ -54,13 +54,15 @@ message(STATUS "Output Directory: ${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}")
 ###################### BUILD CONFIGURATION ############################
 #ADD_DEFINITIONS(DLL_BUILD)
 # Genero una DLL.
-set(CUDA_SEPARABLE_COMPILATION ON)
-#CUDA_ADD_LIBRARY(reconGPU STATIC ${CUDA_LIBRARIES_BUILD} ${reconGPU_Sources} ${reconGPU_cuSources} ${reconGPU_Headers} ${reconGPU_cuHeaders})
+#set(CUDA_SEPARABLE_COMPILATION ON)
+CUDA_ADD_LIBRARY(reconGPU ${CUDA_LIBRARIES_BUILD} ${reconGPU_Sources} ${reconGPU_cuSources} ${reconGPU_Headers} ${reconGPU_cuHeaders}  OPTIONS --compiler-options "-fPIC")
 # Genero varias DLLs, una por cada proyector y los m¨¦todos de reconstrucci¨®n:
-CUDA_ADD_LIBRARY(reconGPU "src/CuSiddonProjector.cu" "src/CuProjector.cpp"  "src/CuMlemSinogram3d.cu" "src/CuOsemSinogram3d.cu" "src/CuProjectorInterface.cu" ${reconGPU_Sources}) #"src/CuOsemSinogram3d.cu"
+#CUDA_ADD_LIBRARY(reconGPU "src/CuSiddonProjector.cu" "src/CuProjector.cpp"  "src/CuMlemSinogram3d.cu" "src/CuOsemSinogram3d.cu" "src/CuProjectorInterface.cu" ${reconGPU_Sources}) #"src/CuOsemSinogram3d.cu"
 #CUDA_ADD_LIBRARY(cuOsem  "src/CuOsemSinogram3d.cu")
 #CUDA_ADD_LIBRARY(cuMlem  "src/CuMlemSinogram3d.cu")
 #CUDA_ADD_LIBRARY(reconGPU2  "src/CuMlemSinogram3d.cu")
+set_target_properties(reconGPU PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+
 # Para windows se debe definir WIN32 y DLL_BUILD tambien
 if(CMAKE_HOST_WIN32)
 #	set_target_properties(APIRL PROPERTIES COMPILE_DEFINITIONS WIN32)

@@ -1,6 +1,7 @@
-/* Kernel that computes the gradient of an image, being the gradient
- * the difference between the neighbour pixels and the central pixel
- * of a cluster.
+/**
+ * TODO: needs to receive generic parameters radius and axial for the cylindrical scanner, for the mmr this is fixed and there is no need to.
+ * 
+ * 
  */
 #include "mex.h"
 #include "matrix.h"
@@ -145,10 +146,10 @@ void mexFunction(int nlhs, mxArray *plhs[],
     }
     else if(strcmp(strOutputType, "mMR")==0)
 	{
-        // Sinograma 3D        
-        outputProjection = new Sinogram3DSiemensMmr(numProj, numR, numRings, radioFov_mm, axialFov_mm, radioScanner_mm, 
-                                                    numSegments, numSinogramsPerSegment, minRingDiffPerSegment, maxRingDiffPerSegment);
-        outputProjection = new Sinogram3DSiemensMmr((char*)"test.h33");
+        // Sinograma 3D
+        outputProjection = new Sinogram3DSiemensMmr(numProj, numR, numRings, numSegments, numSinogramsPerSegment, minRingDiffPerSegment, maxRingDiffPerSegment);
+        //outputProjection = new Sinogram3DSiemensMmr((char*)"test.h33");
+
 	}
 	if (numberOfSubsets != 0)
         outputProjection = outputProjection->getSubset(subsetIndex, numberOfSubsets);
@@ -159,7 +160,7 @@ void mexFunction(int nlhs, mxArray *plhs[],
     /* Return array */
     /* Wrap the result up as a MATLAB gpuArray for return. */
    // plhs[0] = mxGPUCreateMxArrayOnCPU(outputGradient); //mxGPUCreateMxArrayOnCPU(mxGPUArray const * const);
-    size_t dims[3]; dims[0] = numR; dims[1] = numProj; dims[2] = outputProjection->getNumSinograms();
+    size_t dims[3]; dims[0] = outputProjection->getNumR(); dims[1] = outputProjection->getNumProj(); dims[2] = outputProjection->getNumSinograms();
 
     plhs[0] = mxCreateUninitNumericArray(3, dims, mxSINGLE_CLASS, mxREAL);
     outputProjection->copyRawDataInPtr((float*)mxGetData(plhs[0]));
