@@ -100,7 +100,11 @@ void mexFunction(int nlhs, mxArray *plhs[],
     }
     // If subset reduce the data before copying:
     if (numberOfSubsets != 0)
+    {
+        Sinogram3D* auxProjection = inputProjection;
         inputProjection = inputProjection->getSubset(subsetIndex, numberOfSubsets);
+        delete auxProjection;
+    }
     inputProjection->readRawDataFromPtr(inputSinogramPtr);
 //    mexPrintf("%f %f", inputProjection->getSegment(0)->getSinogram2D(64)->getSinogramBin(170,220));
     /* Check image size with structure: */
@@ -158,5 +162,7 @@ void mexFunction(int nlhs, mxArray *plhs[],
     plhs[0] = mxCreateUninitNumericArray(3, dims, mxSINGLE_CLASS, mxREAL);
     memcpy(mxGetData(plhs[0]), outputImage->getPixelsPtr(), outputImage->getPixelCount()*sizeof(float));
     
+    delete inputProjection;
+    delete outputImage;;
     return;
 }

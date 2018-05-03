@@ -152,7 +152,11 @@ void mexFunction(int nlhs, mxArray *plhs[],
 
 	}
 	if (numberOfSubsets != 0)
+    {
+        Sinogram3D* auxProjection = outputProjection;
         outputProjection = outputProjection->getSubset(subsetIndex, numberOfSubsets);
+        delete auxProjection;
+    }
     forwardprojector->Project(inputImage, outputProjection);
 	  
 	  
@@ -164,6 +168,7 @@ void mexFunction(int nlhs, mxArray *plhs[],
 
     plhs[0] = mxCreateUninitNumericArray(3, dims, mxSINGLE_CLASS, mxREAL);
     outputProjection->copyRawDataInPtr((float*)mxGetData(plhs[0]));
-    
+    delete inputImage;
+    delete outputProjection;
     return;
 }
