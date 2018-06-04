@@ -46,7 +46,7 @@ PET = classGpet(opt);
 % time for projection
 tic; c = PET.P(image); time_proj_mex = toc
 % time for backprojection
-tic; d = PET.PT(a); time_backproj_mex = toc
+tic; d = PET.PT(sino); time_backproj_mex = toc
 
 % time for mlem:
 nIter = 60;

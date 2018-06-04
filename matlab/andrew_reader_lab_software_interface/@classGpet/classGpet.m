@@ -1264,7 +1264,7 @@ classdef classGpet < handle
                     end
                 end
                 if opt.save
-                    if rem(i-1,opt.saveInterval) == 0 % -1 to save the first iteration
+                    if rem(i,opt.saveInterval) == 0 % -1 to save the first iteration
                     image_ds{k} = Img;
                     objGpet.write_image(image_ds{k}, [outputPath 'map_ds_iter_' num2str(i)]);
                     k = k + 1;
@@ -1393,7 +1393,7 @@ classdef classGpet < handle
                     end
                 end
                 if opt.save
-                    if rem(i-1,opt.saveInterval) == 0 % -1 to save the first iteration
+                    if rem(i,opt.saveInterval) == 0 % -1 to save the first iteration
                         image_ds{k} = Img;
                         objGpet.write_image(Img, [outputPath 'map_ds_iter_' num2str(i)]);
                         k = k + 1;
