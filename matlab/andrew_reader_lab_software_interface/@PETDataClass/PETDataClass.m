@@ -29,7 +29,6 @@ classdef PETDataClass < handle
     % following to get 3D sinograms
     % data = PETDataClass ('XXX','get_sino_rawdata'); 
     % e.g. scatters = data.Scatters; AN = data.AN;
-    
     properties (SetAccess = private)
         os
         bar
@@ -63,6 +62,8 @@ classdef PETDataClass < handle
         SoftwarePaths
         % A structure with fields: .e7.siemens, .e7.JSRecon12, .STIR, .Apirl
         
+        % Format used to write images: 'interfile', 'nifti'
+        saveImageFormat
         
         ScanDuration_sec
         FrameTimePoints % [0,300,400,300]
@@ -81,6 +82,7 @@ classdef PETDataClass < handle
             ObjData.Data.hardware_umap      = '';
             ObjData.Data.scatters           = '';
             ObjData.Data.rawdata_sino       = '';
+            ObjData.saveImageFormat         = 'nifti';
             
             ObjData.Data.Type                = '';
             ObjData.Data.DCM.nSinograms = 0;
@@ -224,6 +226,30 @@ classdef PETDataClass < handle
                 else
                     ObjData = read_histogram_interfiles(ObjData, ObjData.Data.path);
                 end
+            end
+        end
+        
+        function write_image(objGpet, image, filename, voxelSize_mm)
+            if nargin < 4
+                voxelSize_mm = objGpet.image_size.voxelSize_mm;
+            end
+            if strcmp(objGpet.saveImageFormat, 'interfile')
+                interfilewrite(single(image), filename, voxelSize_mm);
+            elseif strcmp(objGpet.saveImageFormat, 'nifti')
+                params.PixelDimensions = voxelSize_mm;
+                params.SpaceUnits = 'Millimeter';
+                params.TimeUnits = 'Second';
+                params.ImageSize = size(image);
+                params.Description = '';
+                params.Qfactor = 1;
+                params.SliceCode = 'Unknown';
+                params.Datatype = 'single';
+                params.FrequencyDimension = 0;
+                params.PhaseDimension = 0;
+                params.SpatialDimension = 0;
+                image = image(end:-1:1,:,end:-1:1); % image = image(end:-1:1,:,end:-1:1);
+                image = permute(image, [2 1 3]);
+                niftiwrite(single(image), filename, params, 'Compressed', 1);
             end
         end
         
@@ -877,7 +903,6 @@ classdef PETDataClass < handle
             modified_umap = umap;
             modified_umap(umap>0.1) = 0.1;
             % Remove the bottom part(chest or neck):
-            modified_umap(:,:,end-10:end) = 0;
             proj_umap = PET.P(modified_umap);
             acf_umap = PET.ACF(modified_umap, PET.ref_native_image); af_umap = acf_umap; af_umap(af_umap~=0) = 1./(af_umap~=0);
             proj_umap(acf_umap~=0) = proj_umap(acf_umap~=0)./acf_umap(af_umap~=0);
@@ -955,7 +980,8 @@ classdef PETDataClass < handle
             % Motion correction of multi-frame PET data in neuroreceptor mapping: Simulation based validation, NicolasCostes, AlainDagherb, KevinLarcherb, Alan C.EvansbD. LouisCollins, AnthoninReilhaca
             % read mumap:
             umap = interfileReadSiemensImage(ObjData.Data.IF.HumanUmapHdrs.hdrFilename);
-            
+            [main_path, ] = fileparts(ObjData.Data.IF.HumanUmapHdrs.hdrFilename);
+            ObjData.write_image(single(umap), [main_path '/static_umap'], ObjData.image_size.voxelSize_mm);
             % 1) read nac images and generate the target image, that is an
             % avarage of all the images:
             target_image = zeros(ObjData.image_size.matrixSize);
@@ -967,8 +993,7 @@ classdef PETDataClass < handle
             end
             target_image = target_image ./ sum(frameDurations);
             % Just for debugging
-            [main_path, ] = fileparts(ObjData.Data.IF.HumanUmapHdrs.hdrFilename);
-            interfilewrite(single(target_image), [main_path '/target_image'], ObjData.image_size.voxelSize_mm);
+            ObjData.write_image(single(target_image), [main_path '/target_image'], ObjData.image_size.voxelSize_mm);
             % 2) Generate an attenuated umap, the bone in the CT affects
             % the registration, so I modifi it, there are two options: 1)
             % uniform head or 2) invert intensities
@@ -983,97 +1008,72 @@ classdef PETDataClass < handle
             proj_umap(acf_umap~=0) = proj_umap(acf_umap~=0)./acf_umap(acf_umap~=0);
             sensImg = PET.Sensitivity(ones(PET.sinogram_size.matrixSize));
             modified_umap = PET.OPMLEM(proj_umap, zeros(size(proj_umap)), sensImg,PET.ones(), 40);
-            interfilewrite(modified_umap, [ObjData.Data.path_raw_data '/modified_umap'], ObjData.image_size.voxelSize_mm);
+            ObjData.write_image(single(modified_umap), [ObjData.Data.path_raw_data '/modified_umap'], ObjData.image_size.voxelSize_mm);
             for i = 1 : numel(ObjData.Data.recon_nac)
                 % 3) register umap:
-                % write the image in nifti for fsl:
-                params.PixelDimensions = ObjData.image_size.voxelSize_mm;
-                params.SpaceUnits = 'Millimeter';
-                params.TimeUnits = 'Second';
-                params.ImageSize = size(umap);
-                params.Description = '';
-                params.Qfactor = 1;
-                params.SliceCode = 'Unknown';
-                params.Datatype = 'single';
-                params.FrequencyDimension = 0;
-                params.PhaseDimension = 0;
-                params.SpatialDimension = 0;
-                niftiwrite(single(nac_image{i}), [ObjData.Data.path_raw_data '/temp_nac'], params);
-                niftiwrite(single(target_image), [ObjData.Data.path_raw_data '/temp_target'], params);
+                ObjData.write_image(single(nac_image{i}), [ObjData.Data.path_raw_data '/temp_nac'], ObjData.image_size.voxelSize_mm);
+                ObjData.write_image(single(target_image), [ObjData.Data.path_raw_data '/temp_target'], ObjData.image_size.voxelSize_mm);
                 % Register:
                 [path_nac, ] = fileparts(ObjData.Data.recon_nac(i).n);
-                command = sprintf('fsl5.0-flirt -ref %s/temp_nac.nii -in %s/temp_umap.nii -out %s/NAC_image_in_target.nii.gz -omat %s/nac2target_transform.txt -dof 6 -searchrx -30 30 -searchry -30 30 -searchrz -30 30', ...
-                    ObjData.Data.path_raw_data, ObjData.Data.path_raw_data, path_nac); % dof 6 for rigid transformation
+                command = sprintf('fsl5.0-flirt -ref %s/target_image.nii.gz -in %s/temp_nac.nii.gz -out %s/NAC_image_in_target.nii.gz -omat %s/nac2target_transform.txt -dof 6 -searchrx -30 30 -searchry -30 30 -searchrz -30 30', ...
+                    ObjData.Data.path_raw_data, ObjData.Data.path_raw_data, path_nac, path_nac); % dof 6 for rigid transformation
                 [status, message] = system(command);
-                info_ref = niftiinfo([path_nac '/NAC_image_in_target.nii.gz']);
-                
-                [optimizer, metric] = imregconfig('monomodal'); % For pet to pet: monomodal -> crosscorrelation
-                %metric.NumberOfSpatialSamples = 1000; metric.NumberOfHistogramBins = 100;
-                %optimizer.MaximumIterations = 200;
-                %optimizer.InitialRadius = 0.004;
-                tform_nac = imregtform(nac_image{i}, target_image, 'rigid', optimizer, metric);
-                %umap_this_frame = imregister(umap, image, 'rigid', optimizer, metric,'DisplayOptimization',true );
-                % Now write the images and the transform:
-                nac_image_in_target = imwarp(nac_image{i},tform_nac,'OutputView',imref3d(size(target_image)));
-                
-                %save([path_nac '/nac2target_transform.mat'], 'tform_nac');
-                %dlmwrite([path_nac '/nac2target_transform.txt'],tform_nac.T,'delimiter','\t','precision','%.6f')
+                if status == 0
+                    % SAve the transform matrix in matlab format also:
+                    nac2target = dlmread([path_nac '/nac2target_transform.txt']);
+                    tform_nac = affine3d(nac2target');
+                    save([path_nac '/nac2target_transform.mat'], 'tform_nac');
+                else
+                    nac2target = [1 0 0 0; 0 1 0 0; 0 0 1 0; 0 0 0 1]';
+                    tform_nac = affine3d(nac2target');
+                    save([path_nac '/nac2target_transform.mat'], 'tform_nac');
+                    dlmwrite([path_nac '/nac2target_transform.txt'], nac2target, '\t');
+                end
+%                 % Apply the transform:
+%                 command = sprintf('fsl5.0-flirt -ref %s/target_image.nii.gz -in %s/static_umap.nii.gz -out %s/umap_in_target.nii.gz -applyxfm -init %s/nac2target_transform.txt', ...
+%                     ObjData.Data.path_raw_data, ObjData.Data.path_raw_data, path_nac, path_nac); % dof 6 for rigid transformation
+%                 [status, message] = system(command);
+
                 
                 %4 ) Regiter the umap to the target:
-                [optimizer, metric] = imregconfig('multimodal');
-                tform_umap = imregtform(modified_umap, target_image, 'rigid', optimizer, metric);
-                % Apply the transofrm to the roiginal umap (only for
-                % debugging, because the umap must be used in the real
-                % frame space:
-                umap_in_target = imwarp(umap,tform_umap,'OutputView',imref3d(size(umap)));
-                interfilewrite(umap_in_target, [path_nac '/umap_in_target'], ObjData.image_size.voxelSize_mm);
-                save([path_nac '/umap2target_transform.mat'], 'tform_umap');
-                dlmwrite([path_nac '/umap2target_transform.txt'],tform_umap.T,'delimiter','\t','precision','%.6f');
-                
+                command = sprintf('fsl5.0-flirt -ref %s/target_image.nii.gz -in %s/static_umap.nii.gz -out %s/umap_in_target.nii.gz -omat %s/umap2target_transform.txt -dof 6 -searchrx -30 30 -searchry -30 30 -searchrz -30 30', ...
+                    ObjData.Data.path_raw_data, ObjData.Data.path_raw_data, path_nac, path_nac); % dof 6 for rigid transformation
+                [status, message] = system(command);
+                if status == 0
+                    umap2target = dlmread([path_nac '/umap2target_transform.txt']);
+                    tform_umap = affine3d(umap2target');
+                    save([path_nac '/umap2target_transform.mat'], 'tform_umap');
+                else
+                    umap2target = [1 0 0 0; 0 1 0 0; 0 0 1 0; 0 0 0 1]';
+                    tform_umap = affine3d(umap2target');
+                    save([path_nac '/umap2target_transform.mat'], 'tform_umap');
+                    dlmwrite([path_nac '/umap2target_transform.txt'], umap2target, '\t');
+                end
                 % 5) Get the umap in the frame space, to do that I need the
                 % composite of tform_umap and the inverse of tform_nac:
-                inv_tform_nac = invert(tform_nac);
-                rigid_umap2nac = tform_umap.T * inv_tform_nac.T;
-                tform_umap2nac = affine3d(rigid_umap2nac);
-                umap_this_frame = imwarp(umap,tform_umap2nac,'OutputView',imref3d(size(umap)));
-                % save matrices:
+%                 inv_tform_nac = invert(tform_nac);
+%                 rigid_umap2nac = tform_umap.T * inv_tform_nac.T;
+%                 tform_umap2nac = affine3d(rigid_umap2nac);
+%                 umap_this_frame = imwarp(umap,tform_umap2nac,'OutputView',imref3d(size(umap)));
+                command = sprintf('fsl5.0-convert_xfm -omat %s/inv_nac2target_transform.txt -inverse %s/nac2target_transform.txt', ...
+                    path_nac, path_nac);
+                system(command);
+                command = sprintf('fsl5.0-convert_xfm -omat %s/umap2frame_transform.txt -concat %s/inv_nac2target_transform.txt %s/umap2target_transform.txt', ...
+                    path_nac, path_nac, path_nac);
+                system(command);
+                command = sprintf('fsl5.0-flirt -ref %s/target_image.nii.gz -in %s/static_umap.nii.gz -out %s/umap_in_nac.nii.gz -applyxfm -init %s/umap2frame_transform.txt', ...
+                    ObjData.Data.path_raw_data, ObjData.Data.path_raw_data, ObjData.Data.path_raw_data, ObjData.Data.path_raw_data); % dof 6 for rigid transformation
+                [status, message] = system(command);    
+                umap2nac = dlmread([path_nac '/umap2frame_transform.txt']);
+                tform_umap2nac = affine3d(umap2nac');
                 save([path_nac '/umap2frame_transform.mat'], 'tform_umap2nac');
-                dlmwrite([path_nac '/umap2frame_transform.txt'],tform_umap2nac.T,'delimiter','\t','precision','%.6f');
-                % write it in Siemens format 
-                % first replicate header:.
-                [path, ] = fileparts(ObjData.Data.IF.HumanUmapHdrs.hdrFilename);
-                ObjData.Data.IF.RegisteredHumanUmapHdrs(i).hdrFilename = [ObjData.Data.IF.HumanUmapHdrs.hdrFilename(1:end-6) '-' num2str(i-1) '.v.hdr'];
-                ObjData.Data.IF.RegisteredHumanUmapMhdrs(i).hdrFilename = [ObjData.Data.IF.HumanUmapMhdrs.hdrFilename(1:end-5) '-' num2str(i-1) '.mhdr'];
-                filenameBinaryFile = ObjData.ReplicateInterfileImageHeader(ObjData.Data.IF.HumanUmapHdrs.hdrFilename, ObjData.Data.IF.RegisteredHumanUmapHdrs(i).hdrFilename);
-                filenameNewHdrInMhdr = ObjData.ReplicateInterfileMasterHeader(ObjData.Data.IF.HumanUmapMhdrs.hdrFilename, ObjData.Data.IF.RegisteredHumanUmapMhdrs(i).hdrFilename);
-                fid = fopen([path ObjData.bar filenameBinaryFile], 'wb');
-                fwrite(fid, permute(umap_this_frame, [2 1 3]), 'single');
-                fclose(fid);
-                status = 0;
+
+                info = niftiinfo([ObjData.Data.path_raw_data 'umap_in_nac.nii.gz']);
+                umap_this_frame = niftiread(info);
+                umap_this_frame = permute(umap_this_frame, [2 1 3]);
+                umap_this_frame = umap_this_frame(end:-1:1,end:-1:1,end:-1:1);
                 
-                % read nac image:
-                image = interfileReadSiemensImage(ObjData.Data.recon_nac(i).n);
-                % write the image in nifti for fsl:
-                params.PixelDimensions = ObjData.image_size.voxelSize_mm;
-                params.SpaceUnits = 'Millimeter';
-                params.TimeUnits = 'Second';
-                params.ImageSize = size(umap);
-                params.Description = '';
-                params.Qfactor = 1;
-                params.SliceCode = 'Unknown';
-                params.Datatype = 'single';
-                params.FrequencyDimension = 0;
-                params.PhaseDimension = 0;
-                params.SpatialDimension = 0;
-                niftiwrite(single(umap), [ObjData.Data.path_raw_data '/temp_umap'], params);
-                niftiwrite(single(image), [ObjData.Data.path_raw_data '/temp_nac'], params);
-                % Register:
-                command = sprintf('fsl5.0-flirt -ref %s/temp_nac.nii -in %s/temp_umap.nii -out %s/temp_umap_reg.nii.gz -dof 6 -searchrx -30 30 -searchry -30 30 -searchrz -30 30', ...
-                    ObjData.Data.path_raw_data, ObjData.Data.path_raw_data, ObjData.Data.path_raw_data); % dof 6 for rigid transformation
-                [status, message] = system(command);
-                info_ref = niftiinfo([ObjData.Data.path_raw_data '/temp_umap_reg.nii.gz']);
-                umap_this_frame = niftiread(info_ref);
-                % write it in Siemens format
+                % write it in Siemens format 
                 % first replicate header:.
                 [path, ] = fileparts(ObjData.Data.IF.HumanUmapHdrs.hdrFilename);
                 ObjData.Data.IF.RegisteredHumanUmapHdrs(i).hdrFilename = [ObjData.Data.IF.HumanUmapHdrs.hdrFilename(1:end-6) '-' num2str(i-1) '.v.hdr'];
