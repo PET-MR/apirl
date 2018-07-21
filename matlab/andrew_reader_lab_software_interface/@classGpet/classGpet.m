@@ -1,3 +1,5 @@
+
+
 % *********************************************************************
 % Reconstruction Framework for Siemens Biograph mMR.
 % class: Gpet
@@ -344,7 +346,6 @@ classdef classGpet < handle
                 params.PixelDimensions = voxelSize_mm;
                 params.SpaceUnits = 'Millimeter';
                 params.TimeUnits = 'Second';
-                params.ImageSize = size(image);
                 params.Description = '';
                 params.Qfactor = 1;
                 params.SliceCode = 'Unknown';
@@ -352,8 +353,15 @@ classdef classGpet < handle
                 params.FrequencyDimension = 0;
                 params.PhaseDimension = 0;
                 params.SpatialDimension = 0;
-                image = image(end:-1:1,end:-1:1,end:-1:1);
-                image = permute(image, [2 1 3]);
+                if ndims(image) == 4
+                    image = image(end:-1:1,end:-1:1,end:-1:1,:); % image = image(end:-1:1,:,end:-1:1);
+                    image = permute(image, [2 1 3 4]);
+                else
+                    image = image(end:-1:1,end:-1:1,end:-1:1); % image = image(end:-1:1,:,end:-1:1);
+                    image = permute(image, [2 1 3]);
+                end
+                params.ImageSize = size(image);
+                
                 niftiwrite(single(image), filename, params, 'Compressed', 1);
             end
         end
@@ -1060,7 +1068,7 @@ classdef classGpet < handle
             end
         end
         
-        function Img = MAPEM2(objGpet,Prompts,RS, SensImg,Img, nIter,arg)
+        function image = MAPEM2(objGpet,Prompts,RS, SensImg,Img, nIter,arg)
             % First check if the Prior class has already been intialized
             % default parameters
             opt.PetOptimizationMethod = 'DePierro';%'OSL'
@@ -1090,6 +1098,7 @@ classdef classGpet < handle
             
 
             if opt.display, fprintf('Prior: %s, Method: %s\n',opt.PetPriorType,opt.PetOptimizationMethod); end
+            k = 1;
             for i = 1:nIter
                 if opt.display, fprintf('Iteration: %d\n',i); end
                 if strcmpi(opt.PetOptimizationMethod,'DePierro')
@@ -1121,7 +1130,11 @@ classdef classGpet < handle
                 if opt.save
                     if rem(i,opt.saveInterval) == 0 %
                         objGpet.write_image(Img, [opt.outputPath 'map_iter_' num2str(i)]);
+                        image{k} = Img;
+                        k = k + 1;
                     end
+                else
+                    image = Img;
                 end
             end
         end

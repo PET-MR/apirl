@@ -4,6 +4,7 @@ addpath([apirlPath 'matlab/andrew_reader_lab_software_interface/']);
 set_framework_environment(apirlPath);
 
 %% GENERATE A SINOGRAM  WITH STANDARD METHOD AND RECONTRUCT
+opt.scanner = 'mMR';
 opt.method =  'otf_siddon_gpu';
 opt.PSF.type = 'shift-invar';
 opt.PSF.Width = 2.5;

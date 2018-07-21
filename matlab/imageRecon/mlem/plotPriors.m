@@ -24,8 +24,8 @@ set(h, 'Position', [100 100 800 600]);
 
 %% LANGE
 h = figure;
-r = -0.2: 0.01 : 0.2; % Diferencia entre píxeles.
-delta = [1e-2*max(abs(r)) 1*max(abs(r))];
+r = -0.3: 0.01 : 0.3; % Diferencia entre píxeles.
+delta = [1e-1*max(abs(r)) 10*max(abs(r))];
 [DELTA, R] = meshgrid(delta,r);
 % Equalization factor:
 scale_factor = (max(abs(r))./2./delta(1)-log(1+max(abs(r))./2./delta(1)))./(max(abs(r))./2./DELTA-log(1+max(abs(r))./2./DELTA));
